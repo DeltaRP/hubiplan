@@ -192,7 +192,7 @@ def register_data(c: Coupling, names: bool = True) -> dict | None:
     for rm in entries:
         counts[rm.status] += 1
     if not names:
-        return {"counts": counts, "unclear": [], "conflicts": []}
+        return {"counts": counts, "unclear": [], "conflicts": [], "corrections": []}
     unclear = []
     candidate_ids = {pid for rm in entries for pid in (rm.data or {}).get("candidates", [])}
     persons = {
@@ -235,7 +235,25 @@ def register_data(c: Coupling, names: bool = True) -> dict | None:
         for rm in entries
         if (rm.data or {}).get("active_elsewhere")
     ]
-    return {"counts": counts, "unclear": unclear, "conflicts": conflicts}
+    corrections = [
+        {
+            "id": rm.pk,
+            "name": str(rm.membership.person),
+            "current": {
+                f: getattr(rm.membership.person, f)
+                for f in ("last_name", "first_name", "birth_date")
+            },
+            "proposed": rm.data[register.CORRECTION],
+        }
+        for rm in entries
+        if rm.membership_id and (rm.data or {}).get(register.CORRECTION)
+    ]
+    return {
+        "counts": counts,
+        "unclear": unclear,
+        "conflicts": conflicts,
+        "corrections": corrections,
+    }
 
 
 class _Peering(OrgScopedMixin, APIView):
@@ -482,6 +500,14 @@ class RegisterResolveView(_Peering):
         )
         coupling = self.coupling(pk)
         rm = get_object_or_404(RemoteMember, coupling=coupling, pk=member_id)
+        correction = request.data.get("correction")
+        if correction in ("apply", "discard"):
+            try:
+                register.decide_correction(rm, correction == "apply")
+            except DjangoValidationError as exc:
+                _raise(exc)
+            coupling.refresh_from_db()
+            return Response(self.data(coupling, with_messages=True))
         person = request.data.get("person")
         from organizations.models import Organization
 

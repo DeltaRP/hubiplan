@@ -329,6 +329,8 @@ MAIL_RATE_PER_HOUR = int(os.environ.get("MAIL_RATE_PER_HOUR", "0"))
 INBOUND_DOMAINS = [d.lower() for d in env_list("INBOUND_DOMAINS")]
 # Sammelpostfach, in dem alle Mails an die Verteiler landen (IMAP über TLS)
 INBOUND_IMAP_HOST = os.environ.get("INBOUND_IMAP_HOST", "")
+# Kennung des eigenen Mailservers in Authentication-Results (leer: oberster Eintrag zählt)
+MAIL_AUTHSERV_ID = os.environ.get("MAIL_AUTHSERV_ID", "")
 INBOUND_IMAP_PORT = int(os.environ.get("INBOUND_IMAP_PORT", "993"))
 INBOUND_IMAP_USER = os.environ.get("INBOUND_IMAP_USER", "")
 INBOUND_IMAP_PASSWORD = os.environ.get("INBOUND_IMAP_PASSWORD", "")

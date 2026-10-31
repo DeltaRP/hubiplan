@@ -424,6 +424,25 @@ def dmarc_failed(msg: EmailMessage) -> bool:
     return bool(re.search(r"\bdmarc=fail\b", results, re.IGNORECASE))
 
 
+def dmarc_passed(msg: EmailMessage) -> bool:
+    """Hat der eigene Mailserver die Herkunft positiv bestätigt (``dmarc=pass``)?
+
+    Zählt nur das oberste Authentication-Results (vom eigenen Server zuletzt
+    vorangestellt); mit ``MAIL_AUTHSERV_ID`` nur ein Ergebnis genau dieses Servers.
+    Fehlt das Ergebnis oder ist es none/temperror/permerror, gilt die Herkunft als
+    unbestätigt (Gesamtaudit 01.11., GA-S03).
+    """
+    from django.conf import settings
+
+    headers = [str(v) for v in msg.get_all("Authentication-Results") or []]
+    authserv = (getattr(settings, "MAIL_AUTHSERV_ID", "") or "").strip().lower()
+    if authserv:
+        headers = [h for h in headers if h.split(";", 1)[0].strip().lower() == authserv]
+    if not headers:
+        return False
+    return bool(re.search(r"(?:^|[;\s])dmarc=pass\b", headers[0], re.IGNORECASE))
+
+
 def recipient_addresses(msg: EmailMessage) -> list[str]:
     headers = []
     for name in ("Delivered-To", "X-Original-To", "Envelope-To", "To", "Cc"):
@@ -525,6 +544,9 @@ def _process(raw: bytes) -> InboundMail | None:
             MailingList.Mode.CONFIRM: InboundMail.Status.WAITING,
             MailingList.Mode.DIRECT: InboundMail.Status.SENT,
         }.get(ml.mode, InboundMail.Status.DRAFT)
+        if status == InboundMail.Status.SENT and not dmarc_passed(msg):
+            # Herkunft nicht bestätigt: wie „mit Bestätigung“, der Link geht an das Konto
+            status = InboundMail.Status.WAITING
         if status == InboundMail.Status.SENT:
             # Direkt: ohne Bestätigungslink; vor Fälschung schützt nur noch DMARC
             services.start_sending(circular, user)

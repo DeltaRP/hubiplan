@@ -15,8 +15,11 @@ def check_chains() -> int:
 
     with rls_bypass():
         # order_by(): sonst stünde die Standardsortierung im DISTINCT (Einheit je Eintrag)
+        # Auch Organisationen mit früherem Prüfergebnis: sonst fiele das Löschen aller
+        # Einträge nicht auf (Gesamtaudit 01.11., GA-F06)
         org_ids = sorted(
             set(AuditEntry.objects.order_by().values_list("organization_id", flat=True).distinct())
+            | set(AuditCheck.objects.values_list("organization_id", flat=True))
         )
         before = {
             c.organization_id: c.ok for c in AuditCheck.objects.filter(organization_id__in=org_ids)

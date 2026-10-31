@@ -233,3 +233,78 @@ class TestAbfrageAktiv:
         with net.on(VEREIN):
             make_member(world["club"], "Neu", "Mitglied", birth_date=datetime.date(1990, 1, 1))
         assert not any(path.endswith("/query/") for _, path in net.calls[calls:])
+
+
+class TestFremdeVerbandsnummer:
+    """Gesamtaudit 01.11., GA-S02: Eine Nummer allein reicht nicht für fremde Personen."""
+
+    def row(self, uid, number, birth):
+        return {
+            "uid": uid,
+            "last_name": "Aktiv",
+            "first_name": "Anna",
+            "birth_date": birth.isoformat(),
+            "number": number,
+            "periods": [{"entry": "2020-01-01"}],
+            "types": [{"name": "aktiv", "active": True, "from": "2020-01-01"}],
+        }
+
+    def test_fremde_nummer_wird_klaerfall(self, net, world, members):
+        from peering import register
+
+        with net.on(VERBAND):
+            nachbar = make_org("Nachbarverein Musterstadt", parent=world["fed"])
+            local = make_member(nachbar, "Anna", "Aktiv", birth_date=ANNA)
+        lower, upper = named(net, world, level="b")
+        with net.on(VERBAND), tenant_context(world["fed"].pk):
+            fm, _ = FederationMember.objects.get_or_create(
+                person=local.person,
+                defaults={"scope": world["fed"], "member_number": 987654},
+            )
+            falsch = datetime.date(1999, 1, 1)
+            register.apply_rows(upper, [self.row("fremd-1", fm.member_number, falsch)])
+        local.person.refresh_from_db()
+        assert local.person.birth_date == ANNA
+        rm = RemoteMember.objects.get(coupling=upper, uid="fremd-1")
+        assert rm.status == "unclear" and rm.membership is None
+        assert local.person.pk in rm.data["candidates"]
+        with tenant_context(nachbar.pk):
+            assert not Membership.objects.filter(
+                person=local.person, organization=upper.remote_unit
+            ).exists()
+
+    def test_berichtigung_geteilter_person_braucht_freigabe(self, net, world, members):
+
+        with net.on(VERBAND):
+            nachbar = make_org("Nachbarverein Musterstadt", parent=world["fed"])
+            make_member(nachbar, "Anna", "Aktiv", birth_date=ANNA)
+        lower, upper = named(net, world)
+        rm = RemoteMember.objects.get(coupling=upper, uid=f"m{members['anna'].pk}")
+        with net.on(VERBAND):
+            c = api(world["fed_board"])
+            base = f"/api/orgs/{world['fed'].pk}/peering/couplings/{upper.pk}"
+            case = c.get(f"{base}/").json()["register"]["unclear"][0]
+            c.post(
+                f"{base}/members/{rm.pk}/resolve/",
+                {"person": case["candidates"][0]["id"]},
+                content_type=JSON,
+            )
+        rm.refresh_from_db()
+        person = rm.membership.person
+        # Der Verein meldet ein anderes Geburtsdatum: nur als Vorschlag
+        anna = members["anna"].person
+        anna.birth_date = datetime.date(1981, 5, 17)
+        anna.save()
+        sync(net, lower)
+        person.refresh_from_db()
+        assert person.birth_date == ANNA
+        with net.on(VERBAND):
+            data = c.get(f"{base}/").json()["register"]["corrections"]
+            assert data[0]["proposed"] == {"birth_date": "1981-05-17"}
+            resp = c.post(
+                f"{base}/members/{rm.pk}/resolve/", {"correction": "apply"}, content_type=JSON
+            )
+        assert resp.status_code == 200, resp.json()
+        person.refresh_from_db()
+        assert person.birth_date == datetime.date(1981, 5, 17)
+        assert resp.json()["register"]["corrections"] == []

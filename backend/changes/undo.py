@@ -60,6 +60,54 @@ def undo(change_set: ChangeSet, org, user, *, force: bool = False) -> None:
         _undo(change_set, org, user, force=force)
 
 
+def _invariant_problems(records) -> list[str]:
+    """Fachregeln über mehrere Zeilen nach dem Zurückspielen erneut prüfen.
+
+    Rückgängig speichert Modelle direkt; Regeln wie „Barkasse nie unter null“ und
+    „Rücklage nie unter null“ prüfen sonst nur die normalen Schnittstellen
+    (Gesamtaudit 01.11., GA-S08).
+    """
+    import datetime
+
+    from django.core.exceptions import ValidationError
+
+    account_ids: set[int] = set()
+    reserve_ids: set[int] = set()
+    since: datetime.date | None = None
+    for rec in records:
+        rows = [r for r in (rec.before, rec.after) if r]
+        if rec.model == "finance.booking":
+            for row in rows:
+                account_ids.update(
+                    v for v in (row.get("account_id"), row.get("to_account_id")) if v
+                )
+                if row.get("date"):
+                    day = datetime.date.fromisoformat(str(row["date"])[:10])
+                    since = day if since is None else min(since, day)
+        elif rec.model == "finance.account":
+            account_ids.add(rec.object_id)
+            since = datetime.date.min
+        elif rec.model == "finance.reservemovement":
+            reserve_ids.update(row["reserve_id"] for row in rows if row.get("reserve_id"))
+    problems: list[str] = []
+    try:
+        if account_ids:
+            from finance.models import Account
+            from finance.services import ensure_cash_ok
+
+            accounts = list(Account._base_manager.filter(pk__in=account_ids))
+            ensure_cash_ok(accounts, since or datetime.date.min)
+        if reserve_ids:
+            from finance.models import Reserve
+            from finance.reserves import _never_negative
+
+            for reserve in Reserve._base_manager.filter(pk__in=reserve_ids).order_by("pk"):
+                _never_negative(reserve, [])
+    except ValidationError as exc:
+        problems.extend(exc.messages)
+    return problems
+
+
 def _undo(change_set: ChangeSet, org, user, *, force: bool) -> None:
     ctx = tracking.active()
     if ctx is None:
@@ -170,6 +218,8 @@ def _undo(change_set: ChangeSet, org, user, *, force: bool) -> None:
                 break
         if ctx.blocked:
             hard.append(ctx.blocked)
+        if not hard:
+            hard.extend(_invariant_problems(records))
 
         if hard or (soft and not force):
             messages = hard + soft

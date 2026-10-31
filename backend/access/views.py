@@ -121,6 +121,38 @@ def _locks_out(user, org: Organization, role: Role) -> bool:
     return ROLES_MANAGE not in perms
 
 
+def _has_rights_elsewhere(target, org) -> bool:
+    """Hat das Konto Rechte außerhalb von ``org`` und ihren Untereinheiten?
+
+    Plattform-, Staff- und Superuser-Konten zählen immer dazu. Gelesen wird in der Sicht des
+    Zielkontos, sonst blendet RLS dessen Rollen in fremden Organisationen aus.
+    """
+    from access.permissions import is_platform_admin
+    from core.tenancy import rls_bypass, user_view
+
+    if target.is_staff or target.is_superuser or is_platform_admin(target):
+        return True
+    with user_view(target.pk):
+        org_ids = set(
+            RoleAssignment.objects.active()
+            .filter(user=target)
+            .values_list("organization_id", flat=True)
+        )
+    org_ids.discard(org.pk)
+    if not org_ids:
+        return False
+    # Nur Baumstruktur lesen (ohne Inhalte); fehlt eine Zeile, lieber ablehnen
+    with rls_bypass():
+        parents = dict(Organization.objects.values_list("pk", "parent_id"))
+    for org_id in org_ids:
+        node = org_id
+        while node is not None and node != org.pk:
+            node = parents.get(node)
+        if node is None:
+            return True
+    return False
+
+
 class AssignmentViewSet(_OrgContextMixin, OrgScopedMixin, AuditMixin, viewsets.ModelViewSet):
     serializer_class = AssignmentSerializer
     read_permission = ROLES_MANAGE
@@ -180,6 +212,15 @@ class AssignmentViewSet(_OrgContextMixin, OrgScopedMixin, AuditMixin, viewsets.M
             )
         if not RoleAssignment.objects.active().filter(pk=assignment.pk).exists():
             raise serializers.ValidationError({"detail": "Die Rolle ist nicht mehr aktiv."})
+        if _has_rights_elsewhere(target, self.org):
+            # Die Zwei-Faktor-Anmeldung gilt für das ganze Konto. Ein Verein darf sie nur
+            # für Konten zurücksetzen, die allein hier Rechte haben (Gesamtaudit 01.11., GA-S01).
+            raise serializers.ValidationError(
+                {
+                    "detail": "Dieses Konto hat auch außerhalb dieses Vereins Rechte. "
+                    "Die Zwei-Faktor-Anmeldung setzt dann nur die Plattform-Verwaltung zurück."
+                }
+            )
         removed, _ = Authenticator.objects.filter(user=target).delete()
         if not removed:
             raise serializers.ValidationError(

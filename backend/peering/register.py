@@ -251,6 +251,22 @@ def _person_for(federation, row):
     return None
 
 
+def _shared(person, placeholder) -> bool:
+    """Ist die Person auch außerhalb dieses Platzhalters Mitglied (anderer Verein)?
+
+    Ohne RLS gelesen (nur ja/nein): Mitgliedschaften anderer Vereine fehlen sonst und die
+    Prüfung fiele zugunsten des Partners aus.
+    """
+    from core.tenancy import rls_bypass
+
+    with rls_bypass():
+        return (
+            person.memberships.exclude(organization_id=placeholder.pk)
+            .filter(purged_at__isnull=True)
+            .exists()
+        )
+
+
 def _candidates(federation, row):
     from members.models import Person
 
@@ -267,10 +283,18 @@ def _candidates(federation, row):
 def _import(coupling, federation, row, rm=None, person=None):
     from members.models import Person
 
+    found = None
     if person is None:
-        person = _person_for(federation, row)
+        found = _person_for(federation, row)
+        # Eine Verbandsnummer allein beweist nicht, dass der Partner für diese Person
+        # spricht: Ist sie schon Mitglied eines anderen Vereins, entscheidet der
+        # Dachverband im Klärfall (Gesamtaudit 01.11., GA-S02).
+        if found is not None and not _shared(found, coupling.remote_unit):
+            person = found
     if person is None:
         candidates = _candidates(federation, row)
+        if found is not None and found.pk not in candidates:
+            candidates = [found.pk, *candidates][:5]
         if candidates:
             rm = rm or RemoteMember(coupling=coupling, uid=row["uid"])
             rm.status = RemoteMember.Status.UNCLEAR
@@ -316,12 +340,21 @@ def _update(rm: RemoteMember, row: dict) -> None:
     membership = rm.membership
     placeholder = membership.organization
     person = membership.person
-    # Berichtigung (Art. 16/19): Name und Geburtsdatum kommen vom Verein
+    # Berichtigung (Art. 16/19): Name und Geburtsdatum kommen vom Verein. Ist die Person
+    # auch in einem anderen Verein, gibt der Dachverband die Änderung frei (GA-S02).
     changed = [f for f in ("last_name", "first_name", "birth_date") if getattr(person, f) != row[f]]
-    if changed:
-        for f in changed:
-            setattr(person, f, row[f])
-        person.save(update_fields=[*changed, "updated_at"])
+    data = dict(rm.data or {})
+    if changed and _shared(person, placeholder):
+        data[CORRECTION] = {f: row[f].isoformat() if f == "birth_date" else row[f] for f in changed}
+    else:
+        data.pop(CORRECTION, None)
+        if changed:
+            for f in changed:
+                setattr(person, f, row[f])
+            person.save(update_fields=[*changed, "updated_at"])
+    if data != (rm.data or {}):
+        rm.data = data
+        rm.save(update_fields=["data", "updated_at"])
     membership.periods.all().delete()
     membership.type_assignments.all().delete()
     for p in row["periods"]:
@@ -429,6 +462,35 @@ def send_numbers(coupling: Coupling) -> None:
 
 
 # --- oben: Klärfälle ---
+
+# Vom Verein gemeldete Berichtigung einer Person, die auch woanders Mitglied ist
+CORRECTION = "berichtigung"
+
+
+def decide_correction(rm: RemoteMember, apply: bool) -> RemoteMember:
+    """Gemeldete Berichtigung übernehmen (``apply``) oder verwerfen."""
+    import datetime
+
+    from django.core.exceptions import ValidationError
+
+    from changes.tracking import suppress
+
+    proposal = (rm.data or {}).get(CORRECTION)
+    if not proposal or rm.membership_id is None:
+        raise ValidationError("Keine offene Berichtigung.")
+    if apply:
+        person = rm.membership.person
+        fields = []
+        for f, value in proposal.items():
+            if f not in ("last_name", "first_name", "birth_date"):
+                continue
+            setattr(person, f, datetime.date.fromisoformat(value) if f == "birth_date" else value)
+            fields.append(f)
+        with suppress():
+            person.save(update_fields=[*fields, "updated_at"])
+    rm.data = {k: v for k, v in (rm.data or {}).items() if k != CORRECTION}
+    rm.save(update_fields=["data", "updated_at"])
+    return rm
 
 
 def resolve(rm: RemoteMember, person_id: int | None) -> RemoteMember:

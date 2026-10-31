@@ -37,11 +37,34 @@ def balance(reserve: Reserve, until: datetime.date | None = None) -> Decimal:
 
 
 def balances(org, until: datetime.date | None = None) -> dict[int, Decimal]:
-    return {r.pk: balance(r, until) for r in Reserve.objects.filter(organization=org)}
+    """Bestände aller Rücklagen mit einer Abfrage (Gesamtaudit 01.11., GA-P03)."""
+    from django.db.models import Q
+
+    qs = ReserveMovement.objects.filter(reserve__organization=org)
+    if until is not None:
+        qs = qs.filter(date__lte=until)
+    sums = {
+        row["reserve_id"]: (row["add"] or ZERO) - (row["rel"] or ZERO)
+        for row in qs.values("reserve_id")
+        .annotate(
+            add=Sum("amount", filter=Q(direction=ReserveMovement.Direction.ADD)),
+            rel=Sum("amount", filter=Q(direction=ReserveMovement.Direction.RELEASE)),
+        )
+        .order_by()
+    }
+    return {
+        pk: sums.get(pk, ZERO)
+        for pk in Reserve.objects.filter(organization=org).values_list("pk", flat=True)
+    }
 
 
 def _never_negative(reserve: Reserve, extra: list[tuple[datetime.date, Decimal]], skip=None):
-    """Prüft den Verlauf der Rücklage Tag für Tag (mit geplanten Änderungen)."""
+    """Prüft den Verlauf der Rücklage Tag für Tag (mit geplanten Änderungen).
+
+    Sperrt die Rücklage bis zum Ende der Transaktion: Zwei gleichzeitige Auflösungen sähen
+    sonst beide den alten Bestand (Gesamtaudit 01.11., GA-S09).
+    """
+    Reserve.objects.select_for_update().filter(pk=reserve.pk).values_list("pk").first()
     steps = [
         (m.date, m.signed)
         for m in ReserveMovement.objects.filter(reserve=reserve).order_by("date", "pk")

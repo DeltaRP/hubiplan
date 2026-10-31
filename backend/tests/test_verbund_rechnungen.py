@@ -276,3 +276,30 @@ def test_nur_verbundrecht_sieht_keine_rechnungen(net, world, members):
         # der Vorstand mit allen Rechten sieht sie weiter
         data = api(world["club_board"]).get(f"{base}/").json()
         assert len(data["invoices"]) == 1 and data["hidden"] == []
+
+
+def test_rechnung_noch_einmal_aendert_nichts(net, world, members):
+    """Gesamtaudit 01.11., GA-F01: Eine empfangene Rechnung bleibt, wie sie ist."""
+    from django.core.exceptions import ValidationError
+
+    from peering import packet_invoices
+    from peering.packet_invoices import _issue_data
+
+    lower, upper = coupled(net, world)
+    fed_settings(world["fed"])
+    invoice = issue(net, world, upper)
+    incoming = RemoteInvoice.objects.get(coupling=lower)
+    incoming.data = {**incoming.data, "booking_id": 4711}
+    incoming.save(update_fields=["data"])
+    with net.on(VERBAND), tenant_context(world["fed"].pk):
+        data = _issue_data(invoice, incoming.uid)
+    with net.on(VEREIN), tenant_context(world["club"].pk):
+        # dieselbe Rechnung noch einmal: still quittiert, nichts geändert
+        packet_invoices.receive(lower, "invoice.issue", data)
+        incoming.refresh_from_db()
+        assert incoming.data["booking_id"] == 4711
+        # geänderter Betrag: abgelehnt
+        with pytest.raises(ValidationError):
+            packet_invoices.receive(lower, "invoice.issue", {**data, "total": "99.00"})
+    incoming.refresh_from_db()
+    assert incoming.total == Decimal("30.00") and incoming.data["booking_id"] == 4711
