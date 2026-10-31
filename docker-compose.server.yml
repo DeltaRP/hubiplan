@@ -1,0 +1,266 @@
+# Server: docker compose -f docker-compose.server.yml up -d --build
+# Hinter einem vorhandenen Webserver zusätzlich -f docker-compose.proxy.yml.
+# Erwartet eine .env neben dieser Datei (Vorlage: .env.server.example).
+# Geheimnisse liegen nur in dieser .env auf dem Server, nie im Repository.
+
+x-backend-env: &backend-env
+  DJANGO_DEBUG: "false"
+  # Django-Admin (/admin/) nur bei Bedarf: DJANGO_ADMIN_ENABLED=true in der .env
+  DJANGO_ADMIN_ENABLED: ${DJANGO_ADMIN_ENABLED:-false}
+  # Swagger-Oberfläche (/api/docs/, lädt Code von einem CDN) nur bei Bedarf
+  DJANGO_API_DOCS_ENABLED: ${DJANGO_API_DOCS_ENABLED:-false}
+  # Alarm-Mails (große Exporte, neue Plattformzugänge); leer = an alle Superuser
+  SECURITY_ALERT_EMAIL: ${SECURITY_ALERT_EMAIL:-}
+  DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY fehlt in .env}
+  # Verschlüsselt die 2FA-Geheimnisse in der Datenbank (liegt nicht im Backup)
+  MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY:?MFA_ENCRYPTION_KEY fehlt in .env}
+  # Schlüsselwechsel: MFA_ENCRYPTION_KEYS=neu,alt (hat Vorrang, siehe docs/betrieb.md)
+  MFA_ENCRYPTION_KEYS: ${MFA_ENCRYPTION_KEYS:-}
+  DJANGO_ALLOWED_HOSTS: ${SITE_HOST:?SITE_HOST fehlt in .env},localhost
+  DJANGO_CSRF_TRUSTED_ORIGINS: https://${SITE_HOST}
+  FRONTEND_URL: https://${SITE_HOST}
+  # Anmeldung direkt als eingeschränkte Rolle (kein Superuser, kein BYPASSRLS),
+  # damit auch Schadcode in der Anwendung RLS nicht per RESET ROLE verlassen kann
+  DATABASE_URL: postgres://hubiplan_app:${APP_DB_PASSWORD:?APP_DB_PASSWORD fehlt in .env}@postgres:5432/hubiplan
+  # Redis mit Passwort: Programme auf demselben Server erreichen das Docker-Netz
+  REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD fehlt in .env}@redis:6379/0
+  CACHE_URL: redis://:${REDIS_PASSWORD}@redis:6379/1
+  MFA_TOTP_ISSUER: ${MFA_TOTP_ISSUER:-HUBIplan (Test)}
+  # Laufzeit in der eingeschränkten Rolle, damit Row-Level Security greift
+  DATABASE_APP_ROLE: hubiplan_app
+  MEDIA_ROOT: /app/media
+  # Dateisystem schreibgeschützt: Zwischendateien und Caches nur in /tmp
+  HOME: /tmp
+  # Import-/Exportdateien: nur über die API mit Rechteprüfung, nie direkt per Web
+  PRIVATE_ROOT: /app/private
+  LOESCHLISTE_PATH: /app/loeschliste/loeschliste.jsonl
+  # E-Mail: alle Mails landen im Postausgang (Test-Postfach unter Plattform → Postfach).
+  # Erst mit EMAIL_HOST werden sie zusätzlich per SMTP versendet.
+  EMAIL_HOST: ${EMAIL_HOST:-}
+  EMAIL_PORT: ${EMAIL_PORT:-587}
+  EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
+  EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
+  EMAIL_USE_TLS: ${EMAIL_USE_TLS:-true}
+  DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-HUBIplan <noreply@${SITE_HOST}>}
+  # Stundengrenze für Rundschreiben-Mails (0 = keine), z. B. 100 beim Hestia-Postfach
+  MAIL_RATE_PER_HOUR: ${MAIL_RATE_PER_HOUR:-0}
+  # Mailverteiler: Domain der Verteiler-Adressen und Sammelpostfach (IMAP).
+  # Ohne Sammelpostfach gibt es in der Oberfläche den Probe-Eingang.
+  INBOUND_DOMAINS: ${INBOUND_DOMAINS:-}
+  INBOUND_IMAP_HOST: ${INBOUND_IMAP_HOST:-}
+  INBOUND_IMAP_PORT: ${INBOUND_IMAP_PORT:-993}
+  INBOUND_IMAP_USER: ${INBOUND_IMAP_USER:-}
+  INBOUND_IMAP_PASSWORD: ${INBOUND_IMAP_PASSWORD:-}
+  # Vereinswebseite: Testserver nur Vorschau, feste Adresse unter /webseite/
+  WEBSITE_PREVIEW_ONLY: ${WEBSITE_PREVIEW_ONLY:-false}
+  WEBSITE_PUBLIC_URL: ${WEBSITE_PUBLIC_URL:-}
+
+# Abschottung: keine Linux-Sonderrechte, keine Rechteausweitung (setuid)
+# Container-Logs begrenzt (je Dienst höchstens 3 × 10 MB), Gesamtaudit 30.10.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-haertung: &haertung
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  logging: *logging
+
+# Backend und Worker nutzen dasselbe Image; gebaut wird es nur beim Backend.
+# Das Dateisystem ist schreibgeschützt: Schadcode kann den Programmcode nicht
+# verändern. Schreiben nur in /tmp (Arbeitsspeicher) und in die Daten-Volumes.
+# Obergrenzen für Speicher, Prozesse und /tmp: Große Importe oder Dateien bringen so
+# nur diesen Dienst an seine Grenze, nicht den ganzen (geteilten) Server (Gesamtaudit
+# 31.10.b, INF-S02). Anpassbar in der .env.
+x-backend: &backend
+  <<: *haertung
+  image: hubiplan-backend
+  restart: unless-stopped
+  read_only: true
+  mem_limit: ${BACKEND_MEM_LIMIT:-1536m}
+  pids_limit: 256
+  tmpfs:
+    - /tmp:size=${BACKEND_TMP_SIZE:-768m}
+  environment: *backend-env
+  networks: [intern, ausgang]
+  volumes:
+    - media-data:/app/media
+    - private-data:/app/private
+    - loeschliste:/app/loeschliste
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+  postgres:
+    logging: *logging
+    image: postgres:18-alpine@sha256:10a5c69a83035ab5239f5620d708520e8b28f5aa1f2b20143e6024532edadfb5
+    restart: unless-stopped
+    # Der Start wechselt vom root- zum postgres-Benutzer und braucht dafür Rechte
+    security_opt: ["no-new-privileges:true"]
+    networks: [intern]
+    environment:
+      POSTGRES_DB: hubiplan
+      POSTGRES_USER: hubiplan
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hubiplan -d hubiplan"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    <<: *haertung
+    image: redis:8-alpine@sha256:21090af93f8324db2f0f0f4f38a7c60369d47d917e000c3423d89d2ae2883537
+    restart: unless-stopped
+    networks: [intern]
+    user: redis
+    # Passwort über eine Konfigurationsdatei, damit es nicht in der Prozessliste steht
+    command:
+      - sh
+      - -c
+      - umask 077 && printf 'requirepass %s\n' "$$REDIS_PASSWORD" > /tmp/redis.conf && exec redis-server /tmp/redis.conf
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD fehlt in .env}
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli ping | grep -q PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    <<: *backend
+    build: ./backend
+    # Nur das Backend ist für Caddy (web) erreichbar
+    networks: [intern, ausgang, web]
+    environment:
+      <<: *backend-env
+      RUN_MIGRATIONS: "1"
+      # Nur für Migrationen beim Start; das Startskript entfernt beides vor gunicorn
+      MIGRATE_DATABASE_URL: postgres://hubiplan:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD fehlt in .env}@postgres:5432/hubiplan
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD}
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health/')"
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  worker:
+    <<: *backend
+    pull_policy: never
+    # Höchstens zwei Aufträge gleichzeitig (Import, Export, Mails)
+    command: celery -A config worker --loglevel=info --concurrency=2
+    mem_limit: ${WORKER_MEM_LIMIT:-2g}
+    volumes:
+      - media-data:/app/media
+      - private-data:/app/private
+      - loeschliste:/app/loeschliste
+      # Stand des Backups lesen (Alarm-Mail bei Fehler oder Lücke)
+      - backup-status:/backup-status:ro
+    environment:
+      <<: *backend-env
+      BACKUP_STATUS_DIR: /backup-status
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # Zeitgesteuerte Jobs (z. B. Löschfrist täglich)
+  beat:
+    <<: *backend
+    pull_policy: never
+    command: celery -A config beat --loglevel=info --schedule /tmp/celerybeat-schedule
+    mem_limit: 256m
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # Tägliches verschlüsseltes Backup mit Rücksicherungstest (siehe docs/betrieb.md)
+  backup:
+    <<: *haertung
+    build: ./deploy/backup
+    restart: unless-stopped
+    networks: [intern, ausgang]
+    environment:
+      PGHOST: postgres
+      PGUSER: hubiplan
+      PGDATABASE: hubiplan
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      # Öffentlicher age-Schlüssel: Der Server kann Backups verschlüsseln, aber nicht
+      # lesen. Den privaten Schlüssel hat nur der Betreiber (siehe docs/betrieb.md).
+      BACKUP_PUBLIC_KEY: ${BACKUP_PUBLIC_KEY:-}
+      # Alte Form und zum Lesen älterer Backups
+      BACKUP_PASSPHRASE: ${BACKUP_PASSPHRASE:-}
+      BACKUP_HMAC_KEY: ${BACKUP_HMAC_KEY:?BACKUP_HMAC_KEY fehlt in .env}
+      BACKUP_TIME: ${BACKUP_TIME:-03:15}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-30}
+      BACKUP_REMOTE: ${BACKUP_REMOTE:-}
+      TZ: Europe/Berlin
+    # Klartext des Dumps nur im Arbeitsspeicher (Rücksicherungstest vor dem Verschlüsseln)
+    tmpfs:
+      - /tmp
+    volumes:
+      - ${BACKUP_DIR:-/opt/hubiplan-backups}:/backups
+      - media-data:/data/media:ro
+      - private-data:/data/private:ro
+      # Löschliste (nur Kennungen) neben die Backups legen, damit sie mit an den zweiten Ort geht
+      - loeschliste:/loeschliste:ro
+      # Zweiter Ort (optional): id_ed25519 und known_hosts, Eigentümer UID 70, Rechte 600
+      - ${BACKUP_SSH_DIR:-/opt/hubiplan-backup-ssh}:/run/backup-ssh:ro
+      # Stand des letzten Laufs für die Alarm-Mail (Worker liest mit)
+      - backup-status:/status
+    # Erst nach den Migrationen starten – sonst sichert der erste Lauf eine leere Datenbank
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: deploy/web.Dockerfile
+    restart: unless-stopped
+    <<: *haertung
+    cap_add: [NET_BIND_SERVICE]
+    networks: [web]
+    environment:
+      SITE_HOST: ${SITE_HOST}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+      - media-data:/srv-media:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+
+# intern: Datenbank und Redis, ohne Weg ins Internet und für Caddy unerreichbar.
+# web: Caddy ↔ Backend. ausgang: Mailversand, Backup-Zweitort.
+networks:
+  intern:
+    internal: true
+  web:
+  ausgang:
+
+volumes:
+  postgres-data:
+  media-data:
+  private-data:
+  caddy-data:
+  caddy-config:
+  backup-status:
+  # Löschliste außerhalb der Datenbank (Fachfrage 7, 31.10.b); beim Einspielen eines Backups
+  # NICHT zurücksetzen
+  loeschliste:

@@ -1,0 +1,55 @@
+/*
+ * Theme über CSS-Variablen.
+ * Standardwerte der Plattform; ab Meilenstein 1 überschreibt jede Organisation
+ * (Dachverband/Verein) Farben und Logo zur Laufzeit über applyTheme() in theme.ts.
+ */
+/* Schrift des Schriftzugs, selbst ausgeliefert (SIL OFL, Lizenz in lizenzen/zusatz.txt) */
+@font-face {
+  font-family: 'Outfit';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('../assets/fonts/outfit-latin-300-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Outfit';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('../assets/fonts/outfit-latin-800-normal.woff2') format('woff2');
+}
+
+:root {
+  /* Hubi-Grün und Hubi-Gold (Gestaltungshandbuch 31.10.2026) */
+  --color-primary: #0e7c66;
+  --color-primary-hover: #0b6352;
+  /* Text in Primärfarbe (Links): wird bei hellen Vereinsfarben abgedunkelt */
+  --color-link: #0e7c66;
+  /* Fokusrahmen und Zustandsrahmen: wie Links mind. 4,5 : 1, auch bei hellen Vereinsfarben */
+  --color-focus: #0e7c66;
+  --color-on-primary: #ffffff;
+  --color-accent: #f2b33d;
+
+  --color-bg: #f5f6f4;
+  --color-surface: #ffffff;
+  --color-text: #1d2421;
+  --color-text-muted: #5d6763;
+  --color-border: #dde1de;
+  /* Rahmen von Eingabefeldern: mind. 3:1 gegen Weiß (WCAG 1.4.11) */
+  --color-input-border: #858e8a;
+  --color-error: #b3261e;
+  --color-error-bg: #fbe9e7;
+  --color-success-bg: #e6f3ee;
+  --color-success: #1d6b46;
+
+  --sidebar-bg: #17332c;
+  --sidebar-text: #d7e4df;
+  /* Fokusrahmen in der Seitenleiste (hell auf dunkel, UI-Audit NUI-04) */
+  --sidebar-focus: #ffffff;
+  --sidebar-active-bg: rgba(255, 255, 255, 0.12);
+  --sidebar-width: 15rem;
+
+  --radius: 0.5rem;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}

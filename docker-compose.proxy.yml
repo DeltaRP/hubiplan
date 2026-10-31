@@ -1,0 +1,10 @@
+# Zusatz zu docker-compose.server.yml für den Betrieb hinter einem vorhandenen
+# Webserver (z. B. HestiaCP auf dem Echtserver). Der übernimmt HTTPS und leitet an
+# 127.0.0.1:WEB_PORT weiter; Caddy belegt dann weder Port 80 noch 443.
+# Aktiv, wenn in der .env HUBIPLAN_HINTER_PROXY=1 steht (siehe deploy/server-setup.sh).
+
+services:
+  web:
+    command: ["caddy", "run", "--config", "/etc/caddy/Caddyfile.proxy", "--adapter", "caddyfile"]
+    ports: !override
+      - "127.0.0.1:${WEB_PORT:-8110}:80"

@@ -1,0 +1,27 @@
+# Betrieb hinter einem vorgeschalteten Webserver (z. B. nginx von HestiaCP), der
+# HTTPS übernimmt und nur an 127.0.0.1:WEB_PORT weiterleitet. Caddy spricht
+# hier nur HTTP und ist von außen nicht erreichbar.
+{
+	auto_https off
+}
+
+# Der vorgeschaltete Webserver setzt X-Real-IP auf die Adresse des Aufrufers
+# (siehe deploy/hestia/). Daraus wird genau ein X-Forwarded-For-Eintrag, wie
+# ihn das Backend erwartet (core.ratelimit.client_ip). Was der Aufrufer selbst
+# als X-Forwarded-For mitschickt, wird dabei verworfen.
+(upstream) {
+	header_up X-Forwarded-For {http.request.header.X-Real-IP}
+	header_up X-Forwarded-Proto https
+}
+
+:80 {
+	import caddy/site.caddy
+}
+
+# Nur im Docker-Netz „web“ (kein Port nach außen): Die Vereinswebseite holt Logos und
+# Bilder hier ab (HUBIPLAN_MEDIA_URL=http://web:8081). Über die eigene öffentliche
+# Adresse erreicht ihr Container den Server nicht (UX-Audit 31.10. R02).
+:8081 {
+	import caddy/media.caddy
+	respond 404
+}

@@ -1,0 +1,61 @@
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /backend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    ignore:
+      # Wir bleiben bei der LTS-Version (5.2); der Wechsel auf die nächste LTS
+      # (6.2, April 2027) erfolgt bewusst von Hand.
+      - dependency-name: django
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+    groups:
+      python-minor:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    ignore:
+      # Die Node-Typen passen zur Node-Version der Docker-Images (24 LTS);
+      # ein Sprung erfolgt zusammen mit dem Wechsel der Node-Version.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+    groups:
+      npm-minor:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+
+  # Basis-Images sind mit Digest festgeschrieben (Audit G01); Dependabot erneuert ihn.
+  - package-ecosystem: docker
+    directories: [/backend, /frontend, /deploy, /deploy/backup]
+    ignore:
+      # Node nur in LTS-Versionen (gerade Hauptversionen); den Wechsel auf die
+      # nächste LTS machen wir bewusst von Hand in allen Dockerfiles zugleich.
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]
+      # Das Backup-Image muss zur PostgreSQL-Version der Datenbank passen.
+      - dependency-name: postgres
+        update-types: ["version-update:semver-major"]
+      # Python-Versionen nur, wenn Django (5.2 LTS) sie offiziell unterstützt
+      # (Stand 31.10.2026: bis 3.14); den Wechsel machen wir bewusst von Hand.
+      - dependency-name: python
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+    schedule:
+      interval: weekly
+
+  # Datenbank und Redis in den Compose-Dateien (mit Digest festgeschrieben, Audit G01)
+  - package-ecosystem: docker-compose
+    directory: /
+    ignore:
+      - dependency-name: postgres
+        update-types: ["version-update:semver-major"]
+    schedule:
+      interval: weekly

@@ -1,0 +1,3245 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  font-family: var(--font-family);
+  /* Grundschrift aus dem Browser übernehmen (größere Standardschrift bleibt wirksam) */
+  font-size: 100%;
+  line-height: 1.5;
+  color: var(--color-text);
+  background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1 {
+  font-size: 1.6rem;
+  margin: 0 0 0.75rem;
+}
+
+h2 {
+  font-size: 1.2rem;
+  margin: 0 0 0.75rem;
+}
+
+a {
+  color: var(--color-link);
+  text-decoration: none;
+}
+
+/* Links ohne Unterstreichung: Tastaturfokus bleibt deutlich sichtbar. */
+a:focus-visible,
+.link-button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* In der dunklen Seitenleiste reicht die Primärfarbe als Fokusrahmen nicht */
+.sidebar a:focus-visible,
+.sidebar button:focus-visible {
+  outline-color: var(--sidebar-focus);
+}
+
+/*
+ * Basis für alle Eingabefelder. :where() hat Spezifität 0, damit die
+ * bisherigen Klassenregeln (Breite, Abstände) weiter gewinnen. So bleibt kein
+ * Feld im Browser-Standard (klein, eckig, schwarzer Rahmen), auch neue nicht.
+ */
+:where(
+  input:not(
+    [type='checkbox'],
+    [type='radio'],
+    [type='color'],
+    [type='file'],
+    [type='range'],
+    [type='hidden'],
+    [type='submit'],
+    [type='button'],
+    [type='reset'],
+    [type='image']
+  ),
+  select,
+  textarea
+) {
+  max-width: 100%;
+  padding: 0.5rem 0.7rem;
+  font: inherit;
+  color: inherit;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-input-border);
+  border-radius: var(--radius);
+}
+
+:where(input, select, textarea):focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+:where(input:not([type='checkbox'], [type='radio']), select, textarea):focus-visible {
+  border-color: var(--color-focus);
+}
+
+:where(input, select, textarea):disabled {
+  background-color: var(--color-bg);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+::placeholder {
+  color: var(--color-text-muted);
+  opacity: 1;
+}
+
+:where(input[type='checkbox'], input[type='radio']) {
+  accent-color: var(--color-focus);
+}
+
+:where(input[type='file'])::file-selector-button {
+  margin-right: 0.6rem;
+  padding: 0.45rem 0.9rem;
+  font: inherit;
+  font-weight: 600;
+  color: var(--color-link);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+/* Bearbeitung direkt in einer Tabellenzeile (z. B. Umbenennen). */
+.inline-edit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+}
+
+.inline-edit input {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+code {
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: 0.9em;
+  word-break: break-all;
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+/* Hinweis zu Rechten an Uploads (RightsHint) */
+.rights-hint {
+  display: block;
+  margin-top: 0.25rem;
+}
+
+/* --- Bausteine --- */
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.5rem;
+  max-width: 40rem;
+}
+
+.empty-state {
+  color: var(--color-text-muted);
+}
+
+.field {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.field > span,
+.field > .field-label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 0.3rem;
+}
+
+.field input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  font: inherit;
+  color: inherit;
+  background: var(--color-surface);
+  border: 1px solid var(--color-input-border);
+  border-radius: var(--radius);
+}
+
+.field input:focus {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+  border-color: var(--color-focus);
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.1rem;
+  font: inherit;
+  font-weight: 600;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.button-primary {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.button-primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.button-ghost {
+  background: transparent;
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+.button-ghost:hover {
+  background: var(--color-bg);
+}
+
+.button-block {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.button-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Designregel: Buttons und Blöcke stehen nie ohne Abstand neben- oder
+   untereinander.
+   Nebeneinander: mehrere Buttons immer in .button-row (oder einem anderen
+   Container mit gap) setzen, nie lose hintereinander.
+   Untereinander: Eine .button-row oder Karte (.card) im normalen Textfluss hält
+   Abstand zu ihren Nachbarn, z. B. zur nächsten Karte oder zum Logo-Upload.
+   Die Ränder fallen mit denen von Feldern, Absätzen und Hinweisen zusammen,
+   dort ändert sich also nichts. Spezifität 0, damit eigene Regeln Vorrang haben. */
+:where(.button-row:not(:first-child)) {
+  margin-top: 0.75rem;
+}
+:where(.button-row:not(:last-child)) {
+  margin-bottom: 0.75rem;
+}
+:where(.card:not(:first-child)) {
+  margin-top: 1rem;
+}
+:where(.card:not(:last-child)) {
+  margin-bottom: 1rem;
+}
+/* In Flex- und Grid-Containern sorgt gap für den Abstand. */
+:where(
+    .stack,
+    .stack-sm,
+    .tiles,
+    .login-page,
+    .modal-backdrop,
+    .page-head,
+    .card-head,
+    .filters,
+    .calendar-toolbar,
+    .doc-folder-tools,
+    .photo-editor,
+    .photo-row,
+    .photo-tools,
+    .transfer-actions,
+    .responses-head,
+    .responses-open-row,
+    .statute-list > li,
+    .inline-edit,
+    .inline-add,
+    .category-row,
+    .chart-pair,
+    .button-row
+  )
+  > :is(.button-row, .card) {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.alert {
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius);
+  margin: 0 0 1rem;
+}
+
+.alert-error {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+}
+
+.alert-success {
+  background: var(--color-success-bg);
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: inherit;
+}
+
+.logo-img {
+  width: 2rem;
+  height: 2rem;
+}
+
+/* Schriftzug „HUBIplan“: HUBI fett, plan leicht */
+.logo-wordmark {
+  font-family: 'Outfit', var(--font-family);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--color-primary);
+}
+.logo-wordmark-light {
+  font-weight: 300;
+}
+
+.page-loading {
+  padding: 2rem;
+  color: var(--color-text-muted);
+}
+
+/* --- Anmeldung --- */
+
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 24rem;
+}
+
+.login-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+
+/* --- Einstellungen --- */
+
+.totp-setup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.recovery-codes ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+  gap: 0.25rem;
+  padding: 0;
+  list-style: none;
+}
+
+/* --- App-Rahmen: Kopfzeile, linke Navigation, Inhalt --- */
+
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: var(--sidebar-width) 1fr;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    'topbar topbar'
+    'sidebar content';
+}
+
+.topbar {
+  grid-area: topbar;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 1rem;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.topbar-brand {
+  text-decoration: none;
+  color: inherit;
+  min-width: 0;
+}
+
+/* Im Kopf steht der volle Vereinsname; zu lange Namen werden gekürzt. */
+.topbar-brand .logo {
+  max-width: 100%;
+}
+.topbar-brand .logo-img {
+  flex-shrink: 0;
+}
+.topbar-brand .logo-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  /* Auf dem Handy rutschen Auswahl und Knöpfe in eine zweite Zeile. */
+  .topbar {
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+    min-width: 0;
+  }
+  .topbar-brand {
+    flex: 1 1 0;
+    min-width: 10rem;
+  }
+  .topbar-brand .logo {
+    font-size: 1rem;
+  }
+  .topbar-user {
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+    min-width: 0;
+  }
+}
+
+.topbar-user {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Mein Konto: Unterseiten klappen unter dem Knopf auf */
+.account-menu {
+  position: relative;
+}
+.account-menu .button.active {
+  border-color: var(--color-focus);
+}
+.account-menu-list {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.35rem);
+  z-index: 30;
+  min-width: 15rem;
+  padding: 0.35rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.account-menu-list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.account-menu-list a {
+  display: block;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius);
+  color: var(--color-text);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.account-menu-list a:hover,
+.account-menu-list a:focus-visible {
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+}
+.account-menu-list a.active {
+  color: var(--color-link);
+  font-weight: 600;
+}
+
+.topbar-email {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0.5rem;
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.nav-toggle span {
+  display: block;
+  height: 2px;
+  background: var(--color-text);
+  border-radius: 1px;
+}
+
+.sidebar {
+  grid-area: sidebar;
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  padding: 1rem 0.5rem;
+}
+
+/* Hilfe & Glossar fest am Ende der Seitenleiste */
+.sidebar-help {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid color-mix(in srgb, var(--sidebar-text) 25%, transparent);
+}
+
+.sidebar-close {
+  display: none;
+  margin: 0 0 0.75rem auto;
+  padding: 0.4rem 0.6rem;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+/* Sprunglink: erst bei Tastaturfokus sichtbar */
+.skip-link {
+  position: absolute;
+  left: 0.5rem;
+  top: -3rem;
+  z-index: 100;
+  padding: 0.5rem 0.9rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.skip-link:focus {
+  top: 0.5rem;
+}
+
+.content:focus,
+.content h1[tabindex='-1']:focus {
+  outline: none;
+}
+
+.sidebar ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius);
+  color: var(--sidebar-text);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.sidebar-link:hover,
+.sidebar-link.active {
+  background: var(--sidebar-active-bg);
+  color: #fff;
+}
+
+.sidebar-sub {
+  margin: 0.15rem 0 0.4rem !important;
+  padding-left: 2.15rem !important;
+}
+
+.sidebar-sublink {
+  display: block;
+  padding: 0.35rem 0.8rem;
+  border-radius: var(--radius);
+  color: var(--sidebar-text);
+  text-decoration: none;
+  font-size: 0.92rem;
+  opacity: 0.85;
+}
+
+.sidebar-sublink:hover,
+.sidebar-sublink.active {
+  background: var(--sidebar-active-bg);
+  color: #fff;
+  opacity: 1;
+}
+
+.sidebar-backdrop {
+  display: none;
+}
+
+.content {
+  grid-area: content;
+  padding: 1.5rem;
+  min-width: 0;
+}
+
+/* Handy/Tablet: Navigation als ausklappbare Leiste */
+@media (max-width: 800px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'topbar'
+      'content';
+  }
+
+  .nav-toggle {
+    display: inline-flex;
+  }
+
+  .topbar-email {
+    display: none;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: min(80vw, var(--sidebar-width));
+    z-index: 30;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    overflow-y: auto;
+  }
+
+  /* Zugeklappt nicht per Tab oder Screenreader erreichbar */
+  .sidebar {
+    visibility: hidden;
+    transition:
+      transform 0.2s ease,
+      visibility 0s linear 0.2s;
+  }
+
+  .nav-open .sidebar {
+    transform: translateX(0);
+    visibility: visible;
+    transition: transform 0.2s ease;
+  }
+
+  .sidebar-close {
+    display: block;
+  }
+
+  .nav-open .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 25;
+    background: rgba(0, 0, 0, 0.35);
+  }
+
+  .content {
+    padding: 1rem;
+  }
+}
+
+/* --- Meilenstein 1: Formulare, Tabellen, Reiter --- */
+
+h3 {
+  font-size: 1rem;
+  margin: 1.25rem 0 0.5rem;
+}
+
+.small {
+  font-size: 0.875rem;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.stack {
+  display: grid;
+  /* Breite Inhalte (Diagramme, lange Auswahllisten) dürfen die Spalte nicht aufweiten,
+     sonst läuft die ganze Seite auf dem Handy seitlich über (UX-Audit 31.10. R01) */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.stack > *,
+.tiles > *,
+.page-head > * {
+  min-width: 0;
+}
+
+.filters select,
+.filters input,
+.filters .field {
+  max-width: 100%;
+}
+
+.card-wide {
+  max-width: 64rem;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.card-head h2 {
+  margin: 0;
+}
+
+.push-right {
+  margin-left: auto;
+}
+
+.subcard {
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+.grid-2,
+.grid-3,
+.grid-4 {
+  display: grid;
+  gap: 0 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.grid-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.grid-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 900px) {
+  .grid-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .grid-2,
+  .grid-3,
+  .grid-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.field select,
+.org-switch select,
+.inline-add input {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  font: inherit;
+  color: inherit;
+  background: var(--color-surface);
+  border: 1px solid var(--color-input-border);
+  border-radius: var(--radius);
+}
+
+.field small {
+  display: block;
+  margin-top: 0.25rem;
+}
+
+.field-invalid input,
+.field-invalid select {
+  border-color: var(--color-error);
+}
+
+.field-error {
+  color: var(--color-error);
+}
+
+.checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0.35rem 0;
+  cursor: pointer;
+  /* nur Kästchen und Text sind klickbar, nicht der freie Raum rechts daneben */
+  width: fit-content;
+  max-width: 100%;
+}
+
+.checkbox input {
+  margin-top: 0.3rem;
+}
+
+/* Kästchen in einem Formularfeld nicht wie ein Textfeld auf volle Breite ziehen */
+.field .checkbox input {
+  width: auto;
+  padding: 0;
+  flex: none;
+}
+
+.alert-info {
+  background: #eef3fb;
+}
+
+.button-danger {
+  background: transparent;
+  color: var(--color-error);
+  border-color: var(--color-error);
+}
+
+.link-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--color-link);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--color-border);
+  margin: 0.5rem 0 1.25rem;
+}
+
+.tab {
+  padding: 0.55rem 0.9rem;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+  border-bottom: 3px solid transparent;
+}
+
+.tab.active {
+  color: var(--color-text);
+  font-weight: 600;
+  border-bottom-color: var(--color-focus);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+}
+
+/* Feste Spaltenbreiten, z. B. mehrere gleich gebaute Tabellen untereinander */
+.table-fixed {
+  table-layout: fixed;
+}
+
+.table-fixed td {
+  overflow-wrap: anywhere;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 0.55rem 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.table th {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+}
+
+.table .num {
+  text-align: right;
+}
+
+.table .actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.table .indent {
+  padding-left: 1.75rem;
+}
+
+/* Inaktive Datensätze: gedämpfter Hintergrund statt Transparenz, damit Text und
+   Aktionen (z. B. „wieder aktivieren“) voll lesbar bleiben. */
+.table tr.inactive > td {
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+}
+
+.table .group-row td {
+  font-weight: 600;
+  background: var(--color-bg);
+}
+
+/* Mehrere Zeilen einer Person (z. B. Jubiläen): ohne Trennlinie dazwischen */
+.table tr.row-continued > td:not([rowspan]) {
+  border-bottom: 0;
+}
+
+/* Vergleichstabellen (z. B. Werte eines Diagramms) bleiben auch auf dem Handy Tabellen
+   mit sichtbaren Spaltenköpfen und scrollen seitlich (UX-Audit 31.10. C03) */
+@media (max-width: 640px) {
+  .table:not(.table-keep) thead {
+    display: none;
+  }
+
+  /* Auf dem Handy steht vor jedem Wert sein Spaltenname */
+  .table td[data-label]:not([data-label=''])::before {
+    content: attr(data-label) ': ';
+    font-weight: 600;
+    color: var(--color-text-muted);
+  }
+
+  .table:not(.table-keep) tr {
+    display: block;
+    border-bottom: 1px solid var(--color-border);
+    padding: 0.5rem 0;
+  }
+
+  .table:not(.table-keep) tr.row-continued {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .table:not(.table-keep) td {
+    display: block;
+    border: 0;
+    padding: 0.15rem 0;
+  }
+
+  .table:not(.table-keep) .num,
+  .table:not(.table-keep) .actions {
+    text-align: left;
+  }
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 0.15rem 0.7rem;
+  font-size: 0.875rem;
+}
+
+.chip button {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--color-text-muted);
+}
+
+.inline-add {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+  max-width: 30rem;
+}
+
+.inline-form {
+  margin: 1rem 0;
+}
+
+.permission-details > summary {
+  cursor: pointer;
+  font-weight: 600;
+  margin: 0.5rem 0;
+}
+
+.permission-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.permission-group legend {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.color-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.color-row input[type='color'] {
+  width: 3rem;
+  height: 2.5rem;
+  padding: 0.15rem;
+  border: 1px solid var(--color-input-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.color-row input:not([type='color']) {
+  flex: 1;
+  padding: 0.55rem 0.7rem;
+  font: inherit;
+  border: 1px solid var(--color-input-border);
+  border-radius: var(--radius);
+}
+
+.theme-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.preview-chip {
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  font-weight: 600;
+}
+
+.preview-link {
+  text-decoration: none;
+}
+
+.preview-on-page {
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius);
+}
+
+.contrast-list {
+  list-style: none;
+  padding: 0;
+  font-size: 0.875rem;
+}
+
+.contrast-list .ok {
+  color: #1e6b3a;
+}
+
+.contrast-list .bad {
+  color: var(--color-error);
+}
+
+.logo-upload {
+  object-fit: contain;
+}
+
+.logo-preview {
+  max-width: 10rem;
+  max-height: 8rem;
+  object-fit: contain;
+  display: block;
+  margin-bottom: 0.75rem;
+}
+/* Vorschaubild der Homepage einer Untereinheit */
+.homepage-preview {
+  width: 16rem;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  display: block;
+  border-radius: var(--radius);
+  margin-bottom: 0.75rem;
+}
+/* Karomuster zeigt, welche Teile des Logos durchsichtig sind */
+.logo-preview-checker {
+  padding: 0.25rem;
+  border-radius: var(--radius);
+  background: repeating-conic-gradient(#e6e8e6 0% 25%, #ffffff 0% 50%) 50% / 16px 16px;
+}
+
+.org-switch select {
+  max-width: 18rem;
+  padding: 0.4rem 0.6rem;
+}
+
+.audit-list {
+  list-style: none;
+  padding: 0;
+}
+
+.audit-list > li {
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.changes {
+  margin: 0.25rem 0 0;
+  padding-left: 1.2rem;
+  color: var(--color-text-muted);
+}
+
+.tiles {
+  display: grid;
+  /* breit genug für lange Vereinsnamen; auf dem Handy eine Spalte */
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 24rem), 1fr));
+  gap: 1rem;
+}
+
+/* Kennzahlen (Finanzen): bündig mit den breiten Karten darunter */
+.tiles-figures {
+  max-width: 64rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+}
+
+@media (max-width: 800px) {
+  .org-switch select {
+    max-width: 10rem;
+  }
+}
+
+/* --- Meilenstein 2: Mitglieder --- */
+
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.filters select,
+.search-input,
+.inline-add select,
+.inline-add input[type='date'] {
+  padding: 0.55rem 0.7rem;
+  font: inherit;
+  color: inherit;
+  background: var(--color-surface);
+  border: 1px solid var(--color-input-border);
+  border-radius: var(--radius);
+}
+
+.search-input {
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
+.column-picker {
+  flex-basis: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: 0 1rem;
+}
+
+.th-sort {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+.table tr.clickable {
+  cursor: pointer;
+}
+
+.table tr.clickable:hover {
+  background: var(--color-bg);
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.plain-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.plain-list li {
+  padding: 0.35rem 0;
+}
+
+/* Kachel-Einträge: Titel oben, darunter eine Zeile Angaben ohne Umbruch */
+.tile-entry {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.tile-entry-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tile-entry-meta {
+  display: flex;
+  gap: 0.35em;
+  min-width: 0;
+  white-space: nowrap;
+}
+.tile-entry-meta > span {
+  flex: none;
+}
+/* Geburtstag am heutigen Tag farbig hervorheben */
+.tile-entry-today {
+  margin: 0.15rem -0.5rem;
+  padding: 0.35rem 0.5rem 0.35rem 0.4rem;
+  border-left: 3px solid var(--color-focus);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+}
+.tile-entry-today .tile-entry-meta > span:first-child {
+  color: var(--color-link);
+  font-weight: 600;
+}
+.tile-entry-meta > .tile-entry-org {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spaced {
+  margin-left: 0.75rem;
+}
+
+/* Aktionen am Ende einer Listenzeile (z. B. „beenden“ und Löschen-Icon) */
+.inline-actions {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-left: 0.75rem;
+  vertical-align: middle;
+}
+
+.duplicates {
+  list-style: none;
+  padding: 0;
+}
+
+button.tab {
+  background: none;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+button.tab.active {
+  color: var(--color-text);
+  font-weight: 600;
+  border-bottom-color: var(--color-focus);
+}
+
+.inline-add {
+  flex-wrap: wrap;
+}
+
+/* Handy: in der Mitgliederliste nur Name und Mitgliedsart */
+@media (max-width: 640px) {
+  .member-table .col-optional {
+    display: none;
+  }
+
+  .member-table thead {
+    display: table-header-group;
+  }
+
+  .member-table tr {
+    display: table-row;
+  }
+
+  .member-table td {
+    display: table-cell;
+    border-bottom: 1px solid var(--color-border);
+    padding: 0.5rem;
+  }
+}
+
+.member-picker {
+  position: relative;
+}
+
+.member-picker input {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  font: inherit;
+  border: 1px solid var(--color-input-border);
+  border-radius: var(--radius);
+}
+
+.picker-results {
+  position: absolute;
+  z-index: 10;
+  left: 0;
+  right: 0;
+  list-style: none;
+  margin: 0.25rem 0 0;
+  padding: 0.25rem 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.picker-results button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.45rem 0.75rem;
+  background: none;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.picker-results button:hover {
+  background: var(--color-bg);
+}
+
+/* --- Meilenstein 3: Abläufe --- */
+
+.transfer-item {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.transfer-actions {
+  margin-top: 0.5rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.transfer-actions input,
+.transfer-actions select {
+  padding: 0.5rem 0.7rem;
+  font: inherit;
+  border: 1px solid var(--color-input-border);
+  border-radius: var(--radius);
+}
+
+/* --- Meilenstein 4: Zusatzfelder, Jubiläen --- */
+
+.subfield-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  align-items: center;
+}
+
+.subfield-row input,
+.subfield-row select,
+.field textarea,
+.field > select,
+.repeatable input,
+.repeatable select,
+.inline-label input {
+  padding: 0.5rem 0.7rem;
+  font: inherit;
+  color: inherit;
+  background: var(--color-surface);
+  border: 1px solid var(--color-input-border);
+  border-radius: var(--radius);
+}
+
+.field textarea {
+  width: 100%;
+}
+
+.field > input,
+.field > select {
+  width: 100%;
+}
+
+.repeatable .table input,
+.repeatable .table select {
+  width: 100%;
+  min-width: 7rem;
+}
+
+.inline-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.tile a.small {
+  display: inline-block;
+  margin-top: 0.5rem;
+}
+
+/* --- Meilenstein 5: Import und Export --- */
+
+.export-panel {
+  margin-bottom: 1rem;
+}
+
+.export-panel .column-picker {
+  border: 0;
+  padding: 0;
+  margin: 0.5rem 0;
+}
+
+.chips button.chip {
+  cursor: pointer;
+  font: inherit;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.table select {
+  padding: 0.4rem 0.5rem;
+  font: inherit;
+  border: 1px solid var(--color-input-border);
+  border-radius: var(--radius);
+  max-width: 100%;
+}
+
+.preview-error td:last-child {
+  color: var(--color-error);
+}
+
+.preview-duplicate td:last-child {
+  color: #8a5a00;
+}
+
+/* --- Mitgliederfotos --- */
+
+.photo-row {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.photo-frame {
+  width: 9rem;
+  height: 12rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.photo-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-info {
+  flex: 1;
+  min-width: 14rem;
+}
+
+.photo-pending {
+  max-width: 12rem;
+  border-radius: var(--radius);
+  display: block;
+  margin-bottom: 0.75rem;
+}
+
+.photo-editor {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.crop-area {
+  position: relative;
+  width: 100%;
+  height: min(60vh, 26rem);
+  background: #222;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.photo-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.photo-tools select {
+  padding: 0.5rem 0.7rem;
+  font: inherit;
+  border: 1px solid var(--color-input-border);
+  border-radius: var(--radius);
+}
+
+.upload-links {
+  margin-top: 1rem;
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.5rem;
+}
+
+.public-photo {
+  width: 100%;
+  max-width: 36rem;
+}
+
+.name-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.member-avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: none;
+}
+
+.member-avatar-empty {
+  display: inline-grid;
+  place-items: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+}
+
+.member-avatar-lg {
+  width: 4rem;
+  height: 5.33rem;
+  object-fit: cover;
+  border-radius: var(--radius);
+}
+
+/* Abteilungsrollen mit Rechten */
+.role-list {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.role-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.role-row > strong {
+  min-width: 10rem;
+}
+.role-perms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  flex: 1;
+}
+
+/* Postausgang */
+.mail-body {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: inherit;
+  margin: 0 0 0.5rem;
+}
+
+/* Änderungsmeldungen */
+.change-table td:first-child {
+  white-space: nowrap;
+}
+.change-old {
+  text-decoration: line-through;
+  color: var(--color-text-muted);
+}
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 0.75rem 1.5rem;
+  margin: 0.5rem 0 1rem;
+}
+.facts dt {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+.facts dd {
+  margin: 0;
+}
+
+/* Kasse */
+.eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.eyebrow + h1 {
+  margin-top: 0.1rem;
+}
+.todo-list {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+.todo-list li + li {
+  margin-top: 0.35rem;
+}
+.amount-big {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin: 0.25rem 0 0;
+}
+.amount-in {
+  color: var(--color-success);
+}
+.amount-out {
+  color: var(--color-error);
+}
+.file-button {
+  cursor: pointer;
+  display: inline-block;
+}
+.table tfoot th {
+  border-top: 2px solid var(--color-border);
+}
+
+/* Beiträge und Rechnungen */
+.status {
+  display: inline-block;
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  border: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+.status-paid {
+  color: var(--color-success);
+  border-color: currentColor;
+}
+.status-open {
+  color: var(--color-text);
+}
+.status-overdue {
+  color: var(--color-error);
+  border-color: currentColor;
+}
+.status-draft,
+.status-cancelled {
+  color: var(--color-text-muted);
+  border-style: dashed;
+}
+.line-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 2fr) minmax(6rem, 1fr) auto;
+  gap: 0.5rem;
+  align-items: end;
+}
+.line-row-vat {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 2fr) minmax(6rem, 1fr) minmax(8rem, 1fr) auto;
+}
+@media (max-width: 640px) {
+  .line-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Mitgliedsausweis */
+.stack-sm {
+  display: grid;
+  gap: 0.5rem;
+  align-content: start;
+}
+.card-qr-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  align-items: flex-start;
+}
+.card-qr {
+  width: 10rem;
+  height: 10rem;
+  background: #fff;
+  padding: 0.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.25rem;
+  flex: none;
+}
+.card-qr-revoked {
+  opacity: 0.3;
+}
+.public-card {
+  width: 100%;
+  max-width: 30rem;
+}
+.public-card-kind {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.5rem;
+}
+.public-card-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  align-items: flex-start;
+}
+.public-card-photo {
+  width: 7.5rem;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: 0.25rem;
+  border: 1px solid var(--color-border);
+}
+.public-card-name {
+  margin: 0 0 0.5rem;
+}
+.public-card-status {
+  display: inline-block;
+  font-weight: 700;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  margin: 0 0 0.75rem;
+}
+.public-card-status.is-valid {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+.public-card-status.is-invalid {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+}
+.public-card-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 0.75rem;
+  margin: 0;
+}
+.public-card-facts dt {
+  color: var(--color-text-muted);
+}
+.public-card-facts dd {
+  margin: 0;
+}
+
+/* Satzung */
+.statute-panel {
+  margin-top: 1.5rem;
+}
+.statute-list {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+}
+.statute-list > li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.statute-link code {
+  word-break: break-all;
+}
+.statute-panel .badge {
+  margin-left: 0.5rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: var(--radius);
+  background: var(--color-border);
+  font-size: 0.8em;
+}
+.booking-assign {
+  margin-top: 0.75rem;
+}
+.booking-assign > summary {
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+}
+.statute-details {
+  margin-top: 1rem;
+}
+.statute-details > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* --- Meilenstein 12: Terminkalender --- */
+.badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: var(--radius);
+  background: var(--color-border);
+  font-size: 0.75em;
+  font-weight: normal;
+  vertical-align: middle;
+}
+.badge-public {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+.badge-board {
+  background: #efe8f7;
+  color: #5b3d84;
+}
+.badge-cancelled {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+}
+.calendar-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+.calendar-title {
+  margin-left: 0.5rem;
+  font-size: 1.1rem;
+}
+.segmented {
+  display: inline-flex;
+}
+.segmented .button {
+  border-radius: 0;
+}
+.segmented .button:first-child {
+  border-radius: var(--radius) 0 0 var(--radius);
+}
+.segmented .button:last-child {
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+.segmented .is-active {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  border-top: 1px solid var(--color-border);
+  border-left: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.calendar-weekday {
+  padding: 0.3rem 0.4rem;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  border-right: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  text-align: center;
+}
+.calendar-day {
+  min-height: 6.5rem;
+  padding: 0.25rem;
+  border-right: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.calendar-day.is-outside {
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+}
+.calendar-day.is-today .calendar-day-head span {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border-radius: 999px;
+  padding: 0 0.4rem;
+}
+.calendar-day-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+}
+.calendar-add {
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0 0.25rem;
+  opacity: 0;
+}
+.calendar-day:hover .calendar-add,
+.calendar-add:focus {
+  opacity: 1;
+}
+.event-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  width: 100%;
+  border: none;
+  background: none;
+  text-align: left;
+  font: inherit;
+  font-size: 0.8rem;
+  /* Klickziel mindestens 24 px hoch (WCAG 2.5.8) */
+  min-height: 24px;
+  padding: 0.1rem 0.2rem;
+  border-radius: 4px;
+  cursor: pointer;
+  color: inherit;
+  min-width: 0;
+}
+.event-item:hover,
+.event-item:focus-visible {
+  background: var(--color-bg);
+}
+.calendar-day .event-allday {
+  background: var(--color-success-bg);
+}
+.event-item .event-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.event-cancelled .event-title {
+  text-decoration: line-through;
+  color: var(--color-text-muted);
+}
+.event-time {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+.event-dot {
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.calendar-list .plain-list li + li {
+  border-top: 1px solid var(--color-border);
+}
+.calendar-list .event-item {
+  display: grid;
+  grid-template-columns: 14rem 1fr;
+  gap: 0.75rem;
+  padding: 0.6rem 0.4rem;
+  font-size: 0.95rem;
+}
+.calendar-list .event-title {
+  white-space: normal;
+}
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 35%);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 3rem 1rem;
+  overflow-y: auto;
+  z-index: 50;
+}
+.modal {
+  width: 100%;
+  max-width: 44rem;
+}
+.modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+.event-facts {
+  display: grid;
+  grid-template-columns: 7rem 1fr;
+  gap: 0.4rem 1rem;
+  margin: 0;
+}
+.event-facts dt {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+.event-facts dd {
+  margin: 0;
+}
+.event-description {
+  white-space: pre-line;
+}
+.event-form textarea {
+  width: 100%;
+  font: inherit;
+}
+.category-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+}
+.category-row input[type='color'] {
+  width: 2.5rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+}
+.upcoming-list li {
+  padding: 0.3rem 0;
+}
+
+@media (max-width: 700px) {
+  .calendar-day {
+    min-height: 4rem;
+  }
+  .calendar-day .event-time,
+  .calendar-day .event-title {
+    display: none;
+  }
+  .calendar-day .event-item {
+    width: auto;
+    display: inline-flex;
+  }
+  /* Abgesagt bleibt auch als Punkt erkennbar: hohler Kreis */
+  .calendar-day .event-cancelled .event-dot {
+    background: transparent !important;
+    box-shadow: inset 0 0 0 2px var(--color-text-muted);
+  }
+  .calendar-list .event-item {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+}
+
+/* M13: Zu- und Absagen */
+.badge-yes {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+.badge-open {
+  background: #fdf1d8;
+  color: #7a5200;
+}
+fieldset.subcard legend {
+  font-weight: 600;
+  padding: 0 0.3rem;
+}
+.rsvp-panel p {
+  margin: 0;
+}
+.responses-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+.responses .table-wrap {
+  overflow-x: auto;
+}
+.responses-open summary {
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+}
+.responses-open-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* App-eigene Rückfragen (components/dialog.tsx) */
+.app-dialog-backdrop {
+  z-index: 100;
+  align-items: center;
+}
+.app-dialog {
+  max-width: 28rem;
+}
+.app-dialog h2 {
+  margin-top: 0;
+  font-size: 1.15rem;
+}
+.app-dialog-message {
+  margin: 0 0 1rem;
+  white-space: pre-line;
+}
+.app-dialog-actions {
+  justify-content: flex-end;
+  margin-top: 1.25rem;
+}
+.button-danger-solid {
+  background: var(--color-error);
+  color: #fff;
+}
+.button-danger-solid:hover:not(:disabled) {
+  filter: brightness(0.9);
+}
+
+/* Rückgängig/Wiederherstellen und Autospeichern */
+.undo-controls {
+  display: inline-flex;
+  gap: 0.25rem;
+}
+
+.undo-button {
+  min-width: 2.5rem;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.undo-notice {
+  position: fixed;
+  bottom: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: calc(100vw - 2rem);
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  background: var(--color-text);
+  color: var(--color-bg);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.2);
+}
+
+.undo-notice .link-button {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.undo-notice .undo-notice-close {
+  font-size: 1.2rem;
+  text-decoration: none;
+}
+
+.save-status {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.save-status > p {
+  margin: 0;
+}
+
+.save-status .button-row {
+  margin: 0.4rem 0 0;
+}
+
+.save-status-saved {
+  color: var(--color-success, var(--color-text-muted));
+}
+
+.save-status-error {
+  color: var(--color-error);
+}
+
+.audit-actions {
+  margin-top: 0.25rem;
+}
+
+/* --- Wiederverwendbare Tabelle (components/DataTable.tsx) --- */
+
+.data-table-filters {
+  margin-bottom: 0.25rem;
+}
+
+.th-sort-active {
+  color: var(--color-text);
+}
+
+.sort-mark {
+  font-size: 0.75em;
+  opacity: 0.6;
+}
+
+.th-sort-active .sort-mark {
+  opacity: 1;
+}
+
+.data-table-pager {
+  flex-wrap: wrap;
+}
+
+.page-size select {
+  padding: 0.3rem 0.4rem;
+  margin-left: 0.25rem;
+}
+
+.row-actions {
+  display: inline-flex;
+  gap: 0.25rem;
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.icon-button:hover,
+.icon-button:focus-visible {
+  color: var(--color-link);
+  border-color: var(--color-border);
+  background: var(--color-bg);
+}
+
+.icon-button-danger:hover,
+.icon-button-danger:focus-visible {
+  color: var(--color-error);
+  background: var(--color-error-bg);
+}
+
+.icon-button[aria-pressed='true'] {
+  color: var(--color-link);
+  border-color: var(--color-focus);
+}
+
+.icon-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.data-table .table tr.selected td {
+  background: var(--color-success-bg);
+}
+
+.cell-with-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cell-logo {
+  width: 1.75rem;
+  height: 1.75rem;
+  object-fit: contain;
+}
+
+@media (max-width: 640px) {
+  .data-table .col-optional {
+    display: none;
+  }
+
+  .data-table .table td.actions {
+    text-align: right;
+  }
+}
+
+.undo-history {
+  position: relative;
+}
+
+.undo-history-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.25rem);
+  z-index: 40;
+  width: min(22rem, calc(100vw - 2rem));
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 0.5rem 0.75rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.15);
+  text-align: left;
+}
+
+.undo-history-head {
+  margin: 0.4rem 0 0.2rem;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.undo-steps {
+  margin: 0 0 0.25rem;
+  padding: 0;
+  list-style: none;
+}
+
+/* Schritte als linksbündige Zeilen statt zentrierter Linktexte (Ralf 31.10.) */
+.undo-step {
+  display: flex;
+  width: 100%;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.undo-step:hover,
+.undo-step:focus-visible {
+  background: var(--color-bg);
+}
+
+.undo-step:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.undo-steps li + li {
+  border-top: 1px solid var(--color-border);
+}
+
+.undo-step-count {
+  flex: none;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: var(--color-border);
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+/* --- Dokumentenablage --- */
+.documents-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.75rem;
+}
+.doc-folder {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+.doc-folder > summary {
+  cursor: pointer;
+  padding: 0.25rem 0;
+}
+.doc-folder-name {
+  font-weight: 600;
+}
+.doc-folder-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem 1rem;
+  margin: 0.5rem 0;
+}
+.doc-folder-tools .statute-link {
+  flex-basis: 100%;
+}
+.doc-main {
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+.doc-versions ul {
+  margin: 0.25rem 0 0;
+  padding-left: 1rem;
+}
+.doc-file-button {
+  cursor: pointer;
+}
+.doc-move {
+  max-width: 14rem;
+}
+.doc-new-folder,
+.doc-shared {
+  margin-top: 1.5rem;
+}
+.doc-member-folder h2 {
+  font-size: 1.1rem;
+}
+
+/* Rundschreiben */
+.markup-editor textarea {
+  font-family: inherit;
+  min-height: 14rem;
+}
+.markup-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-bottom: 0.3rem;
+}
+.markup-toolbar button {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+}
+.markup-toolbar select {
+  width: auto;
+}
+.markup-preview {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 0.5rem 1rem;
+  margin: 0.5rem 0 1rem;
+  background: var(--color-surface);
+}
+
+/* Editor für die Texte der Webseite (components/texteditor) */
+.texteditor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-bottom: 0.3rem;
+}
+.texteditor-toolbar button {
+  min-width: 2.4rem;
+  min-height: 2.2rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: inherit;
+  font: inherit;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+}
+.texteditor-toolbar button.texteditor-gap {
+  margin-left: 0.5rem;
+}
+.texteditor-toolbar button[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--color-primary) 14%, var(--color-surface));
+  border-color: var(--color-primary);
+}
+.texteditor-toolbar button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.texteditor textarea {
+  width: 100%;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.texteditor-frame .texteditor-content {
+  max-width: 44rem;
+  padding: 0.6rem 0.9rem;
+  line-height: 1.55;
+  background: var(--color-surface);
+  border: 1px solid var(--color-input-border);
+  border-radius: var(--radius);
+  overflow-wrap: anywhere;
+}
+.texteditor-frame .texteditor-content:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+.field-invalid .texteditor-content {
+  border-color: var(--color-error);
+}
+.texteditor-content > :first-child {
+  margin-top: 0;
+}
+.texteditor-content h2 {
+  font-size: 1.35rem;
+  margin: 1.1rem 0 0.4rem;
+}
+.texteditor-content h3 {
+  font-size: 1.12rem;
+  margin: 0.9rem 0 0.3rem;
+}
+.texteditor-content p {
+  margin: 0 0 0.7rem;
+}
+.texteditor-content ul,
+.texteditor-content ol {
+  padding-left: 1.5rem;
+  margin: 0 0 0.7rem;
+}
+.texteditor-content a {
+  color: var(--color-link);
+  font-weight: 600;
+  text-decoration: none;
+}
+.texteditor-content blockquote {
+  border-left: 3px solid var(--color-border);
+  margin: 0 0 0.7rem;
+  padding-left: 0.8rem;
+}
+.texteditor-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+}
+.texteditor-image.ProseMirror-selectednode {
+  outline: 3px solid var(--color-primary);
+}
+.texteditor-image-noalt {
+  outline: 2px dashed var(--color-error);
+  outline-offset: 2px;
+}
+.texteditor-images {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: 0.6rem;
+}
+.texteditor-images button {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+  padding: 0.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.texteditor-images img {
+  width: 100%;
+  height: 6rem;
+  object-fit: cover;
+  border-radius: var(--radius);
+}
+.texteditor-linkkind {
+  border: 0;
+  padding: 0;
+  margin: 0 0 0.8rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.2rem;
+}
+
+/* --- Impressum und Datenschutz --- */
+
+.public-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.public-shell > .login-page {
+  flex: 1;
+  min-height: 0;
+}
+
+.site-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.25rem 1.25rem;
+  padding: 1rem;
+  font-size: 0.85rem;
+}
+
+.content > .site-footer {
+  margin-top: 2.5rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.site-footer a {
+  color: var(--color-text-muted);
+}
+
+.public-imprint {
+  max-width: 44rem;
+}
+
+/* Impressum und Datenschutz: Abschnitt der Einheit, darunter der des Betreibers */
+.imprint-section + .imprint-section {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+}
+.imprint-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.plain-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+}
+
+/* Dateiauswahl hinter einem Knopf (label.button): das Feld bleibt per Tab
+   erreichbar und für Screenreader benannt, nur unsichtbar; der Knopf zeigt
+   den Tastaturfokus. */
+.file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+label:has(> .file-input:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* Sortierung als Auswahl, nur auf dem Handy (dort fehlt der Tabellenkopf). Steht
+   nach der allgemeinen Regel, sonst würde sie die Handy-Ansicht wieder ausblenden
+   (UI-Audit NUI-02). */
+.data-table-sort {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.9rem;
+}
+@media (min-width: 641px) {
+  .data-table-sort {
+    display: none;
+  }
+}
+
+.color-swatch {
+  display: inline-block;
+  width: 0.9em;
+  height: 0.9em;
+  border-radius: 2px;
+  vertical-align: -0.1em;
+  border: 1px solid var(--color-input-border);
+}
+
+/* Suche über langen Listen (Protokoll, Postausgang) */
+.list-search {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: flex-end;
+  margin: 0.75rem 0;
+}
+.list-search .field {
+  margin: 0;
+}
+.list-search .field:first-child {
+  flex: 1 1 14rem;
+}
+.list-search .button-row {
+  margin: 0;
+}
+.pager {
+  align-items: center;
+  margin-top: 0.75rem;
+}
+
+/* Aufgaben-Kacheln im Mitgliederbereich */
+.task-tiles {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: 0.75rem;
+}
+.task-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  height: 100%;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: inherit;
+  text-decoration: none;
+  min-height: 44px;
+}
+.task-tile strong {
+  color: var(--color-link);
+}
+.task-tile:hover,
+.task-tile:focus-visible {
+  border-color: var(--color-focus);
+}
+
+/* Startseite: offene Aufgaben */
+.task-list li + li {
+  margin-top: 0.5rem;
+}
+
+/* Finanzen: Arbeitsschritte und Stand eines Beitragslaufs */
+.step-links {
+  list-style: none;
+  counter-reset: step;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.5rem;
+}
+.step-links li {
+  counter-increment: step;
+}
+.step-links a {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  height: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: inherit;
+}
+.step-links a strong::before {
+  content: counter(step) '. ';
+}
+.step-links a strong {
+  color: var(--color-link);
+}
+.step-links a:hover,
+.step-links a:focus-visible {
+  border-color: var(--color-focus);
+}
+.run-steps {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0;
+  margin: 0.5rem 0 1rem;
+}
+.run-steps li {
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-size: 0.875rem;
+}
+.run-steps li + li::before {
+  content: '→ ';
+  color: var(--color-text-muted);
+}
+.run-steps li.done::after {
+  content: ' ✓';
+}
+.run-steps li.current {
+  border-color: var(--color-focus);
+  font-weight: 600;
+}
+
+/* Briefvorlage: Vorschau der ersten Seite (A4 hoch) */
+.letter-preview {
+  width: 100%;
+  max-width: 640px;
+  aspect-ratio: 210 / 297;
+  border: 1px solid var(--color-border);
+  background: #fff;
+}
+
+/* Liste wird nach neuer Suche nachgeladen: alte Treffer gedämpft (UI-Audit NMF-05) */
+.freshness:empty {
+  display: none;
+}
+.is-stale {
+  opacity: 0.55;
+  transition: opacity 0.15s;
+}
+
+/* Rollenzuordnung: Zeitraum in der Tabellenzeile bearbeiten */
+.assignment-dates {
+  display: grid;
+  gap: 0.4rem;
+}
+.assignment-dates label {
+  display: grid;
+  gap: 0.15rem;
+}
+
+/* Webseite › Inhalte: Bilderkarussell der Begrüßung */
+.gallery-picker {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+}
+.gallery-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.75rem;
+  display: grid;
+  gap: 0.5rem;
+}
+.gallery-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.gallery-list img {
+  object-fit: cover;
+  border-radius: 4px;
+}
+.gallery-list li > span:nth-child(2) {
+  flex: 1;
+  min-width: 8rem;
+}
+
+/* Bausteine der Startseite (Webseite › Aufbau) */
+.home-sections {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+.home-sections li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+  padding: 0.25rem 0;
+}
+.home-sections li > :first-child {
+  flex: 1;
+}
+
+/* Webseite › Aufbau › Design (konzepte/webseiten-designs.md) */
+.design-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: 0.75rem;
+  margin: 0.5rem 0 1rem;
+}
+.design-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border: 2px solid var(--color-border);
+  border-radius: 10px;
+  padding: 0.6rem;
+}
+.design-card.selected {
+  border-color: var(--color-primary);
+}
+.design-card label {
+  display: grid;
+  gap: 0.3rem;
+  cursor: pointer;
+}
+.design-card input[type='radio'] {
+  justify-self: start;
+}
+.design-sketch {
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+}
+.design-roles summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* Quittung mit Unterschrift (konzepte/digitale-quittung.md) */
+.signature-pad {
+  position: relative;
+  width: 100%;
+  height: 9rem;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius);
+  background: #fff;
+}
+.signature-pad canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: crosshair;
+}
+.signature-line {
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  bottom: 1.6rem;
+  border-top: 1px solid #999;
+  pointer-events: none;
+}
+.signature-line span {
+  position: absolute;
+  top: 0.15rem;
+  left: 0;
+  font-size: 0.75rem;
+  color: #777;
+}
+.signature-clear {
+  position: absolute;
+  top: 0.3rem;
+  right: 0.5rem;
+}
+.signature-image {
+  display: block;
+  width: 100%;
+  height: 6rem;
+  background: #fff;
+}
+.signature-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: max(0.75rem, env(safe-area-inset-top)) max(0.75rem, env(safe-area-inset-right))
+    max(0.75rem, env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
+  background: #fff;
+  color: #222;
+  overscroll-behavior: contain;
+}
+.signature-fullscreen-text {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+.signature-pad-full {
+  flex: 1;
+  height: auto;
+  min-height: 8rem;
+}
+.signature-fullscreen-actions {
+  justify-content: flex-end;
+}
+.signature-fullscreen-actions .button {
+  min-width: 8rem;
+  min-height: 3rem;
+}
+.receipt-signatures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1rem;
+}
+.receipt-signature {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.receipt-signature-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 6rem;
+  padding: 0;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius);
+  background: #fff;
+  color: #777;
+  font: inherit;
+  cursor: pointer;
+}
+.receipt-amount {
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+.receipt-form {
+  max-width: 36rem;
+}
+
+/* Zusatzfeld Startjahr/Endjahr: zwei schmale Jahresfelder nebeneinander */
+.year-range {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.year-range input {
+  width: 9.5rem;
+  min-width: 0;
+}
+
+/* Offene Angaben der Datenschutzhinweise direkt ausfüllen */
+.placeholder-fill {
+  list-style: none;
+  padding: 0;
+  margin: 0.4rem 0 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.placeholder-fill li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+.placeholder-fill-row {
+  display: grid;
+  gap: 0.2rem;
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+.placeholder-fill-row input {
+  font: inherit;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--color-input-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  width: 100%;
+}
+
+/* Webseite › Social-Media-Beiträge */
+.social-feed {
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.75rem;
+  margin-top: 0.75rem;
+}
+.social-posts li {
+  display: grid;
+  grid-template-columns: minmax(0, 11rem) minmax(0, 1fr);
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+.social-post-images p {
+  margin: 0 0 0.25rem;
+}
+.social-post-thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.social-post-images img {
+  object-fit: cover;
+  border-radius: 4px;
+}
+/* Vergrößertes Bild: Beitrag nutzt dann die ganze Breite */
+.social-posts li:has(.social-post-large) {
+  grid-template-columns: minmax(0, 1fr);
+}
+.social-post-large {
+  margin: 0.5rem 0 0;
+}
+.social-post-large img {
+  display: block;
+  max-width: 100%;
+  max-height: 32rem;
+  height: auto;
+  object-fit: contain;
+}
+.pre-line {
+  white-space: pre-line;
+}
+@media (max-width: 40rem) {
+  .social-posts li {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* „Bewegung reduzieren“ im System: keine Übergänge und kein weiches Scrollen */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Dritte Ebene in der Seitenleiste (früher Reiter im Inhalt, UX-Audit 31.10. W09) */
+.sidebar-sub-deep {
+  margin: 0.1rem 0 0.2rem !important;
+  padding-left: 0.9rem !important;
+  border-left: 2px solid var(--sidebar-active-bg);
+  margin-left: 0.8rem !important;
+}
+
+.sidebar-sub-deep .sidebar-sublink {
+  font-size: 0.88rem;
+  padding: 0.25rem 0.7rem;
+}
+
+/* Rollenliste: Rechte als Bereiche, Einzelrechte aufklappbar */
+.role-areas {
+  margin: 0 0 0.3rem;
+}
+.role-areas .chip.partial {
+  border-style: dashed;
+}
+.role-details summary {
+  cursor: pointer;
+  color: var(--color-text-muted);
+}
+.role-details ul {
+  margin: 0.3rem 0 0;
+  padding-left: 1.1rem;
+}
+
+/* Reihenfolge per Ziehen (components/Sortable.tsx) */
+.drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: grab;
+  /* Finger zieht die Zeile, nicht die Seite */
+  touch-action: none;
+}
+.drag-handle svg {
+  fill: currentColor;
+}
+.drag-handle:hover,
+.drag-handle:focus-visible {
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+.drag-handle:active {
+  cursor: grabbing;
+}
+.table td.drag-cell,
+.table th.drag-cell {
+  width: 2rem;
+  padding-right: 0;
+}
+.sortable-dragging,
+.sortable-dragging > td {
+  background: var(--color-bg);
+  box-shadow: inset 3px 0 0 var(--color-focus);
+}
+.sortable-list {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+}
+.sortable-list > li {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.sortable-list > li {
+  align-items: flex-start;
+}
+.sortable-label {
+  flex: 1;
+  min-width: 0;
+  padding-top: 0.2rem;
+}
+.sortable-list .sortable-list {
+  margin: 0.35rem 0 0;
+}
+.sortable-list .sortable-list > li:last-child {
+  border-bottom: 0;
+}
+.sort-hint svg {
+  fill: currentColor;
+  vertical-align: -2px;
+}
+
+/* Menü der Webseite als Baum (pages/website/MenuTree.tsx) */
+.menu-tree > li.menu-tree-child {
+  padding-left: 1.75rem;
+}
+.menu-tree-heading {
+  font-weight: 600;
+}
+/* Stornierte Buchung im Kassenbuch: blass, Betrag durchgestrichen */
+.booking-cancelled td {
+  opacity: 0.6;
+}
+.booking-cancelled .num {
+  text-decoration: line-through;
+}
+
+/* Zuschnitt-Dialog: Schachbrett zeigt durchsichtige Stellen (Wappen, Logos) */
+.crop-area-checker {
+  background-color: #ddd;
+  background-image:
+    linear-gradient(45deg, #bbb 25%, transparent 25%),
+    linear-gradient(-45deg, #bbb 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #bbb 75%),
+    linear-gradient(-45deg, transparent 75%, #bbb 75%);
+  background-size: 20px 20px;
+  background-position:
+    0 0,
+    0 10px,
+    10px -10px,
+    -10px 0;
+}
+
+.crop-loading {
+  color: #fff;
+  text-align: center;
+  padding-top: 2rem;
+}

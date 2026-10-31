@@ -1,0 +1,21 @@
+# Webserver mit eigenem HTTPS (Let's Encrypt, automatisch), z. B. Testserver:
+# ausgeliefertes React-Frontend und Weiterleitung der API ans Django-Backend.
+# Hinter einem vorgeschalteten Webserver gilt stattdessen Caddyfile.proxy.
+
+# Caddy ist der einzige Proxy vor dem Backend und setzt X-Forwarded-For selbst
+# (verwirft, was der Aufrufer mitschickt). Hier nur zur Klarheit ausgeschrieben.
+(upstream) {
+	header_up X-Forwarded-Proto {http.request.scheme}
+}
+
+{$SITE_HOST} {
+	import caddy/site.caddy
+}
+
+# Nur im Docker-Netz „web“ (kein Port nach außen): Die Vereinswebseite holt Logos und
+# Bilder hier ab (HUBIPLAN_MEDIA_URL=http://web:8081). Über die eigene öffentliche
+# Adresse erreicht ihr Container den Server nicht (UX-Audit 31.10. R02).
+:8081 {
+	import caddy/media.caddy
+	respond 404
+}

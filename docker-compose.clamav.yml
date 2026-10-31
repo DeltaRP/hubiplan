@@ -1,0 +1,15 @@
+# Zusatz zu docker-compose.server.yml: Virenprüfung der Uploads mit dem clamd des Rechners
+# (Fachfrage 4, 31.10.b). Aktiv, wenn in der .env CLAMD_SOCKET_DIR steht, z. B.
+# CLAMD_SOCKET_DIR=/run/clamav (siehe deploy/server-setup.sh und docs/betrieb.md).
+# Eingehängt wird nur der Ordner mit dem Socket, schreibgeschützt.
+x-clamav: &clamav
+  volumes:
+    - ${CLAMD_SOCKET_DIR:?CLAMD_SOCKET_DIR fehlt}:/run/clamav-host:ro
+  environment:
+    CLAMD_SOCKET: /run/clamav-host/${CLAMD_SOCKET_NAME:-clamd.ctl}
+
+services:
+  backend:
+    <<: *clamav
+  worker:
+    <<: *clamav

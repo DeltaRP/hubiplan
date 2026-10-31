@@ -1,0 +1,28 @@
+[project]
+name = "hubiplan-backend"
+version = "0.1.0"
+description = "Backend der Vereinsverwaltung HUBIplan"
+requires-python = ">=3.12"
+license = "AGPL-3.0-or-later"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["test_*.py"]
+addopts = "-ra"
+filterwarnings = ["ignore:No directory at:UserWarning"]
+markers = ["langsam: dauert mehrere Sekunden; läuft zuerst, damit es parallel nicht am Ende hängt"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["*/migrations/*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "DJ", "S", "BLE"]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "S105", "S106"]
+"config/settings.py" = ["S105"]
+"core/rls.py" = ["S608"]  # SQL aus festen Bausteinen, keine Benutzereingaben
+"letterhead/docx.py" = ["E501"]  # feste OOXML-Bausteine (Word-Formatvorlagen, Design)

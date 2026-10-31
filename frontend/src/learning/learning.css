@@ -1,0 +1,388 @@
+/* Lernhilfen: leise, kleine Schrift, Farben aus den Design-Tokens. */
+
+/* --- „Warum?“, „Wie gerechnet?“, „So funktioniert es:“ --- */
+.aid {
+  margin: 0.35rem 0;
+  font-size: 0.85rem;
+}
+
+.aid-summary {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  cursor: pointer;
+  list-style: none;
+  color: var(--color-link);
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 2px;
+}
+
+.aid-summary::-webkit-details-marker,
+.aid-summary::marker {
+  display: none;
+  content: '';
+}
+
+.aid-summary:hover,
+.aid-summary:focus {
+  text-decoration: none;
+}
+
+.aid-summary:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.aid-icon {
+  flex: none;
+  align-self: center;
+}
+
+.aid-prefix {
+  font-weight: 600;
+}
+
+.aid-body {
+  font-weight: normal;
+  color: var(--color-text);
+}
+
+.aid-body p {
+  margin: 0.4rem 0;
+}
+
+.aid-sources {
+  margin: 0.4rem 0;
+  padding-left: 1.1rem;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.aid-hide {
+  margin-top: 0.4rem;
+  padding: 0.2rem 0;
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.aid-hide:hover {
+  color: var(--color-link);
+}
+
+.aid-hide:focus-visible,
+.aid-close:focus-visible,
+.term-q:focus-visible,
+.aid-undo:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.aid-undo {
+  margin: 0.35rem 0;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.aid-example {
+  border-collapse: collapse;
+  margin: 0.4rem 0;
+  font-size: 0.8rem;
+}
+
+.aid-example th,
+.aid-example td {
+  padding: 0.15rem 0.5rem 0.15rem 0;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* Popover */
+.aid-popover {
+  position: fixed;
+  z-index: 60;
+  max-height: 60vh;
+  overflow: auto;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.16);
+}
+
+.aid-popover-panel {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(460px, 100vw);
+  max-height: none;
+  border-radius: 0;
+}
+
+.aid-popover-sheet {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 75vh;
+  border-radius: var(--radius) var(--radius) 0 0;
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+  padding-left: calc(1rem + env(safe-area-inset-left));
+  padding-right: calc(1rem + env(safe-area-inset-right));
+}
+
+.aid-grip {
+  width: 2.5rem;
+  height: 0.25rem;
+  margin: 0 auto 0.5rem;
+  border-radius: 1rem;
+  background: var(--color-border);
+}
+
+.aid-popover-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.aid-popover-title {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--color-text);
+}
+
+.aid-close {
+  flex: none;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0 0.25rem;
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.aid-close:hover {
+  color: var(--color-text);
+}
+
+/* --- „?“ an Begriffen --- */
+.term {
+  white-space: nowrap;
+}
+
+.term-q {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* sichtbar 16 px, klickbar 24 px (WCAG 2.5.8) */
+  width: 24px;
+  height: 24px;
+  margin: -4px -2px -4px 0;
+  padding: 4px;
+  vertical-align: middle;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+}
+
+.term-q > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.term-q:hover,
+.term-q[aria-expanded='true'] {
+  color: var(--color-link);
+}
+
+.term-box {
+  position: fixed;
+  z-index: 61;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  max-width: 320px;
+  padding: 0.6rem 0.75rem;
+  white-space: normal;
+  text-align: left;
+  font-size: 0.85rem;
+  font-weight: normal;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.16);
+}
+
+.term-box[hidden] {
+  display: none;
+}
+
+.term-note,
+.term-example {
+  color: var(--color-text-muted);
+}
+
+.term-link {
+  align-self: flex-start;
+}
+
+/* --- Prüfliste --- */
+.checklist {
+  margin: 0.75rem 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.checklist-title {
+  margin: 0 0 0.2rem;
+  font-size: 1rem;
+}
+
+.checklist-count {
+  margin: 0 0 0.5rem;
+}
+
+.checklist-items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.checklist-item {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.checklist-mark {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.05rem;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.is-ok .checklist-mark {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.is-open .checklist-mark {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+}
+
+.is-info .checklist-mark {
+  border: 1px solid var(--color-text-muted);
+  color: var(--color-text-muted);
+}
+
+.checklist-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.checklist-fix {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.checklist-link {
+  font-size: 0.85rem;
+  align-self: flex-start;
+}
+
+/* --- Glossar --- */
+.glossary-search {
+  max-width: 28rem;
+  margin: 1rem 0;
+}
+
+.glossary-section {
+  margin-top: 1.5rem;
+}
+
+.glossary-list {
+  margin: 0;
+}
+
+.glossary-entry {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.glossary-entry dd {
+  margin: 0.2rem 0 0;
+}
+
+.glossary-example {
+  display: block;
+  margin-top: 0.2rem;
+}
+
+.glossary-sources {
+  padding-left: 1.1rem;
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+/* --- Druck: Popover weg, Inhalte ausgeschrieben --- */
+@media print {
+  .aid-popover,
+  .term-box,
+  .term-q,
+  .aid-hide {
+    display: none !important;
+  }
+
+  .aid::details-content {
+    content-visibility: visible;
+    display: block;
+  }
+
+  .aid > .aid-body {
+    display: block;
+  }
+}
+
+.learning-hidden {
+  display: grid;
+  justify-items: start;
+  gap: 0.4rem;
+}
+
+/* mehrere Hilfen nebeneinander, auf schmalen Bildschirmen untereinander */
+.aid-row {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 1.25rem;
+}

@@ -1,0 +1,398 @@
+import { useState } from 'react'
+import type { FormEvent } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { newRequestKey } from '../../api/client.ts'
+import { GENDERS, memberApi, todayIso } from '../../api/members.ts'
+import type { Duplicate, Gender } from '../../api/members.ts'
+import { orgApi, unitName } from '../../api/orgs.ts'
+import { errorMessage, formatDate, useForm, useLoad } from '../../components/forms.ts'
+import { useChangesGuard } from '../../components/leaveGuard.ts'
+import { Alert, Field, SelectField } from '../../components/ui.tsx'
+import { useActiveOrg } from '../../org/OrgContext.tsx'
+import { useTerms } from '../../org/terms.ts'
+
+type Step = 'person' | 'details'
+
+export function AdmitPage() {
+  const org = useActiveOrg()
+  const terms = useTerms()
+  const fed = !!terms.dv_has
+  const navigate = useNavigate()
+  const types = useLoad(() => memberApi.types(org.id), [org.id])
+  const departments = useLoad(() => orgApi.departments(org.id), [org.id])
+  const [step, setStep] = useState<Step>('person')
+  const [duplicates, setDuplicates] = useState<Duplicate[]>([])
+  const [linked, setLinked] = useState<Duplicate | null>(null)
+  const [checking, setChecking] = useState(false)
+  const [checkError, setCheckError] = useState<string | null>(null)
+  const [transferSent, setTransferSent] = useState(false)
+
+  // Ein Schlüssel je Aufnahme: erneutes Absenden legt die Person nicht doppelt an
+  const [requestKey] = useState(newRequestKey)
+  const form = useForm({
+    last_name: '',
+    first_name: '',
+    birth_date: '',
+    gender: '' as Gender,
+    email: '',
+    phone: '',
+    street: '',
+    postal_code: '',
+    city: '',
+    country: 'Deutschland',
+    club_number: '',
+    member_type: '',
+    entry_date: todayIso(),
+    department_ids: [] as number[],
+  })
+  const v = form.values
+  const e = form.errors
+  // Eingaben vor dem Absenden nicht unbemerkt verlieren (UX-Audit 31.10. W01)
+  const [done, setDone] = useState(false)
+  useChangesGuard(v, !done && !transferSent)
+
+  async function checkPerson(ev: FormEvent) {
+    ev.preventDefault()
+    setChecking(true)
+    setCheckError(null)
+    try {
+      const found = await memberApi.duplicates(org.id, v.last_name, v.first_name, v.birth_date)
+      setDuplicates(found)
+      setLinked(null)
+      setStep('details')
+    } catch (err) {
+      setCheckError(errorMessage(err))
+    } finally {
+      setChecking(false)
+    }
+  }
+
+  async function save(ev: FormEvent) {
+    ev.preventDefault()
+    const payload: Record<string, unknown> = {
+      ...v,
+      member_type: Number(v.member_type),
+      person: linked?.id ?? null,
+    }
+    if (linked) {
+      delete payload.last_name
+      delete payload.first_name
+      delete payload.birth_date
+    }
+    const created = await form.submit(
+      () => memberApi.admit(org.id, payload, requestKey),
+      'Aufgenommen.',
+    )
+    if (created) {
+      setDone(true)
+      navigate(`/mitglieder/${(created as { id: number }).id}`)
+    }
+  }
+
+  async function requestTransfer() {
+    if (!linked) return
+    const sent = await form.submit(
+      () =>
+        memberApi.createTransfer(org.id, {
+          person: linked.id,
+          member_type: Number(v.member_type),
+          entry_date: v.entry_date,
+          club_number: v.club_number,
+          department_ids: v.department_ids,
+          email: v.email,
+          phone: v.phone,
+          street: v.street,
+          postal_code: v.postal_code,
+          city: v.city,
+          country: v.country,
+        }),
+      `Wechselanfrage gestellt. Sobald ${terms.e_der_andere} zustimmt, wird die Aufnahme gespeichert.`,
+    )
+    if (sent) setTransferSent(true)
+  }
+
+  const activeConflict =
+    !!linked && !!e.member_type && e.member_type.includes('bereits aktives Mitglied')
+  const activeTypes = types.data?.filter((t) => !t.is_archived) ?? []
+  const selectedType = activeTypes.find((t) => String(t.id) === v.member_type)
+
+  return (
+    <section>
+      <p>
+        <Link to="/mitglieder">← Mitglieder</Link>
+      </p>
+      <h1>Mitglied aufnehmen</h1>
+
+      {types.error && (
+        <Alert kind="error">
+          Die Mitgliedsarten konnten nicht geladen werden ({types.error}). Deine Eingaben bleiben
+          erhalten.{' '}
+          <button type="button" className="link-button" onClick={() => void types.reload()}>
+            Erneut laden
+          </button>
+        </Alert>
+      )}
+      {types.data && activeTypes.length === 0 && (
+        <Alert kind="error">
+          Für die Aufnahme fehlt noch eine Mitgliedsart. Lege zuerst unter{' '}
+          <Link to="/mitglieder/einrichtung/mitgliedsarten">
+            Mitglieder → Einrichtung → Mitgliedsarten
+          </Link>{' '}
+          mindestens eine an.
+        </Alert>
+      )}
+
+      {step === 'person' ? (
+        <form className="card card-wide" onSubmit={checkPerson}>
+          <h2>1. Person</h2>
+          <p className="muted small">
+            {fed
+              ? `Zuerst prüfen wir, ob es die Person schon gibt – zum Beispiel als Mitglied ${terms.e_eines_anderen} ${terms.dv_im}.`
+              : 'Zuerst prüfen wir, ob es die Person schon gibt.'}
+          </p>
+          <div className="grid-4">
+            <Field
+              label="Name"
+              required
+              value={v.last_name}
+              onChange={(ev) => form.set('last_name', ev.target.value)}
+            />
+            <Field
+              label="Vorname"
+              required
+              value={v.first_name}
+              onChange={(ev) => form.set('first_name', ev.target.value)}
+            />
+            <Field
+              label="Geburtsdatum"
+              type="date"
+              required
+              value={v.birth_date}
+              onChange={(ev) => form.set('birth_date', ev.target.value)}
+            />
+            <SelectField
+              label="Geschlecht"
+              value={v.gender}
+              onChange={(ev) => form.set('gender', ev.target.value as Gender)}
+            >
+              {GENDERS.map((g) => (
+                <option key={g.value} value={g.value}>
+                  {g.label}
+                </option>
+              ))}
+            </SelectField>
+          </div>
+          {checkError && <Alert kind="error">{checkError}</Alert>}
+          <button type="submit" className="button button-primary" disabled={checking}>
+            Weiter
+          </button>
+        </form>
+      ) : (
+        <form className="stack" onSubmit={save}>
+          {duplicates.length > 0 && (
+            <div className="card card-wide">
+              <h2>Mögliche Treffer</h2>
+              <p className="muted small">
+                {fed
+                  ? `Ist eine dieser Personen gemeint? Dann wird sie verknüpft: Verbandsnummer und Eintritt in ${terms.dv_akk} bleiben erhalten.`
+                  : 'Ist eine dieser Personen gemeint? Dann wird sie verknüpft.'}
+              </p>
+              <ul className="duplicates">
+                {duplicates.map((d) => (
+                  <li key={d.id}>
+                    <label className="checkbox">
+                      <input
+                        type="radio"
+                        name="duplicate"
+                        disabled={d.already_member_here}
+                        checked={linked?.id === d.id}
+                        onChange={() => setLinked(d)}
+                      />
+                      <span>
+                        <strong>
+                          {d.last_name}, {d.first_name}
+                        </strong>{' '}
+                        · {formatDate(d.birth_date)}
+                        {d.member_number && ` · Verbandsnr. ${d.member_number}`}
+                        {d.clubs && d.clubs.length > 0 && ` · Mitglied in: ${d.clubs.join(', ')}`}
+                        {d.already_member_here &&
+                          ' · ist oder war schon Mitglied hier (Wiedereintritt in der Akte)'}
+                      </span>
+                    </label>
+                  </li>
+                ))}
+                <li>
+                  <label className="checkbox">
+                    <input
+                      type="radio"
+                      name="duplicate"
+                      checked={linked === null}
+                      onChange={() => setLinked(null)}
+                    />
+                    <span>Keine davon – neue Person anlegen</span>
+                  </label>
+                </li>
+              </ul>
+            </div>
+          )}
+
+          <div className="card card-wide">
+            <h2>2. Mitgliedschaft</h2>
+            <p className="muted small">
+              {v.last_name}, {v.first_name} · {formatDate(v.birth_date)}{' '}
+              <button type="button" className="link-button" onClick={() => setStep('person')}>
+                ändern
+              </button>
+            </p>
+            <div className="grid-3">
+              <SelectField
+                label="Mitgliedsart"
+                required
+                value={v.member_type}
+                error={e.member_type}
+                onChange={(ev) => form.set('member_type', ev.target.value)}
+              >
+                <option value="">– bitte wählen –</option>
+                {activeTypes.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </SelectField>
+              <Field
+                label="Eintritt"
+                type="date"
+                required
+                value={v.entry_date}
+                error={e.entry_date}
+                onChange={(ev) => form.set('entry_date', ev.target.value)}
+              />
+              <Field
+                label={`Mitgliedsnummer ${terms.e_im} (optional)`}
+                value={v.club_number}
+                error={e.club_number}
+                onChange={(ev) => form.set('club_number', ev.target.value)}
+              />
+            </div>
+            {selectedType && (
+              <p className="muted small">
+                {selectedType.active ? 'aktiv' : 'nicht aktiv'}
+                {fed &&
+                  (selectedType.reported
+                    ? ` · wird an ${terms.dv_akk} gemeldet`
+                    : ' · wird nicht gemeldet')}
+              </p>
+            )}
+            {departments.data && departments.data.length > 0 && (
+              <fieldset className="field">
+                <span>{org.department_label_plural} (optional)</span>
+                <div className="chips">
+                  {departments.data
+                    .filter((d) => d.is_active)
+                    .map((d) => (
+                      <label key={d.id} className="checkbox chip">
+                        <input
+                          type="checkbox"
+                          checked={v.department_ids.includes(d.id)}
+                          onChange={(ev) =>
+                            form.set(
+                              'department_ids',
+                              ev.target.checked
+                                ? [...v.department_ids, d.id]
+                                : v.department_ids.filter((x) => x !== d.id),
+                            )
+                          }
+                        />
+                        <span>{unitName(d)}</span>
+                      </label>
+                    ))}
+                </div>
+                {e.department_ids && <small className="field-error">{e.department_ids}</small>}
+              </fieldset>
+            )}
+          </div>
+
+          <div className="card card-wide">
+            <h2>3. Kontakt und Anschrift</h2>
+            <div className="grid-2">
+              <Field
+                label="E-Mail-Adresse (optional)"
+                type="email"
+                hint="Ohne E-Mail erhält das Mitglied Schreiben per Brief. Ein Online-Zugang kann später eingerichtet werden."
+                value={v.email}
+                error={e.email}
+                onChange={(ev) => form.set('email', ev.target.value)}
+              />
+              <Field
+                label="Telefon (optional)"
+                value={v.phone}
+                error={e.phone}
+                onChange={(ev) => form.set('phone', ev.target.value)}
+              />
+            </div>
+            <Field
+              label="Straße und Hausnummer"
+              required
+              value={v.street}
+              error={e.street}
+              onChange={(ev) => form.set('street', ev.target.value)}
+            />
+            <div className="grid-3">
+              <Field
+                label="PLZ"
+                required
+                value={v.postal_code}
+                error={e.postal_code}
+                onChange={(ev) => form.set('postal_code', ev.target.value)}
+              />
+              <Field
+                label="Ort"
+                required
+                value={v.city}
+                error={e.city}
+                onChange={(ev) => form.set('city', ev.target.value)}
+              />
+              <Field
+                label="Land"
+                value={v.country}
+                error={e.country}
+                onChange={(ev) => form.set('country', ev.target.value)}
+              />
+            </div>
+          </div>
+
+          {form.message && <Alert kind={form.message.kind}>{form.message.text}</Alert>}
+          {e.person && <Alert kind="error">{e.person}</Alert>}
+          {activeConflict && !transferSent && (
+            <div className="card card-wide">
+              <p>
+                Ihr könnt {terms.e_beim_anderen} eine <strong>Wechselanfrage</strong> stellen. Dort
+                bestätigt man dann den Austritt oder den Wechsel zu einer nicht aktiven Art.
+              </p>
+              <button
+                type="button"
+                className="button button-primary"
+                onClick={() => void requestTransfer()}
+              >
+                Wechselanfrage stellen
+              </button>
+            </div>
+          )}
+          {transferSent && (
+            <Link to="/mitglieder/anfragen" className="button button-ghost">
+              Zu den Wechselanfragen
+            </Link>
+          )}
+          <div className="button-row">
+            <button type="submit" className="button button-primary" disabled={form.busy}>
+              Aufnehmen
+            </button>
+            <Link to="/mitglieder" className="button button-ghost">
+              Abbrechen
+            </Link>
+          </div>
+        </form>
+      )}
+    </section>
+  )
+}

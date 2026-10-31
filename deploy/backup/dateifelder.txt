@@ -1,0 +1,29 @@
+# Datenbankfelder, die auf Dateien zeigen: Tabelle, Spalte, Ordner unter /data.
+# restore-test.sh prüft damit, ob jede Datei, auf die das Backup der Datenbank zeigt,
+# auch in der Dateiliste des Backups steht. Ein Test (test_backup_dateifelder.py)
+# vergleicht die Liste mit den Modellen; ein neues Dateifeld gehört hier hinein.
+billing_invoice issued_pdf private
+circulars_circularattachment file private
+datatransfer_transferjob file private
+documents_documentversion file private
+events_eventattachment file private
+exchange_exportjob file private
+exchange_importjob error_file private
+exchange_importjob file private
+finance_bankstatement source private
+finance_cashcount pdf private
+finance_donationstatement file private
+finance_receipt file private
+honors_reignphoto file private
+honors_reignphoto small private
+members_memberphoto image private
+members_memberphoto thumbnail private
+organizations_organization logo media
+organizations_organization website_image media
+peering_remoteinvoice file private
+peering_remotestate file private
+statutes_statuteversion file private
+website_websiteimage file private
+website_websiteimage small private
+website_socialpostimage file private
+website_socialpostimage small private

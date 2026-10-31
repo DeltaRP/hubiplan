@@ -1,0 +1,119 @@
+# Lokale Entwicklungsumgebung: docker compose up
+# Werte lassen sich über eine .env-Datei überschreiben (Vorlage: .env.example).
+
+x-backend-env: &backend-env
+  DJANGO_DEBUG: ${DJANGO_DEBUG:-true}
+  DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-nur-fuer-lokale-entwicklung}
+  DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,backend}
+  DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
+  FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+  DATABASE_URL: postgres://${POSTGRES_USER:-hubiplan}:${POSTGRES_PASSWORD:-hubiplan}@postgres:5432/${POSTGRES_DB:-hubiplan}
+  REDIS_URL: redis://redis:6379/0
+  CACHE_URL: redis://redis:6379/1
+  DATABASE_APP_ROLE: hubiplan_app
+
+services:
+  postgres:
+    image: postgres:18-alpine@sha256:10a5c69a83035ab5239f5620d708520e8b28f5aa1f2b20143e6024532edadfb5
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-hubiplan}
+      POSTGRES_USER: ${POSTGRES_USER:-hubiplan}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hubiplan}
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:8-alpine@sha256:21090af93f8324db2f0f0f4f38a7c60369d47d917e000c3423d89d2ae2883537
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build:
+      context: ./backend
+      # Lokal mit pytest und ruff
+      args:
+        REQUIREMENTS: requirements-dev.txt
+    environment:
+      <<: *backend-env
+      RUN_MIGRATIONS: "1"
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./backend:/app
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health/')"
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  worker:
+    build: ./backend
+    environment: *backend-env
+    command: celery -A config worker --loglevel=info
+    volumes:
+      - ./backend:/app
+    depends_on:
+      backend:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  beat:
+    build: ./backend
+    environment: *backend-env
+    command: celery -A config beat --loglevel=info --schedule /tmp/celerybeat-schedule
+    volumes:
+      - ./backend:/app
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    environment:
+      BACKEND_URL: http://backend:8000
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/index.html:/app/index.html
+    ports:
+      - "127.0.0.1:5173:5173"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:5173/').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  postgres-data:

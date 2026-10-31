@@ -1,0 +1,12 @@
+# Auslieferung hochgeladener Logos und Bilder (/media/…), eingebunden in site.caddy
+# und in den internen Port für die Vereinswebseite (Caddyfile, Caddyfile.proxy).
+# Hochgeladene Logos (nur Bilder; Upload und Import schreiben sie als PNG neu).
+# Andere Endungen gibt es hier nicht; sicherheitshalber nie als Seite ausliefern.
+handle_path /media/* {
+	root * /srv-media
+	header X-Content-Type-Options "nosniff"
+	header Content-Security-Policy "default-src 'none'; img-src 'self'; sandbox"
+	@not_image not path_regexp \.(png|jpe?g|webp)$
+	respond @not_image 404
+	file_server
+}

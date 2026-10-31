@@ -1,0 +1,15 @@
+.git
+**/node_modules
+**/.venv
+**/dist
+**/__pycache__
+**/*.sqlite3
+.env
+.env.*
+# Nie in Images: Laufzeitdaten und Schlüssel
+**/private
+**/media
+**/staticfiles
+**/*.key
+**/*.age
+**/*.pem

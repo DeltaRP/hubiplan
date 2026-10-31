@@ -1,0 +1,55 @@
+#=========================================================================#
+# HUBIplan hinter HestiaCP (nginx-Proxy-Vorlage, HTTPS)                   #
+# Kopieren nach /usr/local/hestia/data/templates/web/nginx/app-8110.stpl  #
+# Leitet alles an Caddy im Docker-Verbund auf 127.0.0.1:8110 weiter       #
+# (WEB_PORT in /opt/hubiplan/.env, Standard 8110).                        #
+#                                                                         #
+# Aufgebaut nach den Standardvorlagen von HestiaCP 1.9.4                  #
+# (nginx-Vorlagen für Weiterleitungen, github.com/hestiacp/hestiacp),     #
+# GPL-3.0; geändert für HUBIplan seit 2026-10. Diese Datei steht daher    #
+# unter der GPL-3.0; Volltext in LICENSE-GPL-3.0.txt daneben,             #
+# Einordnung in docs/lizenzen.md.                                         #
+#=========================================================================#
+
+server {
+	listen      %ip%:%proxy_ssl_port% ssl;
+	server_name %domain_idn% %alias_idn%;
+	error_log   /var/log/%web_system%/domains/%domain%.error.log error;
+
+	ssl_certificate     %ssl_pem%;
+	ssl_certificate_key %ssl_key%;
+	ssl_stapling        on;
+	ssl_stapling_verify on;
+
+	include %home%/%user%/conf/web/%domain%/nginx.hsts.conf*;
+
+	# Größter Upload: Datenübernahme bis 500 MB
+	client_max_body_size 520m;
+
+	location / {
+		proxy_pass http://127.0.0.1:8110;
+		proxy_http_version 1.1;
+		proxy_set_header Host $host;
+		# Caddy macht daraus genau einen X-Forwarded-For-Eintrag (Caddyfile.proxy)
+		proxy_set_header X-Real-IP $remote_addr;
+		proxy_set_header X-Forwarded-For $remote_addr;
+		proxy_set_header X-Forwarded-Proto https;
+		proxy_read_timeout 300s;
+		proxy_send_timeout 300s;
+		proxy_request_buffering off;
+		# Antwortet Caddy nicht (z. B. beim Ausrollen), statt „502 Bad Gateway“ eine
+		# freundliche Seite, die sich selbst neu lädt. Fehlerantworten von Caddy selbst
+		# bleiben unverändert (kein proxy_intercept_errors).
+		error_page 502 504 =503 @aktualisierung;
+	}
+
+	location @aktualisierung {
+		include %home%/%user%/conf/web/%domain%/nginx.hsts.conf*;
+		add_header Retry-After 5 always;
+		add_header Cache-Control no-store always;
+		default_type "text/html; charset=utf-8";
+		return 503 '<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="refresh" content="5"><title>Wird aktualisiert</title></head><body style="font-family:system-ui,sans-serif;margin:0;background:#f6f7f9;color:#1f2933"><main style="max-width:32rem;margin:15vh auto;padding:2rem;text-align:center"><h1 style="font-size:1.4rem">HUBIplan wird gerade aktualisiert</h1><p>Das dauert meist nur einen Moment. Die Seite lädt in wenigen Sekunden von selbst neu.</p></main></body></html>';
+	}
+
+	include %home%/%user%/conf/web/%domain%/nginx.ssl.conf_*;
+}

@@ -1,0 +1,356 @@
+// Prüflisten vor folgenreichen Aktionen: was gute Praxis erwartet, zusätzlich zu
+// den harten Fehlerprüfungen des Servers. Die Punkte blockieren nie.
+// Eine Zeile erscheint nur, wenn sie für diesen Lauf überhaupt eine Rolle spielt.
+import type { DecisionKey } from './content.ts'
+
+export interface CheckItem {
+  key: string
+  ok: boolean
+  text: string
+  /** leiser Hinweis, wie man es behebt */
+  fix?: string
+  /** Link zur Stelle, an der man es behebt */
+  to?: string
+  why?: DecisionKey
+  /** reiner Hinweis: zählt nicht als Punkt */
+  info?: boolean
+}
+
+/** Zahlungsziel: unter 14 Tagen bleibt Mitgliedern kaum Zeit zu zahlen, bevor Mahnungen
+ *  anstehen. Keine gesetzliche Mindestfrist; der Verzug ohne Mahnung tritt erst 30 Tage
+ *  nach Fälligkeit ein (§ 286 Abs. 3 BGB). */
+export const MIN_DUE_DAYS = 14
+
+/** Vorabankündigung ohne andere Vereinbarung: 14 Kalendertage
+ *  (SEPA Direct Debit Core Rulebook, EPC016-06, 2025 Version 1.0). */
+export const DEFAULT_PRENOTIFICATION_DAYS = 14
+
+/** Mandate verfallen nach 36 Monaten ohne Einzug (EPC016-06); ab drei Monaten
+ *  vorher weist die Prüfliste darauf hin, damit Zeit für ein neues Mandat bleibt. */
+export const MANDATE_EXPIRY_MONTHS = 36
+export const MANDATE_WARN_MONTHS = 3
+
+/** Prüfliste ab dieser Zahl Buchungen zeigen: ein Jahr ohne Buchungen braucht keine. */
+export const MIN_BOOKINGS_FOR_RECEIPTS = 1
+
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
+
+// --- vor dem Beitragslauf ---
+
+export interface FeeRunInput {
+  skipped: { reason: string }[]
+  members: number
+  dueDays: number
+  /** Konto für Überweisungen mit IBAN */
+  accountWithIban: boolean
+  sepaEnabled: boolean
+  checks?: { unreachable: number; with_mandate: number; open_change_requests: number }
+}
+
+export function feeRunChecks(input: FeeRunInput): CheckItem[] {
+  const items: CheckItem[] = []
+  const noType = input.skipped.filter((s) => !s.reason.startsWith('beitragsfrei')).length
+  items.push({
+    key: 'member_types',
+    ok: noType === 0,
+    text:
+      noType === 0
+        ? 'Alle Mitglieder haben eine Mitgliedsart.'
+        : `${plural(noType, 'Mitglied', 'Mitglieder')} ohne Mitgliedsart, sie bekommen keine Rechnung.`,
+    fix: 'Mitgliedsart in der Mitgliedsakte nachtragen; die Namen stehen in der Vorschau.',
+  })
+  items.push({
+    key: 'account',
+    ok: input.accountWithIban,
+    text: input.accountWithIban
+      ? 'Konto für Überweisungen mit IBAN hinterlegt.'
+      : 'Auf der Rechnung steht noch kein Konto mit IBAN.',
+    fix: 'Konto unter Rechnung & Zahlung wählen.',
+    to: '/finanzen/einstellungen/rechnung',
+  })
+  items.push({
+    key: 'due_days',
+    ok: input.dueDays >= MIN_DUE_DAYS,
+    text: `Zahlungsziel ${input.dueDays} Tage${input.dueDays >= MIN_DUE_DAYS ? '' : ` (empfohlen mindestens ${MIN_DUE_DAYS})`}.`,
+    fix: 'Zahlungsziel unter Rechnung & Zahlung anpassen.',
+    to: '/finanzen/einstellungen/rechnung',
+    why: 'due_days',
+  })
+  const c = input.checks
+  if (c && input.members > 0) {
+    items.push({
+      key: 'unreachable',
+      ok: c.unreachable === 0,
+      text:
+        c.unreachable === 0
+          ? 'Alle Empfänger haben E-Mail oder vollständige Anschrift.'
+          : `${plural(c.unreachable, 'Mitglied', 'Mitglieder')} ohne E-Mail und ohne vollständige Anschrift.`,
+      fix: 'Kontaktdaten in der Mitgliedsakte ergänzen, sonst kommt die Rechnung nicht an.',
+      to: '/mitglieder',
+    })
+    if (c.open_change_requests > 0)
+      items.push({
+        key: 'change_requests',
+        ok: false,
+        text: `${plural(c.open_change_requests, 'offener Änderungsantrag', 'offene Änderungsanträge')} von Mitgliedern.`,
+        fix: 'Erst übernehmen oder ablehnen, damit Anschriften und Konten stimmen.',
+        to: '/mitglieder/anfragen/aenderungen',
+      })
+    if (input.sepaEnabled)
+      items.push({
+        key: 'mandates',
+        ok: true,
+        text: `${c.with_mandate} von ${input.members} Rechnungen lassen sich per Lastschrift einziehen.`,
+        why: 'sepa_use',
+        info: true,
+      })
+  }
+  return items
+}
+
+// --- vor dem Lastschriftlauf ---
+
+export interface DebitInput {
+  creditorId: string
+  creditorValid: boolean
+  date: string
+  earliest: string
+  prenotificationDays: number
+  invoices: { due_date?: string | null; has_email?: boolean }[]
+  /** Mandate, die bald verfallen (letzter Einzug lange her) */
+  expiringSoon?: number
+}
+
+/** Bankarbeitstage: Montag bis Freitag ohne die festen TARGET-Feiertage
+ *  (Neujahr, Karfreitag, Ostermontag, 1. Mai, 25. und 26. Dezember; EPC016-06). */
+export function isBankBusinessDay(iso: string): boolean {
+  const date = new Date(`${iso}T12:00:00`)
+  const day = date.getDay()
+  if (day === 0 || day === 6) return false
+  const md = iso.slice(5)
+  if (['01-01', '05-01', '12-25', '12-26'].includes(md)) return false
+  const easter = easterSunday(date.getFullYear())
+  const diff = Math.round((date.getTime() - easter.getTime()) / 86400000)
+  return diff !== -2 && diff !== 1
+}
+
+/** Ostersonntag nach der Gaußschen Osterformel (anonymer gregorianischer Algorithmus). */
+export function easterSunday(year: number): Date {
+  const a = year % 19
+  const b = Math.floor(year / 100)
+  const c = year % 100
+  const d = Math.floor(b / 4)
+  const e = b % 4
+  const f = Math.floor((b + 8) / 25)
+  const g = Math.floor((b - f + 1) / 3)
+  const h = (19 * a + b - d - g + 15) % 30
+  const i = Math.floor(c / 4)
+  const k = c % 4
+  const l = (32 + 2 * e + 2 * i - h - k) % 7
+  const m = Math.floor((a + 11 * h + 22 * l) / 451)
+  const month = Math.floor((h + l - 7 * m + 114) / 31)
+  const day = ((h + l - 7 * m + 114) % 31) + 1
+  return new Date(year, month - 1, day, 12)
+}
+
+export function debitChecks(input: DebitInput): CheckItem[] {
+  const items: CheckItem[] = []
+  items.push({
+    key: 'creditor',
+    ok: input.creditorValid,
+    text: input.creditorValid
+      ? 'Gläubiger-ID hinterlegt.'
+      : 'Gläubiger-ID fehlt oder ist ungültig.',
+    fix: 'Unter Rechnung & Zahlung → SEPA-Lastschrift eintragen.',
+    to: '/finanzen/einstellungen/rechnung',
+  })
+  if (input.date) {
+    const business = isBankBusinessDay(input.date)
+    items.push({
+      key: 'business_day',
+      ok: business,
+      text: business
+        ? 'Einzugsdatum ist ein Bankarbeitstag.'
+        : 'Einzugsdatum fällt auf ein Wochenende oder einen Bankfeiertag.',
+      fix: 'Einen Werktag wählen; sonst bucht die Bank erst am nächsten Bankarbeitstag.',
+      why: 'collection_date',
+    })
+    const early = input.invoices.filter((i) => i.due_date && i.due_date > input.date).length
+    if (input.invoices.some((i) => i.due_date))
+      items.push({
+        key: 'before_due',
+        ok: early === 0,
+        text:
+          early === 0
+            ? 'Keine Rechnung wird vor ihrer Fälligkeit eingezogen.'
+            : `${plural(early, 'Rechnung wird', 'Rechnungen werden')} vor der Fälligkeit eingezogen.`,
+        fix: 'Späteres Einzugsdatum wählen oder diese Rechnungen abwählen.',
+        why: 'collection_date',
+      })
+  }
+  const noMail = input.invoices.filter((i) => i.has_email === false).length
+  if (input.invoices.some((i) => i.has_email !== undefined))
+    items.push({
+      key: 'prenotification_print',
+      ok: noMail === 0,
+      text:
+        noMail === 0
+          ? 'Alle Zahler bekommen die Vorabankündigung per E-Mail.'
+          : `${plural(noMail, 'Vorabankündigung muss', 'Vorabankündigungen müssen')} gedruckt werden (keine E-Mail).`,
+      fix: 'Nach dem Erstellen ausdrucken und rechtzeitig verschicken.',
+      why: 'prenotification',
+    })
+  if (input.prenotificationDays < DEFAULT_PRENOTIFICATION_DAYS)
+    items.push({
+      key: 'prenotification_days',
+      ok: false,
+      text: `Vorabankündigung ${input.prenotificationDays} Tage statt der üblichen ${DEFAULT_PRENOTIFICATION_DAYS}.`,
+      fix: 'Nur zulässig, wenn die kürzere Frist im Mandat oder in den Beitragsbedingungen steht.',
+      to: '/finanzen/einstellungen/rechnung',
+      why: 'prenotification',
+    })
+  if (input.expiringSoon)
+    items.push({
+      key: 'expiring',
+      ok: false,
+      text: `${plural(input.expiringSoon, 'Mandat verfällt', 'Mandate verfallen')} bald, weil lange nichts eingezogen wurde.`,
+      fix: 'Mit diesem Lauf einziehen oder rechtzeitig ein neues Mandat einholen.',
+      to: '/finanzen/lastschrift/mandate',
+    })
+  items.push({
+    key: 'submit',
+    ok: true,
+    text: 'Datei rechtzeitig einreichen: Banken verlangen sie meist ein bis zwei Bankarbeitstage vor dem Einzug.',
+    info: true,
+  })
+  return items
+}
+
+// --- vor dem Jahresabschluss ---
+
+export interface ClosingInput {
+  bookings: number
+  without_receipt: number
+  tax_areas_enabled: boolean
+  categories_without_area: number
+  open_invoices?: number
+  unbooked_debit_runs?: number
+}
+
+export function closingChecks(c: ClosingInput): CheckItem[] {
+  const items: CheckItem[] = []
+  if (c.bookings >= MIN_BOOKINGS_FOR_RECEIPTS)
+    items.push({
+      key: 'receipts',
+      ok: c.without_receipt === 0,
+      text:
+        c.without_receipt === 0
+          ? 'Jede Buchung hat einen Beleg.'
+          : `${plural(c.without_receipt, 'Buchung', 'Buchungen')} ohne Beleg.`,
+      fix: 'Belege im Kassenbuch nachtragen, bevor die Kassenprüfer kommen.',
+      to: '/finanzen/kassenbuch',
+      why: 'receipts',
+    })
+  if (c.tax_areas_enabled)
+    items.push({
+      key: 'tax_areas',
+      ok: c.categories_without_area === 0,
+      text:
+        c.categories_without_area === 0
+          ? 'Alle benutzten Kategorien haben einen steuerlichen Bereich.'
+          : `${plural(c.categories_without_area, 'benutzte Kategorie', 'benutzte Kategorien')} ohne steuerlichen Bereich.`,
+      fix: 'Bereich unter Finanzen → Einrichtung → Kategorien zuordnen.',
+      to: '/finanzen/einstellungen/kategorien',
+      why: 'tax_areas',
+    })
+  if (c.unbooked_debit_runs !== undefined && c.unbooked_debit_runs > 0)
+    items.push({
+      key: 'debit_runs',
+      ok: false,
+      text: `${plural(c.unbooked_debit_runs, 'Lastschriftlauf ist', 'Lastschriftläufe sind')} noch nicht gebucht.`,
+      fix: 'Nach dem Geldeingang den Lauf buchen.',
+      to: '/finanzen/lastschrift',
+    })
+  if (c.open_invoices !== undefined && c.open_invoices > 0)
+    items.push({
+      key: 'open_invoices',
+      ok: false,
+      text: `${plural(c.open_invoices, 'Rechnung', 'Rechnungen')} des Jahres noch offen.`,
+      fix: 'Zahlungen erfassen oder offene Beträge im Kassenbericht erläutern.',
+      to: '/finanzen/rechnungen',
+    })
+  items.push({
+    key: 'audit',
+    ok: true,
+    text: 'Nach dem Abschluss ist das Jahr gesperrt; vorher die Kassenprüfung abschließen.',
+    why: 'cash_audit',
+    info: true,
+  })
+  return items
+}
+
+// --- vor den Jahresbestätigungen (Zuwendungen) ---
+
+export interface DonationInput {
+  /** fehlende oder abgelaufene Angaben zum Bescheid (vom Server) */
+  problems: string[]
+  open: number
+  without_address: number
+  goods_without_documents: number
+  goods_open: number
+  fees_skipped: number
+}
+
+export function donationChecks(c: DonationInput): CheckItem[] {
+  const items: CheckItem[] = [
+    {
+      key: 'notice',
+      ok: c.problems.length === 0,
+      text:
+        c.problems.length === 0
+          ? 'Angaben zum Bescheid vollständig und noch gültig.'
+          : c.problems.join(' '),
+      fix: 'Unter „Einstellungen“ den aktuellen Bescheid eintragen.',
+      to: '/finanzen/zuwendungen/einstellungen',
+      why: 'donation_notice',
+    },
+  ]
+  if (c.open > 0)
+    items.push({
+      key: 'address',
+      ok: c.without_address === 0,
+      text:
+        c.without_address === 0
+          ? 'Alle offenen Zuwendungen haben eine Anschrift.'
+          : `${plural(c.without_address, 'offene Zuwendung', 'offene Zuwendungen')} ohne Anschrift.`,
+      fix: 'Die Bestätigung nennt Name und Anschrift des Zuwendenden: Anschrift nachtragen.',
+      why: 'donation_liability',
+    })
+  if (c.goods_open > 0)
+    items.push({
+      key: 'goods',
+      ok: c.goods_without_documents === 0,
+      text:
+        c.goods_without_documents === 0
+          ? 'Zu allen Sachzuwendungen liegen Unterlagen zum Wert vor.'
+          : `${plural(c.goods_without_documents, 'Sachzuwendung', 'Sachzuwendungen')} ohne Unterlagen zum Wert.`,
+      fix: 'Kaufbeleg oder Gutachten besorgen und das Häkchen setzen.',
+      why: 'donation_goods',
+    })
+  if (c.goods_open > 0)
+    items.push({
+      key: 'goods_single',
+      ok: true,
+      text: `${plural(c.goods_open, 'Sachzuwendung wird', 'Sachzuwendungen werden')} nicht gesammelt, sondern einzeln bestätigt.`,
+      info: true,
+    })
+  if (c.fees_skipped > 0)
+    items.push({
+      key: 'fees',
+      ok: true,
+      text: `${plural(c.fees_skipped, 'Mitgliedsbeitrag wird', 'Mitgliedsbeiträge werden')} nach den Einstellungen nicht bestätigt.`,
+      why: 'donation_fees',
+      info: true,
+    })
+  return items
+}

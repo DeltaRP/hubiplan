@@ -1,0 +1,136 @@
+name: CI
+
+# Automatische Läufe sind abgeschaltet (Wunsch: keine Actions-Minuten verbrauchen).
+# Bei Bedarf unter "Actions" -> "CI" -> "Run workflow" von Hand starten.
+# Zum Wiedereinschalten die beiden Auslöser unten wieder aktivieren.
+on:
+  workflow_dispatch:
+  # push:
+  #   branches: [main]
+  # pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (Lint + Tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: hubiplan
+          POSTGRES_USER: hubiplan
+          POSTGRES_PASSWORD: hubiplan
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U hubiplan" --health-interval 5s
+          --health-timeout 5s --health-retries 20
+    env:
+      DJANGO_DEBUG: "true"
+      DJANGO_SECRET_KEY: ci-nur-fuer-tests
+      DATABASE_URL: postgres://hubiplan:hubiplan@localhost:5432/hubiplan
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: backend/requirements*.txt
+      - run: pip install -r requirements-dev.txt
+      - name: Lint (ruff)
+        run: |
+          ruff check .
+          ruff format --check .
+      - name: Fehlende Migrationen?
+        run: python manage.py makemigrations --check --dry-run
+      - name: Django-Checks für den Betrieb
+        run: |
+          MFA_ENCRYPTION_KEY=$(python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())") \
+            python manage.py check --deploy --fail-level ERROR
+        env:
+          DJANGO_DEBUG: "false"
+      - name: Tests (pytest)
+        run: pytest
+
+  frontend:
+    name: Frontend (Lint + Tests + Build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Lint (oxlint + Prettier)
+        run: |
+          npm run lint
+          npm run format:check
+      - name: Typprüfung
+        run: npm run typecheck
+      - name: Tests (Vitest)
+        run: npm test
+      - name: Build
+        run: npm run build
+
+  security:
+    name: Sicherheits-Scan (Abhängigkeiten)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - name: Python-Pakete (pip-audit)
+        run: |
+          pip install pip-audit==2.10.1
+          pip-audit -r backend/requirements.txt
+      - name: npm-Pakete (npm audit)
+        working-directory: frontend
+        run: npm audit --audit-level=high
+
+  docker:
+    name: Docker Compose (Start + Smoke-Test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Alle Dienste bauen und starten
+        run: docker compose up -d --build --wait --wait-timeout 300
+      - name: Health-Check über das Frontend
+        run: curl -fsS http://localhost:5173/api/health/
+      - name: Anmeldung über das Frontend
+        run: |
+          docker compose exec -T -e DJANGO_SUPERUSER_PASSWORD=Smoke-Test-123 backend \
+            python manage.py createsuperuser --noinput --email smoke@example.org
+          curl -fsS -c jar -b jar http://localhost:5173/api/csrf/ > /dev/null
+          TOKEN=$(awk '$6 == "csrftoken" {print $7}' jar)
+          curl -fsS -c jar -b jar -H "X-CSRFToken: $TOKEN" -H "Content-Type: application/json" \
+            -d '{"email":"smoke@example.org","password":"Smoke-Test-123"}' \
+            http://localhost:5173/_allauth/browser/v1/auth/login
+          curl -fsS -b jar http://localhost:5173/api/me/
+      - name: Hintergrund-Job über Celery-Worker
+        run: |
+          docker compose exec -T backend python manage.py shell -c \
+            "from core.tasks import ping; assert ping.delay().get(timeout=60) == 'pong'; print('pong')"
+      - name: Logs bei Fehler
+        if: failure()
+        run: docker compose logs
+      - name: Aufräumen
+        if: always()
+        run: docker compose down -v

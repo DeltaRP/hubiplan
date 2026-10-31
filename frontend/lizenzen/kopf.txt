@@ -1,0 +1,10 @@
+Lizenzen der Bibliotheken im Browser-Code von HUBIplan
+======================================================
+
+HUBIplan selbst steht unter der GNU Affero General Public License, Version 3
+oder später (AGPL-3.0-or-later): /lizenzen/LICENSE.txt
+
+Diese Datei wird beim Bauen aus den Modulen erzeugt, die tatsächlich im
+ausgelieferten Code enthalten sind. Darunter stehen die Lizenztexte der
+enthaltenen Pakete, danach Hinweise zu Code, den diese Pakete selbst
+übernommen haben, und zu Vorlagen für einzelne Teile von HUBIplan.

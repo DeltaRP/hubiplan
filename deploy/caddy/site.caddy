@@ -1,0 +1,60 @@
+# Gemeinsamer Inhalt beider Caddyfiles (direkt mit eigenem HTTPS oder hinter
+# einem vorgeschalteten Webserver). Erwartet ein Snippet (upstream) für die
+# Kopfzeilen an das Backend.
+encode zstd gzip
+
+@backend path /api/* /_allauth/* /admin /admin/* /static/*
+handle @backend {
+	# Größte erlaubte Anfrage: Vollübernahme bis 500 MB (Gesamtaudit 31.10.b, INF-S02)
+	request_body {
+		max_size 520MB
+	}
+	reverse_proxy backend:8000 {
+		import upstream
+		# Startet das Backend neu (z. B. beim Ausrollen), wartet Caddy bis zu 30 s,
+		# statt sofort mit 502 zu antworten. Wiederholt wird nur der Verbindungsaufbau;
+		# eine Anfrage, die das Backend schon erreicht hat, wird nie doppelt gesendet.
+		lb_try_duration 30s
+		lb_try_interval 250ms
+	}
+}
+
+import media.caddy
+
+# Vereinswebseite aus hubiplan-website (eigener Container „website“ im Netz „web“).
+# Läuft er nicht, antwortet nur dieser Pfad mit einem Fehler.
+redir /webseite /webseite/ 308
+handle_path /webseite/* {
+	reverse_proxy {$WEBSITE_UPSTREAM:website:8000} {
+		import upstream
+		# Beim Ausrollen der Webseite kurz warten statt Fehler
+		lb_try_duration 15s
+		lb_try_interval 250ms
+	}
+}
+
+handle {
+	header Content-Security-Policy "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; font-src 'self'; frame-src 'self' blob:; object-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+	root * /srv
+	try_files {path} /index.html
+	file_server
+}
+
+header {
+	Strict-Transport-Security "max-age=15552000"
+	Permissions-Policy "camera=(), microphone=(), geolocation=()"
+	X-Content-Type-Options "nosniff"
+	Referrer-Policy "strict-origin-when-cross-origin"
+	-Server
+}
+
+# Ist das Backend oder die Webseite nicht erreichbar (z. B. beim Ausrollen), statt einer
+# leeren Fehlerseite eine freundliche Seite, die sich selbst neu lädt. Die Oberfläche
+# wiederholt Anfragen bei 503 ohnehin (frontend/src/api/client.ts). Antworten, die das
+# Backend selbst mit einem Fehlercode schickt, bleiben unverändert.
+handle_errors 502 503 504 {
+	header Retry-After 5
+	header Cache-Control no-store
+	header Content-Type "text/html; charset=utf-8"
+	respond `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="refresh" content="5"><title>Wird aktualisiert</title></head><body style="font-family:system-ui,sans-serif;margin:0;background:#f6f7f9;color:#1f2933"><main style="max-width:32rem;margin:15vh auto;padding:2rem;text-align:center"><h1 style="font-size:1.4rem">HUBIplan wird gerade aktualisiert</h1><p>Das dauert meist nur einen Moment. Die Seite lädt in wenigen Sekunden von selbst neu.</p></main></body></html>` 503
+}
