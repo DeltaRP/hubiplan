@@ -193,18 +193,22 @@ code {
   font: inherit;
   font-weight: 600;
   border-radius: var(--radius);
-  border: 1px solid transparent;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
   cursor: pointer;
 }
 
+/* gesperrt: deutlich blasser als ein normaler Knopf */
 .button:disabled {
-  opacity: 0.6;
-  cursor: progress;
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .button-primary {
   background: var(--color-primary);
   color: var(--color-on-primary);
+  border-color: transparent;
 }
 
 .button-primary:hover:not(:disabled) {
@@ -217,8 +221,11 @@ code {
   border-color: var(--color-border);
 }
 
-.button-ghost:hover {
-  background: var(--color-bg);
+/* Mouse-over (Ralf 2026-11-01): jeder bedienbare Knopf zeigt es deutlich, sonst wirkt er
+   wie gesperrt. Der frühere Hover-Ton glich dem Seitenhintergrund und war unsichtbar. */
+.button:not(.button-primary, .button-danger-solid):hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
+  border-color: var(--color-primary);
 }
 
 .button-block {
@@ -825,6 +832,11 @@ fieldset {
 .button-danger {
   background: transparent;
   color: var(--color-error);
+  border-color: var(--color-error);
+}
+
+.button.button-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-error) 10%, var(--color-surface));
   border-color: var(--color-error);
 }
 
@@ -2133,6 +2145,7 @@ fieldset.subcard legend {
 .button-danger-solid {
   background: var(--color-error);
   color: #fff;
+  border-color: transparent;
 }
 .button-danger-solid:hover:not(:disabled) {
   filter: brightness(0.9);
@@ -3450,6 +3463,36 @@ label:has(> .file-input:focus-visible) {
 .stand-full {
   max-width: 48rem;
   margin: 0 auto;
+}
+/* Standmodus mit Live-Tabellen: breit nebeneinander, auf dem Handy untereinander */
+.stand-layout {
+  display: grid;
+  gap: 1.5rem;
+}
+.stand-live-block h2 {
+  font-size: 1.05rem;
+  margin: 0 0 0.4rem;
+}
+.stand-live-block + .stand-live-block {
+  margin-top: 1.25rem;
+}
+.stand-live-prize td {
+  font-weight: 600;
+}
+@media (min-width: 64rem) {
+  .stand-layout {
+    grid-template-columns: minmax(0, 44rem) minmax(18rem, 1fr);
+    align-items: start;
+  }
+  .stand-layout .stand-full {
+    margin: 0;
+  }
+  .stand-live {
+    position: sticky;
+    top: 0.75rem;
+    max-height: calc(100vh - 1.5rem);
+    overflow: auto;
+  }
 }
 .stand-sync {
   margin: 0 0 0.75rem;

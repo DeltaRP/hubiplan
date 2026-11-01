@@ -42,6 +42,8 @@ export interface Competition {
   website: WebsiteMode
   drop_out: boolean
   fixed_order: boolean
+  /** Lose im Hut: „Nummer ziehen“ zieht aus 1 bis zu dieser Zahl */
+  lots: number | null
   total_shots: number | null
   /** zugeordneter Termin im Kalender */
   event: number | null
@@ -121,6 +123,8 @@ export const PRESENCE_LABELS: Record<Presence, string> = {
 
 export interface Starter {
   id: number
+  /** letzte Eingabe eines Werts (alle Geräte) */
+  scored_at?: string | null
   name: string
   club: string
   guest: boolean
@@ -342,6 +346,8 @@ export interface SyncResult {
   keys: Record<string, number>
   starters: Starter[]
   status: CompetitionStatus
+  /** Zähler fürs Zurücksetzen: ändert er sich, sind alte Eingaben des Geräts verworfen */
+  generation?: number
   bird?: BirdState
 }
 
@@ -370,6 +376,12 @@ export const competitionsApi = {
     api.patch<Competition>(c(org, id), data),
   remove: (org: number, id: number) => api.del(c(org, id)),
   copy: (org: number, id: number) => api.post<{ id: number }>(`${c(org, id)}copy/`, {}),
+  /** Ergebnisse löschen, ohne ``keepStarters`` auch alle Starter */
+  reset: (org: number, id: number, keepStarters: boolean) =>
+    api.post<{ deleted: Record<string, number>; status: CompetitionStatus; generation: number }>(
+      `${c(org, id)}reset/`,
+      { keep_starters: keepStarters },
+    ),
   setStatus: (org: number, id: number, status: CompetitionStatus) =>
     api.post<{ status: CompetitionStatus; status_label: string }>(`${c(org, id)}status/`, {
       status,
@@ -406,8 +418,8 @@ export const competitionsApi = {
     entry: number,
     data: { value?: string | null; membership?: number | null; name?: string },
   ) => api.patch<ShootOff>(`${c(org, id)}shootoff-entries/${entry}/`, data),
-  sync: (org: number, id: number, ops: SyncOp[]) =>
-    api.post<SyncResult>(`${c(org, id)}sync/`, { ops }),
+  sync: (org: number, id: number, ops: SyncOp[], generation?: number) =>
+    api.post<SyncResult>(`${c(org, id)}sync/`, { ops, generation }),
   exportUrl: (org: number, id: number, query: string) => `${c(org, id)}export/?${query}`,
   // Vogelschießen
   bird: (org: number, id: number) => api.get<BirdState>(`${c(org, id)}bird/`),
@@ -468,7 +480,11 @@ export interface StandApi {
   get: () => Promise<CompetitionDetail>
   starters: () => Promise<Starter[]>
   members: () => Promise<MemberChoice[]>
-  sync: (ops: SyncOp[]) => Promise<SyncResult>
+  sync: (ops: SyncOp[], generation?: number) => Promise<SyncResult>
+  /** kleiner Stand des Wettbewerbs; ändert sich mit jeder Eingabe auf irgendeinem Gerät */
+  version: () => Promise<{ version: string }>
+  /** Ranglisten aller Wertungen (Live-Tabellen im Standmodus) */
+  standings: () => Promise<Pick<Standings, 'scorings' | 'open_shootoffs'>>
   /** endgültig abschließen (nur angemeldet mit „Wettbewerbe verwalten“, nicht per Standzugang) */
   finish?: () => Promise<unknown>
 }
@@ -479,7 +495,9 @@ export function orgStandApi(org: number, id: number): StandApi {
     get: () => competitionsApi.get(org, id),
     starters: () => competitionsApi.starters(org, id),
     members: () => competitionsApi.members(org, id),
-    sync: (ops) => competitionsApi.sync(org, id, ops),
+    sync: (ops, generation) => competitionsApi.sync(org, id, ops, generation),
+    standings: () => competitionsApi.standings(org, id),
+    version: () => api.get<{ version: string }>(`${c(org, id)}version/`),
     finish: () => competitionsApi.setStatus(org, id, 'endgueltig'),
   }
 }
@@ -491,7 +509,9 @@ export function tokenStandApi(token: string): StandApi {
     get: () => api.get<CompetitionDetail>(b),
     starters: () => api.get<Starter[]>(`${b}starters/`),
     members: () => api.get<MemberChoice[]>(`${b}members/`),
-    sync: (ops) => api.post<SyncResult>(`${b}sync/`, { ops }),
+    sync: (ops, generation) => api.post<SyncResult>(`${b}sync/`, { ops, generation }),
+    standings: () => api.get<Pick<Standings, 'scorings' | 'open_shootoffs'>>(`${b}standings/`),
+    version: () => api.get<{ version: string }>(`${b}version/`),
   }
 }
 

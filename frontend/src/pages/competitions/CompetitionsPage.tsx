@@ -368,6 +368,7 @@ function Setup({
     drop_out: comp.drop_out,
     fixed_order: comp.fixed_order,
     total_shots: comp.total_shots,
+    lots: comp.lots,
   })
   const { values: v, set, errors } = form
   const auto = useAutoSave(form, (changes) => competitionsApi.update(org, comp.id, changes), {
@@ -385,6 +386,25 @@ function Setup({
   async function changeStatus(status: CompetitionStatus) {
     try {
       await competitionsApi.setStatus(org, comp.id, status)
+      reload()
+    } catch (err) {
+      form.setMessage({ kind: 'error', text: errorMessage(err) })
+    }
+  }
+
+  async function reset() {
+    const choice = await choiceDialog({
+      title: 'Wettbewerb zurücksetzen',
+      message: `Bei „${comp.title}“ alle erfassten Ergebnisse löschen (Werte, Stechen, Schüsse, gefallene Pfänder)? Regeln, Pfänder, Standzugang und Termin bleiben, der Zustand geht auf „Vorbereitung“. Das lässt sich nicht rückgängig machen.`,
+      choices: [
+        { value: 'ergebnisse', label: 'Nur Ergebnisse löschen' },
+        { value: 'alles', label: 'Ergebnisse und Schützen löschen' },
+      ],
+      cancelValue: '',
+    })
+    if (!choice) return
+    try {
+      await competitionsApi.reset(org, comp.id, choice === 'ergebnisse')
       reload()
     } catch (err) {
       form.setMessage({ kind: 'error', text: errorMessage(err) })
@@ -503,6 +523,15 @@ function Setup({
                   value={v.total_shots ?? ''}
                   error={errors.total_shots}
                   onChange={(e) => set('total_shots', numOrNull(e.target.value))}
+                />
+                <Field
+                  label="Lose im Hut"
+                  type="number"
+                  min={1}
+                  hint="„Nummer ziehen“ zieht zufällig aus 1 bis zu dieser Zahl, z. B. 60; leer: bis zur Zahl der Schützen, dann bekommt ein Nachzügler meist die nächste Nummer"
+                  value={v.lots ?? ''}
+                  error={errors.lots}
+                  onChange={(e) => set('lots', numOrNull(e.target.value))}
                 />
               </div>
             </>
@@ -664,6 +693,11 @@ function Setup({
             <button type="button" className="button button-ghost" onClick={() => void copy()}>
               Für das nächste Jahr kopieren
             </button>
+            {comp.status !== 'endgueltig' && (
+              <button type="button" className="button button-danger" onClick={() => void reset()}>
+                Zurücksetzen …
+              </button>
+            )}
             <button type="button" className="button button-danger" onClick={() => void remove()}>
               Löschen
             </button>

@@ -35,7 +35,9 @@ org_patterns = [
     path(f"{C}candidates/", views.CandidatesView.as_view(), name="competition-candidates"),
     path(f"{C}unit-members/", views.UnitMembersView.as_view(), name="competition-unit-members"),
     path(f"{C}standings/", views.StandingsView.as_view(), name="competition-standings"),
+    path(f"{C}version/", views.VersionView.as_view(), name="competition-version"),
     path(f"{C}status/", views.StatusView.as_view(), name="competition-status"),
+    path(f"{C}reset/", views.ResetView.as_view(), name="competition-reset"),
     path(f"{C}copy/", views.CopyView.as_view(), name="competition-copy"),
     path(f"{C}export/", views.ExportView.as_view(), name="competition-export"),
     path(f"{C}shootoffs/", views.ShootOffsView.as_view(), name="competition-shootoffs"),
@@ -77,5 +79,7 @@ public_patterns = [
     path(S, stand_views.StandDetailView.as_view(), name="stand-detail"),
     path(f"{S}starters/", stand_views.StandStartersView.as_view(), name="stand-starters"),
     path(f"{S}members/", stand_views.StandMembersView.as_view(), name="stand-members"),
+    path(f"{S}standings/", stand_views.StandStandingsView.as_view(), name="stand-standings"),
+    path(f"{S}version/", stand_views.StandVersionView.as_view(), name="stand-version"),
     path(f"{S}sync/", stand_views.StandSyncView.as_view(), name="stand-sync"),
 ]

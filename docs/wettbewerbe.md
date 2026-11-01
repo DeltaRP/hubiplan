@@ -65,6 +65,24 @@ Senden ist harmlos). Wer Wettbewerbe verwaltet und angemeldet ist, kann im Stand
 „Endgültig abschließen“, sobald alle Eingaben des Geräts abgeglichen sind (nicht über einen
 Standzugang); offene Stechen verhindern den Abschluss wie unter „Einrichten“.
 
+**Mehrere Geräte gleichzeitig.** Jedes Gerät fragt alle 3 s nur einen kurzen Stand ab
+(`version/`, beim Standzugang `/api/public/stand/<schlüssel>/version/`: Prüfsumme über Starter,
+Werte, Schüsse, Pfänder und Stechen); ändert er sich, holt es Starter und Werte neu. Ohne eigene
+Eingaben wird zusätzlich alle 15 s abgeglichen. Echter Push (offene Verbindungen) ginge mit den
+synchronen Gunicorn-Workern nicht; das Nachfragen ist billig. „Zuletzt erfasst“ zeigt die
+Eingaben aller Geräte (`scored_at` je Starter). Rechts neben der Erfassung (auf dem Handy
+darunter) stehen die Tabellen aller Wertungen mit allen Plätzen (`standings` ohne Statistik).
+Legen zwei Geräte ohne Netz dasselbe Mitglied an, wird der zweite Starter mit dem ersten
+zusammengeführt: Seine Gerätekennung wird zum zweiten Namen (`Starter.aliases`), die Werte
+laufen wie sonst (der spätere gilt), und das Gerät zeigt einen Hinweis. Gäste werden nicht
+zusammengeführt (gleicher Name kann eine andere Person sein).
+
+**Zurücksetzen** (`reset/`, „Einrichten“, nur verwalten, nicht bei endgültig): löscht Werte,
+Stechen, Plätze, Schüsse und gefallene Pfänder, wahlweise auch alle Starter; Regeln, Pfänder,
+Mannschaften, Standzugang und Termin bleiben, der Zustand geht auf „Vorbereitung“. Der Zähler
+`generation` steigt; Geräte schicken ihn beim Abgleich mit, Eingaben von vor dem Zurücksetzen
+werden verworfen und das Gerät sagt es.
+
 ## Vogelschießen
 
 - **Pfänder** (`Prize`) in fester Reihenfolge, Vorlage Kopf, linker Flügel, rechter Flügel,
@@ -72,8 +90,10 @@ Standzugang); offene Stechen verhindern den Abschluss wie unter „Einrichten“
   aus“ (Standard an) und „Pfänder in fester Reihenfolge“ (Standard aus: jedes hängende Teil
   kann fallen).
 - **Losnummer** = Startnummer: aus dem Hut eintragen (doppelte Nummern werden abgelehnt) oder
-  digital ziehen (freie Nummer aus 1 … Anzahl der Schützen, `draw/`), dazu „alle ohne Nummer
-  auf einmal auslosen“ (`draw-all/`). Wie gezogen und wann steht beim Starter.
+  digital ziehen (`draw/`, zufällig aus den freien Nummern 1 … „Lose im Hut“; ohne diese
+  Angabe 1 … Anzahl der Schützen, dann bekommt ein Nachzügler meist die nächste Nummer), dazu
+  „alle ohne Nummer auf einmal auslosen“ (`draw-all/`). Mit „Lose im Hut“ sind Lücken normal und
+  werden nicht gemeldet. Wie gezogen und wann steht beim Starter.
 - **Reihenfolge** (`bird.py`, gleiche Regel auf dem Gerät in `frontend/src/api/bird.ts`): alle
   mit Losnummer aufsteigend, ohne die, die fehlen oder sich zurückgezogen haben, und ohne die
   mit Pfand (wenn „scheidet aus“). Dran ist die nächsthöhere Nummer nach dem letzten Schuss;
@@ -81,6 +101,9 @@ Standzugang); offene Stechen verhindern den Abschluss wie unter „Einrichten“
 - **Live** im Standmodus: „Schuss“ zählt (`Shot`), „Pfand gefallen“ wählt Teile (auch zwei mit
   einem Schuss), „Schütze fehlt“, „Rückgängig“ nimmt den letzten Schuss samt Pfändern zurück.
   Tastatur: Leertaste = Schuss, Ziffern = Pfand, Enter speichert, Strg+Z = Rückgängig.
+  Bei fester Reihenfolge heißt der Knopf „<nächstes Pfand> gefallen“ und speichert mit einem
+  Klick; „mehrere auf einmal“ wählt bis wohin. Sind alle Pfänder gefallen, zählt kein Schuss
+  mehr (auch nicht von anderen Geräten); der Standmodus bietet Rückgängig und den Abschluss.
   Gezählt werden Schuss-Nr. gesamt und Schüsse für das Pfand (seit dem vorher gefallenen).
 - **Nachträglich** (auf Papier gezählt): je Pfand Schütze, Schuss-Nr. gesamt, Schüsse für das
   Pfand; Gesamtzahl der Schüsse unter „Einrichten“.

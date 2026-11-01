@@ -62,6 +62,12 @@ class Competition(models.Model):
     fixed_order = models.BooleanField("Pfänder in fester Reihenfolge", default=False)
     # Gesamtzahl der Schüsse, wenn nachträglich erfasst (live: Anzahl der Schüsse)
     total_shots = models.PositiveIntegerField("Schüsse insgesamt", null=True, blank=True)
+    # Lose im Hut (Ralf 2026-11-01): „Nummer ziehen“ zieht aus 1 bis zu dieser Zahl; leer:
+    # aus 1 bis Zahl der Starter, dann bekommt ein Nachzügler meist die nächste Nummer.
+    lots = models.PositiveIntegerField("Lose im Hut", null=True, blank=True)
+    # Zählt jedes Zurücksetzen; der Standmodus schickt ihn mit, damit alte Offline-Eingaben
+    # nach dem Zurücksetzen nicht wieder auftauchen.
+    generation = models.PositiveIntegerField("Zurückgesetzt", default=0, editable=False)
     # Termin im Kalender, zu dem der Wettbewerb gehört (Zusagen als Starter übernehmen)
     event = models.ForeignKey(
         "events.Event",
@@ -202,7 +208,11 @@ class Starter(models.Model):
     drawn_at = models.DateTimeField("gezogen am", null=True, blank=True)
     # Kennung vom Gerät (Standmodus offline), damit ein Starter nicht doppelt ankommt
     client_key = models.UUIDField(null=True, blank=True, editable=False)
+    # Gerätekennungen anderer Tablets, die dasselbe Mitglied offline angelegt haben
+    aliases = models.JSONField(default=list, blank=True, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    # Stand für die Live-Ansichten (services.version)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = "Starter"
@@ -303,6 +313,8 @@ class ShootOffEntry(models.Model):
     )
     name = models.CharField("Schütze", max_length=200, blank=True)
     value = models.DecimalField("Wert", max_digits=10, decimal_places=3, null=True, blank=True)
+
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = "Teilnahme am Stechen"

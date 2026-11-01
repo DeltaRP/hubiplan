@@ -171,7 +171,13 @@ export function project(
 }
 
 /** Eine freie Losnummer ziehen (wie der Server: aus 1 … Anzahl der Schützen). */
-export function drawFree(starters: Starter[], exclude?: Ref, random = Math.random): number {
+/** Freie Losnummer ziehen: aus 1 bis Zahl der Starter oder, wenn gesetzt, bis „Lose im Hut“. */
+export function drawFree(
+  starters: Starter[],
+  exclude?: Ref,
+  random = Math.random,
+  lots?: number | null,
+): number {
   const taken = new Set(
     starters
       .filter((s) => exclude === undefined || !sameStarter(s, exclude))
@@ -179,7 +185,7 @@ export function drawFree(starters: Starter[], exclude?: Ref, random = Math.rando
       .filter((n): n is number => n !== null),
   )
   const count = starters.filter((s) => s.presence !== 'zurueckgezogen').length
-  const top = Math.max(count, ...taken, 0)
+  const top = Math.max(count, lots ?? 0, ...taken, 0)
   const free: number[] = []
   for (let n = 1; n <= top; n += 1) if (!taken.has(n)) free.push(n)
   if (!free.length) return top + 1

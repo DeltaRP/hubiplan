@@ -44,3 +44,49 @@ def test_wert_loeschen_und_starter_entfernen(club, schuetzen, zuege, board_a, ap
         "Max Muster"
     ]
     assert not Score.objects.filter(starter_id=max_["id"]).exists()
+
+
+@pytest.mark.django_db
+def test_stand_aendert_sich_mit_jeder_eingabe(club, schuetzen, zuege, board_a, api):  # noqa: F811
+    """Die Ansichten fragen den kleinen Stand ab und laden nur bei einer Änderung neu."""
+    from rest_framework.test import APIClient
+
+    c = api(board_a)
+    resp = c.post(
+        url(club),
+        {"title": "Preisschießen 2027", "date": "2027-06-14", "template": "schiessen"},
+        "application/json",
+    )
+    comp_id = resp.json()["id"]
+    scoring = c.get(url(club, f"{comp_id}/")).json()["scorings"][0]["id"]
+    seen = []
+
+    def version():
+        resp = c.get(url(club, f"{comp_id}/version/"))
+        assert resp.status_code == 200
+        seen.append(resp.json()["version"])
+        return seen[-1]
+
+    version()
+    assert version() == seen[0]  # nichts geändert
+    s = _starter(c, club, comp_id, membership=schuetzen["Max"].pk)
+    assert version() != seen[-2]
+    sync = url(club, f"{comp_id}/sync/")
+    for value in ("27", "28", None):
+        c.post(
+            sync,
+            {"ops": [{"op": "score", "starter": s["id"], "scoring": scoring, "value": value}]},
+            "application/json",
+        )
+        assert version() != seen[-2], value
+    c.patch(url(club, f"{comp_id}/starters/{s['id']}/"), {"number": "7"}, "application/json")
+    assert version() != seen[-2]
+
+    # Standzugang: Stand und Tabellen ohne Anmeldung
+    token = c.post(url(club, f"{comp_id}/stand-access/"), {"label": "Tablet"}).json()["token"]
+    pub = APIClient()
+    base = f"/api/public/stand/{token}/"
+    assert pub.get(f"{base}version/").json()["version"] == seen[-1]
+    data = pub.get(f"{base}standings/").json()
+    assert [b["name"] for b in data["scorings"]][0] == "Einzelwertung"
+    assert "stats" not in data
