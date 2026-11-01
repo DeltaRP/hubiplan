@@ -3560,6 +3560,27 @@ label:has(> .file-input:focus-visible) {
   }
 }
 
+/* Ansicht als Rolle: deutlich, solange eine Rolle gewählt ist */
+.role-preview-switch select {
+  max-width: 14rem;
+}
+.role-preview-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.8rem;
+  border: 2px solid #b26a00;
+  border-radius: var(--radius);
+  background: #fff4e0;
+  color: #4a2c00;
+}
+.role-preview-banner p {
+  margin: 0;
+}
+
 /* Vogelschießen im Standmodus (Wettbewerbe Schritt 2) */
 .stand-current {
   display: flex;

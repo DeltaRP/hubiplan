@@ -76,6 +76,28 @@ export interface OrgSummary {
   registered?: boolean
   /** Schalter „steuerbegünstigt mit eigenem Bescheid“: Zuwendungsbestätigungen */
   donations_enabled?: boolean
+  /** Ansicht als Rolle: wählbar (eigenes Recht) und gerade gewählte Rolle */
+  role_preview?: { available: boolean; active: RolePreviewRole | null }
+}
+
+export interface RolePreviewRole {
+  id: number
+  name: string
+}
+
+/** Ansicht als Rolle: Rollen zur Wahl und gerade gewählte Rolle */
+export interface RolePreviewState {
+  available: boolean
+  roles: RolePreviewRole[]
+  active: RolePreviewRole | null
+}
+
+/** Ansicht als Rolle (nur lesen, nie mehr als die eigenen Rechte) */
+export const rolePreviewApi = {
+  get: (orgId: number) => api.get<RolePreviewState>(`/api/orgs/${orgId}/ansicht/`),
+  start: (orgId: number, role: number) =>
+    api.post<RolePreviewState>(`/api/orgs/${orgId}/ansicht/`, { role }),
+  stop: (orgId: number) => api.delWith<RolePreviewState>(`/api/orgs/${orgId}/ansicht/`, {}),
 }
 
 export interface OrgDetail {
@@ -538,6 +560,7 @@ export const PERM = {
   orgEdit: 'org.edit',
   auditView: 'audit.view',
   rolesManage: 'roles.manage',
+  rolesPreview: 'roles.preview',
   themeEdit: 'theme.edit',
   exportRun: 'export.run',
   platformManage: 'platform.manage',

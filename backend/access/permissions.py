@@ -19,6 +19,17 @@ from .models import RoleAssignment
 def permissions_in(user, org: Organization) -> set[str]:
     """Berechtigungen eines Benutzers in einer Organisation (aus aktiven Rollen).
 
+    Während einer Ansicht als Rolle (access/preview.py) gilt in deren Einheit nur die
+    Schnittmenge aus den eigenen Rechten und denen der Rolle.
+    """
+    from . import preview
+
+    return preview.apply(user, org, own_permissions_in(user, org))
+
+
+def own_permissions_in(user, org: Organization) -> set[str]:
+    """Eigene Berechtigungen, ohne Ansicht als Rolle.
+
     Superuser (Betreiber der Instanz) haben auf der Plattform alle Rechte. Auf
     Vereins- und Dachverbandsebene gelten auch für sie nur zugewiesene Rollen.
     """

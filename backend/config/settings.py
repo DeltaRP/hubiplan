@@ -86,6 +86,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "core.tenancy.TenantMiddleware",
+    "access.preview.RolePreviewMiddleware",
     "changes.middleware.ChangeSetMiddleware",
     "core.filecheck.SafeFileMiddleware",
     "devices.middleware.SignatureFormatMiddleware",
