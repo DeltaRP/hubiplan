@@ -6,11 +6,10 @@ import pytest
 
 from access.catalog import MEMBERS_VIEW, ORG_EDIT, ROLES_MANAGE, ROLES_PREVIEW
 from access.models import Role
-from audit.models import AuditEntry
 from core.tenancy import tenant_context
 from organizations.help_views import clean_contacts, clean_notes
 
-from .factories import give_role, make_user
+from .factories import audit_with, give_role, make_user
 
 JSON = "application/json"
 pytestmark = pytest.mark.django_db
@@ -55,12 +54,7 @@ def test_lesen_jede_rolle_aendern_nur_mit_recht(orgs, api):
     bad = api(chef).patch(url, {"contacts": [{"name": "X", "email": "kein"}]}, content_type=JSON)
     assert bad.status_code == 400
     with tenant_context(org.pk):
-        assert (
-            AuditEntry.objects.filter(
-                organization=org, changes__has_key="Ansprechpartner für Fragen zu HUBIplan"
-            ).count()
-            == 1
-        )
+        assert len(audit_with("Ansprechpartner für Fragen zu HUBIplan", organization=org)) == 1
 
 
 def test_ansprechpartner_und_hinweise_von_oben(orgs, api):
