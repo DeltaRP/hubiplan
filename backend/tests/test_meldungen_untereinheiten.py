@@ -3,11 +3,12 @@ ihrem Bereich, der Verein bestätigt, fragt nach, erinnert; bestätigte Meldunge
 Starter im eigenen Wettbewerb (Ralf 2026-11-01; alles erfunden)."""
 
 import datetime
+from decimal import Decimal
 
 import pytest
 from openpyxl import load_workbook
 
-from competitions.models import Competition, Starter, Team
+from competitions.models import Competition, Score, Starter, Team
 from members.models import DepartmentRoleHolder
 from organizations.models import Department, DepartmentRole
 from portal.models import PortalAccess
@@ -330,3 +331,96 @@ class TestZugang:
         club.enabled_modules = ["members"]
         club.save()
         assert chef.get(dept_url(jaeger, "calls/")).status_code == 404
+
+
+# --- Wettbewerbe Schritt 3, Rest: Ergebnisse zurück an die meldenden Untereinheiten ---
+# Eigene Starter, Mannschaften und die Wertung der Untereinheiten immer; die ganze
+# Einzelrangliste nur mit Freigabe des Ausrichters (Konzept Wettbewerbe Abschnitt 9).
+
+
+def _melden(c, chef, club, zug, call, leute_):
+    """Zug meldet (ohne ``chef``: der Verein trägt die Meldung für ihn ein), Verein bestätigt."""
+    unit = org_url(club, f"units/{zug.pk}/calls/{call['id']}/")
+    base = dept_url(zug, f"calls/{call['id']}/") if chef else unit
+    chef = chef or c
+    block = call["blocks"][0]["id"]
+    entry = _ok(chef.post(f"{base}entry/teams/", {"block": block}))
+    team = entry["teams"][0]["id"]
+    for m in leute_:
+        _ok(
+            chef.post(
+                f"{base}entry/persons/",
+                {"block": block, "team": team, "membership": m.pk},
+                JSON,
+            )
+        )
+    _ok(chef.post(f"{base}entry/submit/", {"channel": "brief"}, JSON))
+    return _ok(c.post(f"{unit}entry/confirm/", {"note": ""}, JSON)), base
+
+
+def test_ergebnisse_zurueck(club, zuege, leute, board_a, api):
+    c = api(board_a)
+    call = _ausschreibung(c, club, zuege)
+    jaeger, gren = zuege["Jägerzug"], zuege["Grenadiere"]
+    chef = api(zugfuehrer(club, jaeger, leute["Max"], "max@example.org"))
+    zugfuehrer(club, gren, leute["Otto"], "otto@example.org")
+    entry, base = _melden(c, chef, club, jaeger, call, [leute["Max"], leute["Erika"]])
+    _melden(c, None, club, gren, call, [leute["Otto"], leute["Paul"]])
+    comp = Competition.objects.get(pk=entry["competition"])
+    einzel = comp.scorings.get(kind="einzel")
+    zugw = comp.scorings.get(kind="einheit")
+    zugw.source = einzel
+    zugw.team_size = 2
+    zugw.save()
+    for name, value in (("Max", 30), ("Erika", 25), ("Otto", 28), ("Paul", 27)):
+        s = Starter.objects.get(competition=comp, membership=leute[name])
+        Score.objects.create(organization=club, scoring=einzel, starter=s, value=Decimal(value))
+
+    # Vor dem Abschluss: nur der Zustand
+    data = _ok(chef.get(f"{base}entry/results/"))
+    assert data["final"] is False and data["scorings"] == []
+    comp.status = Competition.Status.FINAL
+    comp.save()
+
+    data = _ok(chef.get(f"{base}entry/results/"))
+    by = {s["name"]: s for s in data["scorings"]}
+    # Einzel: nur eigene Starter, mit Platz in der Gesamtrangliste
+    rows = by["Einzelwertung"]["rows"]
+    assert [(r["place"], r["name"]) for r in rows] == [(1, "Max Muster"), (4, "Erika Beispiel")]
+    assert all(r["own"] for r in rows) and not by["Einzelwertung"]["complete"]
+    assert by["Einzelwertung"]["field"] == 4
+    # Wertung der Untereinheiten: alle Züge, der eigene markiert
+    zug_rows = by["Wertung der Untereinheiten"]["rows"]
+    assert [(r["name"], r["own"]) for r in zug_rows] == [
+        ("Grenadiere", False),
+        ("Jägerzug", True),
+    ]
+    # Freigabe: ganze Rangliste mit fremden Namen
+    comp.share_ranking = True
+    comp.save()
+    rows = _ok(chef.get(f"{base}entry/results/"))["scorings"][0]["rows"]
+    assert [r["name"] for r in rows] == [
+        "Max Muster",
+        "Otto Normal",
+        "Paul Weber",
+        "Erika Beispiel",
+    ]
+    assert [r["own"] for r in rows] == [True, False, False, True]
+
+
+def test_ohne_wettbewerb_oder_fremder_zug(club, zuege, leute, board_a, api):
+    c = api(board_a)
+    call = _ausschreibung(c, club, zuege, create_competition=False)
+    jaeger = zuege["Jägerzug"]
+    chef = api(zugfuehrer(club, jaeger, leute["Max"], "max@example.org"))
+    base = dept_url(jaeger, f"calls/{call['id']}/")
+    # Keine Meldung, kein Wettbewerb: 404
+    assert chef.get(f"{base}entry/results/").status_code == 404
+    # Andere Untereinheit sieht nichts von dieser Meldung
+    tell = zuege["Tellschützen"]
+    other = api(
+        zugfuehrer(
+            club, tell, make_member(club, "Tim", "Tell", departments=[tell]), "tim@example.org"
+        )
+    )
+    assert other.get(dept_url(tell, f"calls/{call['id']}/entry/results/")).status_code == 404

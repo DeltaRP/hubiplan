@@ -40,6 +40,7 @@ import { PERM } from '../../api/orgs.ts'
 import { useActiveOrg } from '../../org/OrgContext.tsx'
 import { CallEventCard, InterestCard } from './CallEvent.tsx'
 import { UnitEntryPage, UnitsPanel } from './UnitEntries.tsx'
+import { EntryResultsCard } from './EntryResults.tsx'
 import { locale } from '../../i18n/index.ts'
 
 export function EntriesPage() {
@@ -431,7 +432,7 @@ export function EntryPanel({
             </ul>
           </div>
         )}
-        {entry.competition && (
+        {entry.competition && !call.internal && (
           <p>
             Zur Meldung gehört der Wettbewerb{' '}
             <Link to={`/wettbewerbe/${entry.competition}`}>{call.title}</Link>; dort tragt ihr
@@ -440,6 +441,8 @@ export function EntryPanel({
         )}
         {message && <Alert kind="error">{message}</Alert>}
       </div>
+      {/* Ausschreibung an Untereinheiten: Ergebnisse kommen nach Abschluss hierher zurück */}
+      {entry.competition && call.internal && <EntryResultsCard org={org} call={call.id} />}
       <InterestCard org={org} call={call} entry={entry} locked={locked} run={run} />
       {call.blocks.map((b) => (
         <BlockEntry

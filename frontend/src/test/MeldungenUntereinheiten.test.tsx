@@ -206,4 +206,71 @@ describe('Meldungen an Untereinheiten', () => {
     )
     expect(await screen.findByRole('heading', { name: /Meldung: abgegeben/ })).toBeVisible()
   })
+
+  it('zeigt dem Zug nach dem Abschluss seine Ergebnisse', async () => {
+    fakeApi({
+      [`GET ${dept}calls/4/`]: () => ({ status: 200, body: call }),
+      [`GET ${dept}calls/4/entry/`]: () => ({
+        status: 200,
+        body: entry({
+          status: 'bestaetigt',
+          status_label: 'bestätigt',
+          question: '',
+          competition: 12,
+        }),
+      }),
+      [`GET ${dept}options/`]: () => ({ status: 200, body: options }),
+      [`GET ${dept}calls/4/entry/results/`]: () => ({
+        status: 200,
+        body: {
+          title: 'Preisschießen 2027',
+          date: '2027-05-09',
+          status: 'endgueltig',
+          status_label: 'endgültig',
+          final: true,
+          share_ranking: false,
+          prizes: [],
+          scorings: [
+            {
+              name: 'Einzelwertung',
+              kind: 'einzel',
+              field: 4,
+              complete: false,
+              rows: [
+                {
+                  place: 1,
+                  name: 'Max Muster',
+                  value_text: '30',
+                  own: true,
+                  unit_name: 'Jägerzug',
+                },
+              ],
+            },
+            {
+              name: 'Wertung der Untereinheiten',
+              kind: 'einheit',
+              field: 2,
+              complete: true,
+              rows: [
+                { place: 1, name: 'Grenadiere', value_text: '55', own: false },
+                { place: 2, name: 'Jägerzug', value_text: '55', own: true },
+              ],
+            },
+          ],
+        },
+      }),
+    })
+    render(
+      <MemoryRouter initialEntries={['/abteilung/meldungen/4']}>
+        <Routes>
+          <Route path="/abteilung/meldungen/*" element={<DeptEntries deptId={5} />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+    expect(await screen.findByText('Einzelwertung · 4 gewertet')).toBeVisible()
+    expect(screen.getByText('Max Muster')).toBeVisible()
+    expect(screen.getByText('Grenadiere')).toBeVisible()
+    // Kein Link in den Wettbewerb des Vereins (den sieht der Zug nicht)
+    expect(screen.queryByRole('link', { name: 'Preisschießen 2027' })).toBeNull()
+  })
 })

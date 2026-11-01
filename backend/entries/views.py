@@ -872,6 +872,20 @@ def _clean_answer(block: CallBlock, value):
     return text
 
 
+class EntryResultsView(_Mixin, APIView):
+    """GET: Ergebnisse zur Meldung einer Untereinheit (Ausschreibung an Untereinheiten),
+    sobald der Wettbewerb endgültig ist (Wettbewerbe Schritt 3, gleiche Instanz)."""
+
+    def get(self, request, org_id: int, call_id: int):
+        from competitions.returns import entry_results
+
+        entry = self.entry(call_id)
+        data = entry_results(entry) if services.competitions_enabled(self.org) else None
+        if data is None:
+            raise NotFound()
+        return Response(data)
+
+
 class AnswerView(_Mixin, APIView):
     """PUT {block, value}: Angabe zu einem Baustein Zahl, Auswahl oder Text."""
 
