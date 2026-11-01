@@ -43,6 +43,8 @@ class Profile:
     given_name: str = ""
     family_name: str = ""
     email: str = ""
+    # Bisheriger Benutzername in der Nextcloud, nur wenn eingetragen
+    username: str = ""
     groups: list[str] = field(default_factory=list)
 
 
@@ -129,4 +131,11 @@ def profile(client: Client, user) -> Profile:
     given = (getattr(person, "first_name", "") or user.first_name or "").strip()
     family = (getattr(person, "last_name", "") or user.last_name or "").strip()
     name = " ".join(p for p in (given, family) if p) or user.email.split("@")[0]
-    return Profile(name=name, given_name=given, family_name=family, email=user.email, groups=unique)
+    return Profile(
+        name=name,
+        given_name=given,
+        family_name=family,
+        email=user.email,
+        username=client.username_map().get(user.email.lower(), ""),
+        groups=unique,
+    )

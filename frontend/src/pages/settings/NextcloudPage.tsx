@@ -55,6 +55,7 @@ function ClientCard({
     groups_roles: client.groups_roles,
     groups_units: client.groups_units,
     groups_members: client.groups_members,
+    usernames: client.usernames,
     is_active: client.is_active,
   })
   const [error, setError] = useState<string | null>(null)
@@ -175,6 +176,20 @@ function ClientCard({
             onChange={(v) => set('groups_members', v)}
           />
         </fieldset>
+        <label className="field">
+          <span>{t('Bisherige Benutzernamen in der Nextcloud')}</span>
+          <textarea
+            rows={4}
+            placeholder="maria.muster@example.org = mmuster"
+            value={values.usernames ?? ''}
+            onChange={(e) => set('usernames', e.target.value)}
+          />
+          <small className="muted">
+            {t(
+              'Für Konten, die es in der Nextcloud schon gibt: je Zeile die Anmelde-E-Mail bei HUBIplan und der bisherige Benutzername. Wer hier steht, landet bei der ersten Anmeldung in seinem vorhandenen Konto mit allen Dateien. Wer fehlt, bekommt ein neues Konto. Nur eintragen, wenn es wirklich dieselbe Person ist.',
+            )}
+          </small>
+        </label>
         <Checkbox
           label={t('Eingeschaltet')}
           checked={Boolean(values.is_active)}
@@ -192,7 +207,7 @@ function ClientCard({
       <h3>{t('In der Nextcloud eintragen')}</h3>
       <p className="muted small">
         {t(
-          'In der Nextcloud als Administrator die App „OpenID Connect user backend“ (user_oidc) installieren, dann unter Verwaltung › OpenID Connect einen Anbieter mit diesen Angaben anlegen. Dort „Gruppen-Provisionierung“ einschalten und als Gruppen-Zuordnung „groups“ eintragen.',
+          'In der Nextcloud als Administrator die App „OpenID Connect user backend“ (user_oidc) installieren, dann unter Verwaltung › OpenID Connect einen Anbieter mit diesen Angaben anlegen. Dort „Gruppen-Provisionierung“ einschalten und als Gruppen-Zuordnung „groups“ eintragen. Für bisherige Benutzernamen: Benutzer-ID-Zuordnung „preferred_username“, „Eindeutige Benutzer-ID verwenden“ aus und in der config.php „soft_auto_provision“ an (siehe Anleitung).',
         )}
       </p>
       <Copyable label={t('Discovery-Endpunkt')} value={client.discovery_url} />
