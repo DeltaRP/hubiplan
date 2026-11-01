@@ -4308,3 +4308,12 @@ msgstr "At most two signatures."
 
 msgid "Unter Mein Konto › Unterschrift ist keine Unterschrift hinterlegt."
 msgstr "No signature is stored under My account › Signature."
+
+msgid "Bitte die Namen der Bausteine als Text angeben."
+msgstr "Please enter the names of the building blocks as text."
+
+msgid "Dieser Baustein lässt sich nicht umbenennen: {key}"
+msgstr "This building block cannot be renamed: {key}"
+
+msgid "Ein Name darf höchstens {n} Zeichen lang sein."
+msgstr "A name may be at most {n} characters long."

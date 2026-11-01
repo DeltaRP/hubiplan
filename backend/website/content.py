@@ -484,10 +484,12 @@ def link_targets(website) -> list[dict]:
     for block, target, label in _SECTION_TARGETS:
         if not website.block_on(block):
             continue
-        if block == "units":
-            label = org.department_label_plural or "Untereinheiten"
-        elif block == "honors":
+        if block == "honors":
             label = site.honors_label()
+        elif website.block_name(block):
+            label = website.block_name(block)
+        elif block == "units":
+            label = org.department_label_plural or "Untereinheiten"
         targets.append({"href": f"seite:{target}", "label": label})
     for u in site.units:
         targets.append(

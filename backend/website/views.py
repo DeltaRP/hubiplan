@@ -28,12 +28,14 @@ from organizations.theme import effective_theme
 from . import designs, menu, privacy, services
 from .models import (
     BLOCK_HINTS,
+    BLOCK_NAME_MAX,
     BLOCKS,
     HOME_HINTS,
     HOME_NEEDS_BLOCK,
     HOME_SECTIONS,
     HOSTNAME_RE,
     PREVIEW_LINK_MAX_DAYS,
+    RENAMABLE_BLOCKS,
     PreviewLink,
     PublicationConsent,
     Website,
@@ -42,13 +44,14 @@ from .models import (
     normalize_home_sections,
 )
 
-MENU_ITEM_FIELDS = ("label", "hint", "toggle", "heading", "parent")
+MENU_ITEM_FIELDS = ("label", "default_label", "renamable", "hint", "toggle", "heading", "parent")
 
 SETTINGS_FIELDS = [
     "state",
     "maintenance_text",
     "blocks",
     "menu",
+    "block_names",
     "home_sections",
     "design",
     "color_roles",
@@ -120,6 +123,27 @@ class WebsiteSerializer(ModelCleanMixin, serializers.ModelSerializer):
         if unknown:
             raise serializers.ValidationError(f"Unbekannter Baustein: {sorted(unknown)[0]}")
         return normalize_home_sections(value)
+
+    def validate_block_names(self, value):
+        # Eigene Namen der Bausteine: nur bekannte Schlüssel, leer = Standardname
+        if not isinstance(value, dict) or not all(
+            isinstance(v, str) or v is None for v in value.values()
+        ):
+            raise serializers.ValidationError(_("Bitte die Namen der Bausteine als Text angeben."))
+        result = {}
+        for key, name in value.items():
+            if key not in RENAMABLE_BLOCKS:
+                raise serializers.ValidationError(
+                    _("Dieser Baustein lässt sich nicht umbenennen: {key}").format(key=key)
+                )
+            name = " ".join((name or "").split())
+            if len(name) > BLOCK_NAME_MAX:
+                raise serializers.ValidationError(
+                    _("Ein Name darf höchstens {n} Zeichen lang sein.").format(n=BLOCK_NAME_MAX)
+                )
+            if name:
+                result[key] = name
+        return result
 
     def validate_menu(self, value):
         if self.instance is None:

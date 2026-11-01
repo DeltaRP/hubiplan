@@ -1,12 +1,14 @@
 // Menü der Webseite als Baum (Ralf 31.10.): Reihenfolge per Ziehen; ein Punkt auf einen
 // anderen gezogen wird sein Unterpunkt, nach links herausgezogen wieder Hauptpunkt.
 // Pfeiltasten am Griff: ↑ ↓ verschieben, → einrücken, ← ausrücken.
+// Bausteine lassen sich umbenennen (Ralf 01.11.): Stift, leer = Standardname.
 import { useLayoutEffect, useRef, useState } from 'react'
 import type { KeyboardEvent, PointerEvent } from 'react'
 import type { MenuItem, MenuNode } from '../../api/website.ts'
 import { normalizeMenu, placeOf, put, rowsOf, sameTree, take } from './menuTree.ts'
 import type { Place, Tree } from './menuTree.ts'
 import { GripIcon } from '../../components/Sortable.tsx'
+import { EditIcon, IconButton } from '../../components/icons.tsx'
 import { Checkbox } from '../../components/ui.tsx'
 import { t } from '../../i18n/index.ts'
 
@@ -17,15 +19,20 @@ export function MenuTree({
   items,
   value,
   blocks,
+  names = {},
   onChange,
   onToggle,
+  onRename,
   disabled = false,
 }: {
   items: MenuItem[]
   value: Tree
   blocks: Record<string, boolean>
+  /** Eigene Namen der Bausteine (Schlüssel → Name) */
+  names?: Record<string, string>
   onChange: (next: Tree) => void
   onToggle: (block: string, on: boolean) => void
+  onRename?: (key: string, name: string) => void
   disabled?: boolean
 }) {
   const byKey = new Map(items.map((it) => [it.key, it]))
@@ -38,6 +45,7 @@ export function MenuTree({
   const handles = useRef(new Map<string, HTMLButtonElement>())
   const drag = useRef<{ key: string; start: Tree; tree: Tree; x0: number } | null>(null)
   const focusAfter = useRef<string | null>(null)
+  const [editing, setEditing] = useState<string | null>(null)
 
   useLayoutEffect(() => {
     if (focusAfter.current !== null) {
@@ -46,7 +54,15 @@ export function MenuTree({
     }
   })
 
-  const label = (key: string) => byKey.get(key)?.label ?? key
+  /** Standardname eines Punkts (ältere Stände ohne ``default_label``: ``label``) */
+  const standard = (it: MenuItem) => it.default_label ?? it.label
+  /** Name im Menü: eigener Name (auch noch nicht gespeichert) oder Standard */
+  const nameOf = (it: MenuItem) =>
+    (it.renamable && names[it.key]?.trim()) || (it.renamable ? standard(it) : it.label)
+  const label = (key: string) => {
+    const it = byKey.get(key)
+    return it ? nameOf(it) : key
+  }
   /** Kann ``node`` Unterpunkt werden? (keine Überschrift, keine eigenen Unterpunkte) */
   const nestable = (node: MenuNode) => !byKey.get(node.key)?.heading && node.children.length === 0
 
@@ -186,19 +202,43 @@ export function MenuTree({
   function row(node: MenuNode, depth: 0 | 1) {
     const item = byKey.get(node.key)
     if (!item) return null
+    const name = nameOf(item)
+    const renamed = Boolean(item.renamable && names[item.key]?.trim())
+    const hint = renamed
+      ? [t('Standard: {x}', { x: standard(item) }), item.hint].filter(Boolean).join(' · ')
+      : item.hint
     const content = item.toggle ? (
       <Checkbox
-        label={item.label}
-        hint={item.hint}
+        label={name}
+        hint={hint}
         checked={blocks[item.toggle] ?? true}
         disabled={disabled}
         onChange={(on) => onToggle(item.toggle!, on)}
       />
     ) : (
       <span className={item.heading ? 'menu-tree-heading' : undefined}>
-        {item.label}
-        {item.hint && <span className="muted small"> · {item.hint}</span>}
+        {name}
+        {hint && <span className="muted small"> · {hint}</span>}
       </span>
+    )
+    const canRename = Boolean(item.renamable && onRename && !disabled)
+    const rename = canRename && editing === node.key && (
+      <input
+        className="menu-tree-name"
+        autoFocus
+        maxLength={60}
+        value={names[item.key] ?? ''}
+        placeholder={standard(item)}
+        aria-label={t('Eigener Name für {x} (leer: Standardname)', { x: standard(item) })}
+        onChange={(e) => onRename!(item.key, e.target.value)}
+        onBlur={() => setEditing(null)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === 'Escape') {
+            e.preventDefault()
+            setEditing(null)
+          }
+        }}
+      />
     )
     return (
       <li
@@ -237,7 +277,18 @@ export function MenuTree({
             <GripIcon />
           </button>
         )}
-        <div className="sortable-label">{content}</div>
+        <div className="sortable-label">
+          {content}
+          {rename}
+        </div>
+        {canRename && (
+          <IconButton
+            label={t('{x} umbenennen', { x: name })}
+            icon={<EditIcon />}
+            aria-pressed={editing === node.key}
+            onClick={() => setEditing(editing === node.key ? null : node.key)}
+          />
+        )}
       </li>
     )
   }
