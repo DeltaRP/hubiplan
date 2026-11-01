@@ -146,9 +146,15 @@ export function visibleFor(
   return entry.rights.length === 0 || entry.rights.some(hasRight)
 }
 
-/** Passt die Route zur Adresse? Gleich oder darunter (/mitglieder passt zu /mitglieder/5). */
+/** Passt die Route zur Adresse? Gleich oder darunter (/mitglieder passt zu /mitglieder/5).
+ *  „:id“ steht für eine Nummer (/mitglieder/:id passt zu /mitglieder/42, nicht zu /mitglieder/neu). */
 export function routeMatches(route: string, pathname: string): boolean {
-  return pathname === route || pathname.startsWith(`${route.replace(/\/$/, '')}/`)
+  // Die Startseite gilt nur für sich, nicht für alle Seiten darunter
+  if (route === '/') return pathname === '/'
+  const want = route.replace(/\/$/, '').split('/')
+  const have = pathname.replace(/\/$/, '').split('/')
+  if (have.length < want.length) return false
+  return want.every((seg, i) => (seg === ':id' ? /^\d+$/.test(have[i]) : seg === have[i]))
 }
 
 /** Seitenhilfe zur Adresse: die Route mit dem längsten Treffer gewinnt. */

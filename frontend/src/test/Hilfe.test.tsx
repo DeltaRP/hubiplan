@@ -43,6 +43,25 @@ const APP_SOURCE = Object.values(
   import.meta.glob('../App.tsx', { query: '?raw', import: 'default', eager: true }),
 )[0] as string
 
+// Alle Ziele der Navigation (Seitenleiste und Unterpunkte)
+const NAV_SOURCES = import.meta.glob(
+  [
+    '../modules.tsx',
+    '../pages/**/access.ts',
+    '../pages/**/sections.ts',
+    '../pages/settings/*.ts',
+    '../pages/settings/SettingsLayout.tsx',
+  ],
+  { query: '?raw', import: 'default', eager: true },
+) as Record<string, string>
+const NAV_ROUTES = [
+  ...new Set(
+    Object.values(NAV_SOURCES).flatMap((src) =>
+      [...src.matchAll(/(?:to|path): '(\/[^']*)'/g)].map((m) => m[1]),
+    ),
+  ),
+]
+
 const parsed = (language: 'de' | 'en') =>
   new Map(
     Object.entries(RAW[language]).map(([path, raw]) => {
@@ -87,7 +106,7 @@ describe('Hilfedateien', () => {
         expect(RIGHTS.has(r) || r === 'platform.manage', `${name}: ${r}`).toBe(true)
       for (const route of e.routes) {
         expect(route.startsWith('/'), `${name}: ${route}`).toBe(true)
-        expect(TOP_ROUTES.has(route.split('/')[1]), `${name}: ${route}`).toBe(true)
+        expect(route === '/' || TOP_ROUTES.has(route.split('/')[1]), `${name}: ${route}`).toBe(true)
       }
       for (const link of e.body.matchAll(/\]\((\/[^)\s]*)\)/g))
         expect(TOP_ROUTES.has(link[1].split('/')[1]), `${name}: Link ${link[1]}`).toBe(true)
@@ -101,6 +120,13 @@ describe('Hilfedateien', () => {
       for (const b of bold(e.body)) expect(deTexts.has(b), `${name}: „${b}“`).toBe(true)
     for (const [name, e] of ENG)
       for (const b of bold(e.body)) expect(enTexts.has(b), `en/${name}: “${b}”`).toBe(true)
+  })
+
+  it('jede Seite der Navigation hat eine Seitenhilfe', () => {
+    const entries = [...DE.values()]
+    expect(NAV_ROUTES.length).toBeGreaterThan(50)
+    const missing = NAV_ROUTES.filter((r) => !pageHelpFor(entries, r))
+    expect(missing).toEqual([])
   })
 
   it('Anleitungen haben höchstens zehn Schritte', () => {
@@ -135,8 +161,9 @@ describe('Auswahl', () => {
   it('Seitenhilfe: längste passende Route gewinnt', () => {
     expect(pageHelpFor(entries, '/mein-konto/anmeldung')?.key).toBe('page.account_login')
     expect(pageHelpFor(entries, '/mein-konto')?.key).toBe('page.account')
-    expect(pageHelpFor(entries, '/mitglieder/42')?.key).toBe('page.members')
     expect(pageHelpFor(entries, '/mein-kontoxyz')).toBeNull()
+    expect(pageHelpFor(entries, '/mitglieder/42')?.key).toBe('page.member_file')
+    expect(pageHelpFor(entries, '/mitglieder/neu')?.key).toBe('page.members')
     expect(guidesFor(entries, '/mein-konto/anmeldung').map((g) => g.key)).toContain(
       'guide.password',
     )
