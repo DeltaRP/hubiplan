@@ -1,6 +1,6 @@
 // Schießscheiben Schritt 1: Scheibe, Wertungsart und Gleichstandsregeln je Einzelwertung,
 // entschiedener Gleichstand in der Auswertung. Alles erfunden.
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
@@ -352,6 +352,7 @@ describe('Treffer am Stand antippen', () => {
           ],
           needs_review: true,
           note: 'Schuss 2 nah an einer Ringlinie',
+          samples: [{ key: 'probe-schluessel-1', spot: null }],
         },
       }),
       [`POST ${base}3/sync/`]: () => ({
@@ -389,5 +390,103 @@ describe('Treffer am Stand antippen', () => {
       { x: 0, y: 0, spot: null, source: 'foto' },
       { x: 0, y: -9, spot: null, source: 'tippen' },
     ])
+    // mit Einwilligung des Vereins: bereitgelegter Ausschnitt geht mit den bestätigten Treffern
+    expect(op().samples).toEqual(['probe-schluessel-1'])
+  })
+
+  it('vergleicht eine von Hand eingegebene Summe mit dem Foto', async () => {
+    const photoScoring = {
+      ...scoring,
+      target: 'lg10_kyf',
+      method: 'ringe',
+      unit_label: 'Ringe',
+      shots: 2,
+      counted_shots: null,
+      target_info: { ...kyf, photo: true, rings: [{ ring: 1, diameter: 83 }] },
+    }
+    const otto = {
+      id: 21,
+      name: 'Otto Erfunden',
+      club: '',
+      guest: false,
+      membership: 2,
+      unit: null,
+      unit_name: '',
+      number: '',
+      out_of_competition: false,
+      presence: '',
+      drawn_how: '',
+      values: {},
+      hits: {},
+    }
+    const calls = renderAt('/wettbewerbe/3', {
+      [`GET ${base}3/`]: () => ({
+        status: 200,
+        body: { ...detail, status: 'laeuft', scorings: [photoScoring] },
+      }),
+      [`GET ${base}3/starters/`]: () => ({ status: 200, body: [otto] }),
+      [`GET ${base}3/members/`]: () => ({ status: 200, body: [] }),
+      [`POST ${base}3/photo/`]: () => ({
+        status: 200,
+        body: {
+          scoring: 11,
+          hits: [
+            { x: '0.000', y: '0.000', source: 'foto' },
+            { x: '0.000', y: '-10.000', source: 'foto' },
+          ],
+          needs_review: false,
+          note: '',
+        },
+      }),
+      [`POST ${base}3/sync/`]: () => ({
+        status: 200,
+        body: { results: [{ ok: true }], conflicts: [], keys: {}, starters: [otto] },
+      }),
+    })
+    const user = userEvent.setup()
+    await user.type(await screen.findByLabelText('Schütze (Name oder Startnummer)'), 'otto')
+    expect(await screen.findByRole('option', { name: /Otto Erfunden/ })).toBeVisible()
+    await user.keyboard('{Enter}')
+    await user.click(await screen.findByRole('button', { name: 'Nur die Summe eingeben' }))
+    const file = new File([new Uint8Array([1, 2, 3])], 'scheibe.jpg', { type: 'image/jpeg' })
+    fireEvent.change(await screen.findByLabelText('Foto der Scheibe'), {
+      target: { files: [file] },
+    })
+    expect(await screen.findByText(/Foto zum Vergleich: 18 Ringe/)).toBeVisible()
+    await user.type(screen.getByLabelText('Ringe'), '17')
+    expect(screen.getByText(/Weicht von der Eingabe ab/)).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'Speichern' }))
+    const dialog = await screen.findByRole('alertdialog')
+    expect(dialog).toHaveTextContent('Das Foto ergibt 18')
+    await user.click(within(dialog).getByRole('button', { name: 'Eingabe speichern' }))
+    const op = () =>
+      calls
+        .filter((c) => c.key === `POST ${base}3/sync/`)
+        .flatMap((c) => JSON.parse(String(c.init?.body)).ops)
+        .find((o: { op: string }) => o.op === 'score')
+    await waitFor(() => expect(op()).toBeDefined())
+    expect(op().value).toBe('17')
+  })
+
+  it('sammelt Spiegelausschnitte nur nach Einschalten durch den Verein', async () => {
+    let state = { enabled: false, changed_at: null, count: 2, can_manage: true }
+    const calls = renderAt('/wettbewerbe', {
+      [`GET ${base}`]: () => ({ status: 200, body: [] }),
+      [`GET ${base}photo-samples/`]: () => ({ status: 200, body: state }),
+      [`PATCH ${base}photo-samples/`]: (init) => {
+        state = { ...state, ...JSON.parse(String(init?.body)) }
+        return { status: 200, body: state }
+      },
+    })
+    const user = userEvent.setup()
+    await user.click(await screen.findByText('Fotoerkennung verbessern'))
+    const box = screen.getByRole('checkbox', { name: 'Bestätigte Spiegelausschnitte sammeln' })
+    expect(box).not.toBeChecked()
+    expect(screen.getByText(/Gesammelt: 2 Ausschnitte/)).toBeVisible()
+    await user.click(box)
+    await waitFor(() => expect(box).toBeChecked())
+    const patch = calls.find((c) => c.key === `PATCH ${base}photo-samples/`)
+    expect(JSON.parse(String(patch?.init?.body))).toEqual({ enabled: true })
+    expect(screen.getByRole('button', { name: 'Alle Ausschnitte löschen' })).toBeVisible()
   })
 })

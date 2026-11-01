@@ -26,6 +26,11 @@ org_patterns = [
         target_views.TargetCatalogView.as_view(),
         name="competition-targets",
     ),
+    path(
+        "competitions/photo-samples/",
+        target_views.PhotoSamplesView.as_view(),
+        name="competition-photo-samples",
+    ),
     path(f"{C}hits/", target_views.HitsView.as_view(), name="competition-hits"),
     path(f"{C}photo/", target_views.PhotoView.as_view(), name="competition-photo"),
     path(f"{C}event/", event_views.EventLinkView.as_view(), name="competition-event"),

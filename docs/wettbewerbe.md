@@ -126,6 +126,22 @@ sind vor ernsthafter Nutzung gegen die aktuelle Sportordnung zu lesen.
     auf eine helle Unterlage legen oder gegen das Licht halten. Echte Fotos können anders
     aussehen als die künstlichen; die Werte zeigen nur, ob die Erkennung besser oder
     schlechter wird.
+  - **Summe gegen Foto prüfen** (Schritt 6): Auch bei „Nur die Summe eingeben“ gibt es
+    „Foto der Scheibe“. Das Foto wird nur zum Vergleich ausgewertet: „Foto zum Vergleich:
+    46 Ringe“ steht neben der Eingabe, eine Abweichung wird markiert, und vor dem Speichern
+    fragt HUBIplan nach („Weicht vom Foto ab“). Gespeichert wird die eingegebene Summe;
+    „Treffer ansehen“ wechselt zum Antipp-Bild mit den erkannten Treffern.
+  - **Spiegelausschnitte sammeln** (Schritt 6, nur mit Einwilligung des Vereins): Es gibt
+    keine ausgewerteten echten Scheiben. Unter Wettbewerbe › „Fotoerkennung verbessern“ kann
+    der Verein (Recht Wettbewerbe verwalten) erlauben, dass bestätigte Spiegel gesammelt
+    werden; standardmäßig aus. Beim Foto wird je Spiegel der entzerrte Ausschnitt (Graubild,
+    12 Bildpunkte je mm) höchstens 12 Stunden im Cache bereitgelegt, das Gerät bekommt nur
+    einen Schlüssel. Erst beim Speichern der bestätigten Treffer kommt der Ausschnitt mit den
+    bestätigten und den erkannten Trefferpunkten in die Tabelle `PhotoSample`: ohne Starter,
+    Wettbewerb, Uhrzeit oder Namen (nur Tag des Sammelns). Ausschalten löscht nichts; „Alle
+    Ausschnitte löschen“ löscht sofort alle des Vereins. Beides steht im Änderungsprotokoll.
+    `manage.py scheiben_ausschnitte <ordner>` gibt die Ausschnitte (aller einwilligenden
+    Vereine) mit Lösung aus, zum Prüfen und Verbessern der Erkennung; nicht ins Repository.
 
 ## Erfassen und Standmodus
 
@@ -252,4 +268,6 @@ genau eine volle Seite.
 ## Daten
 
 App `competitions`, Tabellen mit `organization` und RLS. Export und Datenübernahme
-enthalten alles (mitgliederbezogen, auch die Treffer); die Wettbewerbe kommen nach den Terminen (Verweis). Keine Dateifelder.
+enthalten alles (mitgliederbezogen, auch die Treffer) außer den gesammelten
+Spiegelausschnitten und der Einwilligung dazu (`PhotoSample`, `PhotoSampleConsent`; nur für
+die Fotoerkennung, ohne Bezug zu Personen); die Wettbewerbe kommen nach den Terminen (Verweis). Keine Dateifelder.

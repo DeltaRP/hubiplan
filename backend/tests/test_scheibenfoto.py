@@ -12,12 +12,12 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
 
 from competitions import targets
-from competitions.models import Competition, Hit, StandAccess
+from competitions.models import Competition, Hit, PhotoSample, StandAccess
 from competitions.target_views import PHOTO_RATE
 from competitions.vision import benchmark, detect, synth
 
 from .test_schiessscheiben import verein  # noqa: F401
-from .test_wettbewerbe import url
+from .test_wettbewerbe import _starter, url
 
 pytestmark = pytest.mark.django_db
 
@@ -120,6 +120,7 @@ class TestFotoSchnittstelle:
         got = [(float(h["x"]), float(h["y"])) for h in data["hits"]]
         assert _rings("lg10_kyf", got) == sorted(sample.rings)
         assert isinstance(data["needs_review"], bool) and "note" in data
+        assert data["samples"] == []  # ohne Einwilligung des Vereins nichts bereitgelegt
         assert not Hit.objects.exists()  # erst das Bestätigen speichert
 
     def test_fehler(self, verein, board_a, api):  # noqa: F811
@@ -163,3 +164,116 @@ class TestFotoSchnittstelle:
             f"/api/public/stand/{token}/photo/", {"scoring": sc, "photo": photo}, format="multipart"
         )
         assert resp.status_code == 429
+
+
+@pytest.mark.django_db(transaction=True)
+class TestSpiegelausschnitte:
+    """Schritt 6: bestätigte Spiegelausschnitte nur mit Einwilligung des Vereins sammeln."""
+
+    def test_einwilligung_sammeln_loeschen(self, verein, board_a, api):  # noqa: F811
+        c = api(board_a)
+        s_url = url(verein, "photo-samples/")
+        state = c.get(s_url).json()
+        assert (state["enabled"], state["count"]) == (False, 0)  # standardmäßig aus
+        assert c.patch(s_url, {"enabled": "ja"}, "application/json").status_code == 400
+        assert c.patch(s_url, {"enabled": True}, "application/json").json()["enabled"] is True
+
+        comp_id, sc = TestFotoSchnittstelle()._wettbewerb(c, verein)
+        photo, sample = _photo()
+        data = c.post(url(verein, f"{comp_id}/photo/"), {"scoring": sc, "photo": photo}).json()
+        assert [s["spot"] for s in data["samples"]] == [None]
+        keys = [s["key"] for s in data["samples"]]
+        assert not PhotoSample.objects.exists()  # erst beim Bestätigen
+
+        anna = _starter(c, verein, comp_id, name="Anna Probe")["id"]
+        confirmed = [{"x": h["x"], "y": h["y"]} for h in data["hits"]]
+        confirmed[0] = {"x": "1.000", "y": "2.000"}  # eine Korrektur am Stand
+        resp = c.put(
+            url(verein, f"{comp_id}/hits/"),
+            {
+                "scoring": sc,
+                "starter": anna,
+                "hits": confirmed,
+                "samples": [*keys, "unbekannt-unbekannt"],
+            },
+            "application/json",
+        )
+        assert resp.status_code == 200, resp.content
+        saved = PhotoSample.objects.get()
+        assert saved.organization_id == verein.pk and saved.target == "lg10_kyf"
+        assert saved.hits[0] == [1.0, 2.0] and len(saved.detected) == 5
+        assert bytes(saved.image[:2]) == b"\xff\xd8"  # JPEG
+        # kein Verweis auf Starter, Wettbewerb oder Uhrzeit
+        names = {f.name for f in PhotoSample._meta.get_fields()}
+        assert not names & {"starter", "competition", "scoring", "created_at"}
+        # Schlüssel gilt nur einmal
+        c.put(
+            url(verein, f"{comp_id}/hits/"),
+            {"scoring": sc, "starter": anna, "hits": confirmed, "samples": keys},
+            "application/json",
+        )
+        assert PhotoSample.objects.count() == 1
+
+        # Ausschalten löscht nichts, Löschen löscht alles
+        assert c.patch(s_url, {"enabled": False}, "application/json").json()["count"] == 1
+        assert c.delete(s_url).json()["count"] == 0
+        assert not PhotoSample.objects.exists()
+
+    def test_ohne_einwilligung_nichts(self, verein, board_a, api):  # noqa: F811
+        c = api(board_a)
+        comp_id, sc = TestFotoSchnittstelle()._wettbewerb(c, verein)
+        photo, _ = _photo()
+        data = c.post(url(verein, f"{comp_id}/photo/"), {"scoring": sc, "photo": photo}).json()
+        anna = _starter(c, verein, comp_id, name="Anna Probe")["id"]
+        c.put(
+            url(verein, f"{comp_id}/hits/"),
+            {
+                "scoring": sc,
+                "starter": anna,
+                "hits": [{"x": h["x"], "y": h["y"]} for h in data["hits"]],
+                "samples": ["a" * 24],
+            },
+            "application/json",
+        )
+        assert not PhotoSample.objects.exists()
+
+    def test_fuenf_spiegel_je_ausschnitt(self, verein):  # noqa: F811
+        from competitions import samples
+        from competitions.models import PhotoSampleConsent
+
+        PhotoSampleConsent.objects.create(organization=verein, enabled=True)
+        image, _ = synth.make_sample("lg10_kyf5", 4002, difficulty=0.3, kind="streuung")
+        found = detect.detect(image, "lg10_kyf5", 25, crops=True)
+        assert len(found.crops) == 5
+
+        class _Scoring:
+            pk = 1
+            target = "lg10_kyf5"
+
+        kept = samples.keep(verein, _Scoring(), targets.BY_KEY["lg10_kyf5"], found, 12.0)
+        assert [k["spot"] for k in kept] == [1, 2, 3, 4, 5]
+        hits = [
+            {"x": x, "y": y, "spot": s} for (x, y), s in zip(found.hits, found.spots, strict=True)
+        ]
+        assert samples.store(verein, _Scoring(), [k["key"] for k in kept], hits) == 5
+        assert all(len(p.hits) == 5 for p in PhotoSample.objects.all())
+
+
+def test_ausschnitte_ausgeben(verein, tmp_path):  # noqa: F811
+    import json
+
+    from django.core.management import call_command
+
+    PhotoSample.objects.create(
+        organization=verein,
+        target="lg10_kyf",
+        target_data={"key": "lg10_kyf"},
+        image=b"\xff\xd8erfunden",
+        px_per_mm=12,
+        hits=[[1.0, 2.0]],
+        detected=[[1.1, 2.0]],
+    )
+    call_command("scheiben_ausschnitte", str(tmp_path))
+    info = json.loads((tmp_path / "0001.json").read_text())
+    assert info["treffer"] == [[1.0, 2.0]] and "verein" not in info
+    assert (tmp_path / "0001.jpg").read_bytes().startswith(b"\xff\xd8")

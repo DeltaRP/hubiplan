@@ -23,6 +23,8 @@ class Detection:
     note: str = ""
     # Karten mit mehreren Spiegeln: Spiegel je Treffer (ab 1); Treffer um dessen Mitte
     spots: list[int] = field(default_factory=list)
+    # entzerrte Spiegelausschnitte (JPEG), nur auf Wunsch (Sammeln mit Einwilligung)
+    crops: list[bytes] = field(default_factory=list)
 
 
 @dataclass

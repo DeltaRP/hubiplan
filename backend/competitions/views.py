@@ -862,7 +862,15 @@ def _apply_op(org, user, comp, op, conflicts) -> dict:
         )
         at = parse_datetime(str(op.get("at") or "")) if op.get("at") else None
         data = target_views.set_hits(
-            org, user, comp, scoring, s, op.get("hits"), op.get("source"), at=at
+            org,
+            user,
+            comp,
+            scoring,
+            s,
+            op.get("hits"),
+            op.get("source"),
+            at=at,
+            sample_keys=op.get("samples"),
         )
         if data.get("conflict"):
             conflicts.append(

@@ -32,6 +32,7 @@ import { BirdStand } from './BirdStand.tsx'
 import { EventCard, EventPicker } from './CalendarLink.tsx'
 import { ManualPrizes, PrizesCard, StandAccessCard } from './BirdSetup.tsx'
 import { ForeignPanel } from './ForeignPanel.tsx'
+import { PhotoSamplesCard } from './PhotoSamples.tsx'
 import { ResultsPanel } from './ResultsPanel.tsx'
 import { StandPanel } from './StandPanel.tsx'
 import { TargetSettings } from './TargetSettings.tsx'
@@ -113,6 +114,7 @@ function CompetitionList() {
           ]}
         />
       )}
+      <PhotoSamplesCard org={org.id} />
     </section>
   )
 }
