@@ -32,7 +32,14 @@ export type ChoiceOptions = {
   title: string
   message?: string
   /** Knöpfe von links nach rechts; der erste mit primary ist die Vorgabe (Enter). */
-  choices: { value: string; label: string; primary?: boolean; danger?: boolean }[]
+  choices: {
+    value: string
+    label: string
+    /** kurze Erklärung unter der Beschriftung; dann stehen die Knöpfe untereinander */
+    hint?: string
+    primary?: boolean
+    danger?: boolean
+  }[]
   /** Ergebnis bei Esc oder Klick neben den Dialog */
   cancelValue: string
 }
@@ -145,7 +152,11 @@ export function AppDialog({
             </label>
           )}
           {spec.kind === 'choice' ? (
-            <div className="button-row app-dialog-actions">
+            <div
+              className={`button-row app-dialog-actions${
+                spec.options.choices.some((c) => c.hint) ? ' app-dialog-choices' : ''
+              }`}
+            >
               {spec.options.choices.map((c) => (
                 <button
                   key={c.value}
@@ -157,6 +168,7 @@ export function AppDialog({
                   onClick={() => onDone(c.value)}
                 >
                   {c.label}
+                  {c.hint && <span className="choice-hint">{c.hint}</span>}
                 </button>
               ))}
             </div>

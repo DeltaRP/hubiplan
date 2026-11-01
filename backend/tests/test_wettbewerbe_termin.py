@@ -180,3 +180,89 @@ def _count(pdf: bytes) -> int:
     import re
 
     return len(re.findall(rb"/Type\s*/Page[^s]", pdf))
+
+
+@pytest.mark.django_db
+class TestSchiesslisteNachZug:
+    """Ralf 2026-11-01: je Zug eine eigene Tabelle mit Feldern für die Zugwertung."""
+
+    def _texts(self, flowables) -> list[str]:
+        from reportlab.platypus import KeepTogether, Paragraph, Table
+
+        out = []
+        for f in flowables:
+            if isinstance(f, KeepTogether):
+                out += self._texts(f._content)  # noqa: SLF001
+            elif isinstance(f, Paragraph):
+                out.append(f.text)
+            elif isinstance(f, Table):
+                for row in f._cellvalues:  # noqa: SLF001
+                    out += [c for c in row if isinstance(c, str) and c]
+                    out += self._texts([c for c in row if not isinstance(c, str)])
+        return out
+
+    def test_je_zug_eine_tabelle(self, club, monkeypatch):  # noqa: F811
+        from competitions.models import Score, Scoring, Starter
+        from organizations.models import Department
+
+        zug1 = Department.objects.create(organization=club, parent=club, name="Zug Eins")
+        zug2 = Department.objects.create(organization=club, parent=club, name="Zug Zwei")
+        comp = Competition.objects.create(
+            organization=club, title="Osterschießen", date=datetime.date(2027, 4, 4)
+        )
+        einzel = Scoring.objects.create(organization=club, competition=comp, name="Einzel", shots=3)
+        Scoring.objects.create(
+            organization=club,
+            competition=comp,
+            name="Zugwertung",
+            kind=Scoring.Kind.UNIT,
+            source=einzel,
+            team_mode="beste",
+            team_size=2,
+            sort_order=1,
+        )
+        for name, unit, value in (
+            ("Max Muster", zug1, 28),
+            ("Otto Normal", zug1, 19),
+            ("Erika Beispiel", zug2, None),
+            ("Gerd Gast", None, 24),
+        ):
+            s = Starter.objects.create(organization=club, competition=comp, name=name, unit=unit)
+            if value is not None:
+                Score.objects.create(organization=club, scoring=einzel, starter=s, value=value)
+        stories = []
+        real = report._filled  # noqa: SLF001
+
+        def spy(comp, title, make_story, least, **kw):
+            stories.append(make_story(least))
+            return real(comp, title, make_story, least, **kw)
+
+        monkeypatch.setattr(report, "_filled", spy)
+        pdf = report.shooting_list(comp, order="einheit")
+        assert pdf.startswith(b"%PDF")
+        texts = self._texts(stories[0])
+        i1, i2 = texts.index("<b>Zug Eins</b>"), texts.index("<b>Zug Zwei</b>")
+        guests = texts.index("<b>Gäste und ohne Einheit</b>")
+        assert i1 < texts.index("Max Muster") < i2 < texts.index("Erika Beispiel") < guests
+        assert guests < texts.index("Gerd Gast")
+        # Zugwertung je Zug: Felder für die besten 2, Summe und Platz
+        assert texts.count("<b>Zugwertung</b><br/>Summe der besten 2") == 2
+        assert texts.count("<b>2.</b>") == 2 and texts.count("<b>Platz</b>") == 2
+        # erfasste Werte stehen drin: Einzel und Zugwertung von Zug Eins (28 + 19 = 47, Platz 1)
+        assert {"28", "19", "24", "47"} <= set(texts) and "1" in texts
+        # leere Liste nach Zug: auch je Zug eine Tabelle
+        stories.clear()
+        report.shooting_list(comp, order="einheit", empty=True)
+        texts = self._texts(stories[0])
+        assert "<b>Zug Zwei</b>" in texts and "Max Muster" not in texts and "28" not in texts
+
+    def test_nach_name_mit_werten(self, club):  # noqa: F811
+        from competitions.models import Score, Scoring, Starter
+
+        comp = Competition.objects.create(
+            organization=club, title="Osterschießen", date=datetime.date(2027, 4, 4)
+        )
+        einzel = Scoring.objects.create(organization=club, competition=comp, name="Einzel")
+        s = Starter.objects.create(organization=club, competition=comp, name="Peter Probe")
+        Score.objects.create(organization=club, scoring=einzel, starter=s, value=28)
+        assert report.shooting_list(comp).startswith(b"%PDF")

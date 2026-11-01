@@ -3801,9 +3801,26 @@ label:has(> .file-input:focus-visible) {
   --color-success-bg: color-mix(in srgb, var(--color-primary) 35%, #10201a);
   color: var(--color-text);
 }
-.stand-page :where(input, select, textarea) {
-  background-color: var(--color-surface);
-  color: var(--color-text);
+.stand-page :where(input, select, textarea),
+.stand-page .stand-hits {
+  /* Eingaben und Auswahllisten bleiben hell (Ralf 2026-11-01) */
+  color-scheme: light;
+  background-color: #fff;
+  color: #1d2421;
+  border-color: color-mix(in srgb, var(--color-primary) 45%, #ffffff);
+}
+.stand-page :where(input, textarea)::placeholder {
+  color: #66706b;
+}
+.stand-page .stand-hit {
+  border-bottom-color: #dfe4e1;
+}
+.stand-page .stand-hit.active,
+.stand-page .stand-hit:hover {
+  background: color-mix(in srgb, var(--color-primary) 14%, #ffffff);
+}
+.stand-head-actions .button {
+  padding: 0.4rem 0.8rem;
 }
 .stand-page .alert-info {
   background: color-mix(in srgb, var(--color-primary) 28%, #16201c);
@@ -3816,4 +3833,20 @@ label:has(> .file-input:focus-visible) {
 }
 .stand-page .stand-draw-big {
   border-color: var(--color-link);
+}
+/* Auswahldialog mit Erklärungen: Knöpfe untereinander, Erklärung klein darunter */
+.app-dialog-choices {
+  flex-direction: column;
+  align-items: stretch;
+}
+.app-dialog-choices .button {
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+.choice-hint {
+  display: block;
+  font-size: 0.85em;
+  font-weight: normal;
+  color: var(--color-text-muted);
 }
