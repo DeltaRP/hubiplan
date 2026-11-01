@@ -24,6 +24,7 @@ import { ChroniclePage } from './members/ChroniclePage.tsx'
 import { OfficesPage } from './members/OfficesPage.tsx'
 import { MembersDevelopmentPage } from './members/DevelopmentPage.tsx'
 import { MovedCirculars } from './circulars/CircularsPage.tsx'
+import { t } from '../i18n/index.ts'
 
 export function MembersSection({
   title,
@@ -40,7 +41,7 @@ export function MembersSection({
     <section>
       <div className="page-head">
         <div>
-          <p className="muted small eyebrow">Mitglieder</p>
+          <p className="muted small eyebrow">{t('Mitglieder')}</p>
           <h1>{title}</h1>
         </div>
         {actions}
@@ -92,7 +93,7 @@ function ClubMembers() {
       <Route
         path="anfragen"
         element={
-          <MembersSection title="Wechselanfragen" tabs={requestTabs()}>
+          <MembersSection title={t('Wechselanfragen')} tabs={requestTabs()}>
             <TransfersPage />
           </MembersSection>
         }
@@ -100,7 +101,7 @@ function ClubMembers() {
       <Route
         path="anfragen/aenderungen"
         element={
-          <MembersSection title="Änderungsmeldungen" tabs={requestTabs()}>
+          <MembersSection title={t('Änderungsmeldungen')} tabs={requestTabs()}>
             <ChangeRequestsPage />
           </MembersSection>
         }
@@ -110,7 +111,7 @@ function ClubMembers() {
       <Route
         path="jubilaeen"
         element={
-          <MembersSection title="Jubiläen">
+          <MembersSection title={t('Jubiläen')}>
             <JubileesPage />
           </MembersSection>
         }
@@ -125,7 +126,7 @@ function ClubMembers() {
         path="import"
         element={
           canEdit ? (
-            <MembersSection title="Altdaten importieren">
+            <MembersSection title={t('Altdaten importieren')}>
               <ImportPage />
             </MembersSection>
           ) : (
@@ -151,17 +152,22 @@ function SetupArea() {
   return (
     <Routes>
       <Route index element={<Navigate to={tabs[0].to} replace />} />
-      {types && <Route path="mitgliedsarten" element={page('Einrichtung', <MemberTypesPage />)} />}
-      <Route path="ehrungen" element={page('Einrichtung', <HonoraryTitlesPage />)} />
+      {types && (
+        <Route path="mitgliedsarten" element={page(t('Einrichtung'), <MemberTypesPage />)} />
+      )}
+      <Route path="ehrungen" element={page(t('Einrichtung'), <HonoraryTitlesPage />)} />
       {/* frühere Adresse (Lesezeichen) */}
       <Route
         path="ehrentitel"
         element={<Navigate to="/mitglieder/einrichtung/ehrungen" replace />}
       />
-      <Route path="zusatzfelder" element={page('Einrichtung', <FieldsPage />)} />
-      <Route path="jubilaeen" element={page('Einrichtung', <MemberDurationSettings />)} />
+      <Route path="zusatzfelder" element={page(t('Einrichtung'), <FieldsPage />)} />
+      <Route path="jubilaeen" element={page(t('Einrichtung'), <MemberDurationSettings />)} />
       {club && (
-        <Route path="mitgliederbereich" element={page('Einrichtung', <MemberPortalSettings />)} />
+        <Route
+          path="mitgliederbereich"
+          element={page(t('Einrichtung'), <MemberPortalSettings />)}
+        />
       )}
       <Route path="*" element={<Navigate to={tabs[0].to} replace />} />
     </Routes>

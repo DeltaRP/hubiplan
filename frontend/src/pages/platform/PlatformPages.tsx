@@ -14,6 +14,7 @@ import { ExportSection, ImportSection } from '../../components/DataTransfer.tsx'
 import { LabelFields } from '../../components/LabelFields.tsx'
 import { buildTerms } from '../../org/terms.ts'
 import { Why } from '../../learning/Aids.tsx'
+import { t, tn } from '../../i18n/index.ts'
 
 // Vorschlag für die Bezeichnung neuer Einheiten, je nachdem, ob sie eigene Mitglieder
 // führen (wie im Backend). Jede Einheit kann ihre Bezeichnung frei ändern.
@@ -31,15 +32,19 @@ function suggestedLabels(keeps: boolean) {
   return DEFAULT_LABELS[keeps ? 'members' : 'without']
 }
 
-const ACCESS_LABELS = { none: 'kein Zugriff', read: 'nur lesen', write: 'lesen und ändern' }
+const ACCESS_LABELS = {
+  none: t('kein Zugriff'),
+  read: t('nur lesen'),
+  write: t('lesen und ändern'),
+}
 const MODULES = [
-  { id: 'members', label: 'Mitglieder' },
-  { id: 'finance', label: 'Kasse' },
-  { id: 'billing', label: 'Beiträge/Rechnungen' },
-  { id: 'events', label: 'Termine' },
-  { id: 'website', label: 'Webseite' },
-  { id: 'competitions', label: 'Wettbewerbe' },
-  { id: 'entries', label: 'Meldungen' },
+  { id: 'members', label: t('Mitglieder') },
+  { id: 'finance', label: t('Kasse') },
+  { id: 'billing', label: t('Beiträge/Rechnungen') },
+  { id: 'events', label: t('Termine') },
+  { id: 'website', label: t('Webseite') },
+  { id: 'competitions', label: t('Wettbewerbe') },
+  { id: 'entries', label: t('Meldungen') },
 ]
 
 export function PlatformLayout() {
@@ -49,14 +54,14 @@ export function PlatformLayout() {
   }
   return (
     <section>
-      <h1>Plattform</h1>
+      <h1>{t('Plattform')}</h1>
       <Tabs
         items={[
-          { to: '/plattform/organisationen', label: 'Einheiten' },
-          { to: '/plattform/einstellungen', label: 'Einstellungen' },
-          { to: '/plattform/impressum', label: 'Impressum' },
-          { to: '/plattform/postfach', label: 'Postfach' },
-          { to: '/plattform/datenuebernahme', label: 'Datenübernahme' },
+          { to: '/plattform/organisationen', label: t('Einheiten') },
+          { to: '/plattform/einstellungen', label: t('Einstellungen') },
+          { to: '/plattform/impressum', label: t('Impressum') },
+          { to: '/plattform/postfach', label: t('Postfach') },
+          { to: '/plattform/datenuebernahme', label: t('Datenübernahme') },
         ]}
       />
       <Outlet />
@@ -69,7 +74,7 @@ export function PlatformOrgsPage() {
   const [editing, setEditing] = useState<PlatformOrg | 'new' | null>(null)
 
   if (error) return <Alert kind="error">{error}</Alert>
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
 
   const federations = data.filter((o) => o.type === 'federation')
   const clubsOf = (fed: number | null) =>
@@ -94,25 +99,31 @@ export function PlatformOrgsPage() {
       <td className={indent ? 'indent' : ''}>
         <strong>{displayName(o)}</strong>
         <div className="small muted">
-          {o.short_name && `${o.name} · `}
+          {o.short_name && t('{name} · ', { name: o.name })}
           {o.type_label} · {o.postal_code} {o.city}
-          {!o.is_active && ' · deaktiviert'}
+          {!o.is_active && t(' · deaktiviert')}
         </div>
       </td>
       <td className="small">
-        <div>{o.keeps_members ? 'führt eigene Mitglieder' : 'ohne eigene Mitglieder'}</div>
+        <div>{o.keeps_members ? t('führt eigene Mitglieder') : t('ohne eigene Mitglieder')}</div>
         {o.type === 'federation' && (
-          <div>Mitgliedsdaten darunter: {ACCESS_LABELS[o.federation_member_access]}</div>
+          <div>
+            {t('Mitgliedsdaten darunter:')} {ACCESS_LABELS[o.federation_member_access]}
+          </div>
         )}
         <div className="muted">
           {o.enabled_modules.length
-            ? `Module: ${o.enabled_modules.map((m) => MODULES.find((x) => x.id === m)?.label ?? m).join(', ')}`
-            : 'keine Module'}
+            ? t('Module: {x}', {
+                x: o.enabled_modules
+                  .map((m) => MODULES.find((x) => x.id === m)?.label ?? m)
+                  .join(', '),
+              })
+            : t('keine Module')}
         </div>
       </td>
       <td className="actions">
         <button type="button" className="link-button" onClick={() => setEditing(o)}>
-          Bearbeiten
+          {t('Bearbeiten')}
         </button>
       </td>
     </tr>
@@ -122,14 +133,14 @@ export function PlatformOrgsPage() {
     <div className="card card-wide">
       <div className="button-row">
         <button type="button" className="button button-primary" onClick={() => setEditing('new')}>
-          Einheit anlegen
+          {t('Einheit anlegen')}
         </button>
       </div>
       <table className="table">
         <thead>
           <tr>
-            <th>Einheit</th>
-            <th>Freigaben</th>
+            <th>{t('Einheit')}</th>
+            <th>{t('Freigaben')}</th>
             <th />
           </tr>
         </thead>
@@ -223,15 +234,24 @@ function PlatformOrgForm({
   async function addBoard(ev: FormEvent) {
     ev.preventDefault()
     if (!org) return
-    const res = await form.submit(() => platformApi.addBoard(org.id, board), 'Vorstand zugeordnet.')
+    const res = await form.submit(
+      () => platformApi.addBoard(org.id, board),
+      t('Vorstand zugeordnet.'),
+    )
     if (res) {
       const r = res as { email: string; invited: boolean; new_account: boolean }
       setBoardResult(
         !r.new_account
-          ? `${r.email} hat jetzt die Rolle „Vorstand“.`
+          ? t('{email} hat jetzt die Rolle „Vorstand“.', { email: r.email })
           : r.invited
-            ? `Neues Konto ${r.email} angelegt; die Einladung zum Festlegen des Passworts ist per E-Mail unterwegs (gilt 7 Tage).`
-            : `Neues Konto ${r.email} angelegt, aber die Einladung konnte nicht verschickt werden. Die Person kann auf der Anmeldeseite „Passwort vergessen“ wählen.`,
+            ? t(
+                'Neues Konto {email} angelegt; die Einladung zum Festlegen des Passworts ist per E-Mail unterwegs (gilt 7 Tage).',
+                { email: r.email },
+              )
+            : t(
+                'Neues Konto {email} angelegt, aber die Einladung konnte nicht verschickt werden. Die Person kann auf der Anmeldeseite „Passwort vergessen“ wählen.',
+                { email: r.email },
+              ),
       )
       setBoard('')
     }
@@ -240,10 +260,14 @@ function PlatformOrgForm({
   return (
     <div className="stack">
       <form className="card card-wide" onSubmit={save}>
-        <h2>{org ? `${tm.Sg} bearbeiten` : `${tm.Sg} anlegen`}</h2>
+        <h2>
+          {org
+            ? t('{Sg} bearbeiten', { Sg: tm.Sg, sg: tm.sg })
+            : t('{Sg} anlegen', { Sg: tm.Sg, sg: tm.sg })}
+        </h2>
         {(!org || org.keeps_members) && (
           <SelectField
-            label="Übergeordnete Einheit"
+            label={t('Übergeordnete Einheit')}
             value={v.federation ?? ''}
             error={e.federation}
             onChange={(ev) => {
@@ -252,7 +276,7 @@ function PlatformOrgForm({
               if (parent !== null && !v.keeps_members) setKeeps(true)
             }}
           >
-            <option value="">– keine (direkt unter der Plattform) –</option>
+            <option value="">{t('– keine (direkt unter der Plattform) –')}</option>
             {parents
               .filter((p) => p.id !== org?.id)
               .map((p) => (
@@ -263,7 +287,7 @@ function PlatformOrgForm({
           </SelectField>
         )}
         <Checkbox
-          label="Führt eigene Mitglieder (Mitgliederliste, Mitgliedsarten, Ein- und Austritt)"
+          label={t('Führt eigene Mitglieder (Mitgliederliste, Mitgliedsarten, Ein- und Austritt)')}
           checked={underParent || v.keeps_members}
           disabled={!switchable}
           onChange={setKeeps}
@@ -271,29 +295,33 @@ function PlatformOrgForm({
         {e.keeps_members && <Alert kind="error">{e.keeps_members}</Alert>}
         <p className="small muted">
           {underParent
-            ? 'Unter einer übergeordneten Einheit führen Einheiten immer eigene Mitglieder.'
+            ? t('Unter einer übergeordneten Einheit führen Einheiten immer eigene Mitglieder.')
             : org && !switchable
-              ? 'Lässt sich nur ändern, solange die Einheit keine eigenen Mitglieder und keine Untereinheiten hat.'
-              : 'Ohne eigene Mitglieder fasst die Einheit andere Einheiten zusammen, die Mitglieder führen. Umschalten geht, solange die Einheit leer ist.'}
+              ? t(
+                  'Lässt sich nur ändern, solange die Einheit keine eigenen Mitglieder und keine Untereinheiten hat.',
+                )
+              : t(
+                  'Ohne eigene Mitglieder fasst die Einheit andere Einheiten zusammen, die Mitglieder führen. Umschalten geht, solange die Einheit leer ist.',
+                )}
         </p>
         <div className="grid-2">
           <Field
-            label="Vollständiger Name"
+            label={t('Vollständiger Name')}
             required
             value={v.name}
             error={e.name}
             onChange={(ev) => form.set('name', ev.target.value)}
           />
           <Field
-            label="Kurzname (optional)"
+            label={t('Kurzname (optional)')}
             maxLength={50}
             value={v.short_name}
             error={e.short_name}
-            hint="Für Navigation, Listen und Auswahlfelder"
+            hint={t('Für Navigation, Listen und Auswahlfelder')}
             onChange={(ev) => form.set('short_name', ev.target.value)}
           />
           <Field
-            label="Gründungsjahr"
+            label={t('Gründungsjahr')}
             type="number"
             required
             value={v.founding_year}
@@ -301,7 +329,7 @@ function PlatformOrgForm({
             onChange={(ev) => form.set('founding_year', ev.target.value)}
           />
         </div>
-        <h3>Bezeichnung</h3>
+        <h3>{t('Bezeichnung')}</h3>
         <LabelFields
           value={{
             label: v.label,
@@ -323,7 +351,7 @@ function PlatformOrgForm({
           }}
         />
         <Field
-          label="Straße und Hausnummer"
+          label={t('Straße und Hausnummer')}
           required
           value={v.street}
           error={e.street}
@@ -338,14 +366,14 @@ function PlatformOrgForm({
             onChange={(ev) => form.set('postal_code', ev.target.value)}
           />
           <Field
-            label="Ort"
+            label={t('Ort')}
             required
             value={v.city}
             error={e.city}
             onChange={(ev) => form.set('city', ev.target.value)}
           />
           <Field
-            label="Land"
+            label={t('Land')}
             value={v.country}
             error={e.country}
             onChange={(ev) => form.set('country', ev.target.value)}
@@ -353,20 +381,20 @@ function PlatformOrgForm({
         </div>
         <div className="grid-3">
           <Field
-            label="E-Mail"
+            label={t('E-Mail')}
             type="email"
             value={v.contact_email}
             error={e.contact_email}
             onChange={(ev) => form.set('contact_email', ev.target.value)}
           />
           <Field
-            label="Telefon"
+            label={t('Telefon')}
             value={v.contact_phone}
             error={e.contact_phone}
             onChange={(ev) => form.set('contact_phone', ev.target.value)}
           />
           <Field
-            label="Website"
+            label={t('Website')}
             type="url"
             value={v.website}
             error={e.website}
@@ -376,9 +404,11 @@ function PlatformOrgForm({
 
         {groupsUnits && (
           <>
-            <h3>Freigaben für {tm.diese}</h3>
+            <h3>
+              {t('Freigaben für')} {tm.diese}
+            </h3>
             <SelectField
-              label="Zugriff auf Mitgliedsdaten der Untereinheiten"
+              label={t('Zugriff auf Mitgliedsdaten der Untereinheiten')}
               value={v.federation_member_access}
               error={e.federation_member_access}
               onChange={(ev) =>
@@ -395,14 +425,16 @@ function PlatformOrgForm({
               ))}
             </SelectField>
             <Checkbox
-              label="Frühere Mitgliedschaften (Einheit, Eintritt, Austritt) für die Untereinheiten sichtbar"
+              label={t(
+                'Frühere Mitgliedschaften (Einheit, Eintritt, Austritt) für die Untereinheiten sichtbar',
+              )}
               checked={v.federation_show_former_memberships}
               onChange={(val) => form.set('federation_show_former_memberships', val)}
             />
           </>
         )}
 
-        <h3>Module</h3>
+        <h3>{t('Module')}</h3>
         {MODULES.map((m) => (
           <Checkbox
             key={m.id}
@@ -418,7 +450,7 @@ function PlatformOrgForm({
         ))}
         {org && (
           <Checkbox
-            label={`${tm.Sg} ist aktiv`}
+            label={t('{Sg} ist aktiv', { Sg: tm.Sg })}
             checked={v.is_active}
             onChange={(val) => form.set('is_active', val)}
           />
@@ -427,23 +459,25 @@ function PlatformOrgForm({
         {form.message && <Alert kind={form.message.kind}>{form.message.text}</Alert>}
         <div className="button-row">
           <button type="submit" className="button button-primary" disabled={form.busy}>
-            Speichern
+            {t('Speichern')}
           </button>
           <button type="button" className="button button-ghost" onClick={onCancel}>
-            Zurück
+            {t('Zurück')}
           </button>
         </div>
       </form>
 
       {org && (
         <form className="card card-wide" onSubmit={addBoard}>
-          <h2>Vorstand festlegen</h2>
+          <h2>{t('Vorstand festlegen')}</h2>
           <p className="muted small">
-            Die Person bekommt die Rolle „Vorstand“ mit allen Rechten in {tm.diesem} und kann danach
-            selbst Rollen und Benutzer verwalten.
+            {t(
+              'Die Person bekommt die Rolle „Vorstand“ mit allen Rechten in {diesem} und kann danach selbst Rollen und Benutzer verwalten.',
+              { diesem: tm.diesem },
+            )}
           </p>
           <Field
-            label="E-Mail-Adresse"
+            label={t('E-Mail-Adresse')}
             type="email"
             required
             value={board}
@@ -451,7 +485,7 @@ function PlatformOrgForm({
           />
           {boardResult && <Alert kind="info">{boardResult}</Alert>}
           <button type="submit" className="button button-primary">
-            Zuordnen
+            {t('Zuordnen')}
           </button>
         </form>
       )}
@@ -462,7 +496,7 @@ function PlatformOrgForm({
 export function PlatformSettingsPage() {
   const { data, error, setData } = useLoad(() => platformApi.settings(), [])
   if (error) return <Alert kind="error">{error}</Alert>
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
   return <SettingsForm settings={data} onSaved={setData} />
 }
 
@@ -481,41 +515,43 @@ function SettingsForm({
   }
   return (
     <form className="card card-wide" onSubmit={save}>
-      <h2>Einstellungen der Plattform</h2>
+      <h2>{t('Einstellungen der Plattform')}</h2>
       <SelectField
-        label="Personendaten bei Mitgliedschaft in mehreren Einheiten"
+        label={t('Personendaten bei Mitgliedschaft in mehreren Einheiten')}
         value={form.values.person_data_mode}
         error={form.errors.person_data_mode}
         onChange={(e) =>
           form.set('person_data_mode', e.target.value as PlatformSettings['person_data_mode'])
         }
       >
-        <option value="shared">gemeinsam gepflegt (eine Änderung gilt für alle Einheiten)</option>
-        <option value="per_club">eigene Kopie je Einheit</option>
+        <option value="shared">
+          {t('gemeinsam gepflegt (eine Änderung gilt für alle Einheiten)')}
+        </option>
+        <option value="per_club">{t('eigene Kopie je Einheit')}</option>
       </SelectField>
       <Why k="person_data_mode" />
       <Field
-        label="Löschfrist nach Austritt (Monate)"
+        label={t('Löschfrist nach Austritt (Monate)')}
         type="number"
         min={1}
         max={600}
         value={form.values.deletion_period_months}
         error={form.errors.deletion_period_months}
-        hint="Danach bleibt nur ein Minimum: Name, Geburtsdatum, Verbandsnummer und Zeiträume."
+        hint={t('Danach bleibt nur ein Minimum: Name, Geburtsdatum, Verbandsnummer und Zeiträume.')}
         onChange={(e) => form.set('deletion_period_months', Number(e.target.value))}
       />
       <Why k="deletion_period" />
-      <h3>Verbund mit anderen HUBIplan-Instanzen</h3>
+      <h3>{t('Verbund mit anderen HUBIplan-Instanzen')}</h3>
       <Checkbox
-        label="Einheiten dürfen sich mit Einheiten auf anderen Instanzen koppeln"
+        label={t('Einheiten dürfen sich mit Einheiten auf anderen Instanzen koppeln')}
         checked={form.values.peering_enabled}
         onChange={(v) => form.set('peering_enabled', v)}
-        hint="Aus: alles bleibt wie bisher auf dieser Instanz."
+        hint={t('Aus: alles bleibt wie bisher auf dieser Instanz.')}
       />
       {form.values.peering_enabled && (
         <>
           <label className="field">
-            <span>Erlaubte Instanzen (eine Domain je Zeile, leer = alle)</span>
+            <span>{t('Erlaubte Instanzen (eine Domain je Zeile, leer = alle)')}</span>
             <textarea
               rows={3}
               value={form.values.peering_allowed_hosts}
@@ -524,27 +560,30 @@ function SettingsForm({
           </label>
           {!form.values.peering_allowed_hosts.trim() && (
             <Alert kind="info">
-              Die Liste ist leer: Jede HUBIplan-Instanz kann sich mit einem Kopplungscode koppeln.
-              Für den Echtbetrieb besser nur die Instanzen eintragen, mit denen ihr wirklich
-              zusammenarbeitet.
+              {t(
+                'Die Liste ist leer: Jede HUBIplan-Instanz kann sich mit einem Kopplungscode koppeln. Für den Echtbetrieb besser nur die Instanzen eintragen, mit denen ihr wirklich zusammenarbeitet.',
+              )}
             </Alert>
           )}
           <Checkbox
-            label="Anmelden mit dem Zugang einer gekoppelten Instanz erlauben"
+            label={t('Anmelden mit dem Zugang einer gekoppelten Instanz erlauben')}
             checked={form.values.peering_login}
             onChange={(v) => form.set('peering_login', v)}
-            hint="Nur nach eigener Verknüpfung unter Mein Konto; Rechte vergibt weiter diese Instanz. Plattformverwaltung meldet sich nie so an."
+            hint={t(
+              'Nur nach eigener Verknüpfung unter Mein Konto; Rechte vergibt weiter diese Instanz. Plattformverwaltung meldet sich nie so an.',
+            )}
           />
           <PeeringInstanceInfo />
         </>
       )}
       <p className="muted small">
-        Das Erscheinungsbild der Plattform (Standard für alle) stellst du unter Einstellungen →
-        Erscheinungsbild ein.
+        {t(
+          'Das Erscheinungsbild der Plattform (Standard für alle) stellst du unter Einstellungen → Erscheinungsbild ein.',
+        )}
       </p>
       {form.message && <Alert kind={form.message.kind}>{form.message.text}</Alert>}
       <button type="submit" className="button button-primary" disabled={form.busy}>
-        Speichern
+        {t('Speichern')}
       </button>
     </form>
   )
@@ -556,8 +595,9 @@ function PeeringInstanceInfo() {
   return (
     <>
       <p className="muted small">
-        Diese Instanz: {data.instance.base_url} · Fingerabdruck{' '}
-        <code>{data.instance.fingerprint}</code> · {data.couplings.length} Kopplung(en)
+        {t('Diese Instanz: {base_url} · Fingerabdruck', { base_url: data.instance.base_url })}{' '}
+        <code>{data.instance.fingerprint}</code>{' '}
+        {tn('· {n} Kopplung', '· {n} Kopplungen', data.couplings.length)}
       </p>
       {(data.pending_keys ?? []).map((p) => (
         <PeerKeysConfirm key={p.id} pending={p} onChange={reload} />
@@ -595,17 +635,19 @@ function PeerKeysConfirm({
   return (
     <div className="move-confirm">
       <Alert kind="error">
-        {pending.base_url} meldet einen Notfallwechsel der Schlüssel: Die alten wurden dort
-        vermutlich gestohlen. Bis zur Bestätigung ruht der Austausch mit dieser Instanz
+        {pending.base_url}{' '}
+        {t(
+          'meldet einen Notfallwechsel der Schlüssel: Die alten wurden dort vermutlich gestohlen. Bis zur Bestätigung ruht der Austausch mit dieser Instanz',
+        )}
         {pending.units.length > 0 && ` (betrifft: ${pending.units.join(', ')})`}.
       </Alert>
       <p>
-        Neuer Fingerabdruck: <code>{pending.fingerprint}</code>. Lass ihn dir von der anderen Seite
-        auf anderem Weg (Telefon) nennen und gib ihn hier ein. Wenn dort niemand von einem Notfall
-        weiß: ablehnen. Die betroffenen Einheiten bekommen danach eine Mitteilung.
+        {t('Neuer Fingerabdruck:')} <code>{pending.fingerprint}</code>. Lass ihn dir von der anderen
+        Seite auf anderem Weg (Telefon) nennen und gib ihn hier ein. Wenn dort niemand von einem
+        Notfall weiß: ablehnen. Die betroffenen Einheiten bekommen danach eine Mitteilung.
       </p>
       <Field
-        label="Fingerabdruck von der anderen Seite"
+        label={t('Fingerabdruck von der anderen Seite')}
         value={fingerprint}
         autoComplete="off"
         spellCheck={false}
@@ -619,7 +661,7 @@ function PeerKeysConfirm({
           disabled={busy || !fingerprint.trim()}
           onClick={() => void run('confirm')}
         >
-          Neue Schlüssel bestätigen
+          {t('Neue Schlüssel bestätigen')}
         </button>
         <button
           type="button"
@@ -627,7 +669,7 @@ function PeerKeysConfirm({
           disabled={busy}
           onClick={() => void run('decline')}
         >
-          Ablehnen
+          {t('Ablehnen')}
         </button>
       </div>
     </div>
@@ -661,35 +703,43 @@ export function InstanceKeysBox({ keys, onChange }: { keys: InstanceKeys; onChan
 
   return (
     <div className="keys-box">
-      <h4>Schlüssel der Instanz</h4>
+      <h4>{t('Schlüssel der Instanz')}</h4>
       <p className="muted small">
-        Zuletzt gewechselt: {formatDate(keys.rotated_at ?? keys.created)}
+        {t('Zuletzt gewechselt:')} {formatDate(keys.rotated_at ?? keys.created)}
         {keys.next_rotation &&
-          ` · nächster automatischer Wechsel: ${formatDate(keys.next_rotation)}`}
+          t(' · nächster automatischer Wechsel: {x}', { x: formatDate(keys.next_rotation) })}
         {keys.previous_until &&
           !keys.emergency &&
-          ` · alter Schlüssel gilt noch bis ${formatDate(keys.previous_until)}`}
+          t(' · alter Schlüssel gilt noch bis {x}', { x: formatDate(keys.previous_until) })}
       </p>
       {keys.emergency && keys.previous_until && (
         <Alert kind="info">
-          Notfallwechsel: Die Plattformverwaltung jeder Partner-Instanz muss den neuen Fingerabdruck{' '}
-          <code>{keys.fingerprint}</code> bestätigen. Teile ihn ihr auf anderem Weg (Telefon) mit.
+          {t(
+            'Notfallwechsel: Die Plattformverwaltung jeder Partner-Instanz muss den neuen Fingerabdruck',
+          )}{' '}
+          <code>{keys.fingerprint}</code>{' '}
+          {t('bestätigen. Teile ihn ihr auf anderem Weg (Telefon) mit.')}
         </Alert>
       )}
       {unaware.length > 0 && (
         <p className="muted small">
-          Kennen den aktuellen Schlüssel noch nicht: {unaware.map((p) => p.base_url).join(', ')}
+          {t('Kennen den aktuellen Schlüssel noch nicht:')}{' '}
+          {unaware.map((p) => p.base_url).join(', ')}
         </p>
       )}
       {mode ? (
         <div className="keys-confirm">
           <p>
             {mode === 'emergency'
-              ? 'Notfallwechsel, wenn der Server vermutlich gehackt wurde: Der alte Schlüssel gilt sofort nicht mehr, und jeder Partner muss den neuen Fingerabdruck bestätigen. Bis dahin ruht der Austausch.'
-              : 'Geplanter Wechsel: Die Partner übernehmen den neuen Schlüssel automatisch, der alte gilt noch 30 Tage.'}{' '}
-            Zum Bestätigen <strong>{needed}</strong> eintippen.
+              ? t(
+                  'Notfallwechsel, wenn der Server vermutlich gehackt wurde: Der alte Schlüssel gilt sofort nicht mehr, und jeder Partner muss den neuen Fingerabdruck bestätigen. Bis dahin ruht der Austausch.',
+                )
+              : t(
+                  'Geplanter Wechsel: Die Partner übernehmen den neuen Schlüssel automatisch, der alte gilt noch 30 Tage.',
+                )}{' '}
+            {t('Zum Bestätigen')} <strong>{needed}</strong> eintippen.
           </p>
-          <Field label="Bestätigung" value={word} onChange={(e) => setWord(e.target.value)} />
+          <Field label={t('Bestätigung')} value={word} onChange={(e) => setWord(e.target.value)} />
           {err && <Alert kind="error">{err}</Alert>}
           <div className="button-row">
             <button
@@ -698,24 +748,24 @@ export function InstanceKeysBox({ keys, onChange }: { keys: InstanceKeys; onChan
               disabled={busy || word.trim().toUpperCase() !== needed}
               onClick={() => void rotate()}
             >
-              {mode === 'emergency' ? 'Notfallwechsel ausführen' : 'Schlüssel wechseln'}
+              {mode === 'emergency' ? t('Notfallwechsel ausführen') : t('Schlüssel wechseln')}
             </button>
             <button type="button" className="button" onClick={() => setMode(null)}>
-              Abbrechen
+              {t('Abbrechen')}
             </button>
           </div>
         </div>
       ) : (
         <div className="button-row">
           <button type="button" className="button" onClick={() => setMode('planned')}>
-            Schlüssel wechseln
+            {t('Schlüssel wechseln')}
           </button>
           <button
             type="button"
             className="button button-danger"
             onClick={() => setMode('emergency')}
           >
-            Notfallwechsel …
+            {t('Notfallwechsel …')}
           </button>
         </div>
       )}
@@ -727,10 +777,11 @@ export function InstanceKeysBox({ keys, onChange }: { keys: InstanceKeys; onChan
 export function PlatformMailPage() {
   return (
     <div className="card card-wide">
-      <h2>Postfach</h2>
+      <h2>{t('Postfach')}</h2>
       <p className="muted small">
-        Alle Mails der Plattform. Solange kein Mailserver hinterlegt ist, werden Mails nur hier
-        gesammelt und nicht zugestellt.
+        {t(
+          'Alle Mails der Plattform. Solange kein Mailserver hinterlegt ist, werden Mails nur hier gesammelt und nicht zugestellt.',
+        )}
       </p>
       <OutboxBrowser
         load={portalApi.platformOutbox}
@@ -748,7 +799,7 @@ export function PlatformTransferPage() {
     <>
       {error && (
         <LoadError
-          message={`Die Einheiten zur Auswahl konnten nicht geladen werden: ${error}`}
+          message={t('Die Einheiten zur Auswahl konnten nicht geladen werden: {error}', { error })}
           onRetry={() => void reload()}
         />
       )}

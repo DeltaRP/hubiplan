@@ -14,6 +14,7 @@ import { errorMessage, useLoad } from '../components/forms.ts'
 import { useImageCrop } from '../components/ImageCrop.tsx'
 import { Alert, Checkbox, Field, SelectField } from '../components/ui.tsx'
 import { LetterPreview } from './settings/LetterheadSettingsPage.tsx'
+import { t } from '../i18n/index.ts'
 
 const PRIVATE: ContactKey[] = ['own_email', 'own_phone', 'own_address']
 
@@ -38,27 +39,29 @@ export function LetterheadNotices({
         <Alert kind="info" key={`${n.kind}-${n.context}-${n.unit.id}`}>
           {n.kind === 'outdated' ? (
             <>
-              Deine Briefvorlage für {n.unit.name} ist veraltet: {n.changes.join(', ')}{' '}
-              geändert.{' '}
+              {t('Deine Briefvorlage für {name} ist veraltet:', { name: n.unit.name })}{' '}
+              {n.changes.join(', ')} {t('geändert.')}{' '}
             </>
           ) : (
             <>
-              Für deine Funktion „{n.function}“ in {n.unit.name} kannst du dir eine Briefvorlage
-              erstellen.{' '}
+              {t(
+                'Für deine Funktion „{function}“ in {name} kannst du dir eine Briefvorlage erstellen.',
+                { function: n.function, name: n.unit.name },
+              )}{' '}
             </>
           )}
           {onPick ? (
             <button type="button" className="link-button" onClick={() => onPick(n)}>
-              {n.kind === 'outdated' ? 'Neu erstellen' : 'Jetzt erstellen'}
+              {n.kind === 'outdated' ? t('Neu erstellen') : t('Jetzt erstellen')}
             </button>
           ) : (
             <Link to={`/briefvorlage?fuer=${encodeURIComponent(optionKey(n.context, n.unit.id))}`}>
-              {n.kind === 'outdated' ? 'Neu erstellen' : 'Jetzt erstellen'}
+              {n.kind === 'outdated' ? t('Neu erstellen') : t('Jetzt erstellen')}
             </Link>
           )}{' '}
           ·{' '}
           <button type="button" className="link-button" onClick={() => onDismiss(n)}>
-            Später
+            {t('Später')}
           </button>
         </Alert>
       ))}
@@ -122,15 +125,16 @@ export function LetterheadPage() {
   const [params] = useSearchParams()
   const { data, error, reload } = useLoad(() => letterheadApi.mine(), [])
   if (error) return <Alert kind="error">{error}</Alert>
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
   return (
     <section>
-      <h1>Briefvorlage erstellen</h1>
+      <h1>{t('Briefvorlage erstellen')}</h1>
       {data.contexts.length === 0 ? (
         <div className="card card-wide">
           <p>
-            Briefvorlagen erstellen Vorstandsmitglieder und Inhaber einer Rolle in einer
-            Untereinheit. Du hast gerade keine solche Funktion.
+            {t(
+              'Briefvorlagen erstellen Vorstandsmitglieder und Inhaber einer Rolle in einer Untereinheit. Du hast gerade keine solche Funktion.',
+            )}
           </p>
         </div>
       ) : (
@@ -162,7 +166,7 @@ function LetterheadForm({
   // Dateiauswahl der Unterschrift beim Wechsel der Vorlage leeren (UI-Audit H-NAF-01)
   const [fileKey, setFileKey] = useState(0)
   const [signatureReset, setSignatureReset] = useState(false)
-  const crop = useImageCrop({ title: 'Ausschnitt der Unterschrift', maxSide: 1200 })
+  const crop = useImageCrop({ title: t('Ausschnitt der Unterschrift'), maxSide: 1200 })
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<{ kind: 'info' | 'error'; text: string } | null>(null)
   const ctx = data.contexts.find((c) => c.key === req.context) ?? data.contexts[0]
@@ -201,7 +205,9 @@ function LetterheadForm({
       saveBlob(blob, letterFileName(unit.name, req.format))
       setMessage({
         kind: 'info',
-        text: 'Die Vorlage ist heruntergeladen. Ändern sich später Daten der Einheit, weist HUBIplan dich darauf hin.',
+        text: t(
+          'Die Vorlage ist heruntergeladen. Ändern sich später Daten der Einheit, weist HUBIplan dich darauf hin.',
+        ),
       })
       reload()
     } catch (err) {
@@ -220,13 +226,13 @@ function LetterheadForm({
       />
       <form className="card card-wide" onSubmit={(e) => e.preventDefault()}>
         <p className="muted small">
-          Briefkopf, Fußzeile, Farben und Schrift kommen aus dem Briefbogen der Einheit. Du wählst
-          hier nur deine Funktion und wie man dich erreicht. Die erzeugte Datei speichert HUBIplan
-          nicht.
+          {t(
+            'Briefkopf, Fußzeile, Farben und Schrift kommen aus dem Briefbogen der Einheit. Du wählst hier nur deine Funktion und wie man dich erreicht. Die erzeugte Datei speichert HUBIplan nicht.',
+          )}
         </p>
         <div className="grid-2">
           <SelectField
-            label="Schreiben für"
+            label={t('Schreiben für')}
             value={optionKey(req.context, req.unit)}
             onChange={(e) => pick(e.target.value)}
           >
@@ -241,7 +247,7 @@ function LetterheadForm({
             ))}
           </SelectField>
           <SelectField
-            label="Deine Funktion"
+            label={t('Deine Funktion')}
             value={req.function}
             onChange={(e) => set('function', e.target.value)}
           >
@@ -252,73 +258,76 @@ function LetterheadForm({
             ))}
           </SelectField>
           <Field
-            label="Funktion, wie sie im Brief steht (optional)"
+            label={t('Funktion, wie sie im Brief steht (optional)')}
             value={req.function_text}
             placeholder={fn.name}
             maxLength={150}
             onChange={(e) => set('function_text', e.target.value)}
           />
           <Field
-            label="Titel (optional)"
+            label={t('Titel (optional)')}
             value={req.title}
-            placeholder="z. B. Dr."
+            placeholder={t('z. B. Dr.')}
             maxLength={30}
-            hint={`Im Brief: ${req.title ? `${req.title} ` : ''}${ctx.name}`}
+            hint={t('Im Brief: {x}{name}', { x: req.title ? `${req.title} ` : '', name: ctx.name })}
             onChange={(e) => set('title', e.target.value)}
           />
         </div>
         <fieldset>
-          <legend>So erreicht man dich (im Informationsblock)</legend>
+          <legend>{t('So erreicht man dich (im Informationsblock)')}</legend>
           <Checkbox
-            label={`Kontakt der Einheit${
+            label={
               unit.contact.phone || unit.contact.email
-                ? `: ${[unit.contact.phone, unit.contact.email].filter(Boolean).join(' · ')}`
-                : ' (nicht hinterlegt)'
-            }`}
+                ? t('Kontakt der Einheit: {x}', {
+                    x: [unit.contact.phone, unit.contact.email].filter(Boolean).join(' · '),
+                  })
+                : t('Kontakt der Einheit (nicht hinterlegt)')
+            }
             checked={has('unit')}
             onChange={(on) => toggle('unit', on)}
           />
           {fn.contact_email && (
             <Checkbox
-              label={`Funktionsadresse: ${fn.contact_email}`}
+              label={t('Funktionsadresse: {contact_email}', { contact_email: fn.contact_email })}
               checked={has('role')}
               onChange={(on) => toggle('role', on)}
             />
           )}
           <Checkbox
-            label={`Meine E-Mail-Adresse: ${ctx.own.email}`}
+            label={t('Meine E-Mail-Adresse: {email}', { email: ctx.own.email })}
             checked={has('own_email')}
             onChange={(on) => toggle('own_email', on)}
           />
           {ctx.own.phone && (
             <Checkbox
-              label={`Meine Telefonnummer: ${ctx.own.phone}`}
+              label={t('Meine Telefonnummer: {phone}', { phone: ctx.own.phone })}
               checked={has('own_phone')}
               onChange={(on) => toggle('own_phone', on)}
             />
           )}
           {ctx.own.address.length > 0 && (
             <Checkbox
-              label={`Meine Anschrift als „Antwort an“: ${ctx.own.address.join(', ')}`}
+              label={t('Meine Anschrift als „Antwort an“: {x}', { x: ctx.own.address.join(', ') })}
               checked={has('own_address')}
               onChange={(on) => toggle('own_address', on)}
             />
           )}
           {privateChosen && (
             <p className="muted small">
-              Deine privaten Angaben stehen dann in jedem Brief aus dieser Vorlage. Das entscheidest
-              nur du; für andere Vorstände ändert sich nichts.
+              {t(
+                'Deine privaten Angaben stehen dann in jedem Brief aus dieser Vorlage. Das entscheidest nur du; für andere Vorstände ändert sich nichts.',
+              )}
             </p>
           )}
         </fieldset>
         <div className="grid-2">
           <Checkbox
-            label="mit Logo/Wappen"
+            label={t('mit Logo/Wappen')}
             checked={req.with_logo}
             onChange={(on) => set('with_logo', on)}
           />
           <label className="field">
-            <span>Unterschrift als Bild (optional, PNG oder JPEG)</span>
+            <span>{t('Unterschrift als Bild (optional, PNG oder JPEG)')}</span>
             <input
               key={fileKey}
               type="file"
@@ -331,18 +340,22 @@ function LetterheadForm({
             {crop.dialog}
             {signatureReset && (
               <small className="field-error">
-                Unterschrift bitte für diese Vorlage erneut auswählen.
+                {t('Unterschrift bitte für diese Vorlage erneut auswählen.')}
               </small>
             )}
-            <small className="muted">Wird nur in diese Datei geschrieben, nicht gespeichert.</small>
+            <small className="muted">
+              {t('Wird nur in diese Datei geschrieben, nicht gespeichert.')}
+            </small>
           </label>
           <SelectField
-            label="Dateiformat"
+            label={t('Dateiformat')}
             value={req.format}
             onChange={(e) => set('format', e.target.value as FileFormat)}
           >
-            <option value="dotx">Word-Vorlage (.dotx): öffnet jedes Mal ein neues Dokument</option>
-            <option value="docx">Word-Dokument (.docx): z. B. für Word im Browser</option>
+            <option value="dotx">
+              {t('Word-Vorlage (.dotx): öffnet jedes Mal ein neues Dokument')}
+            </option>
+            <option value="docx">{t('Word-Dokument (.docx): z. B. für Word im Browser')}</option>
           </SelectField>
         </div>
         <div className="button-row">
@@ -352,7 +365,7 @@ function LetterheadForm({
             disabled={busy}
             onClick={() => void download()}
           >
-            Herunterladen
+            {t('Herunterladen')}
           </button>
           <button
             type="button"
@@ -362,7 +375,7 @@ function LetterheadForm({
               setPreview((n) => n + 1)
             }}
           >
-            {preview ? 'Vorschau aktualisieren' : 'Vorschau anzeigen'}
+            {preview ? t('Vorschau aktualisieren') : t('Vorschau anzeigen')}
           </button>
         </div>
         {message && <Alert kind={message.kind}>{message.text}</Alert>}
@@ -370,8 +383,10 @@ function LetterheadForm({
           <>
             <p className="small" role="status">
               {shown === req
-                ? 'Vorschau aktuell.'
-                : 'Vorschau veraltet: Du hast seitdem etwas geändert. Bitte „Vorschau aktualisieren“.'}
+                ? t('Vorschau aktuell.')
+                : t(
+                    'Vorschau veraltet: Du hast seitdem etwas geändert. Bitte „Vorschau aktualisieren“.',
+                  )}
             </p>
             <LetterPreview load={() => letterheadApi.myPreview(shown)} version={previewKey} />
           </>
