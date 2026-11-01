@@ -12,6 +12,7 @@ import secrets
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
 
@@ -19,6 +20,11 @@ from core.privatefiles import PrivateFileField
 from exchange.models import private_storage
 
 from .models import Website
+
+# Bilderkarussell: Sekunden bis zum nächsten Bild
+GALLERY_INTERVAL = 7
+MIN_INTERVAL = 3
+MAX_INTERVAL = 30
 
 MAX_TITLE = 120
 MAX_BODY = 50_000
@@ -79,6 +85,14 @@ class WebsiteText(models.Model):
     )
     # Bilderkarussell der Begrüßung: IDs der Bilder in ihrer Reihenfolge
     gallery = models.JSONField("Bilderkarussell", default=list, blank=True)
+    # Sekunden bis zum nächsten Bild, je Karussell einstellbar (Ralf 01.11.)
+    gallery_interval = models.PositiveSmallIntegerField(
+        "Wechsel nach (Sekunden)",
+        default=GALLERY_INTERVAL,
+        validators=[MinValueValidator(MIN_INTERVAL), MaxValueValidator(MAX_INTERVAL)],
+    )
+    # Beginnt mit einem zufälligen Bild statt mit dem ersten der Liste
+    gallery_random = models.BooleanField("zufälliges Startbild", default=False)
     # Veröffentlicht
     published_title = models.CharField(max_length=MAX_TITLE, blank=True)
     published_body = models.TextField(blank=True)
@@ -86,6 +100,8 @@ class WebsiteText(models.Model):
         "website.WebsiteImage", on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
     )
     published_gallery = models.JSONField(default=list, blank=True)
+    published_gallery_interval = models.PositiveSmallIntegerField(default=GALLERY_INTERVAL)
+    published_gallery_random = models.BooleanField(default=False)
     published_at = models.DateTimeField("veröffentlicht am", null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(
@@ -141,6 +157,8 @@ class WebsiteText(models.Model):
             or self.body != self.published_body
             or self.image_id != self.published_image_id
             or (self.gallery or []) != (self.published_gallery or [])
+            or self.gallery_interval != self.published_gallery_interval
+            or self.gallery_random != self.published_gallery_random
         )
 
     def clean(self):
@@ -170,6 +188,8 @@ class WebsiteRevision(models.Model):
         "website.WebsiteImage", on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
     )
     gallery = models.JSONField(default=list, blank=True)
+    gallery_interval = models.PositiveSmallIntegerField(default=GALLERY_INTERVAL)
+    gallery_random = models.BooleanField(default=False)
     published_at = models.DateTimeField(default=timezone.now)
     published_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"

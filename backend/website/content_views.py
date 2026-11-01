@@ -87,6 +87,8 @@ def text_data(org_id: int, t: WebsiteText, full: bool = False) -> dict:
                 "image": t.image_id,
                 "image_data": image_data(org_id, t.image),
                 "gallery": list(t.gallery or []),
+                "gallery_interval": t.gallery_interval,
+                "gallery_random": t.gallery_random,
                 "published_title": t.published_title,
                 "published_body": t.published_body,
                 "revisions": [
@@ -121,6 +123,8 @@ class TextSerializer(ModelCleanMixin, serializers.ModelSerializer):
             "body",
             "image",
             "gallery",
+            "gallery_interval",
+            "gallery_random",
         ]
         extra_kwargs = {"kind": {"required": False}}
 

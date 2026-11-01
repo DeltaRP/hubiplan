@@ -338,6 +338,8 @@ describe('Inhalte der Webseite', () => {
     image: null,
     image_data: null,
     gallery: [],
+    gallery_interval: 7,
+    gallery_random: false,
     published_title: '',
     published_body: '',
     revisions: [],
@@ -672,6 +674,50 @@ describe('Inhalte der Webseite', () => {
       () => {
         const put = calls.filter((c) => c.key === `PUT ${base}texts/6/`).at(-1)
         expect(put && JSON.parse(String(put.init?.body))).toEqual({ gallery: [2, 1] })
+      },
+      { timeout: 3000 },
+    )
+  })
+
+  it('stellt Wechselzeit und Startbild je Karussell ein', async () => {
+    const greeting = text({
+      id: 6,
+      kind: 'greeting',
+      title: 'Willkommen',
+      slug: '',
+      gallery: [1, 2],
+    })
+    const calls = renderApp(
+      {
+        [`GET ${base}`]: () => ({ status: 200, body: data(website()) }),
+        [`GET ${base}texts/`]: () => ({ status: 200, body: { texts: [greeting], units: [] } }),
+        [`GET ${base}texts/6/`]: () => ({ status: 200, body: greeting }),
+        [`GET ${base}images/`]: () => ({ status: 200, body: [img(1, 'Fahne'), img(2, 'Zelt')] }),
+        [`PUT ${base}texts/6/`]: () => ({
+          status: 200,
+          body: { ...greeting, gallery_interval: 12 },
+        }),
+      },
+      '/webseite/inhalte',
+    )
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: 'Willkommen' }))
+    const field = await screen.findByLabelText('Nächstes Bild nach (Sekunden)')
+    expect(field).toHaveValue(7)
+    await user.clear(field)
+    await user.type(field, '12')
+    await waitFor(
+      () => {
+        const put = calls.filter((c) => c.key === `PUT ${base}texts/6/`).at(-1)
+        expect(put && JSON.parse(String(put.init?.body))).toEqual({ gallery_interval: 12 })
+      },
+      { timeout: 3000 },
+    )
+    await user.selectOptions(screen.getByLabelText('Beginnt mit'), 'einem zufälligen Bild')
+    await waitFor(
+      () => {
+        const put = calls.filter((c) => c.key === `PUT ${base}texts/6/`).at(-1)
+        expect(put && JSON.parse(String(put.init?.body))).toEqual({ gallery_random: true })
       },
       { timeout: 3000 },
     )

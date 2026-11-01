@@ -248,6 +248,39 @@ class TestBilderkarussell:
         assert put([a["id"], *many]).status_code == 400  # höchstens 10
         assert put(many).status_code == 200
 
+    def test_wechselzeit_und_start_je_karussell(self, orgs, editor, api, site):
+        from django.test import Client
+
+        site.state = "public"
+        site.save()
+        c = api(editor)
+        pk = c.get(url(orgs["a"], "texts/")).json()["texts"][0]["id"]
+        text = c.get(url(orgs["a"], f"texts/{pk}/")).json()
+        assert text["gallery_interval"] == 7  # Standard wie bisher
+
+        def put(value):
+            return c.put(
+                url(orgs["a"], f"texts/{pk}/"), {"gallery_interval": value}, "application/json"
+            )
+
+        assert put(2).status_code == 400
+        assert put(31).status_code == 400
+        resp = put(12)
+        assert resp.status_code == 200 and resp.json()["gallery_interval"] == 12
+        assert resp.json()["has_changes"] is True
+        c.post(url(orgs["a"], f"texts/{pk}/publish/"))
+        public = f"/api/public/site/v1/{site.public_key}/"
+        assert Client().get(public).json()["greeting"]["gallery_interval"] == 12
+        assert Client().get(public).json()["greeting"]["gallery_random"] is False
+        c.put(url(orgs["a"], f"texts/{pk}/"), {"gallery_random": True}, "application/json")
+        c.post(url(orgs["a"], f"texts/{pk}/publish/"))
+        assert Client().get(public).json()["greeting"]["gallery_random"] is True
+        # Ältere Fassung zurückholen bringt auch ihre Wechselzeit zurück
+        revision = WebsiteText.objects.get(pk=pk).revisions.first()
+        put(5)
+        c.post(url(orgs["a"], f"texts/{pk}/revisions/{revision.pk}/restore/"))
+        assert WebsiteText.objects.get(pk=pk).gallery_interval == 12
+
 
 class TestBildTrotzdemLoeschen:
     def test_stellen_genau_benannt(self, orgs, editor, api, site):
