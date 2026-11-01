@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from accounts.models import User
@@ -39,7 +40,7 @@ class RoleSerializer(serializers.ModelSerializer):
         unknown = sorted(set(value) - allowed)
         if unknown:
             raise serializers.ValidationError(
-                f"Für diese Organisation nicht erlaubt: {', '.join(unknown)}"
+                gettext("Für diese Organisation nicht erlaubt: {x}").format(x=", ".join(unknown))
             )
         return sorted(set(value))
 
@@ -49,7 +50,7 @@ class RoleSerializer(serializers.ModelSerializer):
         if self.instance:
             qs = qs.exclude(pk=self.instance.pk)
         if qs.exists():
-            raise serializers.ValidationError("Diese Rolle gibt es schon.")
+            raise serializers.ValidationError(gettext("Diese Rolle gibt es schon."))
         return value
 
 
@@ -138,7 +139,7 @@ class AssignmentSerializer(serializers.ModelSerializer):
             .first()
         )
         if membership is None:
-            raise serializers.ValidationError("Unbekanntes Mitglied.")
+            raise serializers.ValidationError(gettext("Unbekanntes Mitglied."))
         return membership.person
 
     def get_invited(self, obj) -> bool:
@@ -154,14 +155,16 @@ class AssignmentSerializer(serializers.ModelSerializer):
 
     def validate_role(self, role):
         if role.organization_id != self.context["org"].pk:
-            raise serializers.ValidationError("Unbekannte Rolle.")
+            raise serializers.ValidationError(gettext("Unbekannte Rolle."))
         return role
 
     def validate(self, attrs):
         start = attrs.get("valid_from", getattr(self.instance, "valid_from", None))
         end = attrs.get("valid_until", getattr(self.instance, "valid_until", None))
         if start and end and end < start:
-            raise serializers.ValidationError({"valid_until": "Das Ende liegt vor dem Beginn."})
+            raise serializers.ValidationError(
+                {"valid_until": gettext("Das Ende liegt vor dem Beginn.")}
+            )
         return attrs
 
     def create(self, validated_data):

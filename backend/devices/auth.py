@@ -15,6 +15,7 @@ import re
 from django.core.cache import cache
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext, gettext_lazy
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
 from rest_framework import authentication
 from rest_framework.exceptions import APIException
@@ -91,11 +92,15 @@ def find_device(token: str) -> Device:
         if device.previous_until is None or device.previous_until > now:
             return device
         _copy_detected(device)
-        raise DeviceAuthFailed("Das Gerät ist nicht mehr angemeldet. Bitte die App neu verbinden.")
+        raise DeviceAuthFailed(
+            gettext("Das Gerät ist nicht mehr angemeldet. Bitte die App neu verbinden.")
+        )
     device = qs.filter(retired_hashes__contains=[digest]).first()
     if device is not None:
         _copy_detected(device)
-    raise DeviceAuthFailed("Das Gerät ist nicht mehr angemeldet. Bitte die App neu verbinden.")
+    raise DeviceAuthFailed(
+        gettext("Das Gerät ist nicht mehr angemeldet. Bitte die App neu verbinden.")
+    )
 
 
 class _CodedError(APIException):
@@ -111,7 +116,7 @@ class DeviceRenewRequired(_CodedError):
     """Geräteschlüssel zu alt: die App erneuert ihn (mit dem Schlüsselpaar) und versucht erneut."""
 
     default_code = "device_renew"
-    default_detail = "Der Geräteschlüssel muss erneuert werden."
+    default_detail = gettext_lazy("Der Geräteschlüssel muss erneuert werden.")
 
 
 class DeviceTokenAuthentication(authentication.BaseAuthentication):
@@ -123,11 +128,11 @@ class DeviceTokenAuthentication(authentication.BaseAuthentication):
         if scheme != self.keyword or not token.startswith(TOKEN_PREFIX):
             return None
         if not device_path(request.path):
-            raise DeviceAuthFailed("Mit dem Geräteschlüssel ist das nicht erreichbar.")
+            raise DeviceAuthFailed(gettext("Mit dem Geräteschlüssel ist das nicht erreichbar."))
         device = find_device(token)
         if not device.is_active or not device.user.is_active:
             raise DeviceAuthFailed(
-                "Das Gerät ist nicht mehr angemeldet. Bitte die App neu verbinden."
+                gettext("Das Gerät ist nicht mehr angemeldet. Bitte die App neu verbinden.")
             )
         if device.renew_required and request.path != RENEW_PATH:
             raise DeviceRenewRequired()
@@ -156,7 +161,7 @@ class AdminTokenAuthentication(authentication.BaseAuthentication):
         if scheme != self.keyword or not token.startswith(ADMIN_PREFIX):
             return None
         if not request.path.startswith(ADMIN_PATH):
-            raise DeviceAuthFailed("Mit dem Vorstandszugang ist das nicht erreichbar.")
+            raise DeviceAuthFailed(gettext("Mit dem Vorstandszugang ist das nicht erreichbar."))
         device = (
             Device.objects.select_related("user")
             .filter(admin_token_hash=hash_token(token.strip()))
@@ -164,14 +169,16 @@ class AdminTokenAuthentication(authentication.BaseAuthentication):
         )
         if device is None or not device.is_active or not device.user.is_active:
             raise DeviceAuthFailed(
-                "Das Gerät ist nicht mehr angemeldet. Bitte die App neu verbinden."
+                gettext("Das Gerät ist nicht mehr angemeldet. Bitte die App neu verbinden.")
             )
         # Nur zusammen mit dem Geräteschlüssel desselben Geräts (ein Schlüssel allein reicht nie);
         # während der Erneuerung gilt auch der Vorgänger
         device_token = request.headers.get(DEVICE_HEADER, "").strip()
         if not device_token.startswith(TOKEN_PREFIX) or not _same_device(device, device_token):
             raise DeviceAuthFailed(
-                "Der Vorstandszugang gilt nur zusammen mit dem Geräteschlüssel dieses Geräts."
+                gettext(
+                    "Der Vorstandszugang gilt nur zusammen mit dem Geräteschlüssel dieses Geräts."
+                )
             )
         if device.renew_required:
             raise DeviceRenewRequired()
@@ -210,7 +217,9 @@ _NONCE = re.compile(r"[A-Za-z0-9_-]{16,100}")
 
 class AdminSignatureFailed(_CodedError):
     default_code = "admin_signature"
-    default_detail = "Die Anfrage ist nicht gültig unterschrieben. Bitte die App neu freischalten."
+    default_detail = gettext_lazy(
+        "Die Anfrage ist nicht gültig unterschrieben. Bitte die App neu freischalten."
+    )
 
 
 def check_admin_signature(request, device: Device) -> None:
@@ -226,12 +235,12 @@ def check_admin_signature(request, device: Device) -> None:
         raise AdminSignatureFailed() from None
     if skew > devicekey.MAX_SKEW or not signature:
         raise AdminSignatureFailed(
-            "Die Uhrzeit des Telefons weicht zu stark ab oder die Unterschrift fehlt."
+            gettext("Die Uhrzeit des Telefons weicht zu stark ab oder die Unterschrift fehlt.")
         )
     try:
         body = devicekey.request_body(request)
     except devicekey.BodyTooLarge:
-        raise AdminSignatureFailed("Die Anfrage ist zu groß.") from None
+        raise AdminSignatureFailed(gettext("Die Anfrage ist zu groß.")) from None
     nonce = request.headers.get(devicekey.NONCE_HEADER, "").strip()
     if nonce and not _NONCE.fullmatch(nonce):
         raise AdminSignatureFailed()
@@ -253,7 +262,7 @@ def check_admin_signature(request, device: Device) -> None:
     else:
         replay_key = f"app-admin-sig:{device.pk}:" + devicekey.replay_id(message, signature)
     if not cache.add(replay_key, 1, 2 * devicekey.MAX_SKEW + 60):
-        raise AdminSignatureFailed("Diese Anfrage wurde schon einmal geschickt.")
+        raise AdminSignatureFailed(gettext("Diese Anfrage wurde schon einmal geschickt."))
 
 
 class AdminLocked(APIException):
@@ -261,7 +270,7 @@ class AdminLocked(APIException):
 
     status_code = 401
     default_code = "admin_locked"
-    default_detail = (
+    default_detail = gettext_lazy(
         "Die Verwaltung ist gesperrt. Bitte mit Passwort und Zwei-Faktor-Code freischalten."
     )
 

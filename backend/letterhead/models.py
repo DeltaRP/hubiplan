@@ -9,31 +9,32 @@ from __future__ import annotations
 
 from django.conf import settings
 from django.db import models
+from django.utils.translation import gettext_lazy
 
 from organizations.models import Organization
 
 
 class Letterhead(models.Model):
     class Mode(models.TextChoices):
-        OWN = "own", "eigener Briefbogen"
-        INHERIT = "inherit", "Briefbogen der übergeordneten Einheit"
+        OWN = "own", gettext_lazy("eigener Briefbogen")
+        INHERIT = "inherit", gettext_lazy("Briefbogen der übergeordneten Einheit")
 
     class Form(models.TextChoices):
-        A = "a", "DIN 5008 Form A (Anschriftfeld 27 mm von oben)"
-        B = "b", "DIN 5008 Form B (Anschriftfeld 45 mm von oben)"
+        A = "a", gettext_lazy("DIN 5008 Form A (Anschriftfeld 27 mm von oben)")
+        B = "b", gettext_lazy("DIN 5008 Form B (Anschriftfeld 45 mm von oben)")
 
     class LogoPosition(models.TextChoices):
         RIGHT = "right", "rechts"
         LEFT = "left", "links"
-        NONE = "none", "ohne Logo/Wappen"
+        NONE = "none", gettext_lazy("ohne Logo/Wappen")
 
     class Font(models.TextChoices):
-        ARIAL = "Arial", "Arial"
-        CALIBRI = "Calibri", "Calibri"
-        CAMBRIA = "Cambria", "Cambria"
-        GEORGIA = "Georgia", "Georgia"
-        TIMES = "Times New Roman", "Times New Roman"
-        VERDANA = "Verdana", "Verdana"
+        ARIAL = "Arial", gettext_lazy("Arial")
+        CALIBRI = "Calibri", gettext_lazy("Calibri")
+        CAMBRIA = "Cambria", gettext_lazy("Cambria")
+        GEORGIA = "Georgia", gettext_lazy("Georgia")
+        TIMES = "Times New Roman", gettext_lazy("Times New Roman")
+        VERDANA = "Verdana", gettext_lazy("Verdana")
 
     organization = models.OneToOneField(
         Organization, on_delete=models.CASCADE, related_name="letterhead"

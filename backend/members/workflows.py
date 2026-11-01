@@ -12,6 +12,7 @@ from dateutil.relativedelta import relativedelta
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.translation import gettext
 from rest_framework.exceptions import ValidationError
 
 from audit.models import AuditEntry
@@ -49,7 +50,7 @@ def lock(membership: Membership) -> None:
 def _open_period(membership: Membership, on: datetime.date) -> MembershipPeriod:
     period = membership.current_period(on)
     if period is None:
-        raise ValidationError("Zu diesem Datum besteht keine Mitgliedschaft.")
+        raise ValidationError(gettext("Zu diesem Datum besteht keine Mitgliedschaft."))
     return period
 
 
@@ -62,13 +63,13 @@ def change_type(membership: Membership, new_type: MemberType, on: datetime.date)
     lock(membership)
     _open_period(membership, on)
     if new_type.organization_id != membership.organization_id or new_type.is_archived:
-        raise ValidationError({"member_type": "Diese Mitgliedsart ist nicht verfügbar."})
+        raise ValidationError({"member_type": gettext("Diese Mitgliedsart ist nicht verfügbar.")})
     current = membership.current_type(on)
     if current and current.member_type_id == new_type.pk:
-        raise ValidationError({"member_type": "Das ist bereits die aktuelle Art."})
+        raise ValidationError({"member_type": gettext("Das ist bereits die aktuelle Art.")})
     if current and current.valid_from >= on:
         raise ValidationError(
-            {"valid_from": "Der Stichtag muss nach dem Beginn der jetzigen Art liegen."}
+            {"valid_from": gettext("Der Stichtag muss nach dem Beginn der jetzigen Art liegen.")}
         )
     services.check_active_rule(membership.person, membership.organization, new_type, on, membership)
     if current:
@@ -95,13 +96,13 @@ def exit_membership(
 ) -> None:
     """Zeitraum schließen; Art, Abteilungen und Abteilungsrollen enden mit."""
     if reason not in ExitReason.values:
-        raise ValidationError({"exit_reason": "Unbekannter Austrittsgrund."})
+        raise ValidationError({"exit_reason": gettext("Unbekannter Austrittsgrund.")})
     lock(membership)
     period = membership.periods.filter(exit_date__isnull=True).first()
     if period is None:
-        raise ValidationError("Die Mitgliedschaft ist bereits beendet.")
+        raise ValidationError(gettext("Die Mitgliedschaft ist bereits beendet."))
     if exit_date < period.entry_date:
-        raise ValidationError({"exit_date": "Der Austritt liegt vor dem Eintritt."})
+        raise ValidationError({"exit_date": gettext("Der Austritt liegt vor dem Eintritt.")})
     period.exit_date = exit_date
     period.exit_reason = reason
     period.note = note[:200]
@@ -133,14 +134,14 @@ def reenter(
     """Neuer Zeitraum; alte Zeiträume, Verbandsnummer usw. bleiben erhalten."""
     lock(membership)
     if membership.periods.filter(exit_date__isnull=True).exists():
-        raise ValidationError("Die Person ist noch Mitglied.")
+        raise ValidationError(gettext("Die Person ist noch Mitglied."))
     last = membership.periods.order_by("-entry_date").first()
     if last and last.exit_date and entry_date <= last.exit_date:
         raise ValidationError(
-            {"entry_date": "Der Wiedereintritt muss nach dem letzten Austritt liegen."}
+            {"entry_date": gettext("Der Wiedereintritt muss nach dem letzten Austritt liegen.")}
         )
     if member_type.organization_id != membership.organization_id or member_type.is_archived:
-        raise ValidationError({"member_type": "Diese Mitgliedsart ist nicht verfügbar."})
+        raise ValidationError({"member_type": gettext("Diese Mitgliedsart ist nicht verfügbar.")})
     club = membership.organization
     services.check_active_rule(membership.person, club, member_type, entry_date, membership)
     MembershipPeriod.objects.create(organization=club, membership=membership, entry_date=entry_date)
@@ -150,7 +151,7 @@ def reenter(
     if contact:
         services.save_contact(membership.person, club, contact)
     elif services.contact_for(membership.person, club) is None:
-        raise ValidationError({"email": "Bitte die Kontaktdaten neu erfassen."})
+        raise ValidationError({"email": gettext("Bitte die Kontaktdaten neu erfassen.")})
     if member_type.reported:
         services.ensure_federation_member(membership.person, club)
     if membership.purged_at:
@@ -189,10 +190,14 @@ def create_transfer(club: Organization, user, data: dict) -> TransferRequest:
     entry_date = data["entry_date"]
     if not member_type.active:
         raise ValidationError(
-            {"member_type": "Eine Wechselanfrage braucht es nur für eine aktive Mitgliedsart."}
+            {
+                "member_type": gettext(
+                    "Eine Wechselanfrage braucht es nur für eine aktive Mitgliedsart."
+                )
+            }
         )
     if person.scope_id != services.scope_for(club).pk:
-        raise ValidationError({"person": "Unbekannte Person."})
+        raise ValidationError({"person": gettext("Unbekannte Person.")})
     # Gegen zwei gleichzeitige Anfragen für dieselbe Person
     services.lock_person(person.pk)
     other = active_membership_elsewhere(person, club, entry_date)
@@ -208,7 +213,7 @@ def create_transfer(club: Organization, user, data: dict) -> TransferRequest:
         if TransferRequest.objects.filter(
             person=person, to_org=club, status=TransferRequest.Status.PENDING
         ).exists():
-            raise ValidationError("Es gibt bereits eine offene Wechselanfrage.")
+            raise ValidationError(gettext("Es gibt bereits eine offene Wechselanfrage."))
         request = TransferRequest.objects.create(
             scope=services.scope_for(club),
             person=person,
@@ -237,7 +242,7 @@ def cancel_transfer(request: TransferRequest) -> TransferRequest:
     with rls_bypass():
         current = TransferRequest.objects.select_for_update().get(pk=request.pk)
     if current.status != TransferRequest.Status.PENDING:
-        raise ValidationError("Die Anfrage ist bereits erledigt.")
+        raise ValidationError(gettext("Die Anfrage ist bereits erledigt."))
     current.status = TransferRequest.Status.CANCELLED
     current.save()
     if current.from_org.is_remote:
@@ -264,7 +269,7 @@ def decide_transfer(
         current = TransferRequest.objects.select_for_update().get(pk=request.pk)
     request.status = current.status
     if request.status != TransferRequest.Status.PENDING:
-        raise ValidationError("Die Anfrage ist bereits erledigt.")
+        raise ValidationError(gettext("Die Anfrage ist bereits erledigt."))
     request.decided_by = user
     request.decided_at = timezone.now()
     request.response = response[:500]
@@ -280,10 +285,10 @@ def decide_transfer(
         exit_membership(old, request.entry_date - ONE_DAY, ExitReason.TRANSFER)
     elif decision == TransferRequest.Decision.CHANGE_TYPE:
         if new_type is None or new_type.active:
-            raise ValidationError({"member_type": "Bitte eine nicht aktive Art wählen."})
+            raise ValidationError({"member_type": gettext("Bitte eine nicht aktive Art wählen.")})
         change_type(old, new_type, request.entry_date)
     else:
-        raise ValidationError({"decision": "Unbekannte Entscheidung."})
+        raise ValidationError({"decision": gettext("Unbekannte Entscheidung.")})
     request.status = TransferRequest.Status.ACCEPTED
     request.decision = decision
     return admit_after_transfer(request)

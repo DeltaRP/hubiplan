@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from xml.sax.saxutils import escape
 
 from django.utils import timezone
+from django.utils.functional import Promise
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
@@ -278,7 +279,7 @@ FORMULA_START = ("=", "+", "-", "@", "\t", "\r")
 
 def safe_cell(value):
     """Verhindert, dass Excel Text aus den Daten als Formel ausführt."""
-    if isinstance(value, PhotoRef):
+    if isinstance(value, (PhotoRef, Promise)):
         return str(value)
     if isinstance(value, str) and value.startswith(FORMULA_START):
         return "'" + value

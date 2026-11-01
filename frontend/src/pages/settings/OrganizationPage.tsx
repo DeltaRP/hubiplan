@@ -253,6 +253,8 @@ function OrganizationForm({
                 plural: v.label_plural ?? '',
                 gender: v.label_gender ?? 'm',
                 genitive: v.label_genitive ?? '',
+                labelEn: v.label_en ?? '',
+                pluralEn: v.label_plural_en ?? '',
               }}
               errors={{
                 label: errors.label,
@@ -265,6 +267,8 @@ function OrganizationForm({
                 set('label_plural', l.plural)
                 set('label_gender', l.gender)
                 set('label_genitive', l.genitive)
+                set('label_en', l.labelEn ?? '')
+                set('label_plural_en', l.pluralEn ?? '')
               }}
             />
           </>
@@ -285,6 +289,8 @@ function OrganizationForm({
                 plural: v.department_label_plural,
                 gender: v.department_label_gender,
                 genitive: v.department_label_genitive,
+                labelEn: v.department_label_en ?? '',
+                pluralEn: v.department_label_plural_en ?? '',
               }}
               errors={{
                 label: errors.department_label,
@@ -297,6 +303,8 @@ function OrganizationForm({
                 set('department_label_plural', l.plural)
                 set('department_label_gender', l.gender)
                 set('department_label_genitive', l.genitive)
+                set('department_label_en', l.labelEn ?? '')
+                set('department_label_plural_en', l.pluralEn ?? '')
               }}
             />
           </>
@@ -376,10 +384,14 @@ const EDITABLE: (keyof OrgDetail)[] = [
   'label_plural',
   'label_gender',
   'label_genitive',
+  'label_en',
+  'label_plural_en',
   'department_label',
   'department_label_plural',
   'department_label_gender',
   'department_label_genitive',
+  'department_label_en',
+  'department_label_plural_en',
   'allow_multiple_departments',
   'keeps_members',
   'department_access_enabled',

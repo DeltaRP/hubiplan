@@ -33,6 +33,7 @@ import time
 from django.core.cache import cache
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.utils import timezone
+from django.utils.translation import gettext
 
 from . import crypto, identity
 from .models import Coupling, LoginLink, Peer, RemoteAccount, UsedAssertion
@@ -73,7 +74,7 @@ def coupled_peers():
 def peer_by_instance(instance_id: str) -> Peer:
     peer = coupled_peers().filter(instance_id=_uuid(instance_id)).first()
     if peer is None:
-        raise ValidationError("Mit dieser Instanz besteht keine Kopplung.")
+        raise ValidationError(gettext("Mit dieser Instanz besteht keine Kopplung."))
     return peer
 
 
@@ -104,16 +105,21 @@ def _is_platform_admin(user) -> bool:
 def start(request, peer: Peer, purpose: str, next_path: str = "") -> str:
     """Zufallswert in der Sitzung merken; liefert die Adresse der Bestätigungsseite bei H."""
     if purpose not in PURPOSES:
-        raise ValidationError("Unbekannter Zweck.")
+        raise ValidationError(gettext("Unbekannter Zweck."))
     if not login_enabled():
         raise ValidationError(
-            "Die Anmeldung über gekoppelte Instanzen ist auf dieser Instanz nicht eingeschaltet."
+            gettext(
+                "Die Anmeldung über gekoppelte Instanzen ist auf dieser Instanz nicht "
+                "eingeschaltet."
+            )
         )
     if purpose == "link":
         if not request.user.is_authenticated:
-            raise PermissionDenied("Zum Verknüpfen bitte zuerst hier anmelden.")
+            raise PermissionDenied(gettext("Zum Verknüpfen bitte zuerst hier anmelden."))
         if _is_platform_admin(request.user):
-            raise PermissionDenied("Zugänge der Plattformverwaltung werden nicht verknüpft.")
+            raise PermissionDenied(
+                gettext("Zugänge der Plattformverwaltung werden nicht verknüpft.")
+            )
     state = secrets.token_urlsafe(24)
     request.session[SESSION_KEY] = {
         "state": state,
@@ -211,9 +217,9 @@ def _ensure_fresh(request, user, password: str, code: str) -> None:
     if not password:
         raise ReauthRequired(needs_code)
     if not user.check_password(password):
-        raise PermissionDenied("Das Passwort stimmt nicht.")
+        raise PermissionDenied(gettext("Das Passwort stimmt nicht."))
     if needs_code and not check_second_factor(user, code):
-        raise PermissionDenied("Der Code stimmt nicht.")
+        raise PermissionDenied(gettext("Der Code stimmt nicht."))
     record(request, user, "password")
     if needs_code:
         record(request, user, "mfa", type="totp")
@@ -240,19 +246,23 @@ def issue(
     from .services import enabled
 
     if not enabled():
-        raise ValidationError("Der Verbund ist auf dieser Instanz nicht eingeschaltet.")
+        raise ValidationError(gettext("Der Verbund ist auf dieser Instanz nicht eingeschaltet."))
     user = request.user
     if not user.is_authenticated or not user.is_active:
-        raise PermissionDenied("Bitte zuerst anmelden.")
+        raise PermissionDenied(gettext("Bitte zuerst anmelden."))
     if purpose not in PURPOSES or not state or len(state) > 100:
-        raise ValidationError("Die Anfrage ist unvollständig.")
+        raise ValidationError(gettext("Die Anfrage ist unvollständig."))
     if _is_platform_admin(user):
-        raise PermissionDenied("Zugänge der Plattformverwaltung melden sich nicht anderswo an.")
+        raise PermissionDenied(
+            gettext("Zugänge der Plattformverwaltung melden sich nicht anderswo an.")
+        )
     peer = peer_by_instance(rp_instance)
     if "peering" in session_auth(request)["amr"]:
         raise PermissionDenied(
-            "Diese Anmeldung stammt selbst von einer anderen Instanz. Bitte hier direkt mit "
-            "Passwort anmelden."
+            gettext(
+                "Diese Anmeldung stammt selbst von einer anderen Instanz. Bitte hier "
+                "direkt mit Passwort anmelden."
+            )
         )
     _ensure_fresh(request, user, password, code)
     auth = session_auth(request)
@@ -306,29 +316,29 @@ def verify(request, token: str) -> dict:
     """Prüft die Bestätigung gegen die Sitzung; liefert Zweck, Konto-Kennung und Ziel."""
     pending = request.session.pop(SESSION_KEY, None)
     if not pending or pending.get("until", 0) < time.time():
-        raise ValidationError("Die Anmeldung ist abgelaufen. Bitte erneut beginnen.")
+        raise ValidationError(gettext("Die Anmeldung ist abgelaufen. Bitte erneut beginnen."))
     if not login_enabled():
-        raise ValidationError("Die Anmeldung über gekoppelte Instanzen ist ausgeschaltet.")
+        raise ValidationError(gettext("Die Anmeldung über gekoppelte Instanzen ist ausgeschaltet."))
     try:
         outer = json.loads(identity.unb64(str(token or "")[:8000]))
         envelope, signature = outer["env"], outer["sig"]
         signature2 = str(outer.get("sig2") or "")
         sender = str(envelope["from"])
     except (ValueError, KeyError, TypeError) as exc:
-        raise ValidationError("Die Anmeldebestätigung ist beschädigt.") from exc
+        raise ValidationError(gettext("Die Anmeldebestätigung ist beschädigt.")) from exc
     if sender != pending["peer"]:
-        raise ValidationError("Die Bestätigung kommt von einer anderen Instanz.")
+        raise ValidationError(gettext("Die Bestätigung kommt von einer anderen Instanz."))
     peer = peer_by_instance(sender)
     if not any(
         identity.verify(key, _canonical(envelope), sig)
         for key in (peer.public_key, peer.valid_previous_key)
         for sig in (str(signature), signature2)
     ):
-        raise ValidationError("Die Unterschrift der Anmeldebestätigung stimmt nicht.")
+        raise ValidationError(gettext("Die Unterschrift der Anmeldebestätigung stimmt nicht."))
     try:
         data = crypto.open_sealed(envelope, identity.identity())
     except crypto.CryptoError as exc:
-        raise ValidationError("Die Anmeldebestätigung lässt sich nicht öffnen.") from exc
+        raise ValidationError(gettext("Die Anmeldebestätigung lässt sich nicht öffnen.")) from exc
     now = time.time()
     if (
         data.get("iss") != sender
@@ -340,7 +350,7 @@ def verify(request, token: str) -> dict:
         or data.get("iat", 0) > now + 60
         or not data.get("sub")
     ):
-        raise ValidationError("Die Anmeldebestätigung passt nicht zu dieser Anmeldung.")
+        raise ValidationError(gettext("Die Anmeldebestätigung passt nicht zu dieser Anmeldung."))
     amr = data.get("amr")
     if (
         not isinstance(data.get("v"), int)
@@ -351,12 +361,15 @@ def verify(request, token: str) -> dict:
         or "peering" in amr
     ):
         raise ValidationError(
-            "Die andere Instanz bestätigt die Anmeldung nicht ausreichend (zu alt oder veraltete "
-            "Version). Bitte dort neu anmelden oder die andere Instanz aktualisieren."
+            gettext(
+                "Die andere Instanz bestätigt die Anmeldung nicht ausreichend (zu alt "
+                "oder veraltete Version). Bitte dort neu anmelden oder die andere "
+                "Instanz aktualisieren."
+            )
         )
     jti = str(data.get("jti") or "")[:64]
     if not jti or not cache.add(f"peering-sso-jti:{sender}:{jti}", 1, TOKEN_SECONDS + 60):
-        raise ValidationError("Die Anmeldebestätigung wurde schon benutzt.")
+        raise ValidationError(gettext("Die Anmeldebestätigung wurde schon benutzt."))
     from django.db import IntegrityError, transaction
     from django.utils import timezone as tz
 
@@ -368,7 +381,7 @@ def verify(request, token: str) -> dict:
                 expires_at=tz.now() + datetime.timedelta(seconds=TOKEN_SECONDS + 60),
             )
     except IntegrityError as exc:
-        raise ValidationError("Die Anmeldebestätigung wurde schon benutzt.") from exc
+        raise ValidationError(gettext("Die Anmeldebestätigung wurde schon benutzt.")) from exc
     UsedAssertion.objects.filter(expires_at__lt=tz.now()).delete()
     return {"peer": peer, "data": data, "pending": pending}
 
@@ -377,11 +390,13 @@ def complete_link(request, checked: dict) -> LoginLink:
     pending, peer, data = checked["pending"], checked["peer"], checked["data"]
     user = request.user
     if not user.is_authenticated or user.pk != pending.get("user"):
-        raise PermissionDenied("Die Verknüpfung gehört zu einem anderen Konto.")
+        raise PermissionDenied(gettext("Die Verknüpfung gehört zu einem anderen Konto."))
     subject = str(data["sub"])[:64]
     other = LoginLink.objects.filter(peer=peer, subject=subject).exclude(user=user).first()
     if other is not None:
-        raise ValidationError("Dieser Zugang ist hier schon mit einem anderen Konto verknüpft.")
+        raise ValidationError(
+            gettext("Dieser Zugang ist hier schon mit einem anderen Konto verknüpft.")
+        )
     link, _ = LoginLink.objects.update_or_create(
         user=user,
         peer=peer,
@@ -400,18 +415,22 @@ def complete_login(checked: dict):
     )
     if link is None:
         raise ValidationError(
-            "Dieser Zugang ist hier mit keinem Konto verknüpft. Bitte einmal mit dem Zugang "
-            "dieser Instanz anmelden und unter Mein Konto verknüpfen."
+            gettext(
+                "Dieser Zugang ist hier mit keinem Konto verknüpft. Bitte einmal mit dem "
+                "Zugang dieser Instanz anmelden und unter Mein Konto verknüpfen."
+            )
         )
     user = link.user
     if not user.is_active or _is_platform_admin(user):
         raise PermissionDenied(
-            "Für dieses Konto ist die Anmeldung über eine andere Instanz gesperrt."
+            gettext("Für dieses Konto ist die Anmeldung über eine andere Instanz gesperrt.")
         )
     if _uses_mfa(user) and "mfa" not in (data.get("amr") or []):
         raise PermissionDenied(
-            "Dieses Konto nutzt hier die Zwei-Faktor-Anmeldung. Bitte auf der anderen Instanz "
-            "ebenfalls die Zwei-Faktor-Anmeldung einrichten."
+            gettext(
+                "Dieses Konto nutzt hier die Zwei-Faktor-Anmeldung. Bitte auf der "
+                "anderen Instanz ebenfalls die Zwei-Faktor-Anmeldung einrichten."
+            )
         )
     link.last_used_at = timezone.now()
     link.email = str(data.get("email") or link.email)[:254]
@@ -489,9 +508,12 @@ def needs_local_factor(user) -> bool:
 def begin_stepup(request, user, peer: Peer, next_path: str) -> None:
     if not _uses_mfa(user):
         raise PermissionDenied(
-            "Für Konten mit Vorstands-, Kassen- oder Prüferrollen braucht die Anmeldung über eine "
-            "andere Instanz hier eine eigene Zwei-Faktor-Anmeldung. Bitte einmal direkt mit "
-            "Passwort anmelden und unter Mein Konto die Zwei-Faktor-Anmeldung einrichten."
+            gettext(
+                "Für Konten mit Vorstands-, Kassen- oder Prüferrollen braucht die "
+                "Anmeldung über eine andere Instanz hier eine eigene "
+                "Zwei-Faktor-Anmeldung. Bitte einmal direkt mit Passwort anmelden und "
+                "unter Mein Konto die Zwei-Faktor-Anmeldung einrichten."
+            )
         )
     request.session[STEPUP_KEY] = {
         "user": user.pk,
@@ -507,7 +529,7 @@ def finish_stepup(request, code: str):
 
     pending = request.session.pop(STEPUP_KEY, None)
     if not pending or pending.get("until", 0) < time.time():
-        raise ValidationError("Die Anmeldung ist abgelaufen. Bitte erneut beginnen.")
+        raise ValidationError(gettext("Die Anmeldung ist abgelaufen. Bitte erneut beginnen."))
     user = get_user_model().objects.filter(pk=pending["user"], is_active=True).first()
     peer = coupled_peers().filter(instance_id=pending["peer"]).first()
     # Zustand jetzt erneut prüfen, nicht nur beim ersten Schritt: In der Zwischenzeit können
@@ -519,9 +541,11 @@ def finish_stepup(request, code: str):
         or not LoginLink.objects.filter(peer=peer, user=user).exists()
         or _is_platform_admin(user)
     ):
-        raise PermissionDenied("Die Anmeldung ist nicht mehr möglich.")
+        raise PermissionDenied(gettext("Die Anmeldung ist nicht mehr möglich."))
     if not check_second_factor(user, code):
-        raise PermissionDenied("Der Code stimmt nicht. Bitte die Anmeldung erneut beginnen.")
+        raise PermissionDenied(
+            gettext("Der Code stimmt nicht. Bitte die Anmeldung erneut beginnen.")
+        )
     return user, peer, pending.get("next") or "/"
 
 

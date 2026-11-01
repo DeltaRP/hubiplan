@@ -13,6 +13,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext, gettext_lazy
 
 from core.encfields import EncryptedCharField
 from core.privatefiles import PrivateFileField
@@ -20,17 +21,17 @@ from exchange.models import private_storage
 
 
 class TaxArea(models.TextChoices):
-    IDEAL = "ideal", "ideeller Bereich"
-    ASSETS = "assets", "Vermögensverwaltung"
-    PURPOSE = "purpose", "Zweckbetrieb"
-    BUSINESS = "business", "wirtschaftlicher Geschäftsbetrieb"
+    IDEAL = "ideal", gettext_lazy("ideeller Bereich")
+    ASSETS = "assets", gettext_lazy("Vermögensverwaltung")
+    PURPOSE = "purpose", gettext_lazy("Zweckbetrieb")
+    BUSINESS = "business", gettext_lazy("wirtschaftlicher Geschäftsbetrieb")
 
 
 class Account(models.Model):
     class Kind(models.TextChoices):
-        BANK = "bank", "Bankkonto"
-        CASH = "cash", "Barkasse"
-        SAVINGS = "savings", "Sparkonto"
+        BANK = "bank", gettext_lazy("Bankkonto")
+        CASH = "cash", gettext_lazy("Barkasse")
+        SAVINGS = "savings", gettext_lazy("Sparkonto")
 
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE, related_name="+"
@@ -65,7 +66,7 @@ class Account(models.Model):
         self.iban = self.iban.replace(" ", "").upper()
         self.bic = self.bic.replace(" ", "").upper()
         if self.iban and not iban_valid(self.iban):
-            raise ValidationError({"iban": "Die IBAN ist ungültig."})
+            raise ValidationError({"iban": gettext("Die IBAN ist ungültig.")})
 
 
 def iban_valid(iban: str) -> bool:
@@ -79,9 +80,9 @@ def iban_valid(iban: str) -> bool:
 
 class Category(models.Model):
     class Kind(models.TextChoices):
-        INCOME = "income", "Einnahmen"
-        EXPENSE = "expense", "Ausgaben"
-        BOTH = "both", "Einnahmen und Ausgaben"
+        INCOME = "income", gettext_lazy("Einnahmen")
+        EXPENSE = "expense", gettext_lazy("Ausgaben")
+        BOTH = "both", gettext_lazy("Einnahmen und Ausgaben")
 
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE, related_name="+"
@@ -116,9 +117,9 @@ class Category(models.Model):
 
 class Booking(models.Model):
     class Kind(models.TextChoices):
-        INCOME = "income", "Einnahme"
-        EXPENSE = "expense", "Ausgabe"
-        TRANSFER = "transfer", "Umbuchung"
+        INCOME = "income", gettext_lazy("Einnahme")
+        EXPENSE = "expense", gettext_lazy("Ausgabe")
+        TRANSFER = "transfer", gettext_lazy("Umbuchung")
 
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE, related_name="+"
@@ -485,11 +486,11 @@ class CashReceipt(models.Model):
     """
 
     class Direction(models.TextChoices):
-        IN = "in", "Verein erhält Geld"
-        OUT = "out", "Verein zahlt Geld aus"
+        IN = "in", gettext_lazy("Verein erhält Geld")
+        OUT = "out", gettext_lazy("Verein zahlt Geld aus")
 
     class Status(models.TextChoices):
-        DRAFT = "draft", "Entwurf"
+        DRAFT = "draft", gettext_lazy("Entwurf")
         FINAL = "final", "abgeschlossen"
         CANCELLED = "cancelled", "storniert"
 
@@ -630,8 +631,11 @@ class DonationSettings(models.Model):
     """Angaben zur Steuerbegünstigung, die auf jeder Zuwendungsbestätigung stehen."""
 
     class Notice(models.TextChoices):
-        EXEMPTION = "exemption", "Freistellungsbescheid bzw. Anlage zum Körperschaftsteuerbescheid"
-        STATUTE = "statute", "Feststellung der Satzungsmäßigkeit nach § 60a AO"
+        EXEMPTION = (
+            "exemption",
+            gettext_lazy("Freistellungsbescheid bzw. Anlage zum Körperschaftsteuerbescheid"),
+        )
+        STATUTE = "statute", gettext_lazy("Feststellung der Satzungsmäßigkeit nach § 60a AO")
 
     organization = models.OneToOneField(
         "organizations.Organization", on_delete=models.CASCADE, related_name="+"
@@ -675,8 +679,8 @@ class DonationStatement(models.Model):
     """Ausgestellte Zuwendungsbestätigung; das PDF ist das Doppel (§ 50 Abs. 7 EStDV)."""
 
     class Kind(models.TextChoices):
-        SINGLE = "single", "Einzelbestätigung"
-        COLLECTIVE = "collective", "Sammelbestätigung"
+        SINGLE = "single", gettext_lazy("Einzelbestätigung")
+        COLLECTIVE = "collective", gettext_lazy("Sammelbestätigung")
 
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE, related_name="+"
@@ -737,14 +741,14 @@ class Donation(models.Model):
     """Eine Zuwendung (Geld, Mitgliedsbeitrag oder Sache), bestätigt oder noch offen."""
 
     class Kind(models.TextChoices):
-        MONEY = "money", "Geldzuwendung"
-        FEE = "fee", "Mitgliedsbeitrag"
-        GOODS = "goods", "Sachzuwendung"
+        MONEY = "money", gettext_lazy("Geldzuwendung")
+        FEE = "fee", gettext_lazy("Mitgliedsbeitrag")
+        GOODS = "goods", gettext_lazy("Sachzuwendung")
 
     class Origin(models.TextChoices):
-        BUSINESS = "business", "aus dem Betriebsvermögen"
-        PRIVATE = "private", "aus dem Privatvermögen"
-        UNKNOWN = "unknown", "keine Angaben zur Herkunft"
+        BUSINESS = "business", gettext_lazy("aus dem Betriebsvermögen")
+        PRIVATE = "private", gettext_lazy("aus dem Privatvermögen")
+        UNKNOWN = "unknown", gettext_lazy("keine Angaben zur Herkunft")
 
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE, related_name="+"
@@ -854,14 +858,14 @@ class BankLine(models.Model):
     class Status(models.TextChoices):
         OPEN = "open", "offen"
         DONE = "done", "erledigt"
-        IGNORED = "ignored", "übergangen"
+        IGNORED = "ignored", gettext_lazy("übergangen")
 
     class Suggestion(models.TextChoices):
-        NONE = "", "kein Vorschlag"
-        INVOICE = "invoice", "Zahlung zu Rechnung"
-        DEBIT_RUN = "debit_run", "Lastschriftlauf"
-        BOOKED = "booked", "schon im Kassenbuch"
-        RETURN = "return", "Rücklastschrift"
+        NONE = "", gettext_lazy("kein Vorschlag")
+        INVOICE = "invoice", gettext_lazy("Zahlung zu Rechnung")
+        DEBIT_RUN = "debit_run", gettext_lazy("Lastschriftlauf")
+        BOOKED = "booked", gettext_lazy("schon im Kassenbuch")
+        RETURN = "return", gettext_lazy("Rücklastschrift")
 
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE, related_name="+"
@@ -940,8 +944,8 @@ class CashCount(models.Model):
     (Kassendifferenz bzw. Tageseinnahmen) tragen das PDF als Beleg."""
 
     class Kind(models.TextChoices):
-        COUNT = "count", "Zählprotokoll"
-        EVENT = "event", "Kassenbericht"
+        COUNT = "count", gettext_lazy("Zählprotokoll")
+        EVENT = "event", gettext_lazy("Kassenbericht")
 
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE, related_name="+"
@@ -1005,10 +1009,13 @@ class Reserve(models.Model):
     einen Teil davon für einen Zweck. Bewegungen sind Zuführungen und Auflösungen."""
 
     class Kind(models.TextChoices):
-        PURPOSE = "purpose", "Projektrücklage (§ 62 Abs. 1 Nr. 1 AO)"
-        REPLACEMENT = "replacement", "Wiederbeschaffungsrücklage (§ 62 Abs. 1 Nr. 2 AO)"
-        FREE = "free", "freie Rücklage (§ 62 Abs. 1 Nr. 3 AO)"
-        OTHER = "other", "sonstige Rücklage"
+        PURPOSE = "purpose", gettext_lazy("Projektrücklage (§ 62 Abs. 1 Nr. 1 AO)")
+        REPLACEMENT = (
+            "replacement",
+            gettext_lazy("Wiederbeschaffungsrücklage (§ 62 Abs. 1 Nr. 2 AO)"),
+        )
+        FREE = "free", gettext_lazy("freie Rücklage (§ 62 Abs. 1 Nr. 3 AO)")
+        OTHER = "other", gettext_lazy("sonstige Rücklage")
 
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE, related_name="+"
@@ -1032,8 +1039,8 @@ class ReserveMovement(models.Model):
     """Zuführung zu oder Auflösung einer Rücklage."""
 
     class Direction(models.TextChoices):
-        ADD = "add", "Zuführung"
-        RELEASE = "release", "Auflösung"
+        ADD = "add", gettext_lazy("Zuführung")
+        RELEASE = "release", gettext_lazy("Auflösung")
 
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE, related_name="+"

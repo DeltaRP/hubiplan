@@ -13,6 +13,7 @@ from dateutil.relativedelta import relativedelta
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.translation import gettext
 
 from finance.models import iban_valid
 
@@ -140,7 +141,7 @@ def create_mandate(org, *, membership=None, club=None, signed_on, source, user, 
 
 def revoke(mandate: Mandate, on: datetime.date | None = None) -> None:
     if mandate.status != Mandate.Status.ACTIVE:
-        raise ValidationError("Das Mandat ist schon widerrufen.")
+        raise ValidationError(gettext("Das Mandat ist schon widerrufen."))
     mandate.status = Mandate.Status.REVOKED
     mandate.revoked_on = on or timezone.localdate()
     mandate.save(update_fields=["status", "revoked_on"])
@@ -247,7 +248,9 @@ def create_run(org, invoice_ids: list[int], collection_date: datetime.date, user
     )
     chosen = [(i, m) for i, m in proposals(org, collection_date) if i.pk in set(invoice_ids)]
     if not chosen:
-        raise ValidationError("Bitte mindestens eine Rechnung mit gültigem Mandat auswählen.")
+        raise ValidationError(
+            gettext("Bitte mindestens eine Rechnung mit gültigem Mandat auswählen.")
+        )
     run = DebitRun.objects.create(
         organization=org,
         collection_date=collection_date,
@@ -306,7 +309,7 @@ def cancel_run(run: DebitRun) -> None:
         DebitRun.objects.select_for_update().values_list("status", flat=True).get(pk=run.pk)
     )
     if run.status != DebitRun.Status.CREATED:
-        raise ValidationError("Nur noch nicht gebuchte Läufe lassen sich verwerfen.")
+        raise ValidationError(gettext("Nur noch nicht gebuchte Läufe lassen sich verwerfen."))
     run.status = DebitRun.Status.CANCELLED
     run.save(update_fields=["status"])
 
@@ -316,7 +319,7 @@ def book_run(run: DebitRun, user) -> int:
     # Sperre gegen gleichzeitiges zweites Buchen desselben Laufs
     locked = DebitRun.objects.select_for_update().get(pk=run.pk)
     if locked.status != DebitRun.Status.CREATED:
-        raise ValidationError("Der Lauf ist schon gebucht oder verworfen.")
+        raise ValidationError(gettext("Der Lauf ist schon gebucht oder verworfen."))
     items = list(run.items.select_related("invoice__organization", "mandate"))
     # Gebucht wird genau der Betrag aus der Bankdatei. Passt eine Rechnung nicht mehr
     # dazu, lieber gar nichts buchen als Bank und Kasse auseinanderlaufen lassen.
@@ -327,9 +330,11 @@ def book_run(run: DebitRun, user) -> int:
     ]
     if problems:
         raise ValidationError(
-            "Diese Rechnungen passen nicht mehr zum Betrag in der Lastschriftdatei "
-            f"(schon bezahlt oder storniert): {', '.join(problems)}. "
-            "Bitte prüfen; der Lauf wurde nicht gebucht."
+            gettext(
+                "Diese Rechnungen passen nicht mehr zum Betrag in der Lastschriftdatei "
+                "(schon bezahlt oder storniert): {x}. Bitte prüfen; der Lauf wurde nicht "
+                "gebucht."
+            ).format(x=", ".join(problems))
         )
     booked = 0
     for item in items:

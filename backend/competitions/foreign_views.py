@@ -7,6 +7,7 @@ from __future__ import annotations
 from django.db import transaction
 from django.db.models import Max
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -31,13 +32,13 @@ class _ForeignMixin(_Mixin):
     def foreign_competition(self, pk) -> Competition:
         comp = self.competition(pk)
         if comp.own:
-            raise ValidationError("Das ist kein fremder Wettbewerb.")
+            raise ValidationError(gettext("Das ist kein fremder Wettbewerb."))
         return comp
 
 
 def _open(comp: Competition) -> None:
     if comp.status == Competition.Status.FINAL:
-        raise ValidationError("Der Wettbewerb ist endgültig abgeschlossen.")
+        raise ValidationError(gettext("Der Wettbewerb ist endgültig abgeschlossen."))
 
 
 class TeamsView(_ForeignMixin, APIView):
@@ -81,16 +82,16 @@ class TeamView(_ForeignMixin, APIView):
         if "name" in request.data:
             name = str(request.data["name"] or "").strip()[:100]
             if not name:
-                raise ValidationError({"name": "Bitte einen Namen angeben."})
+                raise ValidationError({"name": gettext("Bitte einen Namen angeben.")})
             t.name = name
             t.save()
         if "members" in request.data:
             ids = request.data["members"] or []
             if not isinstance(ids, list):
-                raise ValidationError({"members": "Ungültige Angabe."})
+                raise ValidationError({"members": gettext("Ungültige Angabe.")})
             members = list(Starter.objects.filter(competition=t.competition, pk__in=ids))
             if len(members) != len({int(i) for i in ids}):
-                raise ValidationError({"members": "Unbekannter Schütze."})
+                raise ValidationError({"members": gettext("Unbekannter Schütze.")})
             old = sorted(m.name for m in t.members.all())
             t.members.set(members, through_defaults={"organization": self.org})
             new = sorted(m.name for m in members)
@@ -141,11 +142,19 @@ class PlacingView(_ForeignMixin, APIView):
             try:
                 place = int(str(place).strip())
             except ValueError as exc:
-                raise ValidationError({"place": "Bitte eine ganze Zahl eingeben."}) from exc
+                raise ValidationError(
+                    {"place": gettext("Bitte eine ganze Zahl eingeben.")}
+                ) from exc
             if place < 1 or place > 100000:
-                raise ValidationError({"place": "Bitte einen Platz ab 1 eingeben."})
+                raise ValidationError({"place": gettext("Bitte einen Platz ab 1 eingeben.")})
             if scoring.field_size and place > scoring.field_size:
-                raise ValidationError({"place": f"Es gab nur {scoring.field_size} Teilnehmer."})
+                raise ValidationError(
+                    {
+                        "place": gettext("Es gab nur {field_size} Teilnehmer.").format(
+                            field_size=scoring.field_size
+                        )
+                    }
+                )
         value = _decimal(data.get("value"), "value")
         if value is not None:
             _check_decimals(value, scoring.decimals, "value")

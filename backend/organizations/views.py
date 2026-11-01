@@ -3,6 +3,7 @@ from __future__ import annotations
 from django.db import transaction
 from django.db.models import Count, ProtectedError, RestrictedError
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext
 from rest_framework import generics, mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -151,7 +152,7 @@ class DepartmentViewSet(OrgScopedMixin, AuditMixin, viewsets.ModelViewSet):
         """Reihenfolge der Untereinheiten unter einer Einheit (``parent``; leer: oberste Ebene)."""
         parent = request.data.get("parent") or self.org.pk
         if not isinstance(parent, int):
-            raise serializers.ValidationError({"parent": "Unbekannte Einheit."})
+            raise serializers.ValidationError({"parent": gettext("Unbekannte Einheit.")})
         return reorder_response(
             request,
             self.org,
@@ -174,7 +175,7 @@ class DepartmentViewSet(OrgScopedMixin, AuditMixin, viewsets.ModelViewSet):
             else None
         )
         if membership is None:
-            raise serializers.ValidationError({"member": "Unbekanntes Mitglied."})
+            raise serializers.ValidationError({"member": gettext("Unbekanntes Mitglied.")})
         result = setup_unit_manager(self.org, unit, membership, request.user)
         return Response(
             {
@@ -197,7 +198,18 @@ class DepartmentViewSet(OrgScopedMixin, AuditMixin, viewsets.ModelViewSet):
             unit.label_plural = above.department_label_plural
             unit.label_gender = above.department_label_gender
             unit.label_genitive = above.department_label_genitive
-            unit.save(update_fields=["label", "label_plural", "label_gender", "label_genitive"])
+            unit.label_en = above.department_label_en
+            unit.label_plural_en = above.department_label_plural_en
+            unit.save(
+                update_fields=[
+                    "label",
+                    "label_plural",
+                    "label_gender",
+                    "label_genitive",
+                    "label_en",
+                    "label_plural_en",
+                ]
+            )
         ensure_workspace_role(unit)
         # Neue Homepage: Vorschaubild einmal im Hintergrund holen
         homepage_preview.schedule(unit)
@@ -206,8 +218,10 @@ class DepartmentViewSet(OrgScopedMixin, AuditMixin, viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         if instance.is_remote:
             raise serializers.ValidationError(
-                "Diese Einheit liegt auf einer anderen Instanz. Zum Entfernen die Kopplung "
-                "unter Verbund lösen."
+                gettext(
+                    "Diese Einheit liegt auf einer anderen Instanz. Zum Entfernen die "
+                    "Kopplung unter Verbund lösen."
+                )
             )
         if Department.objects.filter(parent=instance).exists():
             raise serializers.ValidationError(
@@ -245,7 +259,11 @@ class DepartmentViewSet(OrgScopedMixin, AuditMixin, viewsets.ModelViewSet):
 def _not_remote(unit) -> None:
     if unit.is_remote:
         raise serializers.ValidationError(
-            {"detail": "Diese Einheit liegt auf einer anderen Instanz und pflegt sich dort."}
+            {
+                "detail": gettext(
+                    "Diese Einheit liegt auf einer anderen Instanz und pflegt sich dort."
+                )
+            }
         )
 
 
@@ -352,7 +370,7 @@ class DepartmentRoleViewSet(OrgScopedMixin, AuditMixin, viewsets.ModelViewSet):
         """Reihenfolge der Rollen einer Untereinheit (``department``)."""
         department = request.data.get("department")
         if not isinstance(department, int):
-            raise serializers.ValidationError({"department": "Unbekannte Einheit."})
+            raise serializers.ValidationError({"department": gettext("Unbekannte Einheit.")})
         return reorder_response(
             request,
             self.org,
@@ -394,7 +412,11 @@ class FederationClubViewSet(
     def perform_update(self, serializer):
         if serializer.instance.is_remote:
             raise serializers.ValidationError(
-                {"detail": "Diese Einheit liegt auf einer anderen Instanz und pflegt sich dort."}
+                {
+                    "detail": gettext(
+                        "Diese Einheit liegt auf einer anderen Instanz und pflegt sich dort."
+                    )
+                }
             )
         before = snapshot(serializer.instance)
         club = serializer.save()
@@ -456,7 +478,7 @@ class PlatformOrganizationViewSet(
     def perform_update(self, serializer):
         if serializer.instance.is_remote:
             raise serializers.ValidationError(
-                {"detail": "Diese Einheit liegt auf einer anderen Instanz (Verbund)."}
+                {"detail": gettext("Diese Einheit liegt auf einer anderen Instanz (Verbund).")}
             )
         before = snapshot(serializer.instance)
         org = serializer.save()

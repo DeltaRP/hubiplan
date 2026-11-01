@@ -11,6 +11,7 @@ from django.db import transaction
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
+from django.utils.translation import gettext
 from rest_framework import serializers, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny
@@ -85,7 +86,7 @@ class _StatuteMixin(OrgScopedMixin):
         if value in (None, ""):
             return Kind.STATUTE
         if value not in Kind.values:
-            raise serializers.ValidationError({"kind": "Unbekannte Dokumentart."})
+            raise serializers.ValidationError({"kind": gettext("Unbekannte Dokumentart.")})
         return value
 
 

@@ -18,6 +18,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.translation import gettext, gettext_lazy
 
 from access.models import RoleAssignment, RoleAssignmentQuerySet
 from core.encfields import EncryptedCharField, EncryptedDateField, EncryptedEmailField
@@ -30,7 +31,7 @@ def today() -> datetime.date:
 class Gender(models.TextChoices):
     """Geschlecht einer Person. Leer = keine Angabe."""
 
-    MALE = "männlich", "männlich"
+    MALE = "männlich", gettext_lazy("männlich")
     FEMALE = "weiblich", "weiblich"
     DIVERSE = "divers", "divers"
 
@@ -270,11 +271,11 @@ class Membership(models.Model):
 
 
 class ExitReason(models.TextChoices):
-    EXIT = "exit", "Austritt"
-    EXCLUSION = "exclusion", "Ausschluss"
-    STRIKE_OFF = "strike_off", "Streichung"
-    DEATH = "death", "Tod"
-    TRANSFER = "transfer", "Wechsel in anderen Verein"
+    EXIT = "exit", gettext_lazy("Austritt")
+    EXCLUSION = "exclusion", gettext_lazy("Ausschluss")
+    STRIKE_OFF = "strike_off", gettext_lazy("Streichung")
+    DEATH = "death", gettext_lazy("Tod")
+    TRANSFER = "transfer", gettext_lazy("Wechsel in anderen Verein")
 
 
 class MembershipPeriod(models.Model):
@@ -306,9 +307,9 @@ class MembershipPeriod(models.Model):
 
     def clean(self) -> None:
         if self.exit_date and self.exit_date < self.entry_date:
-            raise ValidationError({"exit_date": "Der Austritt liegt vor dem Eintritt."})
+            raise ValidationError({"exit_date": gettext("Der Austritt liegt vor dem Eintritt.")})
         if self.exit_date and not self.exit_reason:
-            raise ValidationError({"exit_reason": "Bitte einen Austrittsgrund angeben."})
+            raise ValidationError({"exit_reason": gettext("Bitte einen Austrittsgrund angeben.")})
 
 
 class MemberTypeAssignment(models.Model):
@@ -386,10 +387,10 @@ class HonoraryTitle(models.Model):
     Verbandsbeitrag, den der Verein für das Mitglied zahlt."""
 
     class FeeMode(models.TextChoices):
-        NONE = "none", "keine Beitragsänderung"
+        NONE = "none", gettext_lazy("keine Beitragsänderung")
         FREE = "free", "beitragsfrei"
-        AMOUNT = "amount", "fester Jahresbeitrag"
-        DISCOUNT = "discount", "Abschlag in Prozent"
+        AMOUNT = "amount", gettext_lazy("fester Jahresbeitrag")
+        DISCOUNT = "discount", gettext_lazy("Abschlag in Prozent")
 
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE, related_name="honorary_titles"
@@ -494,13 +495,13 @@ class TransferRequest(models.Model):
 
     class Status(models.TextChoices):
         PENDING = "pending", "offen"
-        ACCEPTED = "accepted", "bestätigt"
+        ACCEPTED = "accepted", gettext_lazy("bestätigt")
         REJECTED = "rejected", "abgelehnt"
-        CANCELLED = "cancelled", "zurückgezogen"
+        CANCELLED = "cancelled", gettext_lazy("zurückgezogen")
 
     class Decision(models.TextChoices):
-        EXIT = "exit", "Austritt im alten Verein"
-        CHANGE_TYPE = "change_type", "Wechsel zu nicht aktiver Art"
+        EXIT = "exit", gettext_lazy("Austritt im alten Verein")
+        CHANGE_TYPE = "change_type", gettext_lazy("Wechsel zu nicht aktiver Art")
 
     scope = models.ForeignKey(
         "organizations.Organization", on_delete=models.PROTECT, related_name="+"

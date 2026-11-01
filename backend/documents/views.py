@@ -7,6 +7,7 @@ from django.db import transaction
 from django.http import FileResponse, Http404
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.translation import gettext
 from rest_framework import serializers, status
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
@@ -127,7 +128,7 @@ class _DocsMixin:
 
     def require_manage(self) -> None:
         if not self.viewer.can_manage:
-            raise PermissionDenied("Dafür fehlt dir die Berechtigung.")
+            raise PermissionDenied(gettext("Dafür fehlt dir die Berechtigung."))
 
     @property
     def department(self) -> Department | None:
@@ -283,7 +284,7 @@ class _Folders(APIView):
         visibility = data.validated_data.get("visibility", V.BOARD)
         if visibility not in services.visibilities_for(self.viewer.org, department):
             raise serializers.ValidationError(
-                {"visibility": "Diese Sichtbarkeit gibt es hier nicht."}
+                {"visibility": gettext("Diese Sichtbarkeit gibt es hier nicht.")}
             )
         folder = Folder.objects.create(
             organization=self.viewer.org,
@@ -317,7 +318,7 @@ class _FolderDetail(APIView):
         if visibility and visibility != folder.visibility:
             if visibility not in services.visibilities_for(self.viewer.org, folder.department):
                 raise serializers.ValidationError(
-                    {"visibility": "Diese Sichtbarkeit gibt es hier nicht."}
+                    {"visibility": gettext("Diese Sichtbarkeit gibt es hier nicht.")}
                 )
             changes[f"Sichtbar für ({folder.name})"] = [
                 folder.get_visibility_display(),
@@ -328,7 +329,7 @@ class _FolderDetail(APIView):
         if shared_up is not None and shared_up != folder.shared_up:
             if shared_up and self.viewer.share_up_label() is None:
                 raise serializers.ValidationError(
-                    {"shared_up": "Hier gibt es keine höhere Ebene zum Freigeben."}
+                    {"shared_up": gettext("Hier gibt es keine höhere Ebene zum Freigeben.")}
                 )
             changes[f"Nach oben freigegeben ({folder.name})"] = [folder.shared_up, shared_up]
             folder.shared_up = shared_up
@@ -344,7 +345,11 @@ class _FolderDetail(APIView):
         folder = self.own_folder(pk)
         if Document.objects.filter(folder=folder, deleted_at__isnull=True).exists():
             raise serializers.ValidationError(
-                {"detail": "Der Ordner ist nicht leer. Bitte zuerst die Dokumente verschieben."}
+                {
+                    "detail": gettext(
+                        "Der Ordner ist nicht leer. Bitte zuerst die Dokumente verschieben."
+                    )
+                }
             )
         self.audit("delete", folder, {"Ordner": [self.label(folder), None]})
         folder.delete()
@@ -417,7 +422,11 @@ class _DocumentDetail(APIView):
             target = self.own_folder(values["folder"])
             if target.department_id != doc.department_id:
                 raise serializers.ValidationError(
-                    {"folder": "Dokumente lassen sich nur innerhalb einer Ablage verschieben."}
+                    {
+                        "folder": gettext(
+                            "Dokumente lassen sich nur innerhalb einer Ablage verschieben."
+                        )
+                    }
                 )
             changes["Ordner"] = [doc.folder.name, target.name]
             doc.folder = target
@@ -524,7 +533,11 @@ class _Version(APIView):
             raise NotFound()
         if version.document.versions.count() <= 1:
             raise serializers.ValidationError(
-                {"detail": "Die einzige Fassung lässt sich nicht löschen. Lösche das Dokument."}
+                {
+                    "detail": gettext(
+                        "Die einzige Fassung lässt sich nicht löschen. Lösche das Dokument."
+                    )
+                }
             )
         self.audit("update", version.document, {"Fassung gelöscht": [version.name, None]})
         version.delete()

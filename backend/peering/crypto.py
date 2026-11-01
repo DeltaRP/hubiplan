@@ -21,6 +21,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey, X25519PublicKey
 from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+from django.utils.translation import gettext
 
 from .identity import Identity, b64, unb64, verify
 
@@ -62,9 +63,9 @@ def seal(payload: dict, *, sender: str, recipient: str, recipient_enc_key: str) 
 def open_sealed(envelope: dict, ident: Identity) -> dict:
     """Entschlüsselt ein Paket an diese Instanz."""
     if not isinstance(envelope, dict) or envelope.get("format") != ENVELOPE:
-        raise CryptoError("kein verschlüsseltes Paket")
+        raise CryptoError(gettext("kein verschlüsseltes Paket"))
     if envelope.get("to") != ident.instance_id:
-        raise CryptoError("Paket ist nicht für diese Instanz")
+        raise CryptoError(gettext("Paket ist nicht für diese Instanz"))
     # Nach einem geplanten Schlüsselwechsel: auch der alte Schlüssel (Übergangszeit)
     for enc_key in ident.decryption_keys:
         try:
@@ -82,8 +83,8 @@ def open_sealed(envelope: dict, ident: Identity) -> dict:
         except InvalidTag:
             continue
         except (KeyError, ValueError, TypeError) as exc:
-            raise CryptoError("Paket lässt sich nicht entschlüsseln") from exc
-    raise CryptoError("Paket lässt sich nicht entschlüsseln")
+            raise CryptoError(gettext("Paket lässt sich nicht entschlüsseln")) from exc
+    raise CryptoError(gettext("Paket lässt sich nicht entschlüsseln"))
 
 
 def signing_input(method: str, path: str, date: str, nonce: str, body: bytes) -> bytes:

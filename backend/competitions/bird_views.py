@@ -5,6 +5,7 @@ from __future__ import annotations
 from django.db import transaction
 from django.db.models import Max
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
@@ -21,7 +22,7 @@ class _BirdMixin(_Mixin):
     def bird_competition(self, pk) -> Competition:
         comp = self.competition(pk)
         if comp.form != Competition.Form.BIRD:
-            raise ValidationError("Das ist kein Vogelschießen.")
+            raise ValidationError(gettext("Das ist kein Vogelschießen."))
         return comp
 
 
@@ -44,7 +45,7 @@ class PrizesView(_BirdMixin, APIView):
         comp = self.bird_competition(competition_id)
         name = str(request.data.get("name", "")).strip()[:100]
         if not name:
-            raise ValidationError({"name": "Bitte einen Namen angeben."})
+            raise ValidationError({"name": gettext("Bitte einen Namen angeben.")})
         last = comp.prizes.aggregate(m=Max("sort_order"))["m"] or 0
         p = Prize.objects.create(
             organization=self.org,
@@ -79,14 +80,14 @@ class PrizeView(_BirdMixin, APIView):
         data = request.data
         if any(f in data for f in SETUP_FIELDS):
             if not self.can_manage:
-                raise PermissionDenied("Dafür fehlt dir die Berechtigung.")
+                raise PermissionDenied(gettext("Dafür fehlt dir die Berechtigung."))
             if p.competition.status == Competition.Status.FINAL:
-                raise ValidationError("Der Wettbewerb ist endgültig abgeschlossen.")
+                raise ValidationError(gettext("Der Wettbewerb ist endgültig abgeschlossen."))
             before = snapshot(p)
             if "name" in data:
                 name = str(data["name"] or "").strip()[:100]
                 if not name:
-                    raise ValidationError({"name": "Bitte einen Namen angeben."})
+                    raise ValidationError({"name": gettext("Bitte einen Namen angeben.")})
                 p.name = name
             if "award" in data:
                 p.award = str(data["award"] or "").strip()[:200]
@@ -94,7 +95,7 @@ class PrizeView(_BirdMixin, APIView):
                 try:
                     p.sort_order = max(0, min(int(data["sort_order"]), 999))
                 except (TypeError, ValueError) as exc:
-                    raise ValidationError({"sort_order": "Ungültig."}) from exc
+                    raise ValidationError({"sort_order": gettext("Ungültig.")}) from exc
             p.save()
             changes = diff(before, snapshot(p))
             if changes:
@@ -108,10 +109,12 @@ class PrizeView(_BirdMixin, APIView):
     @transaction.atomic
     def delete(self, request, org_id: int, competition_id: int, pk: int):
         if not self.can_manage:
-            raise PermissionDenied("Dafür fehlt dir die Berechtigung.")
+            raise PermissionDenied(gettext("Dafür fehlt dir die Berechtigung."))
         p = self._get(competition_id, pk)
         if p.fallen:
-            raise ValidationError("Das Pfand ist schon gefallen. Erst das Ergebnis entfernen.")
+            raise ValidationError(
+                gettext("Das Pfand ist schon gefallen. Erst das Ergebnis entfernen.")
+            )
         record(self.org, request.user, "delete", p, diff(snapshot(p), {}))
         p.delete()
         return Response(_state(p.competition))
@@ -127,7 +130,7 @@ class ShotView(_BirdMixin, APIView):
         starter = get_object_or_404(Starter, pk=request.data.get("starter") or 0, competition=comp)
         hits = request.data.get("hits") or []
         if not isinstance(hits, list):
-            raise ValidationError({"hits": "Ungültige Angabe."})
+            raise ValidationError({"hits": gettext("Ungültige Angabe.")})
         bird.fire(
             self.org,
             request.user,

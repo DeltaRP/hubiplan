@@ -40,6 +40,7 @@ from django.core.files.base import ContentFile
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from access.catalog import CIRCULARS_SEND, DEPT_CIRCULARS_SEND
@@ -126,24 +127,30 @@ def clean_local_part(
     if not LOCAL_RE.match(local) or ".." in local:
         raise serializers.ValidationError(
             {
-                field: f"„{value}“: nur Buchstaben, Ziffern, Punkt, Binde- und Unterstrich "
-                "(nicht am Anfang oder Ende)."
+                field: gettext(
+                    "„{value}“: nur Buchstaben, Ziffern, Punkt, Binde- und Unterstrich "
+                    "(nicht am Anfang oder Ende)."
+                ).format(value=value)
             }
         )
     if local in RESERVED:
-        raise serializers.ValidationError({field: f"„{local}“ ist reserviert."})
+        raise serializers.ValidationError(
+            {field: gettext("„{local}“ ist reserviert.").format(local=local)}
+        )
     with rls_bypass():
         taken = lists_with(local)
         if current is not None:
             taken = taken.exclude(pk=current.pk)
         if taken.exists():
-            raise serializers.ValidationError({field: f"„{local}“ ist schon vergeben."})
+            raise serializers.ValidationError(
+                {field: gettext("„{local}“ ist schon vergeben.").format(local=local)}
+            )
     return local
 
 
 def clean_aliases(values, current: MailingList | None, main: str) -> list[str]:
     if not isinstance(values, list):
-        raise serializers.ValidationError({"aliases": "Ungültige Angabe."})
+        raise serializers.ValidationError({"aliases": gettext("Ungültige Angabe.")})
     out: list[str] = []
     for value in values:
         if not isinstance(value, str) or not value.strip():
@@ -152,7 +159,13 @@ def clean_aliases(values, current: MailingList | None, main: str) -> list[str]:
         if local != main and local not in out:
             out.append(local)
     if len(out) > MAX_ALIASES:
-        raise serializers.ValidationError({"aliases": f"Höchstens {MAX_ALIASES} weitere Adressen."})
+        raise serializers.ValidationError(
+            {
+                "aliases": gettext("Höchstens {MAX_ALIASES} weitere Adressen.").format(
+                    MAX_ALIASES=MAX_ALIASES
+                )
+            }
+        )
     return out
 
 
@@ -638,9 +651,13 @@ def confirm(entry: InboundMail) -> dict[str, int]:
     with rls_bypass(), transaction.atomic():
         entry = InboundMail.objects.select_for_update().get(pk=entry.pk)
         if entry.status != InboundMail.Status.WAITING or entry.circular_id is None:
-            raise serializers.ValidationError("Dieses Rundschreiben wurde schon bearbeitet.")
+            raise serializers.ValidationError(
+                gettext("Dieses Rundschreiben wurde schon bearbeitet.")
+            )
         if entry.mailing_list is None or not may_send(entry.user, entry.mailing_list):
-            raise serializers.ValidationError("Du darfst an diesen Verteiler nicht mehr schreiben.")
+            raise serializers.ValidationError(
+                gettext("Du darfst an diesen Verteiler nicht mehr schreiben.")
+            )
         counts = services.start_sending(entry.circular, entry.user)
         entry.status = InboundMail.Status.SENT
         entry.save(update_fields=["status"])
@@ -651,7 +668,9 @@ def discard(entry: InboundMail) -> None:
     with rls_bypass(), transaction.atomic():
         entry = InboundMail.objects.select_for_update().get(pk=entry.pk)
         if entry.status != InboundMail.Status.WAITING:
-            raise serializers.ValidationError("Dieses Rundschreiben wurde schon bearbeitet.")
+            raise serializers.ValidationError(
+                gettext("Dieses Rundschreiben wurde schon bearbeitet.")
+            )
         if entry.circular is not None and entry.circular.is_draft:
             delete_circular(entry.circular)
         entry.circular = None

@@ -19,6 +19,7 @@ import math
 import random
 from dataclasses import asdict, dataclass, field
 
+from django.utils.translation import gettext
 from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 
 from .. import targets
@@ -235,7 +236,7 @@ def _solve(a: list[list[float]], b: list[float]) -> list[float]:
         m[col], m[piv] = m[piv], m[col]
         p = m[col][col]
         if abs(p) < 1e-12:
-            raise ValueError("Abbildung nicht bestimmbar")
+            raise ValueError(gettext("Abbildung nicht bestimmbar"))
         for r in range(n):
             if r != col:
                 f = m[r][col] / p

@@ -18,6 +18,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext
 from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, PermissionDenied
@@ -141,7 +142,7 @@ class HonoraryTitleSerializer(serializers.ModelSerializer):
         if self.instance:
             qs = qs.exclude(pk=self.instance.pk)
         if qs.exists():
-            raise serializers.ValidationError("Diese Ehrung gibt es schon.")
+            raise serializers.ValidationError(gettext("Diese Ehrung gibt es schon."))
         return value
 
     def validate(self, attrs):
@@ -150,14 +151,16 @@ class HonoraryTitleSerializer(serializers.ModelSerializer):
         amount, percent = get("fee_amount"), get("fee_discount_percent")
         if mode == HonoraryTitle.FeeMode.AMOUNT:
             if amount is None:
-                raise serializers.ValidationError({"fee_amount": "Bitte einen Betrag angeben."})
+                raise serializers.ValidationError(
+                    {"fee_amount": gettext("Bitte einen Betrag angeben.")}
+                )
             if amount < 0:
                 raise serializers.ValidationError(
-                    {"fee_amount": "Der Beitrag darf nicht negativ sein."}
+                    {"fee_amount": gettext("Der Beitrag darf nicht negativ sein.")}
                 )
         if mode == HonoraryTitle.FeeMode.DISCOUNT and (percent is None or not (0 < percent <= 100)):
             raise serializers.ValidationError(
-                {"fee_discount_percent": "Der Abschlag liegt zwischen 0 und 100 Prozent."}
+                {"fee_discount_percent": gettext("Der Abschlag liegt zwischen 0 und 100 Prozent.")}
             )
         return attrs
 
@@ -212,7 +215,9 @@ class HonoraryTitleViewSet(OrgScopedMixin, AuditMixin, viewsets.ModelViewSet):
         if title.awards.exists():
             return Response(
                 {
-                    "detail": f"„{title.name}“ ist verliehen und kann nur archiviert werden.",
+                    "detail": gettext(
+                        "„{name}“ ist verliehen und kann nur archiviert werden."
+                    ).format(name=title.name),
                     "can_archive": not title.is_archived,
                 },
                 status=status.HTTP_409_CONFLICT,
@@ -284,9 +289,11 @@ class AwardSerializer(serializers.ModelSerializer):
             start = start.replace(month=1, day=1)
             attrs["valid_from"] = start
         if end and start and end < start:
-            raise serializers.ValidationError({"valid_until": "Das Ende liegt vor dem Beginn."})
+            raise serializers.ValidationError(
+                {"valid_until": gettext("Das Ende liegt vor dem Beginn.")}
+            )
         if self.instance is None and title is not None and title.is_archived:
-            raise serializers.ValidationError({"title": "Diese Ehrung ist archiviert."})
+            raise serializers.ValidationError({"title": gettext("Diese Ehrung ist archiviert.")})
         person_id = self.context["person_id"]
         others = HonoraryTitleAward.objects.filter(
             organization=self.context["org"], person_id=person_id, title=title
@@ -296,7 +303,7 @@ class AwardSerializer(serializers.ModelSerializer):
         for other in others:
             if overlaps(start, end, other.valid_from, other.valid_until):
                 raise serializers.ValidationError(
-                    "Das Mitglied hat diese Ehrung im Zeitraum bereits."
+                    gettext("Das Mitglied hat diese Ehrung im Zeitraum bereits.")
                 )
         return attrs
 
@@ -397,7 +404,7 @@ class FederationAwardViewSet(OrgScopedMixin, _AwardViewSet):
         super().initial(request, *args, **kwargs)
         if self.org.federation_member_access == "none":
             raise PermissionDenied(
-                "Die Plattform hat den Zugriff auf Mitgliedsdaten nicht freigegeben."
+                gettext("Die Plattform hat den Zugriff auf Mitgliedsdaten nicht freigegeben.")
             )
 
     def audit_orgs(self, membership: Membership) -> list[Organization]:

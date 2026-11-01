@@ -7,6 +7,7 @@ import datetime
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -336,7 +337,7 @@ class CouplingView(_Peering):
     def patch(self, request, org_id, pk):
         coupling = self.coupling(pk)
         if not coupling.is_open and coupling.state != Coupling.State.PENDING:
-            raise ValidationError({"detail": "Die Kopplung ist nicht aktiv."})
+            raise ValidationError({"detail": gettext("Die Kopplung ist nicht aktiv.")})
         if "options" in request.data:
             options = request.data.get("options") or {}
             coupling.options = {
@@ -395,8 +396,10 @@ class CouplingActionView(_Peering):
                 )
             elif action in ("keys-confirm", "keys-decline"):
                 raise PermissionDenied(
-                    "Einen Notfallwechsel der Schlüssel bestätigt die Plattformverwaltung, weil "
-                    "er für alle Kopplungen mit dieser Instanz gilt."
+                    gettext(
+                        "Einen Notfallwechsel der Schlüssel bestätigt die Plattformverwaltung, "
+                        "weil er für alle Kopplungen mit dieser Instanz gilt."
+                    )
                 )
             elif action == "sync":
                 services.sync(coupling)
@@ -472,7 +475,9 @@ class InvoicePaidView(_Invoice):
         account = category = None
         if request.data.get("account"):
             if FINANCE_EDIT not in permissions_in(request.user, self.org):
-                raise PermissionDenied("Buchen in der Kasse braucht das Recht „Kasse führen“.")
+                raise PermissionDenied(
+                    gettext("Buchen in der Kasse braucht das Recht „Kasse führen“.")
+                )
             account = Account.objects.filter(
                 organization=self.org, pk=request.data["account"]
             ).first()
@@ -480,7 +485,7 @@ class InvoicePaidView(_Invoice):
                 organization=self.org, pk=request.data.get("category") or 0
             ).first()
             if account is None:
-                raise ValidationError({"account": "Konto nicht gefunden."})
+                raise ValidationError({"account": gettext("Konto nicht gefunden.")})
         try:
             packet_invoices.report_paid(
                 remote, date=date, account=account, category=category, user=request.user
@@ -521,7 +526,7 @@ class RegisterResolveView(_Peering):
         try:
             resolve(rm, int(person) if person else None)
         except (TypeError, ValueError):
-            raise ValidationError({"person": "Ungültige Auswahl."}) from None
+            raise ValidationError({"person": gettext("Ungültige Auswahl.")}) from None
         except DjangoValidationError as exc:
             _raise(exc)
         coupling.refresh_from_db()
@@ -533,7 +538,7 @@ class TransferCreateView(_Peering):
 
     def post(self, request, org_id, pk):
         if MEMBERS_EDIT not in permissions_in(request.user, self.org):
-            raise PermissionDenied("Dafür braucht es das Recht, Mitglieder zu bearbeiten.")
+            raise PermissionDenied(gettext("Dafür braucht es das Recht, Mitglieder zu bearbeiten."))
         coupling = self.coupling(pk)
         try:
             transfers.request_transfer(coupling, request.data, request.user)
@@ -550,7 +555,7 @@ class TransferDecideView(_Peering):
         from members.models import MemberType
 
         if MEMBERS_EDIT not in permissions_in(request.user, self.org):
-            raise PermissionDenied("Dafür braucht es das Recht, Mitglieder zu bearbeiten.")
+            raise PermissionDenied(gettext("Dafür braucht es das Recht, Mitglieder zu bearbeiten."))
         coupling = self.coupling(pk)
         rt = get_object_or_404(
             RemoteTransfer.objects.select_related("membership__person", "coupling"),
@@ -600,7 +605,9 @@ class RegisterSuggestView(OrgScopedMixin, APIView):
             )
         except DjangoValidationError as exc:
             _raise(exc)
-        return Response({"detail": "Der Vorschlag ist an den Verein unterwegs."}, status=202)
+        return Response(
+            {"detail": gettext("Der Vorschlag ist an den Verein unterwegs.")}, status=202
+        )
 
 
 class MoveView(_Peering):
@@ -621,7 +628,9 @@ class MoveView(_Peering):
         except DjangoValidationError as exc:
             _raise(exc)
         except transport.PeerError as exc:
-            raise ValidationError({"detail": f"Die neue Instanz antwortet nicht: {exc}"}) from exc
+            raise ValidationError(
+                {"detail": gettext("Die neue Instanz antwortet nicht: {exc}").format(exc=exc)}
+            ) from exc
 
 
 class PlatformPeeringView(APIView):
@@ -672,7 +681,9 @@ class PlatformKeysView(APIView):
         if str(request.data.get("confirm") or "").strip().upper() != (
             "NOTFALL" if emergency else "WECHSELN"
         ):
-            raise ValidationError({"detail": "Zum Bestätigen bitte das angezeigte Wort eintippen."})
+            raise ValidationError(
+                {"detail": gettext("Zum Bestätigen bitte das angezeigte Wort eintippen.")}
+            )
         keys.rotate(request.user, emergency=emergency)
         return Response(keys.status())
 
@@ -690,7 +701,7 @@ class PlatformPeerKeysView(APIView):
             elif request.data.get("action") == "decline":
                 keys.decline(peer, request.user)
             else:
-                raise ValidationError({"action": "confirm oder decline"})
+                raise ValidationError({"action": gettext("confirm oder decline")})
         except DjangoValidationError as exc:
             _raise(exc)
         return Response({"pending_keys": keys.pending_peers()})
@@ -748,17 +759,17 @@ class SpinOffsView(_Peering):
         self.require(DATA_EXPORT, "Ausgliedern braucht das Recht für den vollständigen Export.")
         if self.org.type != Organization.Type.CLUB:
             raise ValidationError(
-                {"detail": "Nur Einheiten mit eigenem Datenbereich gliedern aus."}
+                {"detail": gettext("Nur Einheiten mit eigenem Datenbereich gliedern aus.")}
             )
         unit = Organization.objects.filter(
             pk=request.data.get("unit"), organization=self.org, type=Organization.Type.UNIT
         ).first()
         if unit is None:
-            raise ValidationError({"unit": "Unbekannte Untereinheit."})
+            raise ValidationError({"unit": gettext("Unbekannte Untereinheit.")})
         try:
             cutoff = datetime.date.fromisoformat(str(request.data.get("cutoff") or ""))
         except ValueError:
-            raise ValidationError({"cutoff": "Bitte einen Stichtag angeben."}) from None
+            raise ValidationError({"cutoff": gettext("Bitte einen Stichtag angeben.")}) from None
         try:
             spin = spinoff.prepare(
                 self.org,

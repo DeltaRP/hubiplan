@@ -9,6 +9,7 @@ Auswahl und Anhängen bleiben im Browser.
 from __future__ import annotations
 
 from django.db import transaction
+from django.utils.translation import gettext
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
@@ -93,7 +94,7 @@ class SendShortView(APIView):
             if org is None or not permissions_in(user, org):
                 raise NotFound()
             if CIRCULARS_SEND not in permissions_in(user, org):
-                raise PermissionDenied("Dafür fehlt dir die Berechtigung.")
+                raise PermissionDenied(gettext("Dafür fehlt dir die Berechtigung."))
             set_rls(org.pk, user.pk, scope_id=scope_of(org.pk))
             return org, None
         if kind == "dept":
@@ -101,7 +102,7 @@ class SendShortView(APIView):
             if ctx is None:
                 raise NotFound()
             if DEPT_CIRCULARS_SEND not in ctx.permissions:
-                raise PermissionDenied("Dafür fehlt dir die Berechtigung.")
+                raise PermissionDenied(gettext("Dafür fehlt dir die Berechtigung."))
             set_rls(ctx.club.pk, user.pk, scope_id=scope_of(ctx.club.pk))
             return ctx.club, ctx.department
         raise NotFound()

@@ -5,6 +5,7 @@ from __future__ import annotations
 from django.db import transaction
 from django.http import Http404
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -189,7 +190,7 @@ class PortalMandateView(APIView):
                 )
             if request.data.get("consent") is not True:
                 raise serializers.ValidationError(
-                    {"consent": "Bitte bestätige den Text des Mandats."}
+                    {"consent": gettext("Bitte bestätige den Text des Mandats.")}
                 )
             try:
                 mandate = sepa.create_mandate(
@@ -245,7 +246,7 @@ class PortalMandateView(APIView):
                 status=Mandate.Status.ACTIVE,
             ).first()
             if mandate is None:
-                raise NotFound("Kein gültiges Mandat.")
+                raise NotFound(gettext("Kein gültiges Mandat."))
             sepa.revoke(mandate)
             record(
                 club,

@@ -5,6 +5,7 @@ from __future__ import annotations
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext
 from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -52,7 +53,7 @@ class _WorkflowView(_ClubMixin, APIView):
     def member_type(self, pk) -> MemberType:
         member_type = MemberType.objects.filter(organization=self.org, pk=pk).first()
         if member_type is None:
-            raise serializers.ValidationError({"member_type": "Unbekannte Mitgliedsart."})
+            raise serializers.ValidationError({"member_type": gettext("Unbekannte Mitgliedsart.")})
         if member_type.is_archived:
             raise serializers.ValidationError({"member_type": ARCHIVED})
         return member_type
@@ -121,7 +122,7 @@ class ReentryView(_WorkflowView):
         entry_date = v.pop("entry_date")
         contact = {k: val for k, val in v.items() if k in services.CONTACT_FIELDS}
         if contact and not all(contact.get(f) for f in ("street", "postal_code", "city")):
-            raise serializers.ValidationError("Bitte die vollständige Anschrift angeben.")
+            raise serializers.ValidationError(gettext("Bitte die vollständige Anschrift angeben."))
         workflows.reenter(membership, entry_date, member_type, contact or None)
         record(
             self.org,
@@ -216,12 +217,12 @@ class TransferListView(_ClubMixin, APIView):
             pk=v.pop("person"), scope=services.scope_for(self.org)
         ).first()
         if person is None:
-            raise serializers.ValidationError({"person": "Unbekannte Person."})
+            raise serializers.ValidationError({"person": gettext("Unbekannte Person.")})
         member_type = MemberType.objects.filter(
             organization=self.org, pk=v.pop("member_type")
         ).first()
         if member_type is None:
-            raise serializers.ValidationError({"member_type": "Unbekannte Mitgliedsart."})
+            raise serializers.ValidationError({"member_type": gettext("Unbekannte Mitgliedsart.")})
         if member_type.is_archived:
             raise serializers.ValidationError({"member_type": ARCHIVED})
         transfer = workflows.create_transfer(

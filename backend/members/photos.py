@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 from django.core.files.base import ContentFile
 from django.db import transaction
+from django.utils.translation import gettext
 from PIL import Image, ImageOps, UnidentifiedImageError
 from rest_framework.exceptions import ValidationError
 
@@ -61,15 +62,17 @@ def enforce_aspect(img: Image.Image) -> Image.Image:
 def process(upload) -> Processed:
     """Prüft das Bild, wendet die EXIF-Ausrichtung an, entfernt Metadaten, skaliert."""
     if upload.size > MAX_BYTES:
-        raise ValidationError({"file": "Das Bild darf höchstens 10 MB groß sein."})
+        raise ValidationError({"file": gettext("Das Bild darf höchstens 10 MB groß sein.")})
     try:
         upload.seek(0)
         probe = Image.open(upload)
         fmt = probe.format
         if fmt not in ALLOWED_FORMATS:
-            raise ValidationError({"file": "Bitte ein JPEG-, PNG- oder WebP-Bild hochladen."})
+            raise ValidationError(
+                {"file": gettext("Bitte ein JPEG-, PNG- oder WebP-Bild hochladen.")}
+            )
         if probe.width * probe.height > MAX_PIXELS:
-            raise ValidationError({"file": "Das Bild hat zu viele Pixel."})
+            raise ValidationError({"file": gettext("Das Bild hat zu viele Pixel.")})
         probe.verify()
         upload.seek(0)
         img = Image.open(upload)
@@ -77,7 +80,7 @@ def process(upload) -> Processed:
     except ValidationError:
         raise
     except (UnidentifiedImageError, OSError, Image.DecompressionBombError) as exc:
-        raise ValidationError({"file": "Die Datei ist kein gültiges Bild."}) from exc
+        raise ValidationError({"file": gettext("Die Datei ist kein gültiges Bild.")}) from exc
     img = ImageOps.exif_transpose(img)
     if img.mode in ("RGBA", "LA", "P"):
         img = img.convert("RGBA")
@@ -110,7 +113,7 @@ def clean_photo(content: bytes, size: int = FULL_SIZE) -> bytes:
         raise
     except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError) as exc:
         raise DjangoValidationError(
-            "Ein Mitgliederfoto in der Datei ist kein gültiges Bild."
+            gettext("Ein Mitgliederfoto in der Datei ist kein gültiges Bild.")
         ) from exc
     img = img.convert("RGB")
     img.thumbnail((size, size), Image.Resampling.LANCZOS)
@@ -167,7 +170,7 @@ def store(membership, processed: Processed, status: str, source: str, user=None)
 def approve(membership) -> MemberPhoto:
     pending = MemberPhoto.objects.filter(membership=membership, status="pending").first()
     if pending is None:
-        raise ValidationError("Es wartet kein Foto auf Freigabe.")
+        raise ValidationError(gettext("Es wartet kein Foto auf Freigabe."))
     current = MemberPhoto.objects.filter(membership=membership, status="approved").first()
     if current:
         current.delete_files()

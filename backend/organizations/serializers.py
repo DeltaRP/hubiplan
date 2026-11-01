@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import URLValidator
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from access.catalog import DEPARTMENT_CODES, MEMBERS_VIEW, SWITCHABLE_MODULES
@@ -77,11 +78,11 @@ def effective_contact(org: Organization) -> dict:
 def whole_years(value) -> list[int]:
     """Jahreszahlen als ganze Zahlen; 25.9, true oder „abc“ werden abgelehnt."""
     if not isinstance(value, list | tuple):
-        raise serializers.ValidationError("Bitte ganze Jahre angeben.")
+        raise serializers.ValidationError(gettext("Bitte ganze Jahre angeben."))
     years = set()
     for v in value:
         if isinstance(v, bool):
-            raise serializers.ValidationError("Bitte ganze Jahre angeben.")
+            raise serializers.ValidationError(gettext("Bitte ganze Jahre angeben."))
         if isinstance(v, int):
             years.add(v)
         elif isinstance(v, float) and v.is_integer():
@@ -89,7 +90,7 @@ def whole_years(value) -> list[int]:
         elif isinstance(v, str) and v.strip().lstrip("-").isdigit():
             years.add(int(v.strip()))
         else:
-            raise serializers.ValidationError("Bitte ganze Jahre angeben.")
+            raise serializers.ValidationError(gettext("Bitte ganze Jahre angeben."))
     return sorted(years)
 
 
@@ -153,6 +154,8 @@ class OrganizationSerializer(KeepsMembersMixin, ModelCleanMixin, serializers.Mod
             "label_plural",
             "label_gender",
             "label_genitive",
+            "label_en",
+            "label_plural_en",
             "founding_year",
             "street",
             "postal_code",
@@ -168,6 +171,8 @@ class OrganizationSerializer(KeepsMembersMixin, ModelCleanMixin, serializers.Mod
             "department_label_plural",
             "department_label_gender",
             "department_label_genitive",
+            "department_label_en",
+            "department_label_plural_en",
             "department_terms",
             "allow_multiple_departments",
             "direct_members",
@@ -226,8 +231,11 @@ class OrganizationSerializer(KeepsMembersMixin, ModelCleanMixin, serializers.Mod
             if Booking.objects.filter(organization=org).exists():
                 raise serializers.ValidationError(
                     {
-                        "fiscal_start_month": "Es gibt schon Buchungen in der Kasse. Das "
-                        "Geschäftsjahr lässt sich dann nicht mehr ändern."
+                        "fiscal_start_month": gettext(
+                            "Es gibt schon Buchungen in der Kasse. "
+                            "Das Geschäftsjahr lässt sich dann "
+                            "nicht mehr ändern."
+                        )
                     }
                 )
         return super().validate(attrs)
@@ -238,32 +246,36 @@ class OrganizationSerializer(KeepsMembersMixin, ModelCleanMixin, serializers.Mod
             return value
         if value and org.type != Organization.Type.FEDERATION:
             raise serializers.ValidationError(
-                "Eigene Mitglieder neben denen darunter gibt es nur in der obersten Einheit."
+                gettext(
+                    "Eigene Mitglieder neben denen darunter gibt es nur in der obersten Einheit."
+                )
             )
         if not value and org.direct_members:
             from members.models import Membership
 
             if Membership.objects.filter(organization=org).exists():
                 raise serializers.ValidationError(
-                    "Es gibt schon eigene Mitglieder. Bitte diese zuerst entfernen."
+                    gettext("Es gibt schon eigene Mitglieder. Bitte diese zuerst entfernen.")
                 )
         return value
 
     def validate_jubilee_years(self, value):
         years = whole_years(value)
         if any(y < 1 or y > 100 for y in years):
-            raise serializers.ValidationError("Jubiläen zwischen 1 und 100 Jahren.")
+            raise serializers.ValidationError(gettext("Jubiläen zwischen 1 und 100 Jahren."))
         return years
 
     def validate_unit_jubilee_years(self, value):
         years = whole_years(value)
         if any(y < 1 or y > 1000 for y in years):
-            raise serializers.ValidationError("Jubiläen zwischen 1 und 1000 Jahren.")
+            raise serializers.ValidationError(gettext("Jubiläen zwischen 1 und 1000 Jahren."))
         return years
 
     def validate_contact_role(self, role):
         if role and self.instance and role.organization_id != self.instance.pk:
-            raise serializers.ValidationError("Die Rolle gehört nicht zu dieser Organisation.")
+            raise serializers.ValidationError(
+                gettext("Die Rolle gehört nicht zu dieser Organisation.")
+            )
         return role
 
 
@@ -340,7 +352,7 @@ class HomepageImageSerializer(serializers.Serializer):
         from .models import MAX_LOGO_BYTES
 
         if file.size > MAX_LOGO_BYTES * 2:
-            raise serializers.ValidationError("Das Bild darf höchstens 4 MB groß sein.")
+            raise serializers.ValidationError(gettext("Das Bild darf höchstens 4 MB groß sein."))
         file.seek(0)
         try:
             data = clean_preview(file.read())
@@ -373,14 +385,16 @@ class LogoSerializer(serializers.Serializer):
         from .models import MAX_LOGO_BYTES
 
         if file.size > MAX_LOGO_BYTES:
-            raise serializers.ValidationError("Das Logo darf höchstens 2 MB groß sein.")
+            raise serializers.ValidationError(gettext("Das Logo darf höchstens 2 MB groß sein."))
         return file
 
 
 def clean_department_permissions(value) -> list[str]:
     unknown = sorted(set(value) - DEPARTMENT_CODES)
     if unknown:
-        raise serializers.ValidationError(f"Unbekannte Berechtigungen: {', '.join(unknown)}")
+        raise serializers.ValidationError(
+            gettext("Unbekannte Berechtigungen: {x}").format(x=", ".join(unknown))
+        )
     return sorted(set(value))
 
 
@@ -483,10 +497,14 @@ class DepartmentSerializer(ModelCleanMixin, serializers.ModelSerializer):
             "label",
             "label_plural",
             "label_gender",
+            "label_en",
+            "label_plural_en",
             "department_label",
             "department_label_plural",
             "department_label_gender",
             "department_label_genitive",
+            "department_label_en",
+            "department_label_plural_en",
             "child_terms",
             "own_workspace",
             "own_website",
@@ -498,6 +516,8 @@ class DepartmentSerializer(ModelCleanMixin, serializers.ModelSerializer):
             "label",
             "label_plural",
             "label_gender",
+            "label_en",
+            "label_plural_en",
             "is_remote",
             "website_image_custom",
         ]
@@ -536,7 +556,7 @@ class DepartmentSerializer(ModelCleanMixin, serializers.ModelSerializer):
             URLValidator(schemes=["http", "https"])(value)
         except DjangoValidationError:
             raise serializers.ValidationError(
-                "Bitte eine gültige Adresse angeben, z. B. https://www.beispiel.de"
+                gettext("Bitte eine gültige Adresse angeben, z. B. https://www.beispiel.de")
             ) from None
         return value
 
@@ -563,7 +583,7 @@ class DepartmentSerializer(ModelCleanMixin, serializers.ModelSerializer):
         if self.instance:
             siblings = siblings.exclude(pk=self.instance.pk)
         if name and siblings.exists():
-            raise serializers.ValidationError({"name": "Diesen Namen gibt es hier schon."})
+            raise serializers.ValidationError({"name": gettext("Diesen Namen gibt es hier schon.")})
         self._validate_self_managed(attrs)
         self._validate_own_website(attrs, org)
         return super().validate(attrs)
@@ -578,8 +598,10 @@ class DepartmentSerializer(ModelCleanMixin, serializers.ModelSerializer):
             if "self_managed" in attrs:
                 raise serializers.ValidationError(
                     {
-                        "self_managed": "Mit eigenem Arbeitsbereich verwaltet sich die Einheit "
-                        "selbst. Bitte zuerst den Arbeitsbereich ausschalten."
+                        "self_managed": gettext(
+                            "Mit eigenem Arbeitsbereich verwaltet sich die Einheit selbst. Bitte "
+                            "zuerst den Arbeitsbereich ausschalten."
+                        )
                     }
                 )
             attrs["self_managed"] = True
@@ -606,7 +628,11 @@ class DepartmentSerializer(ModelCleanMixin, serializers.ModelSerializer):
             wanted = False  # ohne Arbeitsbereich auch keine Webseite
         if wanted and not has and WEBSITE_MODULE not in (org.enabled_modules or []):
             raise serializers.ValidationError(
-                {"own_website": "Dafür muss hier das Modul „Webseite“ freigeschaltet sein."}
+                {
+                    "own_website": gettext(
+                        "Dafür muss hier das Modul „Webseite“ freigeschaltet sein."
+                    )
+                }
             )
         if wanted != has:
             modules = (modules | {WEBSITE_MODULE}) if wanted else (modules - {WEBSITE_MODULE})
@@ -703,6 +729,8 @@ class PlatformOrganizationSerializer(
             "label_plural",
             "label_gender",
             "label_genitive",
+            "label_en",
+            "label_plural_en",
             "founding_year",
             "street",
             "postal_code",
@@ -741,7 +769,9 @@ class PlatformOrganizationSerializer(
     def validate_enabled_modules(self, value):
         unknown = sorted(set(value) - set(SWITCHABLE_MODULES))
         if unknown:
-            raise serializers.ValidationError(f"Unbekannte Module: {', '.join(unknown)}")
+            raise serializers.ValidationError(
+                gettext("Unbekannte Module: {x}").format(x=", ".join(unknown))
+            )
         return sorted(set(value))
 
     def validate(self, attrs):
@@ -763,7 +793,11 @@ class PlatformOrganizationSerializer(
             if keeps is not None:
                 if "parent" in attrs and attrs["parent"] != self.instance.parent:
                     raise serializers.ValidationError(
-                        {"keeps_members": "Bitte erst umhängen und danach den Schalter ändern."}
+                        {
+                            "keeps_members": gettext(
+                                "Bitte erst umhängen und danach den Schalter ändern."
+                            )
+                        }
                     )
                 self.switch_members(attrs, keeps)
                 org_type = self.instance.type

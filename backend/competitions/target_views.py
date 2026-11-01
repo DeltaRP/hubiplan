@@ -19,6 +19,7 @@ from decimal import Decimal, InvalidOperation
 from django.core.cache import cache
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext
 from rest_framework.exceptions import Throttled, ValidationError
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
@@ -56,9 +57,13 @@ def _coord(raw, field: str) -> Decimal:
     try:
         value = Decimal(str(raw).replace(",", ".").strip())
     except (InvalidOperation, AttributeError) as exc:
-        raise ValidationError({"hits": f"{field}: Bitte eine Zahl angeben."}) from exc
+        raise ValidationError(
+            {"hits": gettext("{field}: Bitte eine Zahl angeben.").format(field=field)}
+        ) from exc
     if not value.is_finite() or abs(value) > MAX_MM:
-        raise ValidationError({"hits": f"{field}: Treffer liegt außerhalb der Scheibe."})
+        raise ValidationError(
+            {"hits": gettext("{field}: Treffer liegt außerhalb der Scheibe.").format(field=field)}
+        )
     return value.quantize(Decimal("0.001"))
 
 
@@ -118,29 +123,31 @@ def set_hits(
     Foto, die mit diesen bestätigten Treffern gesammelt werden (nur mit Einwilligung)."""
     _open_for_entries(comp)
     if scoring.kind != Scoring.Kind.INDIVIDUAL:
-        raise ValidationError("Treffer gibt es nur in Einzelwertungen.")
+        raise ValidationError(gettext("Treffer gibt es nur in Einzelwertungen."))
     if services.target_of(scoring) is None:
-        raise ValidationError("Für diese Wertung ist keine Scheibe eingestellt.")
+        raise ValidationError(gettext("Für diese Wertung ist keine Scheibe eingestellt."))
     if not isinstance(raw, list):
-        raise ValidationError({"hits": "Bitte eine Liste von Treffern senden."})
+        raise ValidationError({"hits": gettext("Bitte eine Liste von Treffern senden.")})
     limit = scoring.shots or MAX_HITS
     if len(raw) > limit:
-        raise ValidationError({"hits": f"Höchstens {limit} Treffer je Schütze."})
+        raise ValidationError(
+            {"hits": gettext("Höchstens {limit} Treffer je Schütze.").format(limit=limit)}
+        )
     src = source or Hit.Source.TAP
     if src not in Hit.Source.values:
-        raise ValidationError({"source": "Unbekannte Quelle."})
+        raise ValidationError({"source": gettext("Unbekannte Quelle.")})
     wanted = []
     for n, item in enumerate(raw, start=1):
         if not isinstance(item, dict):
-            raise ValidationError({"hits": "Ungültiger Treffer."})
+            raise ValidationError({"hits": gettext("Ungültiger Treffer.")})
         spot = item.get("spot")
         if spot not in (None, ""):
             try:
                 spot = int(spot)
             except (TypeError, ValueError) as exc:
-                raise ValidationError({"hits": "Ungültiger Spiegel."}) from exc
+                raise ValidationError({"hits": gettext("Ungültiger Spiegel.")}) from exc
             if spot < 1 or spot > 20:
-                raise ValidationError({"hits": "Ungültiger Spiegel."})
+                raise ValidationError({"hits": gettext("Ungültiger Spiegel.")})
         else:
             spot = None
         wanted.append(
@@ -247,7 +254,7 @@ def photo_rate(key: str) -> None:
     key = f"scheibenfoto:{key}"
     count = cache.get(key, 0)
     if count >= PHOTO_RATE[0]:
-        raise Throttled(detail="Zu viele Fotos in kurzer Zeit. Bitte kurz warten.")
+        raise Throttled(detail=gettext("Zu viele Fotos in kurzer Zeit. Bitte kurz warten."))
     cache.set(key, count + 1, PHOTO_RATE[1])
 
 
@@ -258,12 +265,12 @@ def detect_photo(comp, data, files) -> dict:
     )
     target = services.target_of(scoring)
     if target is None:
-        raise ValidationError("Für diese Wertung ist keine Scheibe eingestellt.")
+        raise ValidationError(gettext("Für diese Wertung ist keine Scheibe eingestellt."))
     upload = files.get("photo")
     if upload is None:
-        raise ValidationError({"photo": "Bitte ein Foto der Scheibe senden."})
+        raise ValidationError({"photo": gettext("Bitte ein Foto der Scheibe senden.")})
     if upload.size > MAX_PHOTO_BYTES:
-        raise ValidationError({"photo": "Das Foto ist zu groß (höchstens 15 MB)."})
+        raise ValidationError({"photo": gettext("Das Foto ist zu groß (höchstens 15 MB).")})
     # erst hier laden: OpenCV braucht Speicher, den nicht jeder Aufruf braucht
     from .vision import detect
 
@@ -329,7 +336,7 @@ class PhotoSamplesView(_Mixin, APIView):
     def patch(self, request, org_id: int):
         value = request.data.get("enabled")
         if not isinstance(value, bool):
-            raise ValidationError({"enabled": "Bitte ja oder nein angeben."})
+            raise ValidationError({"enabled": gettext("Bitte ja oder nein angeben.")})
         consent, _ = PhotoSampleConsent.objects.select_for_update().get_or_create(
             organization=self.org
         )

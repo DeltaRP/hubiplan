@@ -17,6 +17,7 @@ import datetime
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.translation import gettext
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
 from rest_framework.response import Response
@@ -99,7 +100,7 @@ class MemberPreviewView(_MemberMixin, APIView):
 
         new = MemberType.objects.filter(organization=self.org, pk=v.get("member_type") or 0).first()
         if new is None:
-            raise serializers.ValidationError({"member_type": "Unbekannte Mitgliedsart."})
+            raise serializers.ValidationError({"member_type": gettext("Unbekannte Mitgliedsart.")})
         on = v.get("valid_from") or timezone.localdate()
         assignment = membership.current_type(on)
         old = assignment.member_type if assignment else None
@@ -206,7 +207,7 @@ class MemberPreviewView(_MemberMixin, APIView):
     def _fee_self(self, membership, v):
         pays = v.get("pays_fee_self")
         if pays is None:
-            raise serializers.ValidationError({"pays_fee_self": "Bitte angeben."})
+            raise serializers.ValidationError({"pays_fee_self": gettext("Bitte angeben.")})
         items = [
             "Bekommt künftig eine eigene Beitragsrechnung."
             if pays
@@ -246,7 +247,9 @@ class MemberMoveView(_MemberMixin, APIView):
         data.is_valid(raise_exception=True)
         on = data.validated_data["valid_from"]
         if not membership.current_period(on):
-            raise serializers.ValidationError("Zu diesem Datum keine laufende Mitgliedschaft.")
+            raise serializers.ValidationError(
+                gettext("Zu diesem Datum keine laufende Mitgliedschaft.")
+            )
         current = list(
             membership.department_memberships.select_for_update().filter(valid_from__lte=on)
         )
@@ -256,8 +259,10 @@ class MemberMoveView(_MemberMixin, APIView):
         for dm in current:
             if dm.valid_from >= on:
                 raise serializers.ValidationError(
-                    "Die bisherige Zugehörigkeit beginnt erst an diesem Tag. Bitte ein späteres "
-                    "Datum wählen oder im Browser korrigieren."
+                    gettext(
+                        "Die bisherige Zugehörigkeit beginnt erst an diesem Tag. Bitte ein "
+                        "späteres Datum wählen oder im Browser korrigieren."
+                    )
                 )
             before = snapshot(dm)
             dm.valid_until = on - datetime.timedelta(days=1)

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
+from django.utils.translation import gettext
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
@@ -103,7 +104,7 @@ class ReserveViewSet(FinanceMixin, AuditMixin, viewsets.ModelViewSet):
     def initial(self, request, *args, **kwargs):
         super().initial(request, *args, **kwargs)
         if not self.org.reserves_enabled:
-            raise NotFound("Rücklagen sind für diese Einheit nicht eingeschaltet.")
+            raise NotFound(gettext("Rücklagen sind für diese Einheit nicht eingeschaltet."))
 
     def get_queryset(self):
         return Reserve.objects.filter(organization=self.org)
@@ -142,7 +143,7 @@ class ReserveViewSet(FinanceMixin, AuditMixin, viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         if instance.movements.exists():
             raise serializers.ValidationError(
-                "Die Rücklage hat Bewegungen; bitte stattdessen archivieren."
+                gettext("Die Rücklage hat Bewegungen; bitte stattdessen archivieren.")
             )
         super().perform_destroy(instance)
 

@@ -14,6 +14,7 @@ import datetime
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy
 
 from core.privatefiles import PrivateFileField
 from exchange.models import private_storage
@@ -32,17 +33,17 @@ def default_expiry():
 
 class TransferJob(models.Model):
     class Direction(models.TextChoices):
-        EXPORT = "export", "Export"
-        IMPORT = "import", "Import"
+        EXPORT = "export", gettext_lazy("Export")
+        IMPORT = "import", gettext_lazy("Import")
 
     class Kind(models.TextChoices):
-        ORGANIZATION = "organization", "Organisation"
-        DEPARTMENT = "department", "Abteilung"
+        ORGANIZATION = "organization", gettext_lazy("Organisation")
+        DEPARTMENT = "department", gettext_lazy("Abteilung")
 
     class Status(models.TextChoices):
         PENDING = "pending", "wartet"
-        RUNNING = "running", "läuft"
-        CHECKED = "checked", "geprüft"
+        RUNNING = "running", gettext_lazy("läuft")
+        CHECKED = "checked", gettext_lazy("geprüft")
         DONE = "done", "fertig"
         FAILED = "failed", "fehlgeschlagen"
 

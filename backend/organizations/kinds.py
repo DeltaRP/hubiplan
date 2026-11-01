@@ -18,6 +18,7 @@ Untereinheiten ohne eigene Mitglieder (z. B. Züge) bleiben ``unit``.
 from __future__ import annotations
 
 from django.core.exceptions import ValidationError
+from django.utils.translation import gettext
 
 from .models import DEFAULT_LABELS, Organization
 
@@ -38,17 +39,21 @@ def type_for_new(parent: Organization | None, keeps_members: bool) -> str:
         if not keeps_members:
             raise ValidationError(
                 {
-                    "keeps_members": "Einheiten unter dieser Einheit führen immer eigene "
-                    "Mitglieder. Gruppen ohne eigene Mitglieder gibt es (noch) nur unter "
-                    "Einheiten mit eigenen Mitgliedern (dort in den Einstellungen)."
+                    "keeps_members": gettext(
+                        "Einheiten unter dieser Einheit führen immer eigene Mitglieder. Gruppen "
+                        "ohne eigene Mitglieder gibt es (noch) nur unter Einheiten mit eigenen "
+                        "Mitgliedern (dort in den Einstellungen)."
+                    )
                 }
             )
         return T.CLUB
     raise ValidationError(
         {
-            "federation": "Unter dieser Einheit lassen sich hier keine Einheiten anlegen. "
-            "Untereinheiten ohne eigene Mitglieder legt die Einheit selbst in "
-            "ihren Einstellungen an."
+            "federation": gettext(
+                "Unter dieser Einheit lassen sich hier keine Einheiten anlegen. "
+                "Untereinheiten ohne eigene Mitglieder legt die Einheit selbst in ihren "
+                "Einstellungen an."
+            )
         }
     )
 
@@ -81,14 +86,19 @@ def apply_keeps_members(org: Organization, value: bool) -> bool:
     if not can_switch_members(org):
         raise ValidationError(
             {
-                "keeps_members": "Unter einer übergeordneten Einheit führen Einheiten immer "
-                "eigene Mitglieder."
+                "keeps_members": gettext(
+                    "Unter einer übergeordneten Einheit führen Einheiten immer eigene Mitglieder."
+                )
             }
         )
     has_members = Membership.objects.filter(organization=org).exists()
     if not value and has_members:
         raise ValidationError(
-            {"keeps_members": "Es gibt schon eigene Mitglieder. Bitte diese zuerst entfernen."}
+            {
+                "keeps_members": gettext(
+                    "Es gibt schon eigene Mitglieder. Bitte diese zuerst entfernen."
+                )
+            }
         )
     if org.type == T.FEDERATION:
         if not value or has_member_units(org):
@@ -97,7 +107,11 @@ def apply_keeps_members(org: Organization, value: bool) -> bool:
             return False
         if org.children.exists():
             raise ValidationError(
-                {"keeps_members": "Bitte zuerst die Untereinheiten entfernen oder umhängen."}
+                {
+                    "keeps_members": gettext(
+                        "Bitte zuerst die Untereinheiten entfernen oder umhängen."
+                    )
+                }
             )
         _change_type(org, T.CLUB)
         org.direct_members = False
@@ -106,8 +120,9 @@ def apply_keeps_members(org: Organization, value: bool) -> bool:
     if org.children.exists():
         raise ValidationError(
             {
-                "keeps_members": "Es gibt noch Untereinheiten. Bitte diese zuerst entfernen "
-                "oder umhängen."
+                "keeps_members": gettext(
+                    "Es gibt noch Untereinheiten. Bitte diese zuerst entfernen oder umhängen."
+                )
             }
         )
     _change_type(org, T.FEDERATION)

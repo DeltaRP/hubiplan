@@ -8,6 +8,7 @@ import datetime
 
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -55,10 +56,10 @@ def find_event(view: _Mixin, raw) -> Event:
     try:
         pk = int(raw)
     except (TypeError, ValueError) as exc:
-        raise ValidationError({"event": "Unbekannter Termin."}) from exc
+        raise ValidationError({"event": gettext("Unbekannter Termin.")}) from exc
     event = _visible_events(view).select_related("department").filter(pk=pk).first()
     if event is None:
-        raise ValidationError({"event": "Unbekannter Termin."})
+        raise ValidationError({"event": gettext("Unbekannter Termin.")})
     return event
 
 
@@ -83,9 +84,9 @@ def link(view: _Mixin, comp: Competition, event: Event | None, *, fill: bool = F
 def create_event(view: _Mixin, comp: Competition) -> Event:
     """Ganztägigen Termin mit Titel, Datum und Ort des Wettbewerbs anlegen (nur Mitglieder)."""
     if not calendar_on(view.org):
-        raise ValidationError("Der Terminkalender ist nicht freigeschaltet.")
+        raise ValidationError(gettext("Der Terminkalender ist nicht freigeschaltet."))
     if EVENTS_MANAGE not in view.org_permissions:
-        raise PermissionDenied("Termine anlegen darf, wer Termine verwalten darf.")
+        raise PermissionDenied(gettext("Termine anlegen darf, wer Termine verwalten darf."))
     day = _midnight(comp.date)
     event = Event(
         organization=view.org,
@@ -153,7 +154,7 @@ class EventLinkView(_Mixin, APIView):
         comp = self.competition(competition_id)
         if request.data.get("create"):
             if comp.event_id:
-                raise ValidationError("Der Wettbewerb hat schon einen Termin.")
+                raise ValidationError(gettext("Der Wettbewerb hat schon einen Termin."))
             create_event(self, comp)
         elif request.data.get("event") is None:
             link(self, comp, None)
@@ -176,7 +177,7 @@ class StartersFromEventView(_Mixin, APIView):
     def post(self, request, org_id: int, competition_id: int):
         comp = self.competition(competition_id)
         if comp.event_id is None:
-            raise ValidationError("Dem Wettbewerb ist kein Termin zugeordnet.")
+            raise ValidationError(gettext("Dem Wettbewerb ist kein Termin zugeordnet."))
         yes = (
             EventResponse.objects.filter(
                 event_id=comp.event_id,

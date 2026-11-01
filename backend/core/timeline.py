@@ -12,6 +12,7 @@ from dataclasses import dataclass
 
 from dateutil.relativedelta import relativedelta
 from django.utils import timezone
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 MONTHS = [
@@ -64,7 +65,9 @@ def _parse(value: str, field: str, *, end: bool) -> datetime.date:
             return day + relativedelta(months=1) - ONE_DAY if end else day
         return datetime.date.fromisoformat(value)
     except ValueError as exc:
-        raise serializers.ValidationError({field: "Bitte ein gültiges Datum angeben."}) from exc
+        raise serializers.ValidationError(
+            {field: gettext("Bitte ein gültiges Datum angeben.")}
+        ) from exc
 
 
 def _month_start(day: datetime.date) -> datetime.date:
@@ -94,21 +97,25 @@ def build(params, *, earliest: datetime.date | None, year_start=None, year_label
         start = _month_start(end) - relativedelta(months=11)
     if raw_from and raw_from != "alles" and start > end:
         # Nicht still umdeuten: ein umgedrehter Zeitraum ist ein Eingabefehler
-        raise serializers.ValidationError({"bis": "Das Ende liegt vor dem Beginn."})
+        raise serializers.ValidationError({"bis": gettext("Das Ende liegt vor dem Beginn.")})
     start = min(start, end)
     if end < start:
-        raise serializers.ValidationError({"bis": "Das Ende liegt vor dem Beginn."})
+        raise serializers.ValidationError({"bis": gettext("Das Ende liegt vor dem Beginn.")})
 
     months = (end.year - start.year) * 12 + end.month - start.month + 1
     raster = params.get("raster") or (MONTH if months <= 36 else YEAR)
     if raster not in (MONTH, YEAR):
-        raise serializers.ValidationError({"raster": "Bitte Monat oder Jahr wählen."})
+        raise serializers.ValidationError({"raster": gettext("Bitte Monat oder Jahr wählen.")})
 
     buckets: list[Bucket] = []
     if raster == MONTH:
         if months > MAX_MONTHS:
             raise serializers.ValidationError(
-                {"raster": "Zu viele Monate. Bitte einen kürzeren Zeitraum oder Jahre wählen."}
+                {
+                    "raster": gettext(
+                        "Zu viele Monate. Bitte einen kürzeren Zeitraum oder Jahre wählen."
+                    )
+                }
             )
         start = _month_start(start)
         day = start
@@ -123,7 +130,7 @@ def build(params, *, earliest: datetime.date | None, year_start=None, year_label
         start = year_start(year)
         while year_start(year) <= end:
             if len(buckets) >= MAX_YEARS:
-                raise serializers.ValidationError({"von": "Der Zeitraum ist zu lang."})
+                raise serializers.ValidationError({"von": gettext("Der Zeitraum ist zu lang.")})
             last = min(year_start(year + 1) - ONE_DAY, end)
             buckets.append(Bucket(year_start(year), last, year_label(year)))
             year += 1

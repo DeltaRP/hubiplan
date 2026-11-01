@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 from django.db import transaction
 from django.db.models import Max, Q
+from django.utils.translation import gettext
 from rest_framework.exceptions import ValidationError
 
 from audit.log import diff, record, snapshot
@@ -288,7 +289,7 @@ def admit(club: Organization, data: dict) -> Membership:
 
     if person is not None:
         if person.scope_id != scope.pk:
-            raise ValidationError({"person": "Unbekannte Person."})
+            raise ValidationError({"person": gettext("Unbekannte Person.")})
         lock_person(person.pk)
         if Membership.objects.filter(organization=club, person=person).exists():
             raise ValidationError(

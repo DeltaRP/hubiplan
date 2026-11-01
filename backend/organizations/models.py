@@ -17,6 +17,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext, gettext_lazy
 
 from access.models import Role
 
@@ -27,7 +28,7 @@ MAX_LOGO_BYTES = 2 * 1024 * 1024
 
 def validate_logo(file) -> None:
     if file and file.size > MAX_LOGO_BYTES:
-        raise ValidationError("Das Logo darf höchstens 2 MB groß sein.")
+        raise ValidationError(gettext("Das Logo darf höchstens 2 MB groß sein."))
 
 
 def logo_path(instance, filename: str) -> str:
@@ -148,7 +149,11 @@ class FiscalYearFields(models.Model):
             datetime.date(2001, self.fiscal_start_month, self.fiscal_start_day)
         except ValueError as exc:
             raise ValidationError(
-                {"fiscal_start_day": "Diesen Tag gibt es in dem Monat nicht (in jedem Jahr)."}
+                {
+                    "fiscal_start_day": gettext(
+                        "Diesen Tag gibt es in dem Monat nicht (in jedem Jahr)."
+                    )
+                }
             ) from exc
 
     @property
@@ -175,19 +180,19 @@ class FiscalYearFields(models.Model):
 
 class Organization(ShortNameMixin, FiscalYearFields, ThemeFields):
     class Type(models.TextChoices):
-        PLATFORM = "platform", "Plattform"
-        FEDERATION = "federation", "Dachverband"
-        CLUB = "club", "Verein"
-        UNIT = "unit", "Untereinheit"
+        PLATFORM = "platform", gettext_lazy("Plattform")
+        FEDERATION = "federation", gettext_lazy("Dachverband")
+        CLUB = "club", gettext_lazy("Verein")
+        UNIT = "unit", gettext_lazy("Untereinheit")
 
     class MemberAccess(models.TextChoices):
-        NONE = "none", "kein Zugriff"
-        READ = "read", "nur lesen"
-        WRITE = "write", "lesen und ändern"
+        NONE = "none", gettext_lazy("kein Zugriff")
+        READ = "read", gettext_lazy("nur lesen")
+        WRITE = "write", gettext_lazy("lesen und ändern")
 
     class ContactSource(models.TextChoices):
-        OWN = "own", "eigene Angaben"
-        ROLE = "role", "von einer Vorstandsrolle übernehmen"
+        OWN = "own", gettext_lazy("eigene Angaben")
+        ROLE = "role", gettext_lazy("von einer Vorstandsrolle übernehmen")
 
     type = models.CharField("Art", max_length=20, choices=Type.choices)
     # Feste Kennung, auch über Instanzen hinweg (Verbund) und beim Umzug unverändert
@@ -247,6 +252,13 @@ class Organization(ShortNameMixin, FiscalYearFields, ThemeFields):
     label_genitive = models.CharField(
         "Bezeichnung (Genitiv, falls abweichend)", max_length=50, blank=True
     )
+    # Englische Bezeichnung (Konzept englisch.md, F7); leer: Vorgabe bzw. die deutsche
+    label_en = models.CharField(
+        "Bezeichnung englisch (Einzahl)", max_length=50, blank=True, default="", db_default=""
+    )
+    label_plural_en = models.CharField(
+        "Bezeichnung englisch (Mehrzahl)", max_length=50, blank=True, default="", db_default=""
+    )
     street = models.CharField("Straße und Hausnummer", max_length=200, blank=True)
     postal_code = models.CharField("PLZ", max_length=10, blank=True)
     city = models.CharField("Ort", max_length=100, blank=True)
@@ -304,6 +316,20 @@ class Organization(ShortNameMixin, FiscalYearFields, ThemeFields):
         max_length=50,
         blank=True,
         help_text="Leer: wird gebildet (des Zugs, des Kreises). Nur bei Ausnahmen eintragen.",
+    )
+    department_label_en = models.CharField(
+        "Bezeichnung für Abteilungen englisch (Einzahl)",
+        max_length=50,
+        blank=True,
+        default="",
+        db_default="",
+    )
+    department_label_plural_en = models.CharField(
+        "Bezeichnung für Abteilungen englisch (Mehrzahl)",
+        max_length=50,
+        blank=True,
+        default="",
+        db_default="",
     )
     allow_multiple_departments = models.BooleanField(
         "Mitglied darf mehreren Abteilungen angehören", default=True
@@ -490,6 +516,8 @@ class Organization(ShortNameMixin, FiscalYearFields, ThemeFields):
                 label_plural=self.department_label_plural,
                 label_gender=self.department_label_gender,
                 label_genitive=self.department_label_genitive,
+                label_en=self.department_label_en,
+                label_plural_en=self.department_label_plural_en,
             )
 
     @classmethod
@@ -607,8 +635,8 @@ class PlatformSettings(models.Model):
     """Globale Einstellungen der Plattform (genau ein Datensatz)."""
 
     class PersonData(models.TextChoices):
-        SHARED = "shared", "gemeinsam gepflegt"
-        PER_CLUB = "per_club", "eigene Kopie je Verein"
+        SHARED = "shared", gettext_lazy("gemeinsam gepflegt")
+        PER_CLUB = "per_club", gettext_lazy("eigene Kopie je Verein")
 
     person_data_mode = models.CharField(
         "Personendaten bei mehreren Vereinen",
@@ -766,13 +794,13 @@ class Imprint(models.Model):
     """
 
     class Mode(models.TextChoices):
-        INHERIT = "inherit", "von der übergeordneten Einheit übernehmen"
-        OWN = "own", "eigenes Impressum"
-        LINK = "link", "auf eigenes Impressum verlinken"
+        INHERIT = "inherit", gettext_lazy("von der übergeordneten Einheit übernehmen")
+        OWN = "own", gettext_lazy("eigenes Impressum")
+        LINK = "link", gettext_lazy("auf eigenes Impressum verlinken")
 
     class PrivacyMode(models.TextChoices):
-        TEXT = "text", "Text in HUBIplan"
-        LINK = "link", "auf eigene Seite verlinken"
+        TEXT = "text", gettext_lazy("Text in HUBIplan")
+        LINK = "link", gettext_lazy("auf eigene Seite verlinken")
 
     organization = models.OneToOneField(
         Organization, on_delete=models.CASCADE, related_name="imprint"
@@ -856,17 +884,17 @@ class SocialLink(models.Model):
     """Social-Media-Kanal einer Einheit (Stammdaten, z. B. für Briefvorlage und Webseite)."""
 
     class Kind(models.TextChoices):
-        FACEBOOK = "facebook", "Facebook"
-        INSTAGRAM = "instagram", "Instagram"
-        YOUTUBE = "youtube", "YouTube"
-        TIKTOK = "tiktok", "TikTok"
+        FACEBOOK = "facebook", gettext_lazy("Facebook")
+        INSTAGRAM = "instagram", gettext_lazy("Instagram")
+        YOUTUBE = "youtube", gettext_lazy("YouTube")
+        TIKTOK = "tiktok", gettext_lazy("TikTok")
         X = "x", "X"
-        MASTODON = "mastodon", "Mastodon"
-        BLUESKY = "bluesky", "Bluesky"
-        THREADS = "threads", "Threads"
-        WHATSAPP = "whatsapp", "WhatsApp-Kanal"
-        LINKEDIN = "linkedin", "LinkedIn"
-        OTHER = "other", "Sonstiges"
+        MASTODON = "mastodon", gettext_lazy("Mastodon")
+        BLUESKY = "bluesky", gettext_lazy("Bluesky")
+        THREADS = "threads", gettext_lazy("Threads")
+        WHATSAPP = "whatsapp", gettext_lazy("WhatsApp-Kanal")
+        LINKEDIN = "linkedin", gettext_lazy("LinkedIn")
+        OTHER = "other", gettext_lazy("Sonstiges")
 
     organization = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="social_links"

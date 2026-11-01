@@ -120,3 +120,41 @@ def test_app_liest_und_setzt_die_sprache(member, token):  # noqa: F811
     # Fehlermeldungen kommen danach auf Englisch
     resp = app(token).patch(f"{APP}me/language/", {"language": "xx"}, content_type=JSON)
     assert resp.json()["language"] == ["This language is not available."]
+
+
+def test_abteilungsformen_auf_englisch():
+    from organizations.terms import build_terms_en, department_terms, fill
+
+    tm = build_terms_en("Abteilung", "Abteilungen")
+    assert (tm["gen"], tm["ein"], tm["im"], tm["Pl"]) == (
+        "the department",
+        "a department",
+        "in the department",
+        "Departments",
+    )
+    assert build_terms_en("Einheit", "Einheiten")["ein"] == "a unit"
+    assert build_terms_en("x", "y", "f")["adj"] == ""
+    # Eigene Bezeichnung ohne englische Form bleibt deutsch, mit englischer Form englisch
+    club = Organization(name="Testverein", type="club", label="Verein", department_label="Zug")
+    club.department_label_plural = "Züge"
+    club.department_label_gender = "m"
+    with translation.override("en"):
+        assert fill("Members of {gen}", club) == "Members of the Zug"
+        club.department_label_en = "platoon"
+        club.department_label_plural_en = "platoons"
+        terms = department_terms(club)
+        assert (terms["gen"], terms["ein"], terms["pl"]) == ("the platoon", "a platoon", "platoons")
+        assert terms["e_im"] == "in the club"
+    with translation.override("de"):
+        assert department_terms(club)["gen"] == "des Zugs"
+
+
+def test_rechtekatalog_auf_englisch():
+    from access.catalog import catalog_for
+
+    with translation.override("en"):
+        modules = {m["id"]: m for m in catalog_for("club")}
+    assert modules["members"]["label"] == "Members"
+    assert modules["members"]["permissions"][0]["label"] == "Read members"
+    with translation.override("de"):
+        assert catalog_for("club")[0]["label"] == "Mitglieder"

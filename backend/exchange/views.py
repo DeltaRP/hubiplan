@@ -6,6 +6,7 @@ from pathlib import Path
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext
 from rest_framework import serializers, status, viewsets
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
@@ -128,29 +129,35 @@ class ExportJobSerializer(serializers.ModelSerializer):
         org = self.context["org"]
         if org.type == "federation":
             if value != "federation_members":
-                raise serializers.ValidationError("Dachverbände exportieren die Verbandsliste.")
+                raise serializers.ValidationError(
+                    gettext("Dachverbände exportieren die Verbandsliste.")
+                )
             if org.federation_member_access == "none":
-                raise serializers.ValidationError("Kein Zugriff auf Mitgliedsdaten freigegeben.")
+                raise serializers.ValidationError(
+                    gettext("Kein Zugriff auf Mitgliedsdaten freigegeben.")
+                )
             return value
         if value not in ("members", "jubilees"):
-            raise serializers.ValidationError("Unbekannte Liste.")
+            raise serializers.ValidationError(gettext("Unbekannte Liste."))
         return value
 
     def validate_file_format(self, value):
         if value not in ("xlsx", "pdf"):
-            raise serializers.ValidationError("Bitte Excel oder PDF wählen.")
+            raise serializers.ValidationError(gettext("Bitte Excel oder PDF wählen."))
         return value
 
     def validate_orientation(self, value):
         if value not in ("portrait", "landscape"):
-            raise serializers.ValidationError("Hoch- oder Querformat.")
+            raise serializers.ValidationError(gettext("Hoch- oder Querformat."))
         return value
 
     def validate(self, attrs):
         if attrs.get("kind") == "jubilees":
             f = attrs.get("filters", {})
             if not (f.get("von") and f.get("bis")):
-                raise serializers.ValidationError({"filters": "Zeitraum (von, bis) angeben."})
+                raise serializers.ValidationError(
+                    {"filters": gettext("Zeitraum (von, bis) angeben.")}
+                )
         kind = attrs.get("kind")
         if kind == "jubilees":
             cols = export.jubilee_columns()
@@ -162,7 +169,7 @@ class ExportJobSerializer(serializers.ModelSerializer):
         unknown = [c for c in attrs.get("columns", []) if c not in allowed]
         if unknown:
             raise serializers.ValidationError(
-                {"columns": f"Unbekannte Spalten: {', '.join(unknown)}"}
+                {"columns": gettext("Unbekannte Spalten: {x}").format(x=", ".join(unknown))}
             )
         return attrs
 
@@ -223,7 +230,9 @@ class ExportDownloadView(OrgScopedMixin, APIView):
         )
         if job.purged_at or not job.file:
             raise serializers.ValidationError(
-                f"Die Datei wurde nach {EXPORT_KEEP_DAYS} Tagen gelöscht. Bitte neu erstellen."
+                gettext(
+                    "Die Datei wurde nach {EXPORT_KEEP_DAYS} Tagen gelöscht. Bitte neu erstellen."
+                ).format(EXPORT_KEEP_DAYS=EXPORT_KEEP_DAYS)
             )
         return FileResponse(job.file.open("rb"), as_attachment=True, filename=job.file_name)
 
@@ -304,9 +313,13 @@ class ImportJobSerializer(serializers.ModelSerializer):
             if target in ("", None, "ignore"):
                 continue
             if target not in targets:
-                raise serializers.ValidationError(f"Unbekanntes Feld: {target}")
+                raise serializers.ValidationError(
+                    gettext("Unbekanntes Feld: {target}").format(target=target)
+                )
             if target in result.values():
-                raise serializers.ValidationError(f"„{targets[target]}“ ist mehrfach zugeordnet.")
+                raise serializers.ValidationError(
+                    gettext("„{x}“ ist mehrfach zugeordnet.").format(x=targets[target])
+                )
             result[str(col)] = target
         return result
 
@@ -325,9 +338,9 @@ class ImportJobViewSet(_OrgCtx, OrgScopedMixin, viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         upload = request.FILES.get("file")
         if upload is None:
-            raise serializers.ValidationError({"file": "Bitte eine Datei wählen."})
+            raise serializers.ValidationError({"file": gettext("Bitte eine Datei wählen.")})
         if upload.size > MAX_UPLOAD:
-            raise serializers.ValidationError({"file": "Die Datei ist größer als 10 MB."})
+            raise serializers.ValidationError({"file": gettext("Die Datei ist größer als 10 MB.")})
         jobquota.ensure_capacity(
             ImportJob.objects.filter(organization=self.org),
             active_statuses=[ImportJob.Status.VALIDATING, ImportJob.Status.IMPORTING],
@@ -355,14 +368,16 @@ class ImportJobViewSet(_OrgCtx, OrgScopedMixin, viewsets.ModelViewSet):
         job = serializer.instance
         if job.purged_at:
             raise serializers.ValidationError(
-                f"Dieser Import ist älter als {IMPORT_KEEP_DAYS} Tage und abgelaufen."
+                gettext(
+                    "Dieser Import ist älter als {IMPORT_KEEP_DAYS} Tage und abgelaufen."
+                ).format(IMPORT_KEEP_DAYS=IMPORT_KEEP_DAYS)
             )
         if job.status not in (
             ImportJob.Status.UPLOADED,
             ImportJob.Status.VALIDATED,
             ImportJob.Status.FAILED,
         ):
-            raise serializers.ValidationError("Dieser Import ist schon gelaufen.")
+            raise serializers.ValidationError(gettext("Dieser Import ist schon gelaufen."))
         serializer.save(status=ImportJob.Status.UPLOADED, preview=[], counts={})
 
 
@@ -402,8 +417,10 @@ class _JobAction(OrgScopedMixin, APIView):
         if job.purged_at:
             # Datei, Vorschau und Journal sind nach Ablauf der Frist gelöscht
             raise serializers.ValidationError(
-                f"Dieser Import ist älter als {IMPORT_KEEP_DAYS} Tage; Datei und "
-                "„Rückgängig“ stehen nicht mehr zur Verfügung."
+                gettext(
+                    "Dieser Import ist älter als {IMPORT_KEEP_DAYS} Tage; Datei und "
+                    "„Rückgängig“ stehen nicht mehr zur Verfügung."
+                ).format(IMPORT_KEEP_DAYS=IMPORT_KEEP_DAYS)
             )
         return job
 
@@ -425,7 +442,7 @@ class ImportValidateView(_JobAction):
         job = self.job()
         if not {"last_name", "first_name", "birth_date"} <= set(job.mapping.values()):
             raise serializers.ValidationError(
-                "Name, Vorname und Geburtsdatum müssen zugeordnet sein."
+                gettext("Name, Vorname und Geburtsdatum müssen zugeordnet sein.")
             )
         # Nur aus erlaubten Vorzuständen und atomar (Audit 31.10. X-01): Ein schon
         # importierter Auftrag bleibt importiert und behält „Rückgängig“
@@ -434,8 +451,10 @@ class ImportValidateView(_JobAction):
         ).update(status=ImportJob.Status.VALIDATING)
         if not claimed:
             raise serializers.ValidationError(
-                "Dieser Import ist schon übernommen oder wird gerade bearbeitet. Für eine "
-                "neue Prüfung bitte die Datei erneut hochladen."
+                gettext(
+                    "Dieser Import ist schon übernommen oder wird gerade bearbeitet. Für "
+                    "eine neue Prüfung bitte die Datei erneut hochladen."
+                )
             )
         job.refresh_from_db()
         enqueue(tasks.validate_import, job, failed_status=ImportJob.Status.UPLOADED)
@@ -446,16 +465,16 @@ class ImportRunView(_JobAction):
     def post(self, request, org_id: int, pk: int):
         job = self.job()
         if job.status != ImportJob.Status.VALIDATED:
-            raise serializers.ValidationError("Bitte zuerst prüfen.")
+            raise serializers.ValidationError(gettext("Bitte zuerst prüfen."))
         if not job.counts.get("ok"):
-            raise serializers.ValidationError("Keine fehlerfreien Zeilen zum Importieren.")
+            raise serializers.ValidationError(gettext("Keine fehlerfreien Zeilen zum Importieren."))
         # Atomarer Übergang (Audit 31.10. R-X-02): Ein zweiter, verspäteter Start darf einen
         # fertigen Import nicht wieder auf „wird importiert“ setzen
         claimed = ImportJob.objects.filter(pk=job.pk, status=ImportJob.Status.VALIDATED).update(
             status=ImportJob.Status.IMPORTING
         )
         if not claimed:
-            raise serializers.ValidationError("Der Import läuft schon oder ist fertig.")
+            raise serializers.ValidationError(gettext("Der Import läuft schon oder ist fertig."))
         job.refresh_from_db()
         enqueue(tasks.run_import, job, failed_status=ImportJob.Status.VALIDATED)
         return self.respond(job)
@@ -476,7 +495,7 @@ class ImportErrorFileView(_JobAction):
     def get(self, request, org_id: int, pk: int):
         job = self.job()
         if not job.error_file:
-            raise serializers.ValidationError("Keine Fehlerliste vorhanden.")
+            raise serializers.ValidationError(gettext("Keine Fehlerliste vorhanden."))
         return FileResponse(
             job.error_file.open("rb"),
             as_attachment=True,

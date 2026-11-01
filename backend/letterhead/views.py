@@ -6,6 +6,7 @@ from django.db import transaction
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.translation import gettext
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
@@ -53,10 +54,12 @@ class LetterheadSerializer(ModelCleanMixin, serializers.ModelSerializer):
     def validate_mode(self, value):
         org = self.instance.organization if self.instance else None
         if value == Letterhead.Mode.INHERIT and org is not None and org.type != "unit":
-            raise serializers.ValidationError("Nur Untereinheiten übernehmen einen Briefbogen.")
+            raise serializers.ValidationError(
+                gettext("Nur Untereinheiten übernehmen einen Briefbogen.")
+            )
         if value == Letterhead.Mode.OWN and org is not None and not service.may_have_own(org):
             raise serializers.ValidationError(
-                "Einen eigenen Briefbogen gibt es nur mit eigenem Arbeitsbereich."
+                gettext("Einen eigenen Briefbogen gibt es nur mit eigenem Arbeitsbereich.")
             )
         return value
 
@@ -66,7 +69,9 @@ class LetterheadSerializer(ModelCleanMixin, serializers.ModelSerializer):
             return value
         org = self.instance.organization
         if value not in {a["id"] for a in service.bank_accounts(org)}:
-            raise serializers.ValidationError("Bitte ein aktives Bankkonto mit IBAN wählen.")
+            raise serializers.ValidationError(
+                gettext("Bitte ein aktives Bankkonto mit IBAN wählen.")
+            )
         return value
 
 
@@ -174,7 +179,7 @@ class OrgLetterheadDownloadView(_OrgLetterheadMixin, APIView):
         unit = self.target(request.query_params.get("unit"))
         fmt = request.query_params.get("type", "dotx")
         if fmt not in docx.MIME:
-            raise serializers.ValidationError({"type": "Bitte dotx oder docx wählen."})
+            raise serializers.ValidationError({"type": gettext("Bitte dotx oder docx wählen.")})
         letter = service.letter_data(unit)
         return _file(docx.build(letter, fmt), docx.filename(letter, fmt), docx.MIME[fmt])
 
@@ -196,7 +201,9 @@ class OrgLetterheadPublishView(_OrgLetterheadMixin, APIView):
         from documents.views import _save_version
 
         if DOCS_MANAGE not in self.org_permissions:
-            raise PermissionDenied("Dafür fehlt dir die Berechtigung für die Dokumentenablage.")
+            raise PermissionDenied(
+                gettext("Dafür fehlt dir die Berechtigung für die Dokumentenablage.")
+            )
         params = PublishSerializer(data=request.data)
         params.is_valid(raise_exception=True)
         unit = self.target(params.validated_data.get("unit"))
@@ -204,7 +211,7 @@ class OrgLetterheadPublishView(_OrgLetterheadMixin, APIView):
             organization=self.org, pk=params.validated_data["folder"], department__isnull=True
         ).first()
         if folder is None:
-            raise serializers.ValidationError({"folder": "Diesen Ordner gibt es nicht."})
+            raise serializers.ValidationError({"folder": gettext("Diesen Ordner gibt es nicht.")})
         fmt = params.validated_data["format"]
         letter = service.letter_data(unit)
         name = docx.filename(letter, fmt)
@@ -350,12 +357,12 @@ class RequestSerializer(serializers.Serializer):
         items = [v.strip() for v in (value or "").split(",") if v.strip()]
         unknown = [v for v in items if v not in service.CONTACT_KEYS]
         if unknown:
-            raise serializers.ValidationError("Unbekannter Kontaktweg.")
+            raise serializers.ValidationError(gettext("Unbekannter Kontaktweg."))
         return items
 
     def validate_signature(self, value):
         if value is not None and value.size > MAX_SIGNATURE_BYTES:
-            raise serializers.ValidationError("Die Unterschrift ist größer als 1 MB.")
+            raise serializers.ValidationError(gettext("Die Unterschrift ist größer als 1 MB."))
         return value
 
 
@@ -368,17 +375,21 @@ class _PersonalMixin:
         v = params.validated_data
         ctx = next((c for c in service.contexts_for(request.user) if c.key == v["context"]), None)
         if ctx is None:
-            raise NotFound("Dafür hast du keine passende Funktion.")
+            raise NotFound(gettext("Dafür hast du keine passende Funktion."))
         unit = next((u for u in ctx.units() if u.pk == v["unit"]), None)
         if unit is None:
             raise NotFound()
         if not any(f.key == v["function"] for f in ctx.functions):
-            raise serializers.ValidationError({"function": "Bitte eine deiner Funktionen wählen."})
+            raise serializers.ValidationError(
+                {"function": gettext("Bitte eine deiner Funktionen wählen.")}
+            )
         signature = None
         if v.get("signature"):
             signature = v["signature"].read()
             if docx.load_picture(signature, "unterschrift") is None:
-                raise serializers.ValidationError({"signature": "Das ist kein lesbares Bild."})
+                raise serializers.ValidationError(
+                    {"signature": gettext("Das ist kein lesbares Bild.")}
+                )
         contacts = list(v.get("contacts") or [])
         sender = service.build_sender(
             request.user,

@@ -10,6 +10,7 @@ from __future__ import annotations
 from django.db import transaction
 from django.db.models import Exists, OuterRef, Q, Subquery
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
@@ -35,10 +36,10 @@ class _FederationMixin(OrgScopedMixin):
         access = self.org.federation_member_access
         if access == "none":
             raise PermissionDenied(
-                "Die Plattform hat den Zugriff auf Mitgliedsdaten nicht freigegeben."
+                gettext("Die Plattform hat den Zugriff auf Mitgliedsdaten nicht freigegeben.")
             )
         if request.method not in ("GET", "HEAD", "OPTIONS") and access != "write":
-            raise PermissionDenied("Der Dachverband darf Mitgliedsdaten nur lesen.")
+            raise PermissionDenied(gettext("Der Dachverband darf Mitgliedsdaten nur lesen."))
 
 
 def federation_queryset(federation):
@@ -174,8 +175,10 @@ class FederationMemberDetailView(_FederationMixin, APIView):
         m = self.membership()
         if m.organization.is_remote:
             raise PermissionDenied(
-                "Die Person gehört zu einer Einheit auf einer anderen Instanz. "
-                "Bitte eine Korrektur vorschlagen."
+                gettext(
+                    "Die Person gehört zu einer Einheit auf einer anderen Instanz. Bitte "
+                    "eine Korrektur vorschlagen."
+                )
             )
         data = MemberUpdateSerializer(data=request.data, partial=True)
         data.is_valid(raise_exception=True)
@@ -195,7 +198,7 @@ class FederationMemberDetailView(_FederationMixin, APIView):
         changes.pop("Verbandsbereich", None)
         changes.pop("person", None)
         if not changes:
-            raise serializers.ValidationError("Keine Änderungen.")
+            raise serializers.ValidationError(gettext("Keine Änderungen."))
         changes["geändert durch Dachverband"] = [None, self.org.name]
         record(self.org, request.user, "update", m, changes, person=person)
         record(m.organization, request.user, "update", m, changes, person=person)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from django.utils.translation import gettext
 from rest_framework import serializers, viewsets
 
 from access.catalog import ORG_EDIT
@@ -23,7 +24,7 @@ class SocialLinkSerializer(ModelCleanMixin, serializers.ModelSerializer):
 
     def validate_url(self, value: str) -> str:
         if not value.lower().startswith(("https://", "http://")):
-            raise serializers.ValidationError("Bitte eine Adresse mit https:// angeben.")
+            raise serializers.ValidationError(gettext("Bitte eine Adresse mit https:// angeben."))
         return value
 
 
@@ -40,7 +41,11 @@ class SocialLinkViewSet(OrgScopedMixin, AuditMixin, viewsets.ModelViewSet):
 
     def get_create_kwargs(self) -> dict:
         if SocialLink.objects.filter(organization=self.org).count() >= MAX_LINKS:
-            raise serializers.ValidationError(f"Mehr als {MAX_LINKS} Kanäle sind nicht möglich.")
+            raise serializers.ValidationError(
+                gettext("Mehr als {MAX_LINKS} Kanäle sind nicht möglich.").format(
+                    MAX_LINKS=MAX_LINKS
+                )
+            )
         last = (
             SocialLink.objects.filter(organization=self.org)
             .order_by("-position")

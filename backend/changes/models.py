@@ -14,6 +14,7 @@ import uuid
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy
 
 from core.encfields import EncryptedJSONField
 
@@ -50,8 +51,8 @@ class ChangeSet(models.Model):
 class ChangeRecord(models.Model):
     class Operation(models.TextChoices):
         CREATE = "create", "angelegt"
-        UPDATE = "update", "geändert"
-        DELETE = "delete", "gelöscht"
+        UPDATE = "update", gettext_lazy("geändert")
+        DELETE = "delete", gettext_lazy("gelöscht")
 
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE, related_name="+"

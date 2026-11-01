@@ -14,6 +14,7 @@ from django.db import transaction
 from django.http import FileResponse, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.translation import gettext
 from rest_framework import serializers, status
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -72,7 +73,7 @@ def clean_filters(value) -> dict:
     if value in (None, ""):
         return {}
     if not isinstance(value, dict):
-        raise serializers.ValidationError("Ungültige Empfängerauswahl.")
+        raise serializers.ValidationError(gettext("Ungültige Empfängerauswahl."))
     out: dict = {}
     for key in FILTER_LIST_KEYS:
         if key in value:
@@ -85,7 +86,7 @@ def clean_filters(value) -> dict:
         if key in value:
             number = rcp.as_int(value[key])
             if number is not None and not 0 <= number <= 2200:
-                raise serializers.ValidationError({key: "Ungültiger Wert."})
+                raise serializers.ValidationError({key: gettext("Ungültiger Wert.")})
             out[key] = number
     for key in FILTER_BOOL_KEYS:
         if key in value:
@@ -98,7 +99,7 @@ def clean_filters(value) -> dict:
     age_min, age_max = out.get("age_min"), out.get("age_max")
     if age_min is not None and age_max is not None and age_max < age_min:
         raise serializers.ValidationError(
-            {"age_max": "Das Höchstalter liegt unter dem Mindestalter."}
+            {"age_max": gettext("Das Höchstalter liegt unter dem Mindestalter.")}
         )
     return out
 
@@ -125,12 +126,14 @@ class CircularWriteSerializer(serializers.ModelSerializer):
         if value is None:
             return None
         if self.instance is not None and hasattr(self.instance, "list_pattern"):
-            raise serializers.ValidationError("Das Muster eines Verteilers hat keinen Verteiler.")
+            raise serializers.ValidationError(
+                gettext("Das Muster eines Verteilers hat keinen Verteiler.")
+            )
         ok = value.organization_id == self.context["org"].pk and value.department_id == getattr(
             self.context.get("dept"), "pk", None
         )
         if not ok:
-            raise serializers.ValidationError("Verteiler nicht gefunden.")
+            raise serializers.ValidationError(gettext("Verteiler nicht gefunden."))
         return value
 
     def validate(self, attrs):
@@ -138,7 +141,11 @@ class CircularWriteSerializer(serializers.ModelSerializer):
         body = attrs.get("body", getattr(self.instance, "body", ""))
         if kind == Circular.Kind.SHORT and len(body or "") > MAX_SHORT_BODY:
             raise serializers.ValidationError(
-                {"body": f"Eine Kurzmitteilung hat höchstens {MAX_SHORT_BODY} Zeichen."}
+                {
+                    "body": gettext(
+                        "Eine Kurzmitteilung hat höchstens {MAX_SHORT_BODY} Zeichen."
+                    ).format(MAX_SHORT_BODY=MAX_SHORT_BODY)
+                }
             )
         ml = attrs.get("mailing_list")
         if ml is not None:
@@ -161,7 +168,7 @@ class CircularWriteSerializer(serializers.ModelSerializer):
                 return value
             return Circular.Audience.MEMBERS
         if value in (Circular.Audience.DEPARTMENTS, Circular.Audience.ROLES):
-            raise serializers.ValidationError("Ungültiger Empfängerkreis.")
+            raise serializers.ValidationError(gettext("Ungültiger Empfängerkreis."))
         if value == Circular.Audience.MEMBERS and org.federation_member_access in (
             "",
             "none",
@@ -183,7 +190,7 @@ class TemplateSerializer(serializers.ModelSerializer):
     def validate_name(self, value):
         value = value.strip()
         if not value:
-            raise serializers.ValidationError("Bitte einen Namen eingeben.")
+            raise serializers.ValidationError(gettext("Bitte einen Namen eingeben."))
         return value
 
 
@@ -328,7 +335,7 @@ class _CircularMixin:
         circular = self.get_circular(pk)
         if not circular.is_draft:
             raise serializers.ValidationError(
-                "Ein versendetes Rundschreiben lässt sich nicht mehr ändern."
+                gettext("Ein versendetes Rundschreiben lässt sich nicht mehr ändern.")
             )
         return circular
 
@@ -500,12 +507,14 @@ class _List(APIView):
         if template_id:
             tpl = self.templates().filter(pk=template_id).first()
             if tpl is None:
-                raise serializers.ValidationError({"template": "Vorlage nicht gefunden."})
+                raise serializers.ValidationError({"template": gettext("Vorlage nicht gefunden.")})
             initial = {"kind": tpl.kind, "subject": tpl.subject, "body": tpl.body}
         elif copy_id:
             src = self.circulars().filter(pk=copy_id).first()
             if src is None:
-                raise serializers.ValidationError({"copy_of": "Rundschreiben nicht gefunden."})
+                raise serializers.ValidationError(
+                    {"copy_of": gettext("Rundschreiben nicht gefunden.")}
+                )
             initial = {
                 "kind": src.kind,
                 "audience": src.audience,
@@ -550,7 +559,7 @@ class _Detail(APIView):
     def delete(self, request, pk: int, **kwargs):
         circular = self.get_draft(pk)
         if self.is_pattern(circular):
-            raise serializers.ValidationError("Bitte den Verteiler selbst löschen.")
+            raise serializers.ValidationError(gettext("Bitte den Verteiler selbst löschen."))
         self.audit("delete", circular, {"Betreff": [circular.subject, None]})
         for att in circular.attachments.all():
             delete_on_commit(att.file)
@@ -617,7 +626,9 @@ class _Send(APIView):
     def post(self, request, pk: int, **kwargs):
         circular = self.get_draft(pk)
         if self.is_pattern(circular):
-            raise serializers.ValidationError("Das ist die Empfängerauswahl eines Verteilers.")
+            raise serializers.ValidationError(
+                gettext("Das ist die Empfängerauswahl eines Verteilers.")
+            )
         services.apply_list(circular)
         self.check_audience(circular)
         counts = services.start_sending(circular, request.user)
@@ -645,7 +656,9 @@ class _Resend(APIView):
     def post(self, request, pk: int, **kwargs):
         circular = self.get_circular(pk)
         if circular.is_draft:
-            raise serializers.ValidationError("Das Rundschreiben ist noch nicht versendet.")
+            raise serializers.ValidationError(
+                gettext("Das Rundschreiben ist noch nicht versendet.")
+            )
         self.check_audience(circular)
         count = services.resend(circular)
         if count:
@@ -690,26 +703,34 @@ class _AttachmentList(APIView):
     def post(self, request, pk: int, **kwargs):
         circular = self.get_draft(pk)
         if circular.kind == Circular.Kind.SHORT:
-            raise serializers.ValidationError({"file": "Kurzmitteilungen haben keine Anhänge."})
+            raise serializers.ValidationError(
+                {"file": gettext("Kurzmitteilungen haben keine Anhänge.")}
+            )
         upload = request.FILES.get("file")
         if upload is None:
-            raise serializers.ValidationError({"file": "Bitte eine Datei wählen."})
+            raise serializers.ValidationError({"file": gettext("Bitte eine Datei wählen.")})
         mb = MAX_ATTACHMENT_BYTES // (1024 * 1024)
         if upload.size > MAX_ATTACHMENT_BYTES:
-            raise serializers.ValidationError({"file": f"Die Datei ist größer als {mb} MB."})
+            raise serializers.ValidationError(
+                {"file": gettext("Die Datei ist größer als {mb} MB.").format(mb=mb)}
+            )
         if circular.attachments.count() >= MAX_ATTACHMENTS:
             raise serializers.ValidationError(
-                {"file": f"Höchstens {MAX_ATTACHMENTS} Anhänge je Rundschreiben."}
+                {
+                    "file": gettext("Höchstens {MAX_ATTACHMENTS} Anhänge je Rundschreiben.").format(
+                        MAX_ATTACHMENTS=MAX_ATTACHMENTS
+                    )
+                }
             )
         total = sum(a.size for a in circular.attachments.all()) + upload.size
         if total > 2 * MAX_ATTACHMENT_BYTES:
             raise serializers.ValidationError(
-                {"file": f"Alle Anhänge zusammen höchstens {2 * mb} MB."}
+                {"file": gettext("Alle Anhänge zusammen höchstens {x} MB.").format(x=2 * mb)}
             )
         head = upload.read(5)
         upload.seek(0)
         if head != b"%PDF-":
-            raise serializers.ValidationError({"file": "Bitte eine PDF-Datei hochladen."})
+            raise serializers.ValidationError({"file": gettext("Bitte eine PDF-Datei hochladen.")})
         name = upload.name.rsplit("/", 1)[-1].rsplit("\\", 1)[-1][:200]
         att = CircularAttachment(circular=circular, name=name, size=upload.size)
         att.file.save(_safe_name(upload.name), upload, save=False)
@@ -797,7 +818,7 @@ class MailingListSerializer(serializers.ModelSerializer):
     def validate_name(self, value):
         value = value.strip()
         if not value:
-            raise serializers.ValidationError("Bitte einen Namen eingeben.")
+            raise serializers.ValidationError(gettext("Bitte einen Namen eingeben."))
         return value
 
     def validate_senders(self, value):
@@ -809,7 +830,7 @@ class MailingListSerializer(serializers.ModelSerializer):
         wanted = set(value)
         if wanted - allowed:
             raise serializers.ValidationError(
-                "Nur Personen mit dem Recht „Rundschreiben versenden“ sind möglich."
+                gettext("Nur Personen mit dem Recht „Rundschreiben versenden“ sind möglich.")
             )
         return sorted(wanted)
 
@@ -1016,15 +1037,15 @@ class _ListProbe(_ListsMixin, APIView):
         from . import inbound
 
         if not settings.INBOUND_SIMULATION:
-            raise PermissionDenied("Probe-Eingänge gibt es nur ohne Sammelpostfach.")
+            raise PermissionDenied(gettext("Probe-Eingänge gibt es nur ohne Sammelpostfach."))
         ml = self.get_list(list_id)
         if not ml.is_active:
-            raise serializers.ValidationError("Der Verteiler ist ausgeschaltet.")
+            raise serializers.ValidationError(gettext("Der Verteiler ist ausgeschaltet."))
         subject = str(request.data.get("subject") or "").strip()[:200]
         body = str(request.data.get("body") or "")[: MAX_BODY + 1]
         entry = inbound.simulate(ml, request.user, subject, body)
         if entry is None:
-            raise serializers.ValidationError("Diese Mail wurde schon verarbeitet.")
+            raise serializers.ValidationError(gettext("Diese Mail wurde schon verarbeitet."))
         data = inbound_data(entry)
         if entry.status == InboundMail.Status.WAITING:
             data["confirm_url"] = inbound.confirm_url(entry)
@@ -1228,7 +1249,7 @@ class PublicOptOutView(APIView):
     def get_membership(self, token: str) -> Membership:
         pk = services.opt_out_membership(token)
         if pk is None:
-            raise NotFound("Dieser Link ist ungültig.")
+            raise NotFound(gettext("Dieser Link ist ungültig."))
         with rls_bypass():
             m = (
                 Membership.objects.select_related("person", "organization")
@@ -1236,7 +1257,7 @@ class PublicOptOutView(APIView):
                 .first()
             )
         if m is None:
-            raise NotFound("Dieser Link ist ungültig.")
+            raise NotFound(gettext("Dieser Link ist ungültig."))
         return m
 
     def data(self, m: Membership) -> dict:
@@ -1277,7 +1298,7 @@ class PublicConfirmView(APIView):
 
         entry = inbound.entry_from_token(token)
         if entry is None:
-            raise NotFound("Dieser Link ist ungültig oder abgelaufen.")
+            raise NotFound(gettext("Dieser Link ist ungültig oder abgelaufen."))
         return entry
 
     def data(self, entry: InboundMail) -> dict:
@@ -1327,5 +1348,5 @@ class PublicConfirmView(APIView):
                     {"versendet über Verteiler": [None, sent_text(counts)]},
                 )
         else:
-            raise serializers.ValidationError("Unbekannte Aktion.")
+            raise serializers.ValidationError(gettext("Unbekannte Aktion."))
         return Response(self.data(self.get_entry(token)))

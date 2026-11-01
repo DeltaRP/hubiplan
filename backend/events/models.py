@@ -24,6 +24,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy
 
 from core.privatefiles import PrivateFileField
 from exchange.models import private_storage
@@ -62,15 +63,15 @@ class EventCategory(models.Model):
 
 class Event(models.Model):
     class Visibility(models.TextChoices):
-        PUBLIC = "public", "nach außen öffentlich"
-        MEMBERS = "members", "Mitglieder"
-        BOARD = "board", "nur Vorstand"
+        PUBLIC = "public", gettext_lazy("nach außen öffentlich")
+        MEMBERS = "members", gettext_lazy("Mitglieder")
+        BOARD = "board", gettext_lazy("nur Vorstand")
 
     class Repeat(models.TextChoices):
         NONE = "none", "einmalig"
-        WEEKLY = "weekly", "wöchentlich"
+        WEEKLY = "weekly", gettext_lazy("wöchentlich")
         MONTHLY = "monthly", "monatlich"
-        YEARLY = "yearly", "jährlich"
+        YEARLY = "yearly", gettext_lazy("jährlich")
 
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE, related_name="+"
@@ -316,12 +317,12 @@ class EventResponse(models.Model):
     """Zu- oder Absage eines Mitglieds zu einem Termin."""
 
     class Status(models.TextChoices):
-        YES = "yes", "Zusage"
-        NO = "no", "Absage"
+        YES = "yes", gettext_lazy("Zusage")
+        NO = "no", gettext_lazy("Absage")
 
     class Source(models.TextChoices):
-        MEMBER = "member", "Mitglied"
-        BOARD = "board", "Vorstand"
+        MEMBER = "member", gettext_lazy("Mitglied")
+        BOARD = "board", gettext_lazy("Vorstand")
 
     # Verein des Termins (Mandantentrennung)
     organization = models.ForeignKey(

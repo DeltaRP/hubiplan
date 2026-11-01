@@ -35,6 +35,7 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.db import IntegrityError, connection, transaction
 from django.utils.module_loading import import_string
+from django.utils.translation import gettext, gettext_lazy
 from rest_framework.exceptions import APIException
 
 logger = logging.getLogger(__name__)
@@ -55,9 +56,9 @@ class KeyUnavailable(APIException):
     es bei 503 von selbst erneut."""
 
     status_code = 503
-    default_detail = (
-        "Die verschlüsselten Daten sind gerade nicht verfügbar. Bitte in einigen Minuten "
-        "erneut versuchen."
+    default_detail = gettext_lazy(
+        "Die verschlüsselten Daten sind gerade nicht verfügbar. Bitte in einigen "
+        "Minuten erneut versuchen."
     )
     default_code = "schluessel_nicht_verfuegbar"
 
@@ -151,19 +152,23 @@ class FileKeyProvider(KeyProvider):
             kid, data = rest.split(".", 1)
             blob = _unb64(data)
         except ValueError as exc:
-            raise DecryptionError("Unbekanntes Format eines verpackten Schlüssels.") from exc
+            raise DecryptionError(
+                gettext("Unbekanntes Format eines verpackten Schlüssels.")
+            ) from exc
         if prefix != self.prefix or version != self.VERSION or len(blob) < 12 + 16:
-            raise DecryptionError("Unbekanntes Format eines verpackten Schlüssels.")
+            raise DecryptionError(gettext("Unbekanntes Format eines verpackten Schlüssels."))
         master = self._by_id.get(kid)
         if master is None:
             raise DecryptionError(
-                "Datenschlüssel wurde mit einem anderen Hauptschlüssel verpackt "
-                "(Hauptschlüssel falsch oder der alte fehlt)."
+                gettext(
+                    "Datenschlüssel wurde mit einem anderen Hauptschlüssel verpackt "
+                    "(Hauptschlüssel falsch oder der alte fehlt)."
+                )
             )
         try:
             return AESGCM(master).decrypt(blob[:12], blob[12:], b"datakey:" + context.encode())
         except InvalidTag as exc:
-            raise DecryptionError("Datenschlüssel lässt sich nicht entpacken.") from exc
+            raise DecryptionError(gettext("Datenschlüssel lässt sich nicht entpacken.")) from exc
 
     def is_current(self, wrapped: str) -> bool:
         return wrapped.startswith(f"{self.prefix}:{self.VERSION}:{self.key_id(self._keys[0])}.")
@@ -273,7 +278,9 @@ def _load(key_id: int) -> bytes:
 
     row = DataKey.objects.filter(pk=key_id).values("organization_id", "wrapped").first()
     if row is None:
-        raise DecryptionError(f"Datenschlüssel {key_id} fehlt (Verein gelöscht?).")
+        raise DecryptionError(
+            gettext("Datenschlüssel {key_id} fehlt (Verein gelöscht?).").format(key_id=key_id)
+        )
     key = unwrap_key(row["wrapped"], _context(row["organization_id"]))
     _remember(key_id, row["organization_id"], key)
     return key
@@ -423,7 +430,7 @@ def encrypt_bytes(data: bytes, key_id: int, key: bytes) -> bytes:
 def plain_size(total: int) -> int:
     body = total - HEADER
     if body < TAG:
-        raise DecryptionError("Verschlüsselte Datei ist abgeschnitten.")
+        raise DecryptionError(gettext("Verschlüsselte Datei ist abgeschnitten."))
     chunks = max(1, -(-body // (CHUNK + TAG)))
     return body - chunks * TAG
 
@@ -437,7 +444,7 @@ class DecryptingReader(io.RawIOBase):
         raw.seek(0)
         header = raw.read(HEADER)
         if len(header) != HEADER or not is_encrypted_header(header):
-            raise DecryptionError("Keine verschlüsselte Datei.")
+            raise DecryptionError(gettext("Keine verschlüsselte Datei."))
         self._header = header
         self._prefix = header[16:24]
         self._aes = AESGCM(key_by_id(struct.unpack(">Q", header[8:16])[0]))
@@ -471,7 +478,7 @@ class DecryptingReader(io.RawIOBase):
         else:
             raise ValueError("whence")
         if pos < 0:
-            raise ValueError("Negative Position")
+            raise ValueError(gettext("Negative Position"))
         self._pos = pos
         return pos
 
@@ -486,7 +493,9 @@ class DecryptingReader(io.RawIOBase):
                 _chunk_nonce(self._prefix, index), data, _chunk_aad(self._header, last)
             )
         except InvalidTag as exc:
-            raise DecryptionError("Verschlüsselte Datei ist beschädigt oder verändert.") from exc
+            raise DecryptionError(
+                gettext("Verschlüsselte Datei ist beschädigt oder verändert.")
+            ) from exc
         self._cached = (index, plain)
         return plain
 

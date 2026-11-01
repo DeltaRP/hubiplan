@@ -18,6 +18,7 @@ import secrets
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy
 
 from core.privatefiles import PrivateFileField
 from exchange.models import private_storage
@@ -32,10 +33,10 @@ def document_path(instance, filename: str) -> str:
 
 class Folder(models.Model):
     class Visibility(models.TextChoices):
-        BOARD = "board", "nur Vorstand"
-        CLUBS = "clubs", "Vereine des Dachverbands"
-        MEMBERS = "members", "alle Mitglieder"
-        PUBLIC = "public", "öffentlich per Link"
+        BOARD = "board", gettext_lazy("nur Vorstand")
+        CLUBS = "clubs", gettext_lazy("Vereine des Dachverbands")
+        MEMBERS = "members", gettext_lazy("alle Mitglieder")
+        PUBLIC = "public", gettext_lazy("öffentlich per Link")
 
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE, related_name="+"

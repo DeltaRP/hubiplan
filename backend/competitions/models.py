@@ -16,23 +16,24 @@ import secrets
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy
 
 
 class Competition(models.Model):
     class Status(models.TextChoices):
-        PREPARATION = "vorbereitung", "Vorbereitung"
-        RUNNING = "laeuft", "läuft"
-        PROVISIONAL = "vorlaeufig", "vorläufig"
-        FINAL = "endgueltig", "endgültig"
+        PREPARATION = "vorbereitung", gettext_lazy("Vorbereitung")
+        RUNNING = "laeuft", gettext_lazy("läuft")
+        PROVISIONAL = "vorlaeufig", gettext_lazy("vorläufig")
+        FINAL = "endgueltig", gettext_lazy("endgültig")
 
     class Website(models.TextChoices):
-        OFF = "aus", "nicht auf der Webseite"
-        LIVE = "live", "live während des Wettbewerbs"
-        FINAL = "abschluss", "nach Abschluss"
+        OFF = "aus", gettext_lazy("nicht auf der Webseite")
+        LIVE = "live", gettext_lazy("live während des Wettbewerbs")
+        FINAL = "abschluss", gettext_lazy("nach Abschluss")
 
     class Form(models.TextChoices):
-        RANKING = "rangliste", "Rangliste"
-        BIRD = "vogel", "Vogelschießen"
+        RANKING = "rangliste", gettext_lazy("Rangliste")
+        BIRD = "vogel", gettext_lazy("Vogelschießen")
 
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE, related_name="+"
@@ -93,21 +94,21 @@ class Scoring(models.Model):
     """Wertung: eine Rangliste innerhalb des Wettbewerbs."""
 
     class Kind(models.TextChoices):
-        INDIVIDUAL = "einzel", "Einzelwertung"
-        UNIT = "einheit", "Wertung der Untereinheiten"
+        INDIVIDUAL = "einzel", gettext_lazy("Einzelwertung")
+        UNIT = "einheit", gettext_lazy("Wertung der Untereinheiten")
         # nur bei fremden Wettbewerben: die eigenen Mannschaften
-        TEAM = "mannschaft", "Mannschaftswertung"
+        TEAM = "mannschaft", gettext_lazy("Mannschaftswertung")
 
     class Method(models.TextChoices):
-        FREE = "frei", "Wert frei eingeben"
-        RINGS = "ringe", "Ringe"
-        DECIMAL = "zehntel", "Zehntel"
-        TEILER = "teiler", "Teiler"
+        FREE = "frei", gettext_lazy("Wert frei eingeben")
+        RINGS = "ringe", gettext_lazy("Ringe")
+        DECIMAL = "zehntel", gettext_lazy("Zehntel")
+        TEILER = "teiler", gettext_lazy("Teiler")
 
     class TeamMode(models.TextChoices):
-        SUM_BEST = "beste", "Summe der besten"
-        SUM_ALL = "summe", "Summe aller"
-        AVERAGE = "durchschnitt", "Durchschnitt aller"
+        SUM_BEST = "beste", gettext_lazy("Summe der besten")
+        SUM_ALL = "summe", gettext_lazy("Summe aller")
+        AVERAGE = "durchschnitt", gettext_lazy("Durchschnitt aller")
 
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE, related_name="+"
@@ -184,7 +185,7 @@ class Scoring(models.Model):
 class Presence(models.TextChoices):
     PRESENT = "", "dabei"
     ABSENT = "fehlt", "fehlt"
-    WITHDRAWN = "zurueckgezogen", "zurückgezogen"
+    WITHDRAWN = "zurueckgezogen", gettext_lazy("zurückgezogen")
 
 
 class Starter(models.Model):
@@ -286,8 +287,8 @@ class Hit(models.Model):
 
     class Source(models.TextChoices):
         TAP = "tippen", "angetippt"
-        PHOTO = "foto", "aus Foto erkannt"
-        MANUAL = "hand", "von Hand"
+        PHOTO = "foto", gettext_lazy("aus Foto erkannt")
+        MANUAL = "hand", gettext_lazy("von Hand")
 
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE, related_name="+"

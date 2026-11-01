@@ -16,6 +16,7 @@ from decimal import Decimal, InvalidOperation
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.text import slugify
+from django.utils.translation import gettext
 
 from core.encfields import EncryptedJSONField
 
@@ -143,27 +144,35 @@ def clean_scalar(field_type: str, value, choices: list | None = None, any_choice
         text = str(value)
         if len(text) > MAX_TEXT:
             # Nicht still kürzen: der Rest ginge verloren
-            raise ValidationError(f"Höchstens {MAX_TEXT} Zeichen (jetzt {len(text)}).")
+            raise ValidationError(
+                gettext("Höchstens {MAX_TEXT} Zeichen (jetzt {x}).").format(
+                    MAX_TEXT=MAX_TEXT, x=len(text)
+                )
+            )
         return text
     if field_type == "number":
         if isinstance(value, bool):
-            raise ValidationError("Bitte eine Zahl angeben.")
+            raise ValidationError(gettext("Bitte eine Zahl angeben."))
         try:
             number = Decimal(str(value).strip().replace(",", "."))
         except InvalidOperation as exc:
-            raise ValidationError("Bitte eine Zahl angeben.") from exc
+            raise ValidationError(gettext("Bitte eine Zahl angeben.")) from exc
         if not number.is_finite():
-            raise ValidationError("Bitte eine Zahl angeben.")
+            raise ValidationError(gettext("Bitte eine Zahl angeben."))
         number = number.normalize()
         # Als JSON-Zahl gespeichert: mehr als 15 Stellen gingen unbemerkt verloren
         if len(number.as_tuple().digits) > MAX_DIGITS:
-            raise ValidationError(f"Höchstens {MAX_DIGITS} Stellen.")
+            raise ValidationError(
+                gettext("Höchstens {MAX_DIGITS} Stellen.").format(MAX_DIGITS=MAX_DIGITS)
+            )
         # Auch sehr große oder sehr kleine Zahlen (z. B. 1e-400) passen nicht verlustfrei
         # in eine JSON-Zahl: höchstens 15 Stellen vor und 15 nach dem Komma
         if number and (number.adjusted() >= MAX_DIGITS or number.as_tuple().exponent < -MAX_DIGITS):
             raise ValidationError(
-                f"Die Zahl ist zu groß oder zu klein (höchstens {MAX_DIGITS} Stellen vor "
-                f"und {MAX_DIGITS} nach dem Komma)."
+                gettext(
+                    "Die Zahl ist zu groß oder zu klein (höchstens {MAX_DIGITS} Stellen vor "
+                    "und {MAX_DIGITS2} nach dem Komma)."
+                ).format(MAX_DIGITS=MAX_DIGITS, MAX_DIGITS2=MAX_DIGITS)
             )
         if number == number.to_integral_value():
             return int(number)
@@ -172,7 +181,7 @@ def clean_scalar(field_type: str, value, choices: list | None = None, any_choice
         try:
             return datetime.date.fromisoformat(str(value)).isoformat()
         except ValueError as exc:
-            raise ValidationError("Bitte ein Datum angeben.") from exc
+            raise ValidationError(gettext("Bitte ein Datum angeben.")) from exc
     if field_type == "yearrange":
         return clean_year_range(value)
     if field_type == "bool":
@@ -182,14 +191,14 @@ def clean_scalar(field_type: str, value, choices: list | None = None, any_choice
             return True
         if str(value).lower() in {"nein", "false", "0"}:
             return False
-        raise ValidationError("Bitte ja oder nein angeben.")
+        raise ValidationError(gettext("Bitte ja oder nein angeben."))
     if field_type == "choice":
         if any_choice and isinstance(value, str):
             return value
         if value not in (choices or []):
-            raise ValidationError(f"„{value}“ ist kein erlaubter Wert.")
+            raise ValidationError(gettext("„{value}“ ist kein erlaubter Wert.").format(value=value))
         return value
-    raise ValidationError("Unbekannter Feldtyp.")
+    raise ValidationError(gettext("Unbekannter Feldtyp."))
 
 
 MIN_YEAR = 1000
@@ -203,12 +212,12 @@ def clean_year_range(value) -> str:
     Angenommen werden z. B. „2010“, „2010/2015“, „2010-2015“, „2010–15“, „2024/25“
     (zweistelliges Endjahr wie im Schützenjahr) und Zahlen aus Excel (2010 oder 2010.0)."""
     if isinstance(value, bool):
-        raise ValidationError("Bitte ein Jahr oder einen Zeitraum wie 2010/2015 angeben.")
+        raise ValidationError(gettext("Bitte ein Jahr oder einen Zeitraum wie 2010/2015 angeben."))
     if isinstance(value, float) and value.is_integer():
         value = int(value)
     match = YEAR_RANGE.match(str(value))
     if not match:
-        raise ValidationError("Bitte ein Jahr oder einen Zeitraum wie 2010/2015 angeben.")
+        raise ValidationError(gettext("Bitte ein Jahr oder einen Zeitraum wie 2010/2015 angeben."))
     start = int(match.group(1))
     end_raw = match.group(2)
     end = None
@@ -221,9 +230,13 @@ def clean_year_range(value) -> str:
                 end += 100
     for year in (start, end):
         if year is not None and not MIN_YEAR <= year <= MAX_YEAR:
-            raise ValidationError(f"Jahre bitte zwischen {MIN_YEAR} und {MAX_YEAR}.")
+            raise ValidationError(
+                gettext("Jahre bitte zwischen {MIN_YEAR} und {MAX_YEAR}.").format(
+                    MIN_YEAR=MIN_YEAR, MAX_YEAR=MAX_YEAR
+                )
+            )
     if end is not None and end < start:
-        raise ValidationError("Das Endjahr liegt vor dem Startjahr.")
+        raise ValidationError(gettext("Das Endjahr liegt vor dem Startjahr."))
     return f"{start}" if end is None else f"{start}/{end}"
 
 
@@ -241,11 +254,11 @@ def clean_value(definition: FieldDefinition, value, any_choice: bool = False):
     if value in (None, ""):
         return []
     if not isinstance(value, list):
-        raise ValidationError("Bitte eine Liste von Einträgen angeben.")
+        raise ValidationError(gettext("Bitte eine Liste von Einträgen angeben."))
     rows = []
     for row in value:
         if not isinstance(row, dict):
-            raise ValidationError("Ungültiger Eintrag.")
+            raise ValidationError(gettext("Ungültiger Eintrag."))
         clean_row = {}
         for sub in definition.subfields:
             clean_row[sub["key"]] = clean_scalar(

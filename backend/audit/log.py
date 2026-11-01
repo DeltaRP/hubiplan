@@ -9,6 +9,8 @@ from typing import Any
 
 from django.db import models
 from django.db.models.fields.files import FieldFile
+from django.utils import translation
+from django.utils.functional import Promise
 
 from changes.tracking import current_set_id
 from core.tenancy import tenant_context
@@ -125,6 +127,22 @@ def diff(before: dict[str, Any], after: dict[str, Any]) -> dict[str, list[Any]]:
     }
 
 
+def _german(value: Any) -> Any:
+    """Übersetzbare Texte (z. B. Auswahl-Beschriftungen) fürs Protokoll auf Deutsch.
+
+    Das Revisionsprotokoll bleibt deutsch (Konzept englisch.md, 4.4) und muss sich als
+    JSON speichern lassen.
+    """
+    if isinstance(value, Promise):
+        with translation.override("de"):
+            return str(value)
+    if isinstance(value, dict):
+        return {_german(k): _german(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_german(v) for v in value]
+    return value
+
+
 def record(
     organization,
     user,
@@ -151,7 +169,7 @@ def record(
             object_type=OBJECT_TYPES.get(model, model),
             object_id=str(instance.pk),
             object_repr=str(instance)[:200],
-            changes=changes or {},
+            changes=_german(changes or {}),
             person_id=getattr(person, "pk", None),
             change_set=current_set_id(),
             via=current_via.get()[:100],

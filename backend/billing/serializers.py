@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from core.api_base import ModelCleanMixin
@@ -56,23 +57,25 @@ class BillingSettingsSerializer(ModelCleanMixin, serializers.ModelSerializer):
 
         value = value.replace(" ", "").upper()
         if value and not creditor_id_valid(value):
-            raise serializers.ValidationError("Die Gläubiger-Identifikationsnummer ist ungültig.")
+            raise serializers.ValidationError(
+                gettext("Die Gläubiger-Identifikationsnummer ist ungültig.")
+            )
         return value
 
     def validate_sepa_enabled(self, value):
         org = self.context.get("org")
         if value and org is not None and org.type == "unit":
-            raise serializers.ValidationError("Lastschrift gibt es hier nicht.")
+            raise serializers.ValidationError(gettext("Lastschrift gibt es hier nicht."))
         return value
 
     def validate_prenotification_days(self, value):
         if not 1 <= value <= 30:
-            raise serializers.ValidationError("Zwischen 1 und 30 Tagen.")
+            raise serializers.ValidationError(gettext("Zwischen 1 und 30 Tagen."))
         return value
 
     def _own(self, obj, label):
         if obj is not None and obj.organization_id != self.context["org"].pk:
-            raise serializers.ValidationError(f"Unbekannte {label}.")
+            raise serializers.ValidationError(gettext("Unbekannte {label}.").format(label=label))
         return obj
 
     def validate_account(self, value):
@@ -81,18 +84,18 @@ class BillingSettingsSerializer(ModelCleanMixin, serializers.ModelSerializer):
     def validate_category(self, value):
         value = self._own(value, "Kategorie")
         if value is not None and not value.allows("income"):
-            raise serializers.ValidationError("Die Kategorie gilt nicht für Einnahmen.")
+            raise serializers.ValidationError(gettext("Die Kategorie gilt nicht für Einnahmen."))
         return value
 
     def validate_due_days(self, value):
         if value > 365:
-            raise serializers.ValidationError("Höchstens 365 Tage.")
+            raise serializers.ValidationError(gettext("Höchstens 365 Tage."))
         return value
 
     def _not_negative(self, value):
         # Nachlässe und Gutschriften gehören als eigener Posten in die Rechnung
         if value is not None and value < 0:
-            raise serializers.ValidationError("Der Betrag darf nicht negativ sein.")
+            raise serializers.ValidationError(gettext("Der Betrag darf nicht negativ sein."))
         return value
 
     validate_club_rate_active = _not_negative
@@ -101,7 +104,9 @@ class BillingSettingsSerializer(ModelCleanMixin, serializers.ModelSerializer):
 
     def validate_vat_rate(self, value):
         if value is not None and not (0 <= value <= 100):
-            raise serializers.ValidationError("Der Steuersatz liegt zwischen 0 und 100 Prozent.")
+            raise serializers.ValidationError(
+                gettext("Der Steuersatz liegt zwischen 0 und 100 Prozent.")
+            )
         return value
 
 
@@ -143,17 +148,21 @@ class AgeRateSerializer(ModelCleanMixin, serializers.ModelSerializer):
             if low <= o_high and o_low <= high:
                 # Sonst entschiede eine unsichtbare Reihenfolge, welche Stufe gilt
                 raise serializers.ValidationError(
-                    {"min_age": f"Die Altersgrenzen überschneiden sich mit „{other.name}“."}
+                    {
+                        "min_age": gettext(
+                            "Die Altersgrenzen überschneiden sich mit „{name}“."
+                        ).format(name=other.name)
+                    }
                 )
         return attrs
 
     def validate_member_type(self, value):
         if value is not None and value.organization_id != self.context["org"].pk:
-            raise serializers.ValidationError("Unbekannte Mitgliedsart.")
+            raise serializers.ValidationError(gettext("Unbekannte Mitgliedsart."))
         if value is not None and value.is_archived:
             changed = self.instance is None or self.instance.member_type_id != value.pk
             if changed:
-                raise serializers.ValidationError("Diese Art wird nicht mehr verwendet.")
+                raise serializers.ValidationError(gettext("Diese Art wird nicht mehr verwendet."))
         return value
 
 
@@ -360,7 +369,7 @@ class InvoiceInputSerializer(serializers.Serializer):
 
     def validate_lines(self, value):
         if not value:
-            raise serializers.ValidationError("Bitte mindestens einen Posten angeben.")
+            raise serializers.ValidationError(gettext("Bitte mindestens einen Posten angeben."))
         return value
 
 

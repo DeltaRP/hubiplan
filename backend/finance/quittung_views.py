@@ -10,6 +10,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, serializers, status, viewsets
@@ -149,23 +150,25 @@ class CashReceiptSerializer(serializers.ModelSerializer):
     def validate_counterparty_name(self, value):
         value = " ".join(value.split())
         if not value:
-            raise serializers.ValidationError("Bitte den Namen angeben.")
+            raise serializers.ValidationError(gettext("Bitte den Namen angeben."))
         return value
 
     def validate_purpose(self, value):
         value = " ".join(value.split())
         if not value:
-            raise serializers.ValidationError("Bitte den Zweck angeben.")
+            raise serializers.ValidationError(gettext("Bitte den Zweck angeben."))
         return value
 
     def validate_amount(self, value):
         if value <= 0:
-            raise serializers.ValidationError("Der Betrag muss größer als 0 sein.")
+            raise serializers.ValidationError(gettext("Der Betrag muss größer als 0 sein."))
         return value
 
     def validate_vat_rate(self, value):
         if value is not None and not (0 < value < 100):
-            raise serializers.ValidationError("Bitte einen Steuersatz zwischen 0 und 100 angeben.")
+            raise serializers.ValidationError(
+                gettext("Bitte einen Steuersatz zwischen 0 und 100 angeben.")
+            )
         return value
 
     def validate(self, attrs):
@@ -173,7 +176,7 @@ class CashReceiptSerializer(serializers.ModelSerializer):
         inst = self.instance
         if inst is not None and inst.status != CashReceipt.Status.DRAFT:
             raise serializers.ValidationError(
-                "Die Quittung ist abgeschlossen und lässt sich nicht mehr ändern."
+                gettext("Die Quittung ist abgeschlossen und lässt sich nicht mehr ändern.")
             )
         account = attrs.get("account", inst.account if inst else None)
         if account is not None:
@@ -187,7 +190,7 @@ class CashReceiptSerializer(serializers.ModelSerializer):
             kind = "income" if direction == CashReceipt.Direction.IN else "expense"
             if not category.allows(kind) or not category.is_active:
                 raise serializers.ValidationError(
-                    {"category": "Die Kategorie passt nicht zu dieser Richtung."}
+                    {"category": gettext("Die Kategorie passt nicht zu dieser Richtung.")}
                 )
         membership = attrs.get("membership")
         if membership is not None and (inst is None or membership != inst.membership):
@@ -216,7 +219,9 @@ class CashReceiptSerializer(serializers.ModelSerializer):
         if inst is not None and inst.invoice_id:
             if any(k in attrs and attrs[k] != getattr(inst, k) for k in ("direction", "amount")):
                 raise serializers.ValidationError(
-                    "Richtung und Betrag kommen aus der Rechnung und lassen sich nicht ändern."
+                    gettext(
+                        "Richtung und Betrag kommen aus der Rechnung und lassen sich nicht ändern."
+                    )
                 )
         return attrs
 
@@ -313,7 +318,7 @@ class CashReceiptViewSet(
         instance.refresh_from_db()
         if instance.status != CashReceipt.Status.DRAFT:
             raise serializers.ValidationError(
-                "Abgeschlossene Quittungen werden nicht gelöscht. Bitte stornieren."
+                gettext("Abgeschlossene Quittungen werden nicht gelöscht. Bitte stornieren.")
             )
         record(
             self.org,
@@ -344,7 +349,7 @@ class CashReceiptViewSet(
         """Unterschrift setzen (PUT ``{strokes}``, Kassierer auch ``{use_stored: true}``;
         Gegenseite beim Eingang auch ``{declined: "Grund"}``) oder entfernen (DELETE)."""
         if role not in ("treasurer", "counterparty"):
-            raise serializers.ValidationError("Unbekannte Unterschrift.")
+            raise serializers.ValidationError(gettext("Unbekannte Unterschrift."))
         receipt = self._locked()
         try:
             if request.method == "DELETE":
@@ -457,7 +462,7 @@ class CashReceiptViewSet(
         except DjangoValidationError as exc:
             raise _drf(exc) from exc
         if not sent:
-            raise serializers.ValidationError("Die E-Mail konnte nicht verschickt werden.")
+            raise serializers.ValidationError(gettext("Die E-Mail konnte nicht verschickt werden."))
         record(
             self.org,
             request.user,
@@ -488,14 +493,17 @@ class CashReceiptViewSet(
         from billing.services import settings_for
 
         if "billing" not in (self.org.enabled_modules or []):
-            raise serializers.ValidationError("Beiträge sind nicht freigeschaltet.")
+            raise serializers.ValidationError(gettext("Beiträge sind nicht freigeschaltet."))
         invoice = get_object_or_404(Invoice, organization=self.org, pk=invoice_id)
         if invoice.status != Invoice.Status.OPEN or invoice.outstanding <= 0:
-            raise serializers.ValidationError("Die Rechnung ist nicht offen.")
+            raise serializers.ValidationError(gettext("Die Rechnung ist nicht offen."))
         cfg = settings_for(self.org)
         if cfg.category is None:
             raise serializers.ValidationError(
-                "Bitte unter Beiträge → Einstellungen eine Kategorie für Beitragszahlungen wählen."
+                gettext(
+                    "Bitte unter Beiträge → Einstellungen eine Kategorie für "
+                    "Beitragszahlungen wählen."
+                )
             )
         data = request.data if isinstance(request.data, dict) else {}
         amount = data.get("amount")
@@ -515,7 +523,11 @@ class CashReceiptViewSet(
         ser.is_valid(raise_exception=True)
         if ser.validated_data["amount"] > invoice.outstanding:
             raise serializers.ValidationError(
-                {"amount": f"Offen sind nur noch {quittung.euro(invoice.outstanding)}."}
+                {
+                    "amount": gettext("Offen sind nur noch {x}.").format(
+                        x=quittung.euro(invoice.outstanding)
+                    )
+                }
             )
         membership = (
             invoice.membership

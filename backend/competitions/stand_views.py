@@ -12,6 +12,7 @@ from django.db import transaction
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.translation import gettext
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import MultiPartParser
@@ -69,7 +70,7 @@ class StandAccessListView(_Mixin, APIView):
     def post(self, request, org_id: int, competition_id: int):
         comp = self.competition(competition_id)
         if comp.status == Competition.Status.FINAL:
-            raise ValidationError("Der Wettbewerb ist endgültig abgeschlossen.")
+            raise ValidationError(gettext("Der Wettbewerb ist endgültig abgeschlossen."))
         label = str(request.data.get("label", "")).strip()[:100]
         day = max(comp.date, timezone.localdate())
         access, token = StandAccess.create(comp, label, request.user, _end_of_day(day))
@@ -115,7 +116,7 @@ class _StandPublic(APIView):
         key = f"stand:{hash_token(token)[:32]}"
         count = cache.get(key, 0)
         if count >= RATE[0]:
-            raise ValidationError("Zu viele Aufrufe. Bitte kurz warten.")
+            raise ValidationError(gettext("Zu viele Aufrufe. Bitte kurz warten."))
         cache.set(key, count + 1, RATE[1])
         with rls_bypass():
             access = (

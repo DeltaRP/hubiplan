@@ -14,6 +14,8 @@ import xml.etree.ElementTree as ET
 from decimal import Decimal, InvalidOperation
 from xml.sax.saxutils import escape
 
+from django.utils.translation import gettext
+
 MAX_XML = 5 * 1024 * 1024
 
 
@@ -63,14 +65,16 @@ def _date(raw: str) -> datetime.date | None:
 
 def _root(data: bytes):
     if len(data) > MAX_XML:
-        raise EInvoiceError("Die XML-Datei ist größer als 5 MB.")
+        raise EInvoiceError(gettext("Die XML-Datei ist größer als 5 MB."))
     head = data[:4096].lower()
     if b"<!doctype" in head or b"<!entity" in data.lower():
-        raise EInvoiceError("Die Datei enthält eine DTD und wird aus Sicherheitsgründen abgelehnt.")
+        raise EInvoiceError(
+            gettext("Die Datei enthält eine DTD und wird aus Sicherheitsgründen abgelehnt.")
+        )
     try:
         return ET.fromstring(data)  # noqa: S314 - DTD/Entitäten oben abgewiesen
     except ET.ParseError:
-        raise EInvoiceError("Die Datei ist kein gültiges XML.") from None
+        raise EInvoiceError(gettext("Die Datei ist kein gültiges XML.")) from None
 
 
 def _ubl(root) -> dict:
@@ -187,10 +191,14 @@ def parse_xml(data: bytes) -> dict:
         result = _cii(root)
     else:
         raise EInvoiceError(
-            "Keine E-Rechnung erkannt. Unterstützt werden XRechnung (UBL oder CII) und ZUGFeRD."
+            gettext(
+                "Keine E-Rechnung erkannt. Unterstützt werden XRechnung (UBL oder CII) und ZUGFeRD."
+            )
         )
     if not result["number"] or result["payable"] is None:
-        raise EInvoiceError("Die E-Rechnung enthält keine Rechnungsnummer oder keinen Betrag.")
+        raise EInvoiceError(
+            gettext("Die E-Rechnung enthält keine Rechnungsnummer oder keinen Betrag.")
+        )
     return result
 
 

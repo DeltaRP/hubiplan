@@ -3,6 +3,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 
 from django.db import transaction
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import generics, serializers, viewsets
 from rest_framework.decorators import action, api_view
@@ -212,27 +213,43 @@ class AssignmentViewSet(_OrgContextMixin, OrgScopedMixin, AuditMixin, viewsets.M
         target = assignment.user
         if target.pk == request.user.pk:
             raise serializers.ValidationError(
-                {"detail": "Die eigene Zwei-Faktor-Anmeldung setzt eine zweite Person zurück."}
+                {
+                    "detail": gettext(
+                        "Die eigene Zwei-Faktor-Anmeldung setzt eine zweite Person zurück."
+                    )
+                }
             )
         if not has_mfa(request.user):
             raise serializers.ValidationError(
-                {"detail": "Zurücksetzen darf nur, wer selbst die Zwei-Faktor-Anmeldung nutzt."}
+                {
+                    "detail": gettext(
+                        "Zurücksetzen darf nur, wer selbst die Zwei-Faktor-Anmeldung nutzt."
+                    )
+                }
             )
         if not RoleAssignment.objects.active().filter(pk=assignment.pk).exists():
-            raise serializers.ValidationError({"detail": "Die Rolle ist nicht mehr aktiv."})
+            raise serializers.ValidationError(
+                {"detail": gettext("Die Rolle ist nicht mehr aktiv.")}
+            )
         if _has_rights_elsewhere(target, self.org):
             # Die Zwei-Faktor-Anmeldung gilt für das ganze Konto. Ein Verein darf sie nur
             # für Konten zurücksetzen, die allein hier Rechte haben (Gesamtaudit 01.11., GA-S01).
             raise serializers.ValidationError(
                 {
-                    "detail": "Dieses Konto hat auch außerhalb dieses Vereins Rechte. "
-                    "Die Zwei-Faktor-Anmeldung setzt dann nur die Plattform-Verwaltung zurück."
+                    "detail": gettext(
+                        "Dieses Konto hat auch außerhalb dieses Vereins Rechte. Die "
+                        "Zwei-Faktor-Anmeldung setzt dann nur die Plattform-Verwaltung zurück."
+                    )
                 }
             )
         removed, _ = Authenticator.objects.filter(user=target).delete()
         if not removed:
             raise serializers.ValidationError(
-                {"detail": "Für dieses Konto ist keine Zwei-Faktor-Anmeldung eingerichtet."}
+                {
+                    "detail": gettext(
+                        "Für dieses Konto ist keine Zwei-Faktor-Anmeldung eingerichtet."
+                    )
+                }
             )
         User.objects.filter(pk=target.pk).update(mfa_required_by=timezone.now())
         secure_account(target, devices=True)
@@ -561,14 +578,14 @@ class RolePreviewView(generics.GenericAPIView):
     def post(self, request, org_id: int):
         org, perms = self._org(org_id)
         if ROLES_PREVIEW not in perms:
-            raise PermissionDenied("Dafür fehlt dir die Berechtigung.")
+            raise PermissionDenied(gettext("Dafür fehlt dir die Berechtigung."))
         role_id = request.data.get("role") if isinstance(request.data, dict) else None
         if not isinstance(role_id, int) or isinstance(role_id, bool):
-            raise serializers.ValidationError({"role": "Bitte eine Rolle wählen."})
+            raise serializers.ValidationError({"role": gettext("Bitte eine Rolle wählen.")})
         with tenant_context(org.pk):
             role = Role.objects.filter(pk=role_id, organization=org).first()
         if role is None:
-            raise serializers.ValidationError({"role": "Diese Rolle gibt es hier nicht."})
+            raise serializers.ValidationError({"role": gettext("Diese Rolle gibt es hier nicht.")})
         previous = preview.current()
         if previous:
             self._log(previous.org_id, previous.role_id, "begonnen", "beendet")

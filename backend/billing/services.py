@@ -11,6 +11,7 @@ from django.core.exceptions import ValidationError
 from django.db import connection, transaction
 from django.db.models import Q, Sum
 from django.utils import timezone
+from django.utils.translation import gettext
 
 from access.catalog import DEPT_INVOICES_VIEW
 from finance import services as finance_services
@@ -89,7 +90,7 @@ class Period:
 def period(org, year: int, rhythm: str, index: int) -> Period:
     count = PERIODS_PER_YEAR[rhythm]
     if not 1 <= index <= count:
-        raise ValidationError({"period": "Diesen Abrechnungszeitraum gibt es nicht."})
+        raise ValidationError({"period": gettext("Diesen Abrechnungszeitraum gibt es nicht.")})
     months = 12 // count
     first = org.fiscal_start(year)
     start = add_months(first, months * (index - 1))
@@ -662,10 +663,10 @@ def lock_invoice(
 def finalize(invoice: Invoice) -> None:
     lock_invoice(invoice, ("status",))
     if invoice.status != Invoice.Status.DRAFT:
-        raise ValidationError("Die Rechnung ist schon festgeschrieben.")
+        raise ValidationError(gettext("Die Rechnung ist schon festgeschrieben."))
     recalc_total(invoice)
     if invoice.total <= 0:
-        raise ValidationError("Der Rechnungsbetrag muss größer als 0 sein.")
+        raise ValidationError(gettext("Der Rechnungsbetrag muss größer als 0 sein."))
     refresh_recipient(invoice)
     org = invoice.organization
     invoice.year = org.fiscal_year_of(invoice.date)
@@ -694,12 +695,12 @@ def in_open_debit_run(invoice: Invoice) -> bool:
 def cancel(invoice: Invoice) -> None:
     lock_invoice(invoice)
     if invoice.status != Invoice.Status.OPEN:
-        raise ValidationError("Nur offene Rechnungen lassen sich stornieren.")
+        raise ValidationError(gettext("Nur offene Rechnungen lassen sich stornieren."))
     if in_open_debit_run(invoice):
         raise ValidationError(IN_DEBIT_RUN)
     if invoice.payments.exists():
         raise ValidationError(
-            "Zu der Rechnung gibt es Zahlungen. Bitte zuerst die Zahlungen entfernen."
+            gettext("Zu der Rechnung gibt es Zahlungen. Bitte zuerst die Zahlungen entfernen.")
         )
     invoice.status = Invoice.Status.CANCELLED
     invoice.cancelled_at = timezone.now()
@@ -731,13 +732,13 @@ def add_payment(
     lock_invoice(invoice)
     org = invoice.organization
     if invoice.status not in (Invoice.Status.OPEN, Invoice.Status.PAID):
-        raise ValidationError("Zahlungen gibt es nur zu festgeschriebenen Rechnungen.")
+        raise ValidationError(gettext("Zahlungen gibt es nur zu festgeschriebenen Rechnungen."))
     # Der Betrag des Laufs steht schon in der Bankdatei; eine Zahlung dazwischen
     # würde Bank und Kasse auseinanderlaufen lassen.
     if not debit and in_open_debit_run(invoice):
         raise ValidationError(IN_DEBIT_RUN)
     if amount <= 0:
-        raise ValidationError({"amount": "Der Betrag muss größer als 0 sein."})
+        raise ValidationError({"amount": gettext("Der Betrag muss größer als 0 sein.")})
     if amount > invoice.outstanding:
         raise ValidationError(
             {"amount": f"Offen sind nur noch {invoice.outstanding:.2f} €.".replace(".", ",")}
@@ -745,10 +746,12 @@ def add_payment(
     cfg = settings_for(org)
     if cfg.category is None:
         raise ValidationError(
-            "Bitte unter Beiträge → Einstellungen eine Kategorie für Beitragszahlungen wählen."
+            gettext(
+                "Bitte unter Beiträge → Einstellungen eine Kategorie für Beitragszahlungen wählen."
+            )
         )
     if account is None or account.organization_id != org.pk:
-        raise ValidationError({"account": "Bitte das Konto wählen."})
+        raise ValidationError({"account": gettext("Bitte das Konto wählen.")})
     finance_services.ensure_open(org, date=date)
     year = org.fiscal_year_of(date)
     booking = Booking(
@@ -799,7 +802,7 @@ def remove_payment(payment: Payment, user=None) -> Booking | None:
         account, since = booking.account, booking.date
         if booking.receipts.exists():
             raise ValidationError(
-                "An der Buchung hängen Belege. Bitte diese zuerst in der Kasse entfernen."
+                gettext("An der Buchung hängen Belege. Bitte diese zuerst in der Kasse entfernen.")
             )
         booking.delete()
         finance_services.ensure_cash_ok([account], since)
@@ -1059,12 +1062,12 @@ def dun(invoice: Invoice, level: DunningLevel, user, on: datetime.date | None = 
     lock_invoice(invoice)
     on = on or timezone.localdate()
     if invoice.status != Invoice.Status.OPEN:
-        raise ValidationError("Gemahnt werden nur offene Rechnungen.")
+        raise ValidationError(gettext("Gemahnt werden nur offene Rechnungen."))
     # Der Einzug läuft schon; eine Mahnung (womöglich mit Gebühr) wäre irreführend
     if in_open_debit_run(invoice):
         raise ValidationError(IN_DEBIT_RUN)
     if level.level <= invoice.dunning_level:
-        raise ValidationError("Diese Mahnstufe ist schon erreicht.")
+        raise ValidationError(gettext("Diese Mahnstufe ist schon erreicht."))
     cfg = settings_for(invoice.organization)
     dunning = Dunning.objects.create(
         organization=invoice.organization,

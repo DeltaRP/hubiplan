@@ -116,6 +116,8 @@ export interface OrgDetail {
   label_plural?: string
   label_gender?: 'f' | 'm' | 'n'
   label_genitive?: string
+  label_en?: string
+  label_plural_en?: string
   founding_year: number | null
   street: string
   postal_code: string
@@ -138,6 +140,8 @@ export interface OrgDetail {
   department_label_plural: string
   department_label_gender: 'f' | 'm' | 'n'
   department_label_genitive: string
+  department_label_en?: string
+  department_label_plural_en?: string
   department_terms?: DeptTerms
   allow_multiple_departments: boolean
   /** Oberste Einheit führt auch selbst Mitglieder */
@@ -233,11 +237,15 @@ export interface Department {
   label?: string
   label_plural?: string
   label_gender?: 'f' | 'm' | 'n'
+  label_en?: string
+  label_plural_en?: string
   /** Bezeichnung der eigenen Untereinheiten */
   department_label?: string
   department_label_plural?: string
   department_label_gender?: 'f' | 'm' | 'n'
   department_label_genitive?: string
+  department_label_en?: string
+  department_label_plural_en?: string
   /** Formen für Texte über die eigenen Untereinheiten */
   child_terms?: Record<string, string>
   /** eigener Arbeitsbereich mit eigener Kasse und eigenen Rollen */
@@ -374,6 +382,8 @@ export interface PlatformOrg {
   label_plural?: string
   label_gender?: 'f' | 'm' | 'n'
   label_genitive?: string
+  label_en?: string
+  label_plural_en?: string
   founding_year: number | null
   street: string
   postal_code: string

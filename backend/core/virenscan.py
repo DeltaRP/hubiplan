@@ -17,6 +17,7 @@ import struct
 from django.conf import settings
 from django.core.cache import cache
 from django.core.files.uploadhandler import FileUploadHandler
+from django.utils.translation import gettext, gettext_lazy
 from rest_framework.exceptions import APIException
 
 logger = logging.getLogger(__name__)
@@ -25,13 +26,13 @@ logger = logging.getLogger(__name__)
 class VirusFound(APIException):
     status_code = 422
     default_code = "virus_found"
-    default_detail = "Die Datei enthält Schadsoftware und wurde abgelehnt."
+    default_detail = gettext_lazy("Die Datei enthält Schadsoftware und wurde abgelehnt.")
 
 
 class ScanUnavailable(APIException):
     status_code = 503
     default_code = "scan_unavailable"
-    default_detail = (
+    default_detail = gettext_lazy(
         "Die Virenprüfung ist gerade nicht erreichbar. Bitte später noch einmal hochladen."
     )
 
@@ -62,7 +63,7 @@ class Stream:
             sock.sendall(b"zINSTREAM\0")
             self.sock = sock
         except OSError as exc:
-            raise ScanError(f"clamd nicht erreichbar: {exc}") from exc
+            raise ScanError(gettext("clamd nicht erreichbar: {exc}").format(exc=exc)) from exc
 
     def feed(self, data: bytes) -> None:
         if self.too_big or not data:
@@ -76,7 +77,9 @@ class Stream:
             self.sock.sendall(struct.pack("!L", len(data)) + data)
         except OSError as exc:
             self.close()
-            raise ScanError(f"clamd hat die Verbindung beendet: {exc}") from exc
+            raise ScanError(
+                gettext("clamd hat die Verbindung beendet: {exc}").format(exc=exc)
+            ) from exc
         self.sent += len(data)
 
     def result(self) -> str | None:
@@ -92,7 +95,7 @@ class Stream:
                     break
                 reply += part
         except OSError as exc:
-            raise ScanError(f"clamd antwortet nicht: {exc}") from exc
+            raise ScanError(gettext("clamd antwortet nicht: {exc}").format(exc=exc)) from exc
         finally:
             self.close()
         text = reply.rstrip(b"\0").decode("utf-8", "replace").strip()
@@ -100,7 +103,7 @@ class Stream:
             return None
         if text.endswith("FOUND"):
             return text.removeprefix("stream:").removesuffix("FOUND").strip() or "unbekannt"
-        raise ScanError(f"clamd meldet: {text[:200]}")
+        raise ScanError(gettext("clamd meldet: {x}").format(x=text[:200]))
 
     def close(self) -> None:
         if self.sock is not None:

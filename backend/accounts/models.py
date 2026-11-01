@@ -4,6 +4,7 @@ import string
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
+from django.utils.translation import gettext
 
 
 def generate_initial_password(length: int = 16) -> str:
@@ -19,7 +20,7 @@ class UserManager(BaseUserManager):
 
     def _create_user(self, email: str, password: str | None, **extra_fields):
         if not email:
-            raise ValueError("Eine E-Mail-Adresse ist erforderlich.")
+            raise ValueError(gettext("Eine E-Mail-Adresse ist erforderlich."))
         email = self.normalize_email(email).lower()
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
@@ -35,7 +36,7 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         if not extra_fields["is_staff"] or not extra_fields["is_superuser"]:
-            raise ValueError("Superuser brauchen is_staff=True und is_superuser=True.")
+            raise ValueError(gettext("Superuser brauchen is_staff=True und is_superuser=True."))
         return self._create_user(email, password, **extra_fields)
 
 

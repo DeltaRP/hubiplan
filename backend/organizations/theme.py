@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 
 from django.core.exceptions import ValidationError
+from django.utils.translation import gettext
 
 HEX_COLOR = re.compile(r"^#[0-9a-fA-F]{6}$")
 
@@ -46,7 +47,7 @@ def text_color_on(background: str) -> str:
 
 def validate_hex_color(value: str) -> None:
     if not HEX_COLOR.match(value or ""):
-        raise ValidationError("Bitte eine Farbe im Format #RRGGBB angeben.")
+        raise ValidationError(gettext("Bitte eine Farbe im Format #RRGGBB angeben."))
 
 
 def check_primary(color: str) -> list[str]:
@@ -74,20 +75,30 @@ def clean_extra_colors(value) -> list[dict]:
     if value in (None, ""):
         return []
     if not isinstance(value, list):
-        raise ValidationError("Weitere Farben bitte als Liste angeben.")
+        raise ValidationError(gettext("Weitere Farben bitte als Liste angeben."))
     if len(value) > MAX_EXTRA_COLORS:
-        raise ValidationError(f"Höchstens {MAX_EXTRA_COLORS} weitere Farben (zusammen sechs).")
+        raise ValidationError(
+            gettext("Höchstens {MAX_EXTRA_COLORS} weitere Farben (zusammen sechs).").format(
+                MAX_EXTRA_COLORS=MAX_EXTRA_COLORS
+            )
+        )
     result = []
     for i, item in enumerate(value, start=3):
         if not isinstance(item, dict):
-            raise ValidationError("Weitere Farben bitte als Liste angeben.")
+            raise ValidationError(gettext("Weitere Farben bitte als Liste angeben."))
         color = str(item.get("color") or "").lower()
         validate_hex_color(color)
         if contrast(color, text_color_on(color)) < MIN_TEXT_CONTRAST:
-            raise ValidationError(f"Text auf der {i}. Farbe wäre schlecht lesbar.")
+            raise ValidationError(
+                gettext("Text auf der {i}. Farbe wäre schlecht lesbar.").format(i=i)
+            )
         name = str(item.get("name") or "").strip()
         if len(name) > MAX_COLOR_NAME:
-            raise ValidationError(f"Farbnamen bitte höchstens {MAX_COLOR_NAME} Zeichen.")
+            raise ValidationError(
+                gettext("Farbnamen bitte höchstens {MAX_COLOR_NAME} Zeichen.").format(
+                    MAX_COLOR_NAME=MAX_COLOR_NAME
+                )
+            )
         result.append({"color": color, "name": name})
     return result
 

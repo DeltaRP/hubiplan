@@ -23,6 +23,7 @@ import uuid
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext
 
 from .models import Coupling, RemoteMember, RemoteTransfer
 
@@ -40,7 +41,9 @@ def _date(value):
 def _coupling_of(placeholder) -> Coupling:
     coupling = Coupling.objects.filter(remote_unit=placeholder).select_related("peer").first()
     if coupling is None or not coupling.is_open:
-        raise ValidationError(f"{placeholder.name} ist derzeit nicht erreichbar gekoppelt.")
+        raise ValidationError(
+            gettext("{name} ist derzeit nicht erreichbar gekoppelt.").format(name=placeholder.name)
+        )
     return coupling
 
 
@@ -72,7 +75,9 @@ def ask_from_side(request) -> RemoteTransfer:
         .first()
     )
     if rm is None:
-        raise ValidationError("Die Person ist beim bisherigen Verein nicht namentlich gemeldet.")
+        raise ValidationError(
+            gettext("Die Person ist beim bisherigen Verein nicht namentlich gemeldet.")
+        )
     rt = RemoteTransfer.objects.create(
         coupling=coupling, role=RemoteTransfer.Role.FROM, transfer=request
     )
@@ -230,19 +235,19 @@ def request_transfer(coupling: Coupling, data: dict, user) -> RemoteTransfer:
     from . import services
 
     if coupling.direction != Coupling.Direction.PARENT or coupling.state != Coupling.State.ACTIVE:
-        raise ValidationError("Die Kopplung nach oben ist nicht aktiv.")
+        raise ValidationError(gettext("Die Kopplung nach oben ist nicht aktiv."))
     if coupling.level("members") != "b":
-        raise ValidationError("Wechselanfragen brauchen die namentliche Meldung.")
+        raise ValidationError(gettext("Wechselanfragen brauchen die namentliche Meldung."))
     club = coupling.local_unit
     member_type = MemberType.objects.filter(organization=club, pk=data.get("member_type")).first()
     if member_type is None or not member_type.active:
-        raise ValidationError("Bitte eine aktive Mitgliedsart wählen.")
+        raise ValidationError(gettext("Bitte eine aktive Mitgliedsart wählen."))
     birth = _date(data.get("birth_date"))
     entry = _date(data.get("entry_date"))
     last = str(data.get("last_name") or "").strip()[:100]
     first = str(data.get("first_name") or "").strip()[:100]
     if not (birth and entry and last and first):
-        raise ValidationError("Bitte Name, Vorname, Geburtsdatum und Eintritt angeben.")
+        raise ValidationError(gettext("Bitte Name, Vorname, Geburtsdatum und Eintritt angeben."))
     admission = {
         "last_name": last,
         "first_name": first,
@@ -291,7 +296,7 @@ def _receive_request_below(coupling: Coupling, data: dict) -> None:
             organization=coupling.local_unit, pk=int(uid[1:])
         ).first()
     if membership is None:
-        raise ValidationError("Mitgliedschaft unbekannt.")
+        raise ValidationError(gettext("Mitgliedschaft unbekannt."))
     RemoteTransfer.objects.create(
         coupling=coupling,
         tid=tid,
@@ -317,10 +322,10 @@ def decide(rt: RemoteTransfer, decision: str, user, new_type=None, response: str
     from . import services
 
     if rt.role != RemoteTransfer.Role.FROM or rt.status != RemoteTransfer.Status.PENDING:
-        raise ValidationError("Die Anfrage ist bereits erledigt.")
+        raise ValidationError(gettext("Die Anfrage ist bereits erledigt."))
     coupling = rt.coupling
     if not coupling.is_open:
-        raise ValidationError("Die Kopplung ist nicht aktiv.")
+        raise ValidationError(gettext("Die Kopplung ist nicht aktiv."))
     entry = _date(rt.data.get("entry_date")) or timezone.localdate()
     membership = rt.membership
     with transaction.atomic():
@@ -334,10 +339,10 @@ def decide(rt: RemoteTransfer, decision: str, user, new_type=None, response: str
                 or new_type.active
                 or new_type.organization_id != membership.organization_id
             ):
-                raise ValidationError("Bitte eine nicht aktive Art wählen.")
+                raise ValidationError(gettext("Bitte eine nicht aktive Art wählen."))
             workflows.change_type(membership, new_type, entry)
         elif decision != "reject":
-            raise ValidationError("Unbekannte Entscheidung.")
+            raise ValidationError(gettext("Unbekannte Entscheidung."))
         rt.status = (
             RemoteTransfer.Status.REJECTED
             if decision == "reject"
@@ -426,7 +431,7 @@ def receive(coupling: Coupling, kind: str, data: dict) -> None:
     try:
         uuid.UUID(str(data.get("tid")))
     except ValueError as exc:
-        raise ValidationError("Ungültige Wechselanfrage.") from exc
+        raise ValidationError(gettext("Ungültige Wechselanfrage.")) from exc
     below = coupling.direction == Coupling.Direction.PARENT
     if kind == "transfer.request":
         (_receive_request_below if below else _receive_request_above)(coupling, data)
@@ -435,7 +440,7 @@ def receive(coupling: Coupling, kind: str, data: dict) -> None:
     elif kind == "transfer.cancel" and below:
         _receive_cancel_below(coupling, data)
     else:
-        raise ValidationError("Unpassende Wechselmeldung.")
+        raise ValidationError(gettext("Unpassende Wechselmeldung."))
 
 
 def transfer_data(rt: RemoteTransfer) -> dict:

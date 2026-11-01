@@ -13,6 +13,7 @@ from pathlib import Path
 
 from django.db import transaction
 from django.http import Http404
+from django.utils.translation import gettext
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
 from rest_framework.response import Response
@@ -41,7 +42,9 @@ class LearningSerializer(serializers.Serializer):
 
     def validate_learning_hidden(self, value):
         if value:
-            raise serializers.ValidationError("Nur das Zurücksetzen (leere Liste) ist möglich.")
+            raise serializers.ValidationError(
+                gettext("Nur das Zurücksetzen (leere Liste) ist möglich.")
+            )
         return value
 
 
@@ -81,7 +84,7 @@ class LearningView(APIView):
 
 def _known(key: str) -> str:
     if key not in DECISION_KEYS:
-        raise Http404("Unbekannte Erklärung.")
+        raise Http404(gettext("Unbekannte Erklärung."))
     return key
 
 

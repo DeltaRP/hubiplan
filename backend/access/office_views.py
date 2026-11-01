@@ -10,6 +10,7 @@ from pathlib import Path
 
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext
 from rest_framework import serializers, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -41,7 +42,7 @@ def _person(org, person_id):
         organization=org, person_id=person_id, purged_at__isnull=True
     ).exists()
     if not ok:
-        raise ValidationError({"person": "Das Mitglied gehört nicht zu dieser Einheit."})
+        raise ValidationError({"person": gettext("Das Mitglied gehört nicht zu dieser Einheit.")})
     return Person.objects.get(pk=person_id)
 
 
@@ -57,7 +58,7 @@ class EntrySerializer(serializers.Serializer):
         if message := offices.check_years(attrs["from_year"], attrs["until_year"]):
             raise ValidationError({"until_year": message})
         if not (attrs.get("name") or "").strip() and attrs.get("person") is None:
-            raise ValidationError({"name": "Bitte einen Namen eintragen."})
+            raise ValidationError({"name": gettext("Bitte einen Namen eintragen.")})
         return attrs
 
 
@@ -156,9 +157,9 @@ class ImportPreviewView(_OfficesMixin, APIView):
     def post(self, request, org_id: int):
         upload = request.FILES.get("file")
         if upload is None:
-            raise ValidationError({"file": "Bitte eine Datei auswählen."})
+            raise ValidationError({"file": gettext("Bitte eine Datei auswählen.")})
         if upload.size > 5 * 1024 * 1024:
-            raise ValidationError({"file": "Die Datei darf höchstens 5 MB groß sein."})
+            raise ValidationError({"file": gettext("Die Datei darf höchstens 5 MB groß sein.")})
         suffix = Path(upload.name).suffix.lower()
         with tempfile.NamedTemporaryFile(suffix=suffix) as tmp:
             for chunk in upload.chunks():
@@ -184,7 +185,9 @@ class ImportSerializer(serializers.Serializer):
 
     def validate_rows(self, value):
         if len(value) > offices.MAX_ROWS:
-            raise serializers.ValidationError(f"Höchstens {offices.MAX_ROWS} Zeilen.")
+            raise serializers.ValidationError(
+                gettext("Höchstens {MAX_ROWS} Zeilen.").format(MAX_ROWS=offices.MAX_ROWS)
+            )
         return value
 
 
@@ -205,19 +208,25 @@ class ImportView(_OfficesMixin, APIView):
         created = 0
         for line, row in enumerate(ser.validated_data["rows"], start=1):
             if message := offices.check_years(row["from_year"], row["until_year"]):
-                raise ValidationError(f"Zeile {line}: {message}")
+                raise ValidationError(
+                    gettext("Zeile {line}: {message}").format(line=line, message=message)
+                )
             unit_id = row.get("unit_id")
             if unit_id is not None and unit_id not in units:
-                raise ValidationError(f"Zeile {line}: Unbekannte Untereinheit.")
+                raise ValidationError(
+                    gettext("Zeile {line}: Unbekannte Untereinheit.").format(line=line)
+                )
             try:
                 person = _person(self.org, row.get("person_id"))
             except ValidationError:
                 raise ValidationError(
-                    f"Zeile {line}: Das Mitglied gehört nicht zu dieser Einheit."
+                    gettext("Zeile {line}: Das Mitglied gehört nicht zu dieser Einheit.").format(
+                        line=line
+                    )
                 ) from None
             name = (row.get("name") or "").strip()
             if person is None and not name:
-                raise ValidationError(f"Zeile {line}: Name fehlt.")
+                raise ValidationError(gettext("Zeile {line}: Name fehlt.").format(line=line))
             key = (row["role"].strip().lower(), unit_id)
             role = roles.get(key)
             if role is None:

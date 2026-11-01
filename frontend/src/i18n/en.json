@@ -1120,5 +1120,9 @@
   "▼ absteigend": "▼ descending",
   "✓ Gespeichert": "✓ Saved",
   "⟲ Drehen": "⟲ Rotate",
-  "⟳ Drehen": "⟳ Rotate"
+  "⟳ Drehen": "⟳ Rotate",
+  "Englisch (Einzahl)": "English (singular)",
+  "Optional, für die englische Oberfläche. Leer: „{x}“.": "Optional, for the English interface. Empty: “{x}”.",
+  "Englisch (Mehrzahl)": "English (plural)",
+  "Auf Englisch: {a} · {b} · {c}": "In English: {a} · {b} · {c}"
 }

@@ -14,6 +14,7 @@ import secrets
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils.translation import gettext
 
 from core.plural import guess_plural  # noqa: F401  (hier weiter importierbar)
 from core.privatefiles import PrivateFileField
@@ -151,21 +152,23 @@ class Reign(models.Model):
 
     def clean(self):
         if not self.year and not self.valid_from:
-            raise ValidationError({"year": "Bitte ein Jahr oder einen Zeitraum angeben."})
+            raise ValidationError({"year": gettext("Bitte ein Jahr oder einen Zeitraum angeben.")})
         if self.year and not (1000 <= self.year <= 2999):
-            raise ValidationError({"year": "Bitte ein vierstelliges Jahr angeben."})
+            raise ValidationError({"year": gettext("Bitte ein vierstelliges Jahr angeben.")})
         if self.end_year and not self.year:
-            raise ValidationError({"end_year": "Bitte zuerst das Startjahr angeben."})
+            raise ValidationError({"end_year": gettext("Bitte zuerst das Startjahr angeben.")})
         if self.end_year and not (1000 <= self.end_year <= 2999):
-            raise ValidationError({"end_year": "Bitte ein vierstelliges Jahr angeben."})
+            raise ValidationError({"end_year": gettext("Bitte ein vierstelliges Jahr angeben.")})
         if self.year and self.end_year and self.end_year < self.year:
-            raise ValidationError({"end_year": "Das Endjahr liegt vor dem Startjahr."})
+            raise ValidationError({"end_year": gettext("Das Endjahr liegt vor dem Startjahr.")})
         if self.valid_from and self.valid_until and self.valid_until < self.valid_from:
-            raise ValidationError({"valid_until": "Das Ende liegt vor dem Beginn."})
+            raise ValidationError({"valid_until": gettext("Das Ende liegt vor dem Beginn.")})
         if self.ordinal is not None and not (1 <= self.ordinal <= 3999):
-            raise ValidationError({"ordinal": "Bitte eine Zahl von 1 bis 3999 angeben."})
+            raise ValidationError({"ordinal": gettext("Bitte eine Zahl von 1 bis 3999 angeben.")})
         if not self.person_id and not self.name.strip():
-            raise ValidationError({"name": "Bitte ein Mitglied wählen oder einen Namen angeben."})
+            raise ValidationError(
+                {"name": gettext("Bitte ein Mitglied wählen oder einen Namen angeben.")}
+            )
 
 
 class Companion(models.Model):

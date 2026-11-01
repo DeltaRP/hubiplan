@@ -13,6 +13,7 @@ from django.db import transaction
 from django.db.models import Count, Q
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext
 from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -104,7 +105,7 @@ class DignitySerializer(serializers.ModelSerializer):
             return None
         org = self.context["org"]
         if not Department.objects.filter(pk=value.pk, organization=org).exists():
-            raise serializers.ValidationError("Unbekannte Untereinheit.")
+            raise serializers.ValidationError(gettext("Unbekannte Untereinheit."))
         return value
 
     def validate(self, attrs):
@@ -115,7 +116,7 @@ class DignitySerializer(serializers.ModelSerializer):
         if self.instance:
             qs = qs.exclude(pk=self.instance.pk)
         if qs.exists():
-            raise serializers.ValidationError({"name": "Diese Würde gibt es schon."})
+            raise serializers.ValidationError({"name": gettext("Diese Würde gibt es schon.")})
         if "name" in attrs:
             attrs["name"] = name
         return attrs
@@ -143,7 +144,7 @@ class DignityViewSet(_HonorsMixin, AuditMixin, viewsets.ModelViewSet):
         """Reihenfolge der Würden einer Einheit (``unit``; leer: die Einheit selbst)."""
         unit = request.data.get("unit")
         if unit is not None and not isinstance(unit, int):
-            raise ValidationError({"unit": "Unbekannte Einheit."})
+            raise ValidationError({"unit": gettext("Unbekannte Einheit.")})
         return reorder_response(
             request,
             self.org,
@@ -157,8 +158,10 @@ class DignityViewSet(_HonorsMixin, AuditMixin, viewsets.ModelViewSet):
         reigns = list(instance.reigns.all())
         if reigns and self.request.query_params.get("mit_regentschaften") != "1":
             raise ValidationError(
-                f"Zu dieser Würde gibt es {len(reigns)} Regentschaften. Bitte bestätigen, "
-                "dass sie mitgelöscht werden, oder „nicht mehr verwendet“ setzen."
+                gettext(
+                    "Zu dieser Würde gibt es {x} Regentschaften. Bitte bestätigen, dass sie "
+                    "mitgelöscht werden, oder „nicht mehr verwendet“ setzen."
+                ).format(x=len(reigns))
             )
         for reign in reigns:
             record(self.org, self.request.user, "delete", reign, diff(snapshot(reign), {}))
@@ -252,7 +255,7 @@ class ReignSerializer(serializers.ModelSerializer):
 
     def _check_person(self, person):
         if person is not None and person.pk not in self.context["people"]:
-            raise serializers.ValidationError("Bitte ein Mitglied dieser Einheit wählen.")
+            raise serializers.ValidationError(gettext("Bitte ein Mitglied dieser Einheit wählen."))
         return person
 
     def validate_person(self, value):
@@ -260,21 +263,23 @@ class ReignSerializer(serializers.ModelSerializer):
 
     def validate_dignity(self, value):
         if value.organization_id != self.context["org"].pk:
-            raise serializers.ValidationError("Unbekannte Würde.")
+            raise serializers.ValidationError(gettext("Unbekannte Würde."))
         return value
 
     def validate_origin(self, value):
         if value is not None and value.pk not in {
             o.pk for o in origin_choices(self.context["org"])
         }:
-            raise serializers.ValidationError("Bitte eine Einheit unterhalb wählen.")
+            raise serializers.ValidationError(gettext("Bitte eine Einheit unterhalb wählen."))
         return value
 
     def validate_companions(self, value):
         for c in value:
             self._check_person(c.get("person"))
             if not c.get("person") and not (c.get("name") or "").strip():
-                raise serializers.ValidationError("Bitte für jede Begleitperson einen Namen.")
+                raise serializers.ValidationError(
+                    gettext("Bitte für jede Begleitperson einen Namen.")
+                )
         return value
 
     def validate(self, attrs):
@@ -427,7 +432,7 @@ class ReignPhotoView(_HonorsMixin, APIView):
         reign = self.reign(pk)
         upload = request.FILES.get("file")
         if upload is None:
-            raise ValidationError({"file": "Bitte ein Foto auswählen."})
+            raise ValidationError({"file": gettext("Bitte ein Foto auswählen.")})
         full, ext, width, height, small, ext_small = process_image(upload)
         old = getattr(reign, "photo", None)
         if old is not None:
@@ -562,9 +567,9 @@ class ImportPreviewView(_HonorsMixin, APIView):
     def post(self, request, org_id: int):
         upload = request.FILES.get("file")
         if upload is None:
-            raise ValidationError({"file": "Bitte eine Datei auswählen."})
+            raise ValidationError({"file": gettext("Bitte eine Datei auswählen.")})
         if upload.size > 5 * 1024 * 1024:
-            raise ValidationError({"file": "Die Datei darf höchstens 5 MB groß sein."})
+            raise ValidationError({"file": gettext("Die Datei darf höchstens 5 MB groß sein.")})
         suffix = Path(upload.name).suffix.lower()
         with tempfile.NamedTemporaryFile(suffix=suffix) as tmp:
             for chunk in upload.chunks():
@@ -602,7 +607,9 @@ class ImportSerializer(serializers.Serializer):
 
     def validate_rows(self, value):
         if len(value) > importer.MAX_ROWS:
-            raise serializers.ValidationError(f"Höchstens {importer.MAX_ROWS} Zeilen.")
+            raise serializers.ValidationError(
+                gettext("Höchstens {MAX_ROWS} Zeilen.").format(MAX_ROWS=importer.MAX_ROWS)
+            )
         return value
 
 
@@ -633,18 +640,26 @@ class ImportView(_HonorsMixin, APIView):
             if pid is None:
                 return None
             if pid not in persons:
-                raise ValidationError(f"Zeile {line}: Das Mitglied gehört nicht zu dieser Einheit.")
+                raise ValidationError(
+                    gettext("Zeile {line}: Das Mitglied gehört nicht zu dieser Einheit.").format(
+                        line=line
+                    )
+                )
             return persons[pid]
 
         for line, row in enumerate(rows, start=1):
             if row.get("end_year") and row["end_year"] < row["year"]:
-                raise ValidationError(f"Zeile {line}: Das Endjahr liegt vor dem Startjahr.")
+                raise ValidationError(
+                    gettext("Zeile {line}: Das Endjahr liegt vor dem Startjahr.").format(line=line)
+                )
             person = person_of(row.get("person_id"), line)
             if row.get("origin") and row["origin"] not in origins:
-                raise ValidationError(f"Zeile {line}: Unbekannte Einheit bei „aus“.")
+                raise ValidationError(
+                    gettext("Zeile {line}: Unbekannte Einheit bei „aus“.").format(line=line)
+                )
             name = (row.get("name") or "").strip()
             if person is None and not name:
-                raise ValidationError(f"Zeile {line}: Name fehlt.")
+                raise ValidationError(gettext("Zeile {line}: Name fehlt.").format(line=line))
             key = row["dignity"].strip().lower()
             dignity = dignities.get(key)
             if dignity is None:

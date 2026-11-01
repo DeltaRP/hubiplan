@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from django.db.models import Q
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from core.api_base import ModelCleanMixin
@@ -78,7 +79,7 @@ class AccountSerializer(ModelCleanMixin, serializers.ModelSerializer):
         if self.instance:
             qs = qs.exclude(pk=self.instance.pk)
         if qs.exists():
-            raise serializers.ValidationError("Ein Konto mit diesem Namen gibt es schon.")
+            raise serializers.ValidationError(gettext("Ein Konto mit diesem Namen gibt es schon."))
         return value
 
     def validate(self, attrs):
@@ -93,7 +94,7 @@ class AccountSerializer(ModelCleanMixin, serializers.ModelSerializer):
             new_date = attrs.get("opening_date")
             if first and new_date and new_date > first.date:
                 raise serializers.ValidationError(
-                    {"opening_date": "Es gibt schon Buchungen vor diesem Stichtag."}
+                    {"opening_date": gettext("Es gibt schon Buchungen vor diesem Stichtag.")}
                 )
         return super().validate(attrs)
 
@@ -129,7 +130,9 @@ class CategorySerializer(serializers.ModelSerializer):
         if self.instance:
             qs = qs.exclude(pk=self.instance.pk)
         if qs.exists():
-            raise serializers.ValidationError("Eine Kategorie mit diesem Namen gibt es schon.")
+            raise serializers.ValidationError(
+                gettext("Eine Kategorie mit diesem Namen gibt es schon.")
+            )
         return value
 
     def validate_datev_account(self, value):
@@ -292,8 +295,10 @@ class BookingSerializer(ModelCleanMixin, serializers.ModelSerializer):
         ):
             raise serializers.ValidationError(
                 {
-                    "date": "Das Geschäftsjahr einer Buchung lässt sich nicht ändern. "
-                    "Bitte die Buchung stornieren und neu anlegen."
+                    "date": gettext(
+                        "Das Geschäftsjahr einer Buchung lässt sich nicht ändern. Bitte die "
+                        "Buchung stornieren und neu anlegen."
+                    )
                 }
             )
         number = attrs.get("number")
@@ -306,7 +311,7 @@ class BookingSerializer(ModelCleanMixin, serializers.ModelSerializer):
                 ).exclude(pk=self.instance.pk)
                 if taken.exists():
                     raise serializers.ValidationError(
-                        {"number": "Diese Nummer ist im Geschäftsjahr schon vergeben."}
+                        {"number": gettext("Diese Nummer ist im Geschäftsjahr schon vergeben.")}
                     )
         return super().validate(attrs)
 
@@ -325,7 +330,7 @@ class ProjectSeriesSerializer(serializers.ModelSerializer):
         if self.instance:
             qs = qs.exclude(pk=self.instance.pk)
         if qs.exists():
-            raise serializers.ValidationError("Eine Reihe mit diesem Namen gibt es schon.")
+            raise serializers.ValidationError(gettext("Eine Reihe mit diesem Namen gibt es schon."))
         return value
 
 
@@ -393,5 +398,5 @@ class ProjectSerializer(ModelCleanMixin, serializers.ModelSerializer):
 def _datev_number(value: str) -> str:
     value = (value or "").strip()
     if value and (not value.isdigit() or len(value) > 9):
-        raise serializers.ValidationError("Bitte nur Ziffern (höchstens 9).")
+        raise serializers.ValidationError(gettext("Bitte nur Ziffern (höchstens 9)."))
     return value

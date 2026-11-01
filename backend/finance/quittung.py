@@ -18,6 +18,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext
 
 from . import services, signature
 from .models import Account, Booking, CashReceipt, Receipt
@@ -64,17 +65,23 @@ def _when(signed_at) -> datetime.datetime:
     if signed_at is None:
         return now
     if signed_at > now + datetime.timedelta(minutes=5):
-        raise ValidationError({"signed_at": "Der Zeitpunkt liegt in der Zukunft."})
+        raise ValidationError({"signed_at": gettext("Der Zeitpunkt liegt in der Zukunft.")})
     if signed_at < now - MAX_OFFLINE_AGE:
         raise ValidationError(
-            {"signed_at": "Die Unterschrift ist älter als 30 Tage. Bitte neu unterschreiben."}
+            {
+                "signed_at": gettext(
+                    "Die Unterschrift ist älter als 30 Tage. Bitte neu unterschreiben."
+                )
+            }
         )
     return signed_at
 
 
 def _draft(receipt: CashReceipt) -> None:
     if receipt.status != CashReceipt.Status.DRAFT:
-        raise ValidationError("Die Quittung ist abgeschlossen und lässt sich nicht mehr ändern.")
+        raise ValidationError(
+            gettext("Die Quittung ist abgeschlossen und lässt sich nicht mehr ändern.")
+        )
 
 
 def sign_treasurer(receipt: CashReceipt, user, *, strokes=None, use_stored=False, signed_at=None):
@@ -82,7 +89,7 @@ def sign_treasurer(receipt: CashReceipt, user, *, strokes=None, use_stored=False
     if use_stored:
         stored = getattr(user, "stored_signature", None)
         if stored is None or not signature.is_valid(stored.strokes):
-            raise ValidationError("Du hast keine Unterschrift hinterlegt.")
+            raise ValidationError(gettext("Du hast keine Unterschrift hinterlegt."))
         shape = stored.strokes
     else:
         shape = signature.normalize(strokes)
@@ -106,11 +113,14 @@ def without_counterparty(receipt: CashReceipt, reason: str):
     reason = " ".join((reason or "").split())
     if not receipt.receives:
         raise ValidationError(
-            "Bei einer Auszahlung muss der Empfänger unterschreiben: das ist der eigentliche Beleg."
+            gettext(
+                "Bei einer Auszahlung muss der Empfänger unterschreiben: das ist der "
+                "eigentliche Beleg."
+            )
         )
     if len(reason) < 3:
         raise ValidationError(
-            {"reason": "Bitte kurz begründen, warum der Zahler nicht unterschreibt."}
+            {"reason": gettext("Bitte kurz begründen, warum der Zahler nicht unterschreibt.")}
         )
     receipt.counterparty_signature = None
     receipt.counterparty_signed_at = None
@@ -132,9 +142,9 @@ def missing(receipt: CashReceipt) -> list[str]:
 
 def validate_account(org, account: Account) -> None:
     if account.organization_id != org.pk or not account.is_active:
-        raise ValidationError({"account": "Unbekannte Kasse."})
+        raise ValidationError({"account": gettext("Unbekannte Kasse.")})
     if account.kind != Account.Kind.CASH:
-        raise ValidationError({"account": "Quittungen gibt es nur für eine Barkasse."})
+        raise ValidationError({"account": gettext("Quittungen gibt es nur für eine Barkasse.")})
 
 
 def _store_pdf(receipt: CashReceipt, booking: Booking, content: bytes, name: str, user):
@@ -164,12 +174,18 @@ def finalize(receipt: CashReceipt, user, *, confirmed: bool, signed_at=None) -> 
         raise ValidationError("Es fehlt noch: " + ", ".join(gaps) + ".")
     if receipt.treasurer_user_id != user.pk:
         raise ValidationError(
-            "Abschließen kann nur, wer als Kassierer unterschrieben hat. Bitte selbst "
-            "unterschreiben."
+            gettext(
+                "Abschließen kann nur, wer als Kassierer unterschrieben hat. Bitte "
+                "selbst unterschreiben."
+            )
         )
     if not confirmed:
         raise ValidationError(
-            {"confirmed": "Bitte bestätigen, dass du den Betrag erhalten bzw. ausgezahlt hast."}
+            {
+                "confirmed": gettext(
+                    "Bitte bestätigen, dass du den Betrag erhalten bzw. ausgezahlt hast."
+                )
+            }
         )
     validate_account(org, receipt.account)
     when = receipt.counterparty_signed_at or receipt.treasurer_signed_at
@@ -231,10 +247,10 @@ def cancel(receipt: CashReceipt, user, reason: str) -> CashReceipt:
 
     receipt = CashReceipt.objects.select_for_update().get(pk=receipt.pk)
     if receipt.status != CashReceipt.Status.FINAL:
-        raise ValidationError("Stornieren lassen sich nur abgeschlossene Quittungen.")
+        raise ValidationError(gettext("Stornieren lassen sich nur abgeschlossene Quittungen."))
     reason = " ".join((reason or "").split())
     if len(reason) < 3:
-        raise ValidationError({"reason": "Bitte einen Grund für das Storno angeben."})
+        raise ValidationError({"reason": gettext("Bitte einen Grund für das Storno angeben.")})
     org = receipt.organization
     original = receipt.booking
     today = timezone.localdate()
@@ -304,10 +320,10 @@ def send(receipt: CashReceipt, email: str | None = None) -> bool:
     from outbox import mail
 
     if receipt.status == CashReceipt.Status.DRAFT:
-        raise ValidationError("Verschicken lässt sich erst die abgeschlossene Quittung.")
+        raise ValidationError(gettext("Verschicken lässt sich erst die abgeschlossene Quittung."))
     address = (email or receipt.email or "").strip()
     if not address:
-        raise ValidationError({"email": "Bitte eine E-Mail-Adresse angeben."})
+        raise ValidationError({"email": gettext("Bitte eine E-Mail-Adresse angeben.")})
     org = receipt.organization
     content, name = document_bytes(receipt)
     body = (

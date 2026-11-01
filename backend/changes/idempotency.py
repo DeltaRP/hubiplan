@@ -27,6 +27,7 @@ from dataclasses import dataclass, field
 
 from django.db import IntegrityError, transaction
 from django.utils import timezone
+from django.utils.translation import gettext, gettext_lazy
 from rest_framework import status
 from rest_framework.exceptions import APIException, ValidationError
 
@@ -38,7 +39,7 @@ KEEP = datetime.timedelta(days=2)
 
 class Conflict(APIException):
     status_code = status.HTTP_409_CONFLICT
-    default_detail = (
+    default_detail = gettext_lazy(
         "Diese Anfrage wurde schon mit anderen Angaben gesendet und ausgeführt. "
         "Bitte die Seite neu laden und den aktuellen Stand prüfen."
     )
@@ -76,14 +77,18 @@ def claim(request, scope: str, *, required: bool = False) -> Claim:
     if not raw:
         if required:
             raise ValidationError(
-                f"Die Kopfzeile {HEADER} fehlt (Schutz gegen doppeltes Buchen). "
-                "Bitte die Seite neu laden und erneut senden."
+                gettext(
+                    "Die Kopfzeile {HEADER} fehlt (Schutz gegen doppeltes Buchen). Bitte die "
+                    "Seite neu laden und erneut senden."
+                ).format(HEADER=HEADER)
             )
         return Claim()
     try:
         key = uuid.UUID(raw)
     except ValueError as exc:
-        raise ValidationError(f"Ungültige Kopfzeile {HEADER}.") from exc
+        raise ValidationError(
+            gettext("Ungültige Kopfzeile {HEADER}.").format(HEADER=HEADER)
+        ) from exc
     digest = fingerprint(request)
     RequestKey.objects.filter(created_at__lt=timezone.now() - KEEP).delete()
     try:

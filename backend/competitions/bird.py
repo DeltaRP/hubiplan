@@ -20,6 +20,7 @@ from dataclasses import dataclass
 from django.db import IntegrityError, transaction
 from django.db.models import Max
 from django.utils import timezone
+from django.utils.translation import gettext
 from rest_framework.exceptions import ValidationError
 
 from audit.log import diff, record, snapshot
@@ -203,9 +204,9 @@ def state(comp: Competition) -> dict:
 
 def _open(comp: Competition) -> None:
     if comp.status == Competition.Status.FINAL:
-        raise ValidationError("Der Wettbewerb ist endgültig abgeschlossen.")
+        raise ValidationError(gettext("Der Wettbewerb ist endgültig abgeschlossen."))
     if comp.form != Competition.Form.BIRD:
-        raise ValidationError("Das ist kein Vogelschießen.")
+        raise ValidationError(gettext("Das ist kein Vogelschießen."))
 
 
 def _running(comp: Competition) -> None:
@@ -238,23 +239,33 @@ def fire(org, user, comp: Competition, starter: Starter, hits: list, at=None, cl
     # zweiten Gerät oder aus einer nachgereichten Offline-Eingabe.
     all_prizes = list(comp.prizes.all())
     if all_prizes and all(p.fallen for p in all_prizes):
-        raise ValidationError("Alle Pfänder sind gefallen, der Schuss zählt nicht mehr.")
+        raise ValidationError(gettext("Alle Pfänder sind gefallen, der Schuss zählt nicht mehr."))
     prizes = list(comp.prizes.select_for_update().filter(pk__in=hit_ids))
     if len(prizes) != len(hit_ids):
-        raise ValidationError({"hits": "Unbekanntes Pfand."})
+        raise ValidationError({"hits": gettext("Unbekanntes Pfand.")})
     for p in prizes:
         if p.fallen:
-            raise ValidationError({"hits": f"{p.name} ist schon gefallen."})
+            raise ValidationError(
+                {"hits": gettext("{name} ist schon gefallen.").format(name=p.name)}
+            )
     if comp.fixed_order and prizes:
         hanging = [p for p in comp.prizes.all() if not p.fallen]
         allowed = {p.pk for p in hanging[: len(prizes)]}
         if hit_ids != allowed:
             raise ValidationError(
-                {"hits": f"Es gilt die feste Reihenfolge, als Nächstes fällt {hanging[0].name}."}
+                {
+                    "hits": gettext(
+                        "Es gilt die feste Reihenfolge, als Nächstes fällt {name}."
+                    ).format(name=hanging[0].name)
+                }
             )
     if comp.drop_out and starter.prizes.exists():
         raise ValidationError(
-            {"starter": f"{starter.name} hat schon ein Pfand und ist ausgeschieden."}
+            {
+                "starter": gettext("{name} hat schon ein Pfand und ist ausgeschieden.").format(
+                    name=starter.name
+                )
+            }
         )
     number = (comp.shots.aggregate(m=Max("number"))["m"] or 0) + 1
     when = at or timezone.now()
@@ -270,7 +281,9 @@ def fire(org, user, comp: Competition, starter: Starter, hits: list, at=None, cl
                 client_key=client_key,
             )
     except IntegrityError as exc:
-        raise ValidationError("Gleichzeitig ein anderer Schuss, bitte noch einmal.") from exc
+        raise ValidationError(
+            gettext("Gleichzeitig ein anderer Schuss, bitte noch einmal.")
+        ) from exc
     if prizes:
         before = _previous_fallen(comp, number, hit_ids)
         for p in prizes:
@@ -299,9 +312,9 @@ def undo(org, user, comp: Competition, client_key=None) -> Shot | None:
         if target is None:
             return None
         if last is None or target.pk != last.pk:
-            raise ValidationError("Nur der letzte Schuss lässt sich zurücknehmen.")
+            raise ValidationError(gettext("Nur der letzte Schuss lässt sich zurücknehmen."))
     if last is None:
-        raise ValidationError("Es gibt keinen Schuss zum Zurücknehmen.")
+        raise ValidationError(gettext("Es gibt keinen Schuss zum Zurücknehmen."))
     for p in comp.prizes.filter(shot=last):
         old = snapshot(p)
         _clear(p)
@@ -327,9 +340,9 @@ def _positive(raw, field: str) -> int | None:
     try:
         value = int(str(raw).strip())
     except ValueError as exc:
-        raise ValidationError({field: "Bitte eine ganze Zahl eingeben."}) from exc
+        raise ValidationError({field: gettext("Bitte eine ganze Zahl eingeben.")}) from exc
     if value < 1 or value > 1000000:
-        raise ValidationError({field: "Bitte eine Zahl ab 1 eingeben."})
+        raise ValidationError({field: gettext("Bitte eine Zahl ab 1 eingeben.")})
     return value
 
 
@@ -346,7 +359,7 @@ def set_result(org, user, prize: Prize, data) -> Prize:
             return prize
         starter = Starter.objects.filter(competition=comp, pk=data["winner"]).first()
         if starter is None:
-            raise ValidationError({"winner": "Unbekannter Schütze."})
+            raise ValidationError({"winner": gettext("Unbekannter Schütze.")})
         prize.winner = starter
         prize.winner_name = starter.name
         prize.shot = None
@@ -395,7 +408,9 @@ def draw(org, user, comp: Competition, starter: Starter, number=None, how: str =
     n = _positive(number, "number") if number not in (None, "") else None
     if n is not None and n in taken:
         if how != "digital":
-            raise ValidationError({"number": f"Nummer {n} hat schon {taken[n].name}."})
+            raise ValidationError(
+                {"number": gettext("Nummer {n} hat schon {name}.").format(n=n, name=taken[n].name)}
+            )
         note = f"Nummer {n} war schon vergeben, neu gezogen."
         n = None
     if n is None:
@@ -450,7 +465,7 @@ def parse_key(raw):
     try:
         return uuid.UUID(str(raw))
     except ValueError as exc:
-        raise ValidationError({"client_key": "Ungültige Kennung."}) from exc
+        raise ValidationError({"client_key": gettext("Ungültige Kennung.")}) from exc
 
 
 def parse_at(raw) -> datetime.datetime | None:

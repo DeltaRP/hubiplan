@@ -9,6 +9,7 @@ from __future__ import annotations
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
@@ -144,14 +145,14 @@ class BankStatementViewSet(
     def create(self, request, org_id: int):
         upload = request.FILES.get("file")
         if upload is None:
-            raise serializers.ValidationError({"file": "Bitte die CAMT-Datei wählen."})
+            raise serializers.ValidationError({"file": gettext("Bitte die CAMT-Datei wählen.")})
         if upload.size > camt.MAX_FILE:
-            raise serializers.ValidationError({"file": "Die Datei ist größer als 10 MB."})
+            raise serializers.ValidationError({"file": gettext("Die Datei ist größer als 10 MB.")})
         account = None
         if raw := request.data.get("account"):
             account = Account.objects.filter(organization=self.org, pk=raw).first()
             if account is None:
-                raise serializers.ValidationError({"account": "Unbekanntes Konto."})
+                raise serializers.ValidationError({"account": gettext("Unbekanntes Konto.")})
         try:
             result = bank_import.import_file(
                 self.org, upload.read(), upload.name or "kontoauszug.xml", request.user, account
@@ -181,7 +182,9 @@ class BankStatementViewSet(
         list(instance.lines.select_for_update().values_list("pk", flat=True))
         if instance.lines.filter(status=BankLine.Status.DONE).exists():
             raise serializers.ValidationError(
-                "Aus diesem Auszug ist schon etwas gebucht oder zugeordnet. Er bleibt erhalten."
+                gettext(
+                    "Aus diesem Auszug ist schon etwas gebucht oder zugeordnet. Er bleibt erhalten."
+                )
             )
         record(
             self.org,
@@ -232,7 +235,7 @@ class BankLineViewSet(FinanceMixin, mixins.ListModelMixin, viewsets.GenericViewS
     def _get(self, model, pk, field):
         obj = model.objects.filter(organization=self.org, pk=pk).first() if pk else None
         if obj is None:
-            raise serializers.ValidationError({field: "Bitte auswählen."})
+            raise serializers.ValidationError({field: gettext("Bitte auswählen.")})
         return obj
 
     @action(detail=True, methods=["post"])
@@ -251,7 +254,9 @@ class BankLineViewSet(FinanceMixin, mixins.ListModelMixin, viewsets.GenericViewS
                 BankLine.Suggestion.BOOKED: "link",
             }.get(line.suggestion)
             if what is None:
-                raise serializers.ValidationError("Für diesen Umsatz gibt es keinen Vorschlag.")
+                raise serializers.ValidationError(
+                    gettext("Für diesen Umsatz gibt es keinen Vorschlag.")
+                )
             d = {
                 "invoice": line.suggested_invoice_id,
                 "run": line.suggested_run_id,

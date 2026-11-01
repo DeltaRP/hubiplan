@@ -12,6 +12,7 @@ import datetime
 
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -53,13 +54,13 @@ def link(view: _Mixin, call: Call, event: Event | None) -> None:
 def create_event(view: _Mixin, call: Call) -> Event:
     """Ganztägiger Termin am Tag des Anlasses, mit Zu- und Absagen bis zum Meldeschluss."""
     if not event_services.module_on(view.org):
-        raise ValidationError("Der Terminkalender ist nicht freigeschaltet.")
+        raise ValidationError(gettext("Der Terminkalender ist nicht freigeschaltet."))
     if EVENTS_MANAGE not in view.org_permissions:
-        raise PermissionDenied("Termine anlegen darf, wer Termine verwalten darf.")
+        raise PermissionDenied(gettext("Termine anlegen darf, wer Termine verwalten darf."))
     if call.date is None:
-        raise ValidationError("Bitte zuerst das Datum des Anlasses angeben.")
+        raise ValidationError(gettext("Bitte zuerst das Datum des Anlasses angeben."))
     if view.org.type != view.org.Type.CLUB:
-        raise ValidationError("Zu- und Absagen gibt es nur bei Terminen eines Vereins.")
+        raise ValidationError(gettext("Zu- und Absagen gibt es nur bei Terminen eines Vereins."))
     day = _midnight(call.date)
     deadline = None
     if call.deadline and call.deadline < call.date:
@@ -128,7 +129,7 @@ class CallEventView(_Mixin, APIView):
         self.require_organizer(call)
         if request.data.get("create"):
             if call.event_id:
-                raise ValidationError("Die Ausschreibung hat schon einen Termin.")
+                raise ValidationError(gettext("Die Ausschreibung hat schon einen Termin."))
             create_event(self, call)
         elif request.data.get("event") is None:
             link(self, call, None)
@@ -154,7 +155,7 @@ class ResponsesView(_Mixin, APIView):
 
     def get(self, request, org_id: int, call_id: int):
         if not self.can_pick_members:
-            raise PermissionDenied("Die Zusagen sieht nur, wer die Mitglieder sehen darf.")
+            raise PermissionDenied(gettext("Die Zusagen sieht nur, wer die Mitglieder sehen darf."))
         call = self.call(call_id)
         if call.event_id is None:
             return Response({"yes": [], "no_count": 0})

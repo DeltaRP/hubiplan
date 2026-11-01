@@ -12,6 +12,7 @@ from dataclasses import dataclass
 
 from django.db import transaction
 from django.db.models import Q
+from django.utils.translation import gettext
 from rest_framework.exceptions import ValidationError
 
 from access.catalog import DEPARTMENT_CODES
@@ -40,9 +41,9 @@ def setup_unit_manager(
 ) -> ManagerResult:
     on = today()
     if membership.organization_id != club.pk or membership.current_period(on) is None:
-        raise ValidationError({"member": "Bitte ein aktuelles Mitglied auswählen."})
+        raise ValidationError({"member": gettext("Bitte ein aktuelles Mitglied auswählen.")})
     if not unit.is_active:
-        raise ValidationError("Die Einheit ist inaktiv.")
+        raise ValidationError(gettext("Die Einheit ist inaktiv."))
 
     with transaction.atomic():
         if not unit.self_managed:

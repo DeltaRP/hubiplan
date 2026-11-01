@@ -17,6 +17,7 @@ from django.db import transaction
 from django.db.models import Exists, OuterRef, Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.translation import gettext
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status
 from rest_framework.authentication import SessionAuthentication
@@ -256,7 +257,7 @@ class ChangeRequestDecisionView(_ClubMixin, APIView):
             pk=pk,
         )
         if cr.status != ChangeRequest.Status.PENDING:
-            raise serializers.ValidationError("Diese Meldung ist schon bearbeitet.")
+            raise serializers.ValidationError(gettext("Diese Meldung ist schon bearbeitet."))
         data = DecisionSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         if data.validated_data["accept"]:
@@ -266,8 +267,10 @@ class ChangeRequestDecisionView(_ClubMixin, APIView):
                 names = ", ".join(FIELD_LABELS.get(k, k) for k in changed)
                 return Response(
                     {
-                        "detail": f"Seit der Meldung wurde im Verein geändert: {names}. "
-                        "Annehmen überschreibt diese Angaben mit der Meldung.",
+                        "detail": gettext(
+                            "Seit der Meldung wurde im Verein geändert: {names}. Annehmen "
+                            "überschreibt diese Angaben mit der Meldung."
+                        ).format(names=names),
                         "conflicts": changed,
                     },
                     status=status.HTTP_409_CONFLICT,
@@ -314,7 +317,7 @@ class DepartmentScopedMixin:
             else self.write_permission
         )
         if needed and needed not in ctx.permissions:
-            raise PermissionDenied("Dafür fehlt dir die Berechtigung.")
+            raise PermissionDenied(gettext("Dafür fehlt dir die Berechtigung."))
         self.ctx = ctx
         self.dept = ctx.department
         self.org = ctx.club
@@ -483,7 +486,7 @@ class DeptRoleSerializer(serializers.ModelSerializer):
         if self.instance:
             qs = qs.exclude(pk=self.instance.pk)
         if qs.exists():
-            raise serializers.ValidationError("Diese Rolle gibt es schon.")
+            raise serializers.ValidationError(gettext("Diese Rolle gibt es schon."))
         return value
 
 
@@ -566,7 +569,7 @@ class DepartmentRoleDetailView(DepartmentScopedMixin, APIView):
         new_perms = data.validated_data.get("permissions", role.permissions)
         if not self._keeps_own_admin(role, new_perms):
             raise serializers.ValidationError(
-                "Du kannst dir die Rollenverwaltung nicht selbst entziehen."
+                gettext("Du kannst dir die Rollenverwaltung nicht selbst entziehen.")
             )
         before = snapshot(role)
         role = data.save()
@@ -580,7 +583,7 @@ class DepartmentRoleDetailView(DepartmentScopedMixin, APIView):
         role = self.get_role(pk)
         if not self._keeps_own_admin(role, None):
             raise serializers.ValidationError(
-                "Du kannst dir die Rollenverwaltung nicht selbst entziehen."
+                gettext("Du kannst dir die Rollenverwaltung nicht selbst entziehen.")
             )
         with transaction.atomic():
             member_services.remove_role_holders(self.org, request.user, role)
@@ -661,7 +664,7 @@ class DepartmentHolderEndView(DepartmentScopedMixin, APIView):
             holder.role.permissions or []
         ):
             raise serializers.ValidationError(
-                "Du kannst dir die Rollenverwaltung nicht selbst entziehen."
+                gettext("Du kannst dir die Rollenverwaltung nicht selbst entziehen.")
             )
         end = today()
         holder.valid_until = max(end, holder.valid_from)
@@ -790,7 +793,7 @@ class PortalChangeRequestView(APIView):
                 if (v.isoformat() if hasattr(v, "isoformat") else v) != previous_values.get(k)
             }
             if not changed:
-                raise serializers.ValidationError("Es wurde nichts geändert.")
+                raise serializers.ValidationError(gettext("Es wurde nichts geändert."))
             direct = (
                 {}
                 if club.contact_changes_need_approval
@@ -863,7 +866,9 @@ class LoginLinkRequestView(APIView):
 
     def post(self, request):
         if _rate_limited(request, "request"):
-            return Response({"detail": "Zu viele Versuche. Bitte später erneut."}, status=429)
+            return Response(
+                {"detail": gettext("Zu viele Versuche. Bitte später erneut.")}, status=429
+            )
         data = RequestLinkSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         user = User.objects.filter(email__iexact=data.validated_data["email"]).first()
@@ -888,8 +893,10 @@ class LoginLinkRequestView(APIView):
             set_rls(None, None)
         return Response(
             {
-                "detail": "Wenn zu dieser Adresse ein Mitgliederzugang besteht, ist ein "
-                "Anmeldelink unterwegs."
+                "detail": gettext(
+                    "Wenn zu dieser Adresse ein Mitgliederzugang besteht, ist ein "
+                    "Anmeldelink unterwegs."
+                )
             }
         )
 
@@ -904,7 +911,9 @@ class LoginLinkUseView(APIView):
         # Seite einen Browser mit einem eigenen Link in ein anderes Konto einloggt.
         SessionAuthentication().enforce_csrf(request)
         if _rate_limited(request, "use"):
-            return Response({"detail": "Zu viele Versuche. Bitte später erneut."}, status=429)
+            return Response(
+                {"detail": gettext("Zu viele Versuche. Bitte später erneut.")}, status=429
+            )
         link = (
             LoginLink.objects.select_related("user")
             .select_for_update(of=("self",))
@@ -913,12 +922,14 @@ class LoginLinkUseView(APIView):
         )
         if link is None or not link.is_open:
             raise NotFound(
-                "Der Link ist ungültig oder abgelaufen. Bitte fordern Sie einen neuen an."
+                gettext("Der Link ist ungültig oder abgelaufen. Bitte fordern Sie einen neuen an.")
             )
         user = link.user
         set_rls(None, user.pk)
         if not services.link_login_allowed(user):
-            raise PermissionDenied("Für dieses Konto ist die Anmeldung nur mit Passwort möglich.")
+            raise PermissionDenied(
+                gettext("Für dieses Konto ist die Anmeldung nur mit Passwort möglich.")
+            )
         link.used_at = timezone.now()
         link.save(update_fields=["used_at"])
         login(request, user, backend="django.contrib.auth.backends.ModelBackend")

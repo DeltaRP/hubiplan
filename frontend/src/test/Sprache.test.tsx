@@ -11,6 +11,7 @@ import { OrgProvider } from '../org/OrgContext.tsx'
 import { LanguageCard, LanguageSwitch } from '../i18n/LanguageControls.tsx'
 import en from '../i18n/en.json'
 import { fakeApi, testOrg, testUser } from './fakeApi.ts'
+import { buildTermsEn, termsFor } from '../org/terms.ts'
 
 const BOTH = {
   languages: [
@@ -142,5 +143,25 @@ describe('Rahmen auf Englisch', () => {
     renderApp('/mein-konto')
     expect(await screen.findByRole('heading', { name: 'Profile' })).toBeInTheDocument()
     expect(await screen.findByRole('heading', { name: 'Learning aids' })).toBeInTheDocument()
+  })
+})
+
+describe('Abteilungsbezeichnung auf Englisch', () => {
+  it('bildet Formen mit Artikel, Vorgaben übersetzt, eigene Bezeichnung bleibt', () => {
+    const tm = buildTermsEn('Abteilung', 'Abteilungen')
+    expect([tm.gen, tm.ein, tm.im, tm.Pl]).toEqual([
+      'the department',
+      'a department',
+      'in the department',
+      'Departments',
+    ])
+    expect(buildTermsEn('Einheit', 'Einheiten').ein).toBe('a unit')
+    expect(buildTermsEn('Zug', 'Züge', 'm').gen).toBe('the Zug')
+    expect(buildTermsEn('Zug', 'Züge', 'm', 'platoon', 'platoons').ein).toBe('a platoon')
+    expect(buildTermsEn('Zug', 'Züge', 'm', 'order').ein).toBe('an order')
+    setCatalogForTest('en', {})
+    expect(termsFor('Zug', 'Züge', 'm', '', 'platoon').im).toBe('in the platoon')
+    setCatalogForTest('de')
+    expect(termsFor('Zug', 'Züge', 'm').im).toBe('im Zug')
   })
 })

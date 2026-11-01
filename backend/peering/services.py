@@ -11,6 +11,7 @@ import secrets
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext
 
 from . import crypto, identity, packets, transport
 from .models import Coupling, CouplingCode, Message, Peer
@@ -35,7 +36,7 @@ def enabled() -> bool:
 
 def require_enabled() -> None:
     if not enabled():
-        raise ValidationError("Der Verbund ist auf dieser Instanz nicht eingeschaltet.")
+        raise ValidationError(gettext("Der Verbund ist auf dieser Instanz nicht eingeschaltet."))
 
 
 # --- Wer darf was ---
@@ -94,7 +95,7 @@ def _hash(secret: str) -> str:
 def create_code(unit, user, valid: datetime.timedelta = CODE_VALID) -> tuple[str, CouplingCode]:
     require_enabled()
     if not can_offer(unit):
-        raise ValidationError("Diese Einheit kann keine fernen Einheiten aufnehmen.")
+        raise ValidationError(gettext("Diese Einheit kann keine fernen Einheiten aufnehmen."))
     secret = secrets.token_urlsafe(24)
     code = CouplingCode.objects.create(
         unit=unit,
@@ -118,7 +119,7 @@ def create_code(unit, user, valid: datetime.timedelta = CODE_VALID) -> tuple[str
 def parse_code(text: str) -> dict:
     text = "".join((text or "").split())
     if not text.startswith(CODE_PREFIX):
-        raise ValidationError("Das ist kein HUBIplan-Kopplungscode.")
+        raise ValidationError(gettext("Das ist kein HUBIplan-Kopplungscode."))
     try:
         data = json.loads(identity.unb64(text[len(CODE_PREFIX) :]))
         result = {
@@ -129,7 +130,9 @@ def parse_code(text: str) -> dict:
             "upper": packets.CLUB if data.get("k") == packets.CLUB else packets.FEDERATION,
         }
     except (KeyError, ValueError, TypeError, transport.PeerError) as exc:
-        raise ValidationError("Der Kopplungscode ist unvollständig oder beschädigt.") from exc
+        raise ValidationError(
+            gettext("Der Kopplungscode ist unvollständig oder beschädigt.")
+        ) from exc
     return result
 
 
@@ -142,7 +145,7 @@ def _code_for(unit_uuid: str, secret: str) -> CouplingCode:
         .first()
     )
     if code is None or not code.usable or not can_offer(code.unit):
-        raise ValidationError("Der Kopplungscode ist ungültig oder abgelaufen.")
+        raise ValidationError(gettext("Der Kopplungscode ist ungültig oder abgelaufen."))
     assert isinstance(code.unit, Organization)  # noqa: S101
     return code
 
@@ -161,14 +164,18 @@ def _remote_info(parsed: dict) -> dict:
     try:
         info = transport.fetch_info(parsed["base_url"])
     except transport.PeerError as exc:
-        raise ValidationError(f"Die andere Instanz antwortet nicht: {exc}") from exc
+        raise ValidationError(
+            gettext("Die andere Instanz antwortet nicht: {exc}").format(exc=exc)
+        ) from exc
     if info["fingerprint"].replace(" ", "") != parsed["fingerprint"]:
         raise ValidationError(
-            "Der Fingerabdruck der anderen Instanz passt nicht zum Kopplungscode. "
-            "Bitte nicht koppeln und die andere Seite fragen."
+            gettext(
+                "Der Fingerabdruck der anderen Instanz passt nicht zum Kopplungscode. "
+                "Bitte nicht koppeln und die andere Seite fragen."
+            )
         )
     if str(info["instance_id"]) == identity.identity().instance_id:
-        raise ValidationError("Der Code stammt von dieser Instanz selbst.")
+        raise ValidationError(gettext("Der Code stammt von dieser Instanz selbst."))
     return info
 
 
@@ -176,7 +183,9 @@ def inspect_code(unit, text: str) -> dict:
     """Vorschau vor dem Koppeln: wer ist die andere Seite, was fließt?"""
     require_enabled()
     if not can_join(unit):
-        raise ValidationError("Diese Einheit kann sich nicht unter eine ferne Einheit koppeln.")
+        raise ValidationError(
+            gettext("Diese Einheit kann sich nicht unter eine ferne Einheit koppeln.")
+        )
     parsed = parse_code(text)
     info = _remote_info(parsed)
     try:
@@ -186,7 +195,9 @@ def inspect_code(unit, text: str) -> dict:
             {"base_url": identity.base_url(), "unit": parsed["unit"], "secret": parsed["secret"]},
         )
     except transport.PeerError as exc:
-        raise ValidationError(f"Abfrage bei der anderen Instanz fehlgeschlagen: {exc}") from exc
+        raise ValidationError(
+            gettext("Abfrage bei der anderen Instanz fehlgeschlagen: {exc}").format(exc=exc)
+        ) from exc
     _check_kind(parsed, answer)
     probe = Coupling(direction=Coupling.Direction.PARENT, options={"upper": parsed["upper"]})
     return {
@@ -209,7 +220,7 @@ def _check_kind(parsed: dict, answer: dict) -> None:
     """Code und Antwort müssen dieselbe Art der oberen Seite nennen (ältere Instanzen: keine)."""
     kind = answer.get("kind")
     if kind is not None and kind != parsed["upper"]:
-        raise ValidationError("Der Kopplungscode passt nicht zur Art der anderen Einheit.")
+        raise ValidationError(gettext("Der Kopplungscode passt nicht zur Art der anderen Einheit."))
 
 
 def kind_of(unit) -> str:
@@ -280,7 +291,7 @@ def _store_peer(info: dict) -> Peer:
                 ],
             )
             raise ValidationError(
-                "Die andere Instanz meldet einen anderen Schlüssel als bisher bekannt."
+                gettext("Die andere Instanz meldet einen anderen Schlüssel als bisher bekannt.")
             )
         peer.base_url = info["base_url"]
         peer.versions = info.get("versions") or [1]
@@ -306,7 +317,9 @@ def request_coupling(unit, text: str, chosen: dict, user) -> Coupling:
 
     require_enabled()
     if not can_join(unit):
-        raise ValidationError("Diese Einheit kann sich nicht unter eine ferne Einheit koppeln.")
+        raise ValidationError(
+            gettext("Diese Einheit kann sich nicht unter eine ferne Einheit koppeln.")
+        )
     parsed = parse_code(text)
     info = _remote_info(parsed)
     probe = Coupling(
@@ -328,9 +341,11 @@ def request_coupling(unit, text: str, chosen: dict, user) -> Coupling:
             },
         )
     except transport.RemoteRefused as exc:
-        raise ValidationError(f"Die andere Instanz lehnt ab: {exc}") from exc
+        raise ValidationError(
+            gettext("Die andere Instanz lehnt ab: {exc}").format(exc=exc)
+        ) from exc
     except transport.PeerError as exc:
-        raise ValidationError(f"Kopplung fehlgeschlagen: {exc}") from exc
+        raise ValidationError(gettext("Kopplung fehlgeschlagen: {exc}").format(exc=exc)) from exc
     _check_kind(parsed, answer)
     with transaction.atomic():
         peer = _store_peer(info)
@@ -374,18 +389,18 @@ def handle_request(info: dict, payload: dict) -> dict:
         code = _code_for(str(payload.get("unit", "")), str(payload.get("secret", "")))
         code = CouplingCode.objects.select_for_update().get(pk=code.pk)
         if not code.usable:
-            raise ValidationError("Der Kopplungscode ist schon benutzt.")
+            raise ValidationError(gettext("Der Kopplungscode ist schon benutzt."))
         try:
             child_uuid = str(__import__("uuid").UUID(str(child.get("uuid"))))
         except ValueError as exc:
-            raise ValidationError("Ungültige Kennung der Einheit.") from exc
+            raise ValidationError(gettext("Ungültige Kennung der Einheit.")) from exc
         peer = _store_peer(info)
         if (
             Coupling.objects.filter(peer=peer, remote_uuid=child_uuid)
             .exclude(state__in=[Coupling.State.ENDED, Coupling.State.MOVED])
             .exists()
         ):
-            raise ValidationError("Diese Einheit ist hier schon gekoppelt.")
+            raise ValidationError(gettext("Diese Einheit ist hier schon gekoppelt."))
         from . import spinoff
 
         spin = spinoff.placeholder_for(code)
@@ -421,7 +436,7 @@ def _clean_remote(coupling: Coupling, given: dict) -> dict:
 def accept(coupling: Coupling, user, chosen: dict | None = None) -> Coupling:
     require_enabled()
     if coupling.state != Coupling.State.PENDING:
-        raise ValidationError("Diese Kopplung wartet nicht auf eine Bestätigung.")
+        raise ValidationError(gettext("Diese Kopplung wartet nicht auf eine Bestätigung."))
     with transaction.atomic():
         coupling = Coupling.objects.select_for_update().get(pk=coupling.pk)
         if chosen is not None:
@@ -443,7 +458,7 @@ def accept(coupling: Coupling, user, chosen: dict | None = None) -> Coupling:
 
 def decline(coupling: Coupling, user) -> None:
     if coupling.state != Coupling.State.PENDING:
-        raise ValidationError("Diese Kopplung wartet nicht auf eine Bestätigung.")
+        raise ValidationError(gettext("Diese Kopplung wartet nicht auf eine Bestätigung."))
     end(coupling, user, reason="abgelehnt")
 
 
@@ -465,7 +480,7 @@ def set_packets(coupling: Coupling, chosen: dict, user) -> Coupling:
 def set_paused(coupling: Coupling, paused: bool, user) -> Coupling:
     target = Coupling.State.PAUSED if paused else Coupling.State.ACTIVE
     if coupling.state not in (Coupling.State.ACTIVE, Coupling.State.PAUSED):
-        raise ValidationError("Die Kopplung ist nicht aktiv.")
+        raise ValidationError(gettext("Die Kopplung ist nicht aktiv."))
     with transaction.atomic():
         coupling = Coupling.objects.select_for_update().get(pk=coupling.pk)
         coupling.state = target
@@ -1107,7 +1122,7 @@ def decide_more(coupling: Coupling, key: str, accept: bool, user) -> Coupling:
         options = dict(coupling.options or {})
         wants = dict(options.get("wants_more") or {})
         if key not in wants:
-            raise ValidationError("Dazu liegt keine Anfrage vor.")
+            raise ValidationError(gettext("Dazu liegt keine Anfrage vor."))
         level = wants.pop(key)
         if accept:
             options["accept"] = {**(options.get("accept") or {}), key: level}

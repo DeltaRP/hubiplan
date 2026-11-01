@@ -10,6 +10,7 @@ from django.core.exceptions import ValidationError
 from django.db import connection
 from django.db.models import Q, Sum
 from django.utils import timezone
+from django.utils.translation import gettext
 
 from .models import Account, Booking, Category, TaxArea, YearClosing
 
@@ -63,8 +64,10 @@ def ensure_open(org, *, date: datetime.date | None = None, year: int | None = No
         _year_lock(org, year, shared=True)
     if year is not None and is_closed(org, year):
         raise ValidationError(
-            f"Das Geschäftsjahr {org.fiscal_label(year)} ist abgeschlossen. "
-            "Korrekturen bitte als neue Buchung im laufenden Geschäftsjahr."
+            gettext(
+                "Das Geschäftsjahr {x} ist abgeschlossen. Korrekturen bitte als neue "
+                "Buchung im laufenden Geschäftsjahr."
+            ).format(x=org.fiscal_label(year))
         )
 
 
@@ -82,17 +85,21 @@ def close_year(org, year: int, user) -> YearClosing:
     start, last = org.fiscal_range(year)
     if last >= timezone.localdate():
         raise ValidationError(
-            f"Das Geschäftsjahr {org.fiscal_label(year)} läuft noch bis {last:%d.%m.%Y}."
+            gettext("Das Geschäftsjahr {x} läuft noch bis {last:%d.%m.%Y}.").format(
+                x=org.fiscal_label(year), last=last
+            )
         )
     earlier = [
         y for y in years(org) if y < year and not is_closed(org, y) and _has_bookings(org, y)
     ]
     if earlier:
         raise ValidationError(
-            f"Bitte zuerst das Geschäftsjahr {org.fiscal_label(min(earlier))} abschließen."
+            gettext("Bitte zuerst das Geschäftsjahr {x} abschließen.").format(
+                x=org.fiscal_label(min(earlier))
+            )
         )
     if is_closed(org, year):
-        raise ValidationError("Das Geschäftsjahr ist schon abgeschlossen.")
+        raise ValidationError(gettext("Das Geschäftsjahr ist schon abgeschlossen."))
     freeze_categories(org, year)
     snap = overview(org, year)
     return YearClosing.objects.create(
@@ -174,9 +181,11 @@ def ensure_cash_ok(accounts, since: datetime.date) -> None:
             if running < 0:
                 shown = f"{-running:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
                 raise ValidationError(
-                    f"Die Barkasse „{account.name}“ fiele am {day:%d.%m.%Y} um {shown} € unter "
-                    "null. Bitte zuerst die fehlenden Einnahmen erfassen oder Datum und Betrag "
-                    "prüfen."
+                    gettext(
+                        "Die Barkasse „{name}“ fiele am {day:%d.%m.%Y} um {shown} € unter null. "
+                        "Bitte zuerst die fehlenden Einnahmen erfassen oder Datum und Betrag "
+                        "prüfen."
+                    ).format(name=account.name, day=day, shown=shown)
                 )
 
 
@@ -448,30 +457,40 @@ def cancel_booking(booking: Booking, user, reason: str, *, check_links: bool = T
     booking = Booking.objects.select_for_update().get(pk=booking.pk)
     reason = " ".join((reason or "").split())
     if len(reason) < 3:
-        raise ValidationError({"reason": "Bitte einen Grund für das Storno angeben."})
+        raise ValidationError({"reason": gettext("Bitte einen Grund für das Storno angeben.")})
     if booking.cancels_id:
-        raise ValidationError("Eine Stornobuchung lässt sich nicht stornieren.")
+        raise ValidationError(gettext("Eine Stornobuchung lässt sich nicht stornieren."))
     if Booking.objects.filter(cancels=booking).exists():
-        raise ValidationError(f"Die Buchung {booking.display_number} ist schon storniert.")
+        raise ValidationError(
+            gettext("Die Buchung {display_number} ist schon storniert.").format(
+                display_number=booking.display_number
+            )
+        )
     if check_links:
         from .models import CashReceipt
 
         if CashReceipt.objects.filter(booking=booking).exists():
             raise ValidationError(
-                "Die Buchung gehört zu einer unterschriebenen Quittung. Bitte die Quittung "
-                "stornieren."
+                gettext(
+                    "Die Buchung gehört zu einer unterschriebenen Quittung. Bitte die "
+                    "Quittung stornieren."
+                )
             )
         if hasattr(booking, "payment"):
             raise ValidationError(
-                "Die Buchung gehört zu einer Zahlung. Bitte die Zahlung bei der Rechnung "
-                "entfernen; das storniert die Buchung."
+                gettext(
+                    "Die Buchung gehört zu einer Zahlung. Bitte die Zahlung bei der Rechnung "
+                    "entfernen; das storniert die Buchung."
+                )
             )
     donation = getattr(booking, "donation", None)
     if donation is not None:
         if donation.statement_id:
             raise ValidationError(
-                f"Die Buchung ist als Zuwendung in der Bestätigung {donation.statement.number} "
-                "enthalten. Bitte erst die Bestätigung stornieren."
+                gettext(
+                    "Die Buchung ist als Zuwendung in der Bestätigung {number} enthalten. "
+                    "Bitte erst die Bestätigung stornieren."
+                ).format(number=donation.statement.number)
             )
         donation.delete()
     org = booking.organization
@@ -524,12 +543,13 @@ def cancel_booking(booking: Booking, user, reason: str, *, check_links: bool = T
 def fix_until(org, until: datetime.date) -> datetime.date:
     """Kasse bis einschließlich ``until`` festschreiben; nur vorwärts, nicht in die Zukunft."""
     if until > timezone.localdate():
-        raise ValidationError({"until": "Festschreiben geht nur bis heute."})
+        raise ValidationError({"until": gettext("Festschreiben geht nur bis heute.")})
     if org.finance_locked_until and until <= org.finance_locked_until:
         raise ValidationError(
             {
-                "until": f"Die Kasse ist schon bis {org.finance_locked_until:%d.%m.%Y} "
-                "festgeschrieben."
+                "until": gettext(
+                    "Die Kasse ist schon bis {finance_locked_until:%d.%m.%Y} festgeschrieben."
+                ).format(finance_locked_until=org.finance_locked_until)
             }
         )
     org.finance_locked_until = until
@@ -548,8 +568,11 @@ def renumber(org, year: int) -> int:
 
     if CashReceipt.objects.filter(organization=org, booking__year=year).exists():
         raise ValidationError(
-            "In diesem Geschäftsjahr gibt es unterschriebene Quittungen. Ihre Belegnummern "
-            "stehen auf dem Papier bzw. PDF und dürfen sich nicht ändern."
+            gettext(
+                "In diesem Geschäftsjahr gibt es unterschriebene Quittungen. Ihre "
+                "Belegnummern stehen auf dem Papier bzw. PDF und dürfen sich nicht "
+                "ändern."
+            )
         )
     bookings = list(
         Booking.objects.filter(organization=org, year=year)
@@ -562,8 +585,10 @@ def renumber(org, year: int) -> int:
         or Booking.objects.filter(organization=org, cancels__year=year).exists()
     ):
         raise ValidationError(
-            "In diesem Geschäftsjahr gibt es festgeschriebene oder stornierte Buchungen. "
-            "Ihre Nummern dürfen sich nicht mehr ändern."
+            gettext(
+                "In diesem Geschäftsjahr gibt es festgeschriebene oder stornierte "
+                "Buchungen. Ihre Nummern dürfen sich nicht mehr ändern."
+            )
         )
     changed = [b for i, b in enumerate(bookings, start=1) if b.number != i]
     if not changed:
@@ -641,7 +666,9 @@ def reopen_year(closing: YearClosing, user, reason: str):
 
     reason = (reason or "").strip()
     if len(reason) < 5:
-        raise ValidationError("Bitte einen Grund angeben, warum der Abschluss aufgehoben wird.")
+        raise ValidationError(
+            gettext("Bitte einen Grund angeben, warum der Abschluss aufgehoben wird.")
+        )
     by = closing.closed_by
     archived = ReopenedClosing.objects.create(
         organization=closing.organization,

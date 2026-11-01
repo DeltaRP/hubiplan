@@ -19,6 +19,7 @@ import uuid
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy
 
 from core.privatefiles import PrivateFileField
 from exchange.models import private_storage
@@ -71,17 +72,17 @@ class Peer(models.Model):
 
 class Coupling(models.Model):
     class Direction(models.TextChoices):
-        PARENT = "parent", "ferne Einheit darüber"
-        CHILD = "child", "ferne Einheit darunter"
+        PARENT = "parent", gettext_lazy("ferne Einheit darüber")
+        CHILD = "child", gettext_lazy("ferne Einheit darunter")
 
     class State(models.TextChoices):
-        REQUESTED = "requested", "angefragt, wartet auf die andere Seite"
-        PENDING = "pending", "Anfrage eingegangen, wartet auf Bestätigung"
+        REQUESTED = "requested", gettext_lazy("angefragt, wartet auf die andere Seite")
+        PENDING = "pending", gettext_lazy("Anfrage eingegangen, wartet auf Bestätigung")
         ACTIVE = "active", "aktiv"
         PAUSED = "paused", "pausiert"
         # Gegenstelle meldet einen Umzug; erst nach Bestätigung hier geht es weiter
-        MOVING = "moving", "Umzug angekündigt, wartet auf Bestätigung"
-        ENDED = "ended", "gelöst"
+        MOVING = "moving", gettext_lazy("Umzug angekündigt, wartet auf Bestätigung")
+        ENDED = "ended", gettext_lazy("gelöst")
         MOVED = "moved", "umgezogen"
 
     local_unit = models.ForeignKey(
@@ -317,8 +318,8 @@ class RemoteMember(models.Model):
 
     class Status(models.TextChoices):
         ACTIVE = "active", "gemeldet"
-        UNCLEAR = "unclear", "Klärfall: Person schon bekannt?"
-        WITHDRAWN = "withdrawn", "nicht mehr gemeldet"
+        UNCLEAR = "unclear", gettext_lazy("Klärfall: Person schon bekannt?")
+        WITHDRAWN = "withdrawn", gettext_lazy("nicht mehr gemeldet")
 
     coupling = models.ForeignKey(Coupling, on_delete=models.CASCADE, related_name="members")
     uid = models.CharField(max_length=40)
@@ -352,15 +353,15 @@ class RemoteTransfer(models.Model):
     """
 
     class Role(models.TextChoices):
-        FROM = "from", "bisheriger Verein"
-        TO = "to", "neuer Verein"
+        FROM = "from", gettext_lazy("bisheriger Verein")
+        TO = "to", gettext_lazy("neuer Verein")
 
     class Status(models.TextChoices):
         PENDING = "pending", "offen"
-        ACCEPTED = "accepted", "bestätigt"
+        ACCEPTED = "accepted", gettext_lazy("bestätigt")
         REJECTED = "rejected", "abgelehnt"
-        CANCELLED = "cancelled", "zurückgezogen"
-        FAILED = "failed", "Aufnahme fehlgeschlagen"
+        CANCELLED = "cancelled", gettext_lazy("zurückgezogen")
+        FAILED = "failed", gettext_lazy("Aufnahme fehlgeschlagen")
 
     coupling = models.ForeignKey(Coupling, on_delete=models.CASCADE, related_name="transfers")
     tid = models.UUIDField(default=uuid.uuid4)
@@ -406,9 +407,9 @@ class RemoteCircular(models.Model):
 
     class Status(models.TextChoices):
         FORWARDED = "forwarded", "weitergegeben"
-        DRAFT = "draft", "liegt als Entwurf vor"
+        DRAFT = "draft", gettext_lazy("liegt als Entwurf vor")
         SENT = "sent", "versendet"
-        DISCARDED = "discarded", "nicht weitergegeben"
+        DISCARDED = "discarded", gettext_lazy("nicht weitergegeben")
 
     coupling = models.ForeignKey(Coupling, on_delete=models.CASCADE, related_name="circulars")
     uid = models.UUIDField(default=uuid.uuid4)
@@ -513,12 +514,12 @@ class SpinOff(models.Model):
     Einheit (``is_remote``)."""
 
     class Way(models.TextChoices):
-        KEEP = "keep", "Mitglieder bleiben Vereinsmitglieder"
-        MOVE = "move", "Mitglieder werden Mitglieder der Untereinheit"
+        KEEP = "keep", gettext_lazy("Mitglieder bleiben Vereinsmitglieder")
+        MOVE = "move", gettext_lazy("Mitglieder werden Mitglieder der Untereinheit")
 
     class State(models.TextChoices):
-        PREPARED = "prepared", "vorbereitet (Export und Code erstellt)"
-        REQUESTED = "requested", "Kopplung angefragt"
+        PREPARED = "prepared", gettext_lazy("vorbereitet (Export und Code erstellt)")
+        REQUESTED = "requested", gettext_lazy("Kopplung angefragt")
         DONE = "done", "ausgegliedert"
         CANCELLED = "cancelled", "abgebrochen"
 
