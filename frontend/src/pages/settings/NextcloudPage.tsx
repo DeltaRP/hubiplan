@@ -207,7 +207,7 @@ function ClientCard({
       <h3>{t('In der Nextcloud eintragen')}</h3>
       <p className="muted small">
         {t(
-          'In der Nextcloud als Administrator die App „OpenID Connect user backend“ (user_oidc) installieren, dann unter Verwaltung › OpenID Connect einen Anbieter mit diesen Angaben anlegen. Dort „Gruppen-Provisionierung“ einschalten und als Gruppen-Zuordnung „groups“ eintragen. Für bisherige Benutzernamen: Benutzer-ID-Zuordnung „preferred_username“, „Eindeutige Benutzer-ID verwenden“ aus und „Soft auto provisioning“ an.',
+          'In der Nextcloud als Administrator die App „OpenID Connect user backend“ (user_oidc) installieren, dann unter Verwaltung › OpenID Connect einen Anbieter mit diesen Angaben anlegen. Dort „Gruppen-Provisionierung“ einschalten und als Gruppen-Zuordnung „groups“ eintragen. Für bisherige Benutzernamen: Benutzer-ID-Zuordnung „preferred_username“, „Eindeutige Benutzer-ID verwenden“ aus und in der config.php „soft_auto_provision“ an (siehe Anleitung).',
         )}
       </p>
       <Copyable label={t('Discovery-Endpunkt')} value={client.discovery_url} />

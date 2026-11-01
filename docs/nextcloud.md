@@ -55,7 +55,7 @@ In der Nextcloud dazu beim Anbieter:
 - Benutzer-ID-Zuordnung (`mapping-uid`): `preferred_username`,
 - „Eindeutige Benutzer-ID verwenden“ aus (`--unique-uid=0`), sonst bildet `user_oidc`
   eine Prüfsumme statt des Namens,
-- „Soft auto provisioning“ an (`occ config:app:set user_oidc soft_auto_provision --value=1`),
+- in der `config.php` „soft auto provisioning“ an (`occ config:system:set user_oidc soft_auto_provision --type=boolean --value=true`),
   damit ein vorhandenes Konto mit diesem Namen übernommen statt abgelehnt wird.
 
 Die Liste wird bewusst von Hand gepflegt und nicht aus Vor- und Nachnamen abgeleitet:
