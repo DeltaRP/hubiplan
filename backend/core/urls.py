@@ -473,6 +473,7 @@ org_patterns = [
 ]
 
 dept_patterns = [
+    *entry_urls.dept_patterns,
     path(
         "changes/<uuid:set_id>/undo/",
         change_views.DeptUndoView.as_view(),

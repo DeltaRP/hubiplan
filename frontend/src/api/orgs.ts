@@ -581,6 +581,7 @@ export const PERM = {
   competitionsManage: 'competitions.manage',
   competitionsResults: 'competitions.results',
   entriesSubmit: 'entries.submit',
+  entriesManage: 'entries.manage',
 } as const
 
 /** Ergebnis von „Verwalter einrichten“ für eine Untereinheit. */

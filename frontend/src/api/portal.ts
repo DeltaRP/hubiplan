@@ -146,6 +146,7 @@ export const DEPT_PERM = {
   eventsManage: 'dept.events.manage',
   docsManage: 'dept.docs.manage',
   circularsSend: 'dept.circulars.send',
+  entriesSubmit: 'dept.entries.submit',
 } as const
 
 export const FIELD_LABELS: Record<string, string> = {

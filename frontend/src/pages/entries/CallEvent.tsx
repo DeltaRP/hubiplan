@@ -2,7 +2,13 @@
 // als Vorauswahl in der Meldung; gemeldet werden kann weiter jedes Mitglied (Ralf 2026-11-01).
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { entriesApi, type CallDetail, type Entry, type Interested } from '../../api/entries.ts'
+import {
+  entriesApi,
+  type CallDetail,
+  type Entry,
+  type Interested,
+  type Scope,
+} from '../../api/entries.ts'
 import { confirmDialog } from '../../components/dialog.ts'
 import { errorMessage, formatDate, useLoad } from '../../components/forms.ts'
 import { Alert, SelectField } from '../../components/ui.tsx'
@@ -168,7 +174,7 @@ export function InterestCard({
   locked,
   run,
 }: {
-  org: number
+  org: Scope
   call: CallDetail
   entry: Entry
   locked: boolean

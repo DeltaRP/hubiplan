@@ -55,6 +55,7 @@ PEERING_MANAGE = "peering.manage"
 COMPETITIONS_MANAGE = "competitions.manage"
 COMPETITIONS_RESULTS = "competitions.results"
 ENTRIES_SUBMIT = "entries.submit"
+ENTRIES_MANAGE = "entries.manage"
 
 # Rechte in einer Abteilung (Abteilungsrollen, ab Phase 2). Sie gelten nur für
 # die Mitglieder dieser Abteilung.
@@ -68,6 +69,7 @@ DEPT_CARDS_MANAGE = "dept.cards.manage"
 DEPT_EVENTS_MANAGE = "dept.events.manage"
 DEPT_DOCS_MANAGE = "dept.docs.manage"
 DEPT_CIRCULARS_SEND = "dept.circulars.send"
+DEPT_ENTRIES_SUBMIT = "dept.entries.submit"
 
 MODULES: tuple[Module, ...] = (
     Module(
@@ -202,6 +204,10 @@ MODULES: tuple[Module, ...] = (
                 ENTRIES_SUBMIT,
                 "Meldungen an Veranstalter zusammenstellen und abgeben (z. B. Mannschaften)",
             ),
+            Permission(
+                ENTRIES_MANAGE,
+                "Ausschreibungen an die eigenen Untereinheiten verwalten, Meldungen bestätigen",
+            ),
         ),
         switchable=True,
     ),
@@ -262,6 +268,12 @@ DEPARTMENT_MODULES: tuple[Module, ...] = (
         "dept_circulars",
         "Rundschreiben {gen}",
         (Permission(DEPT_CIRCULARS_SEND, "Rundschreiben an die Mitglieder {gen} versenden"),),
+        org_types=("department",),
+    ),
+    Module(
+        "dept_entries",
+        "Meldungen {gen}",
+        (Permission(DEPT_ENTRIES_SUBMIT, "Meldungen {gen} zu Ausschreibungen von oben abgeben"),),
         org_types=("department",),
     ),
     Module(

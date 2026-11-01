@@ -4,10 +4,10 @@ Eine Einheit meldet Mannschaften, Personen oder Angaben an einen Veranstalter, z
 Mannschaften mit je fünf Schützen zum Vergleichsschießen des Dachverbands. Konzept:
 `konzepte/meldungen.md` im Projektordner. App `backend/entries`, Oberfläche `/meldungen`.
 
-Stand: Schritt 1 (Veranstalter außerhalb von HUBIplan) und Schritt 2 (Interessenabfrage über
-Terminzusagen, „Wofür bin ich gemeldet?“). Noch nicht umgesetzt: Ausschreibungen eines
-Veranstalters in HUBIplan mit Eingang und internen Meldungen der Untereinheiten (Schritt 3),
-Gebühren als Rechnung (Schritt 4), Verbund (Schritt 5).
+Stand: Schritt 1 (Veranstalter außerhalb von HUBIplan), Schritt 2 (Interessenabfrage über
+Terminzusagen, „Wofür bin ich gemeldet?“) und Schritt 3 (Ausschreibung an die eigenen
+Untereinheiten mit Eingang). Noch nicht umgesetzt: Gebühren als Rechnung (Schritt 4), Verbund
+(Schritt 5), Ausschreibungen eines Dachverbands an seine Vereine auf derselben Instanz.
 
 ## Freischalten und Rechte
 
@@ -16,6 +16,9 @@ Gebühren als Rechnung (Schritt 4), Verbund (Schritt 5).
 - Recht „Meldungen abgeben“ (`entries.submit`). Vorstandsrollen (mit „Rollen verwalten“) haben
   es nach der Migration.
 - Mitglieder auswählen darf nur, wer auch `members.view` hat. Gäste (Name, Verein) gehen ohne.
+- Recht „Ausschreibungen an die eigenen Untereinheiten verwalten“ (`entries.manage`), ebenfalls
+  für Vorstandsrollen nach der Migration; in Rollen der Untereinheiten „Meldungen … abgeben“
+  (`dept.entries.submit`), nicht automatisch vergeben.
 
 ## Ausschreibung
 
@@ -59,6 +62,37 @@ Untereinheit, Geburtsjahr und Bemerkung; ein Klick ordnet sie einer Mannschaft o
 Die Zusagen sind nur eine Vorauswahl: Gemeldet werden kann weiter jedes Mitglied aus der
 kompletten Mitgliederliste (Ralf 2026-11-01). Bei der Suche steht dabei, wer zu- oder abgesagt
 hat. Die Zusagen sieht nur, wer die Mitglieder sehen darf.
+
+## Ausschreibung an die eigenen Untereinheiten
+
+Wer „Ausschreibungen an die eigenen Untereinheiten verwalten“ (`entries.manage`) hat, kann
+beim Anlegen ankreuzen „Wir schreiben selbst aus, unsere Untereinheiten melden“, etwa für ein
+Preisschießen, zu dem die Züge ihre Schützen melden. Unter „Ausschreibung“ wählt man die
+angeschriebenen Untereinheiten (keine Auswahl: alle direkt darunter) und kann festlegen, dass
+Verstöße gegen die Bedingungen das Abgeben sperren.
+
+- **Untereinheiten melden in ihrem Bereich** (Bereich der Untereinheit › Meldungen), mit dem
+  Recht „Meldungen … abgeben“ (`dept.entries.submit`) in einer Rolle der Untereinheit oder
+  darüber. Mitglieder wählen sie dort nur aus der eigenen Untereinheit (samt Teilbaum). Die
+  Meldung geht „in HUBIplan“ an den Veranstalter, ohne Brief.
+- **Eingang des Veranstalters:** je angeschriebene Untereinheit Zustand, Anzahl Mannschaften und
+  Personen, Hinweise und letzte Abgabe. Ein Klick öffnet die Meldung; der Veranstalter kann sie
+  dort auch selbst eintragen (z. B. für Untereinheiten ohne eigenen Zugang), **bestätigen** oder
+  **mit Rückfrage zurückgeben**. Die Untereinheit bekommt dann eine Mail, sieht die Rückfrage
+  und gibt erneut ab (ohne Änderung ohne neue Fassung).
+- **Erinnern:** „Fehlende erinnern“ schickt eine Mail an alle, die für eine noch nicht meldende
+  Untereinheit melden dürfen und einen Zugang haben. Untereinheiten ohne solche Person werden
+  genannt.
+- **Meldeliste** aller abgegebenen Meldungen als Excel oder CSV, mit Spalte „Untereinheit“.
+- **Doppelt gemeldet:** Meldet eine andere Untereinheit dieselbe Person, steht ein Hinweis da.
+- **Wettbewerb:** Beim ersten Bestätigen entsteht ein eigener Wettbewerb (Einzelwertung,
+  Wertung der Untereinheiten, bei Mannschaften Mannschaftswertung). Bestätigte Personen werden
+  Starter mit der meldenden Untereinheit, Mannschaften werden Mannschaften. Spätere
+  Bestätigungen führen nach, ein Rückzug entfernt wieder, was die Meldung angelegt hat
+  (Starter mit erfassten Werten bleiben). Starter, die der Ausrichter selbst einträgt, bleiben
+  unberührt.
+
+Die Daten liegen beim Veranstalter (RLS), auch die Meldungen der Untereinheiten.
 
 ## Mitgliederbereich: „Wofür bin ich gemeldet?“
 
