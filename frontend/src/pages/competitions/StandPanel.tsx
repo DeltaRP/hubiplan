@@ -16,6 +16,7 @@ import {
   type SyncOp,
 } from '../../api/competitions.ts'
 import { confirmDialog } from '../../components/dialog.ts'
+import { StandFinish } from './StandFinish.tsx'
 import { describe, useStandStore } from './standStore.ts'
 
 type Hit =
@@ -170,6 +171,51 @@ export function StandPanel({
     setTimeout(() => searchRef.current?.focus(), 0)
   }
 
+  function backToSearch() {
+    setChosen(null)
+    setQuery('')
+    setPoints('')
+    setTimeout(() => searchRef.current?.focus(), 0)
+  }
+
+  async function clearValue(s: Starter) {
+    if (!scoring) return
+    const ok = await confirmDialog({
+      title: 'Wert löschen',
+      message: `Den Wert von ${s.name} löschen? ${s.name} steht danach wieder unter „Noch offen“.`,
+      confirmLabel: 'Löschen',
+    })
+    if (!ok) return
+    const ref = s.key ?? s.id
+    const at = new Date().toISOString()
+    push({ op: 'score', starter: ref, scoring: scoring.id, value: null, at }, (l) => ({
+      ...l,
+      starters: l.starters.map((x) =>
+        (x.key ?? x.id) === ref ? { ...x, values: { ...x.values, [scoring.id]: '' } } : x,
+      ),
+      recent: l.recent.filter((r) => r.ref !== ref),
+    }))
+    setNotice(`Wert von ${s.name} gelöscht.`)
+    backToSearch()
+  }
+
+  async function removeStarter(s: Starter) {
+    const ok = await confirmDialog({
+      title: 'Aus dem Wettbewerb entfernen',
+      message: `${s.name} mit allen Werten aus dem Wettbewerb entfernen?`,
+      confirmLabel: 'Entfernen',
+    })
+    if (!ok) return
+    const ref = s.key ?? s.id
+    push({ op: 'starter_delete', starter: ref }, (l) => ({
+      ...l,
+      starters: l.starters.filter((x) => (x.key ?? x.id) !== ref),
+      recent: l.recent.filter((r) => r.ref !== ref),
+    }))
+    setNotice(`${s.name} entfernt.`)
+    backToSearch()
+  }
+
   if (!scoring) return <p className="muted">Zuerst eine Einzelwertung anlegen.</p>
 
   const open = local.starters.filter((s) => !s.values[String(scoring.id)])
@@ -279,6 +325,26 @@ export function StandPanel({
                   Abbrechen
                 </button>
               </div>
+              {chosen.kind === 'starter' && (
+                <div className="button-row stand-buttons">
+                  {!!chosen.starter.values[String(scoring.id)] && (
+                    <button
+                      type="button"
+                      className="button button-ghost"
+                      onClick={() => void clearValue(chosen.starter)}
+                    >
+                      Wert löschen
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="button button-ghost"
+                    onClick={() => void removeStarter(chosen.starter)}
+                  >
+                    Aus dem Wettbewerb entfernen
+                  </button>
+                </div>
+              )}
             </>
           )}
         </form>
@@ -325,6 +391,15 @@ export function StandPanel({
           ))}
         </ul>
       </details>
+      {!closed && (
+        <StandFinish
+          api={api}
+          comp={comp}
+          pending={pending}
+          online={online}
+          onFinished={() => setLocal((l) => ({ ...l, status: 'endgueltig' }))}
+        />
+      )}
     </div>
   )
 }

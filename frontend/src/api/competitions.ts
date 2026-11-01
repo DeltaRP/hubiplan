@@ -323,6 +323,7 @@ export type SyncOp =
       out_of_competition?: boolean
       presence?: Presence
     }
+  | { op: 'starter_delete'; starter: number | string }
   | { op: 'score'; starter: number | string; scoring: number; value: string | null; at: string }
   | { op: 'shot'; starter: number | string; hits: number[]; client_key: string; at: string }
   | { op: 'undo'; client_key: string | null }
@@ -468,6 +469,8 @@ export interface StandApi {
   starters: () => Promise<Starter[]>
   members: () => Promise<MemberChoice[]>
   sync: (ops: SyncOp[]) => Promise<SyncResult>
+  /** endgültig abschließen (nur angemeldet mit „Wettbewerbe verwalten“, nicht per Standzugang) */
+  finish?: () => Promise<unknown>
 }
 
 export function orgStandApi(org: number, id: number): StandApi {
@@ -477,6 +480,7 @@ export function orgStandApi(org: number, id: number): StandApi {
     starters: () => competitionsApi.starters(org, id),
     members: () => competitionsApi.members(org, id),
     sync: (ops) => competitionsApi.sync(org, id, ops),
+    finish: () => competitionsApi.setStatus(org, id, 'endgueltig'),
   }
 }
 

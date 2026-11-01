@@ -55,7 +55,10 @@ export function mergePending(server: Starter[], l: Local): LocalStarter[] {
     if (s.key && pendingKeys.has(s.key) && !out.some((x) => x.key === s.key)) out.push(s)
   const find = (ref: number | string) => out.find((x) => x.id === ref || (!!x.key && x.key === ref))
   for (const o of l.ops) {
-    if (o.op === 'score') {
+    if (o.op === 'starter_delete') {
+      const s = find(o.starter)
+      if (s) out.splice(out.indexOf(s), 1)
+    } else if (o.op === 'score') {
       const s = find(o.starter)
       if (s) s.values = { ...s.values, [o.scoring]: o.value ?? '' }
     } else if (o.op === 'starter_update') {
@@ -95,6 +98,7 @@ export function useStandStore(
   const [syncError, setSyncError] = useState<string | null>(null)
   const localRef = useRef(local)
   const syncing = useRef(false)
+  const pushed = useRef(0)
   const conflictsRef = useRef(onConflicts)
   useEffect(() => {
     conflictsRef.current = onConflicts
@@ -124,6 +128,7 @@ export function useStandStore(
     const ops = localRef.current.ops
     if (syncing.current || (ops.length === 0 && !force)) return
     syncing.current = true
+    const before = pushed.current
     try {
       const res = await api.sync(ops)
       const failed = res.results
@@ -141,6 +146,8 @@ export function useStandStore(
     } finally {
       syncing.current = false
     }
+    // Während des Abgleichs Dazugekommenes gleich hinterher, nicht erst in 15 s
+    if (pushed.current !== before) setTimeout(() => void sync(), 0)
   }
 
   // Erst laden: Starter, Mitgliederliste und Stand aufs Gerät (für die Arbeit ohne Netz)
@@ -176,7 +183,13 @@ export function useStandStore(
 
   /** Eingabe auf dem Gerät übernehmen und gleich abgleichen. */
   function push(op: SyncOp | null, change: (l: Local) => Local = (l) => l) {
-    setLocal((l) => change(op ? { ...l, ops: [...l.ops, op] } : l))
+    if (op) pushed.current += 1
+    setLocal((l) => {
+      const next = change(op ? { ...l, ops: [...l.ops, op] } : l)
+      // gleich merken: der Abgleich unten darf nicht auf das nächste Zeichnen warten
+      localRef.current = next
+      return next
+    })
     setTimeout(() => void sync(), 0)
   }
 
