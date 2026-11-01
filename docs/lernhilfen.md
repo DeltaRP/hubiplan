@@ -93,7 +93,10 @@ Rücklagen, DATEV-Konten und E-Rechnung), Zuwendungsbestätigungen, Quittungen u
 Fotos, Einwilligung, Suchmaschinen, Social Media, Alternativtext, Impressum), Verbund,
 Untereinheiten, App-Geräten, dem verketteten Änderungsprotokoll, Würden (Ordnungszahlen) sowie
 Wettbewerben (eigener oder fremder Wettbewerb, Wertung, Zugwertung, Preisplätze, Stechen,
-vorläufig und endgültig, Zurücksetzen, Standzugang, Vogelschießen, Webseite; Quellen BGB,
+vorläufig und endgültig, Zurücksetzen, Standzugang, Vogelschießen, Webseite; Schießscheiben:
+Gleichstandsregeln, Foto nur als Vorschlag, Summe gegen Foto, Spiegelausschnitte sammeln, die
+Begriffe Zehntelwertung, Innenzehner, Teiler, Spiegel und Loch in Loch und der Rechenweg vom
+Trefferpunkt zu Ring, Zehntel und Teiler; Quellen BGB,
 DSGVO, KUG und DSB-Sportordnung). Die Prüfliste der Webseite
 behält ihre eigene Form, weil dort offene Pflichtpunkte das Veröffentlichen sperren; sie
 trägt aber das „?“ an Impressum und „Verantwortlich“.

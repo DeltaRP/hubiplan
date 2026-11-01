@@ -718,6 +718,46 @@ const DECISIONS_DATA = {
     phase: 'competitions',
     feature: 'competitions',
   },
+  comp_tie_breaks: {
+    title: d('Welche Regeln bei Gleichstand?'),
+    text: d(
+      'Mit Regeln aus den Treffern entscheidet HUBIplan einen Gleichstand ohne Stechen, etwa nach der DSB-Sportordnung erst über die Serien von hinten, dann über mehr Zehner und mehr Innenzehner. Das spart Zeit am Stand, verlangt aber, dass für alle Gleichen Treffer erfasst sind; sonst bleibt es beim Stechen. Nimm die Reihenfolge aus eurer Schießordnung oder der Ausschreibung; steht dort nichts, bleibt das Stechen die übliche Lösung.',
+    ),
+    sources: ['dsbSpo'],
+    place: d('Wettbewerb → Einrichten → Einzelwertung → Bei Gleichstand'),
+    phase: 'competitions',
+    feature: 'competitions',
+  },
+  comp_photo: {
+    title: d('Warum ist das Foto nur ein Vorschlag?'),
+    text: d(
+      'Bei mehreren Löchern ineinander, auf dunkler Unterlage oder knapp an einer Ringlinie kann die Erkennung irren; maßgeblich ist die Auswertung der Scheibe nach der DSB-Sportordnung bzw. eurer Schießordnung. Deshalb setzt das Foto die Treffer nur ins Antipp-Bild, und erst „Speichern“ übernimmt sie. Das Foto selbst wird nur ausgewertet und nie gespeichert, so entsteht kein Bild mit Bezug zum Schützen (Art. 5 Abs. 1 lit. c DSGVO).',
+    ),
+    sources: ['dsbSpo', 'dsgvo'],
+    place: d('Standmodus → Foto der Scheibe'),
+    phase: 'competitions',
+    feature: 'competitions',
+  },
+  comp_photo_sum: {
+    title: d('Summe und Foto weichen ab, was gilt?'),
+    text: d(
+      'Gespeichert wird die eingegebene Summe; das Foto ist nur eine zweite Meinung, die Tippfehler und verzählte Ringe auffallen lässt. Bei einer Abweichung die Scheibe noch einmal ansehen, im Zweifel entscheidet die Aufsicht bzw. der Auswerter nach der DSB-Sportordnung oder eurer Schießordnung. „Treffer ansehen“ zeigt, wo die Erkennung die Löcher sieht.',
+    ),
+    sources: ['dsbSpo'],
+    place: d('Standmodus → Nur die Summe eingeben → Foto der Scheibe'),
+    phase: 'competitions',
+    feature: 'competitions',
+  },
+  comp_photo_samples: {
+    title: d('Spiegelausschnitte sammeln?'),
+    text: d(
+      'Echte, bestätigte Scheiben sind der einzige Weg zu prüfen, wie gut die Fotoerkennung wirklich ist; ohne sie wird nur an künstlichen Fotos gemessen. Gespeichert wird nur der Ausschnitt des Spiegels mit der Trefferlage, ohne Namen, Wettbewerb oder Uhrzeit, also ohne Bezug zu einer Person (Art. 4 Nr. 1 DSGVO). Schalte es ein, wenn ihr die Erkennung oft nutzt; ausschalten und alles löschen geht jederzeit.',
+    ),
+    sources: ['dsgvo'],
+    place: d('Wettbewerbe → Fotoerkennung verbessern'),
+    phase: 'competitions',
+    feature: 'competitions',
+  },
   comp_team_mode: {
     title: d('Warum zählen nur die besten Schützen einer Einheit?'),
     text: d(
@@ -1517,6 +1557,66 @@ const TERMS_DATA = {
     section: 'competitions',
     feature: 'competitions',
   },
+  comp_decimal: {
+    name: d('Zehntelwertung'),
+    meaning: d(
+      'Jeder Schuss zählt mit einer Nachkommastelle, je näher an der Mitte, desto höher, auf dem Luftgewehr höchstens 10,9 (DSB-Sportordnung). Damit gibt es viel seltener einen Gleichstand als mit ganzen Ringen.',
+    ),
+    example: d(
+      'Beispiel: Ein Treffer 0,8 mm neben der Mitte der DSB-Luftgewehrscheibe zählt 10,6, einer 3 mm daneben 9,8.',
+    ),
+    sources: ['dsbSpo'],
+    section: 'competitions',
+    feature: 'competitions',
+  },
+  comp_inner: {
+    name: d('Innenzehner'),
+    meaning: d(
+      'Besonders guter Zehner: Auf der DSB-Luftgewehrscheibe ist es einer, der den weißen Zehnerpunkt ganz wegschießt (DSB-Sportordnung). Mehr Innenzehner entscheiden oft einen Gleichstand.',
+    ),
+    example: d(
+      'Beispiel: Ein Treffer 0,8 mm neben der Mitte ist ein Innenzehner, einer 2 mm daneben nur ein Zehner.',
+    ),
+    sources: ['dsbSpo'],
+    section: 'competitions',
+    feature: 'competitions',
+  },
+  comp_teiler: {
+    name: d('Teiler'),
+    meaning: d(
+      'Abstand der Trefferlochmitte zur Scheibenmitte in Hundertstel Millimetern; kleiner ist besser (DSB-Sportordnung, bei manchen Scheiben mit Faktor). Beim Teilerschießen gewinnt der beste einzelne Schuss.',
+    ),
+    example: d(
+      'Beispiel: Ein Loch, dessen Mitte 0,8 mm neben der Scheibenmitte liegt, hat den Teiler 80; Teiler 80 schlägt Teiler 120.',
+    ),
+    sources: ['dsbSpo'],
+    section: 'competitions',
+    feature: 'competitions',
+  },
+  comp_spot: {
+    name: d('Spiegel'),
+    meaning: d(
+      'Der schwarze Kreis in der Mitte der Scheibe, auf den gezielt wird; eine Karte hat einen oder mehrere Spiegel (DSB-Sportordnung). Die Fotoerkennung sucht zuerst den Spiegel und richtet danach das Bild aus.',
+    ),
+    example: d(
+      'Beispiel: Der Spiegel der DSB-Luftgewehrscheibe misst 30,5 mm und reicht vom 4er-Ring bis zur Zehn.',
+    ),
+    sources: ['dsbSpo'],
+    section: 'competitions',
+    feature: 'competitions',
+  },
+  comp_hole_in_hole: {
+    name: d('Loch in Loch'),
+    meaning: d(
+      'Mehrere Schüsse liegen so dicht, dass ihre Löcher ineinander übergehen; dann lässt sich aus dem Umriss nicht sicher ablesen, wo jedes Loch sitzt. Gewertet wird trotzdem jeder Schuss nach seinem Lochrand (DSB-Sportordnung), deshalb heißt es bei der Fotoerkennung „bitte prüfen“.',
+    ),
+    example: d(
+      'Beispiel: 5 Schuss in einen Spiegel ergeben ein einziges, gezacktes Loch etwa so groß wie 2 einzelne Löcher.',
+    ),
+    sources: ['dsbSpo'],
+    section: 'competitions',
+    feature: 'competitions',
+  },
   comp_tie: {
     name: d('Gleichstand'),
     meaning: d(
@@ -1943,6 +2043,30 @@ const HOWTOS_DATA = {
         ['B', '27', '2.'],
         ['C', '27', '2.'],
         ['D', '25', '4.'],
+      ],
+    },
+    sources: [],
+    feature: 'competitions',
+  },
+  how_comp_score: {
+    kind: 'calc',
+    title: d('Vom Trefferpunkt zu Ring, Zehntel und Teiler'),
+    text: d(
+      'Zehntel = höchster Ring + (halbe Zehn + halbes Kaliber − Abstand zur Mitte) ÷ Ringbreite, abgerundet auf ein Zehntel und höchstens 10,9; der Ring ist der ganze Teil davon. So zählt, wie in der Sportordnung, der höhere Ring, sobald der Lochrand die Ringlinie berührt. Der Teiler ist der Abstand in Hundertstel Millimetern.',
+    ),
+    example: {
+      head: ['Scheibe', 'Abstand', 'Zehntel', 'Ring', 'Teiler'],
+      rows: [
+        ['DSB (Zehn 0,5 mm, Ringe 2,5 mm)', '0,8 mm', '10 + (2,5 − 0,8) ÷ 2,5 = 10,6', '10', '80'],
+        ['DSB', '3,0 mm', '10 + (2,5 − 3,0) ÷ 2,5 = 9,8', '9', '300'],
+        [
+          'Kyffhäuser (Zehn 2 mm, Ringe 4,5 mm)',
+          '3,0 mm',
+          '10 + (3,25 − 3,0) ÷ 4,5 = 10,0',
+          '10',
+          '300',
+        ],
+        ['Kyffhäuser', '6,0 mm', '10 + (3,25 − 6,0) ÷ 4,5 = 9,3', '9', '600'],
       ],
     },
     sources: [],

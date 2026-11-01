@@ -5,6 +5,7 @@ import { competitionsApi } from '../../api/competitions.ts'
 import { confirmDialog } from '../../components/dialog.ts'
 import { errorMessage, useLoad } from '../../components/forms.ts'
 import { Alert, Checkbox } from '../../components/ui.tsx'
+import { Why } from '../../learning/Aids.tsx'
 
 export function PhotoSamplesCard({ org }: { org: number }) {
   const { data, setData } = useLoad(() => competitionsApi.photoSamples(org), [org])
@@ -66,6 +67,7 @@ export function PhotoSamplesCard({ org }: { org: number }) {
         </div>
       )}
       {error && <Alert kind="error">{error}</Alert>}
+      <Why k="comp_photo_samples" />
     </details>
   )
 }

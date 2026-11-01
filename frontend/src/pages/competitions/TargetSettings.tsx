@@ -1,7 +1,7 @@
 // Scheibe, Wertungsart und Gleichstandskette einer Einzelwertung (Schießscheiben Schritt 1).
 import type { CustomTarget, ScoringMethod, TargetCatalog } from '../../api/competitions.ts'
 import { Field, SelectField } from '../../components/ui.tsx'
-import { Why } from '../../learning/Aids.tsx'
+import { HowTo, Term, Why } from '../../learning/Aids.tsx'
 
 export interface TargetValues {
   target: string
@@ -109,10 +109,26 @@ export function TargetSettings({
         <p className="muted small">
           Zehn {fmt(chosen.top_diameter)} mm, Ringe {fmt(chosen.ring_width)} mm breit, Ringe{' '}
           {chosen.lowest} bis {chosen.top}
-          {chosen.inner_diameter ? ', mit Innenzehner' : ''}, höchstens{' '}
-          {chosen.max_decimal.replace('.', ',')} in Zehnteln. {chosen.note}
+          {chosen.inner_diameter ? (
+            <>
+              , mit <Term k="comp_inner">Innenzehner</Term>
+            </>
+          ) : (
+            ''
+          )}
+          , höchstens {chosen.max_decimal.replace('.', ',')} in{' '}
+          <Term k="comp_decimal">Zehnteln</Term>
+          {chosen.black_diameter ? (
+            <>
+              , <Term k="comp_spot">Spiegel</Term> {fmt(chosen.black_diameter)} mm
+            </>
+          ) : (
+            ''
+          )}
+          ; der <Term k="comp_teiler">Teiler</Term> ist der Abstand in 1/100 mm. {chosen.note}
         </p>
       )}
+      {chosen && <HowTo k="how_comp_score" />}
       {custom && (
         <div className="grid-3">
           <Field
@@ -211,6 +227,7 @@ export function TargetSettings({
             Die Regeln gelten der Reihe nach, wenn für alle Gleichen Treffer erfasst sind. Bleibt es
             gleich, teilen sie sich den Platz; auf Preisplätzen folgt ein Stechen.
           </p>
+          <Why k="comp_tie_breaks" />
           {v.tie_breaks.length > 0 ? (
             <ol className="plain-list">
               {v.tie_breaks.map((key, i) => (
