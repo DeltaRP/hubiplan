@@ -55,6 +55,7 @@ jobs:
       - name: Django-Checks für den Betrieb
         run: |
           MFA_ENCRYPTION_KEY=$(python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())") \
+          DATA_ENCRYPTION_KEY=$(python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())") \
             python manage.py check --deploy --fail-level ERROR
         env:
           DJANGO_DEBUG: "false"

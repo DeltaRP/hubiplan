@@ -20,6 +20,7 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
+from core.privatefiles import PrivateFileField
 from exchange.models import private_storage
 
 
@@ -230,7 +231,7 @@ class RemoteState(models.Model):
     coupling = models.ForeignKey(Coupling, on_delete=models.CASCADE, related_name="states")
     key = models.CharField(max_length=40)
     data = models.JSONField(default=dict)
-    file = models.FileField(storage=private_storage, upload_to=remote_file_path, blank=True)
+    file = PrivateFileField(storage=private_storage, upload_to=remote_file_path, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -242,6 +243,14 @@ class RemoteState(models.Model):
 
     def __str__(self) -> str:
         return f"{self.coupling} · {self.key}"
+
+    def encryption_org_id(self) -> int | None:
+        # Dateien gehören zur eigenen Einheit der Kopplung (core/privatefiles.py)
+        return (
+            Coupling.objects.filter(pk=self.coupling_id)
+            .values_list("local_unit_id", flat=True)
+            .first()
+        )
 
 
 class RemoteInvoice(models.Model):
@@ -268,7 +277,7 @@ class RemoteInvoice(models.Model):
     due_date = models.DateField("fällig am", null=True, blank=True)
     total = models.DecimalField("Betrag", max_digits=12, decimal_places=2, default=0)
     data = models.JSONField(default=dict)
-    file = models.FileField(storage=private_storage, upload_to=remote_file_path, blank=True)
+    file = PrivateFileField(storage=private_storage, upload_to=remote_file_path, blank=True)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.OPEN)
     paid_reported_on = models.DateField("als bezahlt gemeldet am", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -283,6 +292,14 @@ class RemoteInvoice(models.Model):
 
     def __str__(self) -> str:
         return f"{self.number} {self.subject}"
+
+    def encryption_org_id(self) -> int | None:
+        # Dateien gehören zur eigenen Einheit der Kopplung (core/privatefiles.py)
+        return (
+            Coupling.objects.filter(pk=self.coupling_id)
+            .values_list("local_unit_id", flat=True)
+            .first()
+        )
 
     @property
     def key(self) -> str:  # für remote_file_path

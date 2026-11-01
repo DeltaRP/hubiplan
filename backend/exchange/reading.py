@@ -31,6 +31,15 @@ def _cell(value):
     return value
 
 
+def read_stored_table(fieldfile, file_name: str) -> tuple[list[str], list[list]]:
+    """Wie read_table für eine gespeicherte (verschlüsselte) Datei: liest eine
+    entschlüsselte Kopie im temporären Verzeichnis, die danach gelöscht wird."""
+    from core.privatefiles import local_copy
+
+    with local_copy(fieldfile, suffix=Path(file_name).suffix.lower()) as path:
+        return read_table(path, file_name)
+
+
 def read_table(path: str | Path, file_name: str) -> tuple[list[str], list[list]]:
     """Kopfzeile und Datenzeilen. Leere Zeilen entfallen."""
     suffix = Path(file_name).suffix.lower()

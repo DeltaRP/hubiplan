@@ -19,6 +19,7 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
+from core.privatefiles import PrivateFileField
 from exchange.models import private_storage
 
 MAX_DOCUMENT_BYTES = 20 * 1024 * 1024
@@ -128,7 +129,7 @@ class DocumentVersion(models.Model):
     document = models.ForeignKey(
         Document, on_delete=models.CASCADE, related_name="versions", verbose_name="Dokument"
     )
-    file = models.FileField("Datei", storage=private_storage, upload_to=document_path)
+    file = PrivateFileField("Datei", storage=private_storage, upload_to=document_path)
     name = models.CharField("Dateiname", max_length=200)
     size = models.PositiveIntegerField("Größe", default=0)
     content_type = models.CharField("Dateiart", max_length=100)

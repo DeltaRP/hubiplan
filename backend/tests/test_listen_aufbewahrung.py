@@ -128,6 +128,8 @@ class TestImporte:
 
 
 def test_verwaiste_dateien(settings):
+    # Lose Dateien ohne Datensatz (sonst ordnet PrivateFileField sie einem Verein zu)
+    settings.DATA_ENCRYPTION_STRICT = False
     storage = private_storage()
     alt = storage.save("exports/99/vergessen.xlsx", _content())
     neu = storage.save("imports/99/gerade.xlsx", _content())

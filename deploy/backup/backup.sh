@@ -123,6 +123,21 @@ if [ -f /loeschliste/loeschliste.jsonl ]; then
         || fail "Löschliste konnte nicht kopiert werden ($STAMP)"
 fi
 
+# Hauptschlüssel der Datenverschlüsselung (Docker-Secret) mit dem öffentlichen
+# Backup-Schlüssel verschlüsselt neben die Backups: Ohne ihn sind verschlüsselte Dateien
+# und Felder in den Backups nicht lesbar. Lesen kann die Kopie nur, wer den privaten
+# Backup-Schlüssel hat (docs/betrieb.md, Abschnitt Verschlüsselung).
+if [ -r /run/secrets/datenschluessel ]; then
+    if [ -n "${BACKUP_PUBLIC_KEY:-}" ]; then
+        age -r "$BACKUP_PUBLIC_KEY" -o "$DIR/datenschluessel.age.tmp" /run/secrets/datenschluessel \
+            && mv "$DIR/datenschluessel.age.tmp" "$DIR/datenschluessel.age" \
+            || echo "$(date '+%F %T') WARNUNG: Kopie des Hauptschlüssels fehlgeschlagen ($STAMP)" \
+                >> "$DIR/backup.log"
+    else
+        echo "HINWEIS: Ohne BACKUP_PUBLIC_KEY keine Kopie des Hauptschlüssels bei den Backups."
+    fi
+fi
+
 # Kettenköpfe des Änderungsprotokolls (nur Nummer und Prüfsumme je Organisation, keine
 # Inhalte) unverschlüsselt anhängen. Die Datei wandert mit restic nach Hetzner; ältere
 # Stände bleiben dort in den Schnappschüssen. Abgleich: manage.py kettenkoepfe_pruefen

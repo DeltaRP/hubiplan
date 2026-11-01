@@ -92,6 +92,27 @@ mkdir -p "$BACKUP_DIR"
 chown 70:70 "$BACKUP_DIR"
 chmod 700 "$BACKUP_DIR"
 
+# Hauptschlüssel für die Verschlüsselung der Daten (core/crypto.py): eigene Datei außerhalb
+# des Programmordners (der beim Ausrollen getauscht wird) und nicht in der .env. Lesbar nur
+# für die App (UID 1000) und das Backup (Gruppe 70, legt eine mit dem öffentlichen
+# Backup-Schlüssel verschlüsselte Kopie neben die Backups). Wird nie überschrieben.
+DATA_KEY_FILE=$(grep '^DATA_KEY_FILE=' .env | cut -d= -f2 || true)
+if [ -z "$DATA_KEY_FILE" ]; then
+    DATA_KEY_FILE="$ZIEL-geheim/datenschluessel"
+    echo "DATA_KEY_FILE=$DATA_KEY_FILE" >> .env
+fi
+if [ ! -s "$DATA_KEY_FILE" ]; then
+    echo "Erzeuge Hauptschlüssel für die Datenverschlüsselung ($DATA_KEY_FILE) …"
+    echo "WICHTIG: Ohne diesen Schlüssel sind Daten und Backups nicht lesbar. Kopie sichern"
+    echo "         (docs/betrieb.md, Abschnitt Verschlüsselung)."
+    mkdir -p "$(dirname "$DATA_KEY_FILE")"
+    chmod 711 "$(dirname "$DATA_KEY_FILE")"
+    (umask 077 && openssl rand -base64 32 | tr '+/' '-_' > "$DATA_KEY_FILE.neu")
+    mv "$DATA_KEY_FILE.neu" "$DATA_KEY_FILE"
+fi
+chown 1000:70 "$DATA_KEY_FILE"
+chmod 440 "$DATA_KEY_FILE"
+
 # Selbst gebaute Images (nicht die per Digest festgelegten Postgres/Redis)
 EIGENE=$($COMPOSE config --images | grep -v '@sha256:' | sort -u)
 

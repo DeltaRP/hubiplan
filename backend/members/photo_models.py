@@ -14,6 +14,7 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
+from core.privatefiles import PrivateFileField
 from exchange.models import private_storage
 
 
@@ -40,8 +41,8 @@ class MemberPhoto(models.Model):
     )
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.APPROVED)
     source = models.CharField(max_length=10, choices=Source.choices, default=Source.BOARD)
-    image = models.FileField(storage=private_storage, upload_to=photo_path)
-    thumbnail = models.FileField(storage=private_storage, upload_to=photo_path)
+    image = PrivateFileField(storage=private_storage, upload_to=photo_path)
+    thumbnail = PrivateFileField(storage=private_storage, upload_to=photo_path)
     width = models.PositiveIntegerField(default=0)
     height = models.PositiveIntegerField(default=0)
     uploaded_by = models.ForeignKey(

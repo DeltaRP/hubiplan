@@ -59,8 +59,11 @@ def _attachment_response(mail: OutgoingMail, index: int) -> FileResponse:
     path = (root / item["path"]).resolve()
     if root not in path.parents or not path.exists():
         raise Http404
+    from exchange.models import private_storage
+
     return FileResponse(
-        path.open("rb"),
+        # Über den privaten Speicher: entschlüsselt Anhänge aus Rundschreiben
+        private_storage().open(str(path.relative_to(root)), "rb"),
         as_attachment=True,
         filename=item["name"],
         content_type=item.get("content_type") or "application/octet-stream",

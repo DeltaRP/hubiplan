@@ -15,6 +15,7 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
+from core.privatefiles import PrivateFileField
 from exchange.models import private_storage
 
 KEEP_DAYS = 7
@@ -68,7 +69,7 @@ class TransferJob(models.Model):
     )
     with_files = models.BooleanField("mit Dateien", default=False)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
-    file = models.FileField(storage=private_storage, upload_to=transfer_path, blank=True)
+    file = PrivateFileField(storage=private_storage, upload_to=transfer_path, blank=True)
     file_name = models.CharField(max_length=200, blank=True)
     size = models.PositiveBigIntegerField(default=0)
     # Export: Anzahlen. Import: Vorschau mit Anzahlen, Warnungen, Fehlern, Dubletten.

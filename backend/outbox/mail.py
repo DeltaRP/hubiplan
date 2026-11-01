@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 from email.utils import parseaddr
-from pathlib import Path
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
@@ -121,10 +120,11 @@ def send(
     for name, content, mimetype in attachments or []:
         message.attach(name, content, mimetype)
     if stored_attachments:
-        root = Path(settings.PRIVATE_ROOT)
+        from core.privatefiles import read_private
+
         for item in stored_attachments:
-            source = Path(item.get("abs") or root / item["path"])
-            message.attach(item["name"], source.read_bytes(), item["content_type"])
+            # Über den privaten Speicher lesen: entschlüsselt, falls die Datei verschlüsselt ist
+            message.attach(item["name"], read_private(item["path"]), item["content_type"])
         message.outbox_attachments = [
             {k: v for k, v in item.items() if k != "abs"} for item in stored_attachments
         ]

@@ -27,6 +27,13 @@ EIGENE=$($COMPOSE config --images | grep -v '@sha256:' | sort -u)
 echo "Jetzt: $(cat .fassung 2>/dev/null || echo unbekannt)"
 echo "Zurück zu: $(cat "$ZIEL.vorher/.fassung" 2>/dev/null || echo unbekannt)"
 
+# Kennt die vorige Fassung die Dateiverschlüsselung nicht (core/privatefiles.py fehlt),
+# erst alle privaten Dateien wieder im Klartext ablegen, sonst kann sie sie nicht lesen.
+if [ ! -f "$ZIEL.vorher/backend/core/privatefiles.py" ] && [ -f backend/core/privatefiles.py ]; then
+    echo "Die vorige Fassung liest keine verschlüsselten Dateien: entschlüssele sie …"
+    $COMPOSE run -T --rm --no-deps backend python manage.py dateien_verschluesseln --entschluesseln
+fi
+
 # Images tauschen: aktuelle <-> :vorher
 for img in $EIGENE; do
     basis="${img%%:*}"

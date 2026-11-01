@@ -218,8 +218,9 @@ def open_file(fieldfile) -> tuple[dict, Files]:
     archive = None
     if magic == b"PK":
         try:
-            # Direkt aus dem Speicher lesen, nicht die ganze ZIP-Datei in den Arbeitsspeicher
-            archive = zipfile.ZipFile(fieldfile.path)
+            # Direkt aus dem Speicher lesen (blockweise entschlüsselt, mit Springen),
+            # nicht die ganze ZIP-Datei in den Arbeitsspeicher
+            archive = zipfile.ZipFile(fieldfile.storage.open(fieldfile.name, "rb"))
         except zipfile.BadZipFile as exc:
             raise FileProblem("Die ZIP-Datei ist beschädigt.") from exc
         if dump.JSON_NAME not in archive.namelist():

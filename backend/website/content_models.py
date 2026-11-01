@@ -15,6 +15,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
+from core.privatefiles import PrivateFileField
 from exchange.models import private_storage
 
 from .models import Website
@@ -196,8 +197,8 @@ class WebsiteImage(models.Model):
     website = models.ForeignKey(Website, on_delete=models.CASCADE, related_name="images")
     # Öffentliche Kennung im Text (Markdown ``![Alt](bild:<key>)``) und in Adressen
     key = models.CharField(max_length=24, unique=True)
-    file = models.FileField("Bild", storage=private_storage, upload_to=image_path)
-    small = models.FileField("Bild klein", storage=private_storage, upload_to=image_path)
+    file = PrivateFileField("Bild", storage=private_storage, upload_to=image_path)
+    small = PrivateFileField("Bild klein", storage=private_storage, upload_to=image_path)
     width = models.PositiveIntegerField(default=0)
     height = models.PositiveIntegerField(default=0)
     caption = models.CharField("Bildunterschrift", max_length=300, blank=True)
@@ -208,7 +209,7 @@ class WebsiteImage(models.Model):
     # Original (höchstens 4000 px, ohne Metadaten) und gewählter Ausschnitt: Damit lässt
     # sich der Ausschnitt später neu wählen, ohne dass etwas verloren geht (Ralf 01.11.).
     # Ältere Bilder haben kein Original; dann gilt ``file`` als Original.
-    original = models.FileField(
+    original = PrivateFileField(
         "Original", storage=private_storage, upload_to=image_path, blank=True
     )
     # {"x", "y", "width", "height"} in Prozent des (gedrehten) Originals, "rotation",
