@@ -2,7 +2,7 @@
 // Angemeldet über /stand/<einheit>/<wettbewerb> oder ohne Konto über einen Standzugang
 // (/stand/zugang/<schlüssel>). Der Bildschirm bleibt an, und die Seite lässt sich auch ohne
 // Netz neu laden (Offline-Speicher im Browser, public/sw-stand.js).
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
@@ -13,6 +13,7 @@ import {
 } from '../../api/competitions.ts'
 import { useLoad } from '../../components/forms.ts'
 import { LoadError } from '../../components/ui.tsx'
+import { StandAccessCard } from './BirdSetup.tsx'
 import { BirdStand } from './BirdStand.tsx'
 import { StandPanel } from './StandPanel.tsx'
 
@@ -21,7 +22,7 @@ export function StandPage() {
   const org = Number(params.org)
   const id = Number(params.id)
   const api = useMemo(() => orgStandApi(org, id), [org, id])
-  return <StandShell api={api} exit={<Link to={`/wettbewerbe/${id}`}>Beenden</Link>} />
+  return <StandShell api={api} org={org} exit={<Link to={`/wettbewerbe/${id}`}>Beenden</Link>} />
 }
 
 export function StandTokenPage() {
@@ -30,7 +31,8 @@ export function StandTokenPage() {
   return <StandShell api={api} exit={null} />
 }
 
-function StandShell({ api, exit }: { api: StandApi; exit: ReactNode }) {
+function StandShell({ api, exit, org }: { api: StandApi; exit: ReactNode; org?: number }) {
+  const [showAccess, setShowAccess] = useState(false)
   const { data, error, reload } = useLoad(async () => {
     const key = `hubiplan.stand.detail.${api.key}`
     try {
@@ -63,8 +65,23 @@ function StandShell({ api, exit }: { api: StandApi; exit: ReactNode }) {
             })}
           </span>
         )}
-        {exit && <span className="push-right">{exit}</span>}
+        {exit && (
+          <span className="push-right">
+            {org && data?.own && data.can_manage && data.status !== 'endgueltig' && (
+              <button
+                type="button"
+                className="link-button"
+                aria-expanded={showAccess}
+                onClick={() => setShowAccess((v) => !v)}
+              >
+                Anderes Gerät per QR-Code
+              </button>
+            )}{' '}
+            {exit}
+          </span>
+        )}
       </header>
+      {showAccess && org && data && <StandAccessCard org={org} comp={data} />}
       {error && <LoadError message={error} onRetry={reload} />}
       {data &&
         (!data.own ? (

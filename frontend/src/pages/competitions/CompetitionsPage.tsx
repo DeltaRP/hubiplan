@@ -228,6 +228,7 @@ function CompetitionArea() {
     [org.id, id],
   )
   const standApi = useMemo(() => orgStandApi(org.id, id), [org.id, id])
+  const [showAccess, setShowAccess] = useState(false)
   if (error) return <LoadError message={error} onRetry={reload} />
   if (!data) return <p className="muted">Wird geladen …</p>
   const base = `/wettbewerbe/${id}`
@@ -262,8 +263,21 @@ function CompetitionArea() {
                     Standmodus (Vollbild, Handy, offline)
                   </a>
                 )}
+                {data.own && data.can_manage && data.status !== 'endgueltig' && (
+                  <button
+                    type="button"
+                    className="button button-ghost"
+                    aria-expanded={showAccess}
+                    onClick={() => setShowAccess((v) => !v)}
+                  >
+                    Anderes Gerät per QR-Code
+                  </button>
+                )}
                 <PrintMenu org={org.id} comp={data} />
               </div>
+              {showAccess && data.own && data.can_manage && (
+                <StandAccessCard org={org.id} comp={data} />
+              )}
               {!data.own ? (
                 <ForeignPanel org={org.id} comp={data} />
               ) : data.form === 'vogel' ? (
@@ -613,8 +627,6 @@ function Setup({
           )}
         </div>
       )}
-
-      {canManage && comp.own && <StandAccessCard org={org} comp={comp} />}
 
       {canManage && (
         <div className="card card-wide">

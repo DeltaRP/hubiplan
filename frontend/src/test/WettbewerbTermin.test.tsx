@@ -118,4 +118,18 @@ describe('Wettbewerb und Termin', () => {
     expect(await screen.findByText('2 Starter aus den Zusagen übernommen.')).toBeVisible()
     expect(calls.some((c) => c.key === `POST ${base}3/starters/from-event/`)).toBe(true)
   })
+
+  it('zeigt den Standzugang direkt beim Erfassen', async () => {
+    renderAt('/wettbewerbe/3', {
+      [`GET ${base}3/`]: () => ({ status: 200, body: detail }),
+      [`GET ${base}3/starters/`]: () => ({ status: 200, body: [] }),
+      [`GET ${base}3/members/`]: () => ({ status: 200, body: [] }),
+      [`GET ${base}3/stand-access/`]: () => ({ status: 200, body: [] }),
+    })
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: 'Anderes Gerät per QR-Code' }))
+    expect(
+      await screen.findByRole('heading', { name: 'Standzugang für ein geliehenes Gerät' }),
+    ).toBeVisible()
+  })
 })
