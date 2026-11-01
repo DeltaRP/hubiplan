@@ -138,7 +138,7 @@ sind vor ernsthafter Nutzung gegen die aktuelle Sportordnung zu lesen.
     fragt HUBIplan nach („Weicht vom Foto ab“). Gespeichert wird die eingegebene Summe;
     „Treffer ansehen“ wechselt zum Antipp-Bild mit den erkannten Treffern.
   - **Spiegelausschnitte sammeln** (Schritt 6, nur mit Einwilligung des Vereins): Es gibt
-    keine ausgewerteten echten Scheiben. Unter Wettbewerbe › „Fotoerkennung verbessern“ kann
+    keine ausgewerteten echten Scheiben. Unter Einstellungen › Datenschutz › „Fotoerkennung verbessern“ kann
     der Verein (Recht Wettbewerbe verwalten) erlauben, dass bestätigte Spiegel gesammelt
     werden; standardmäßig aus. Beim Foto wird je Spiegel der entzerrte Ausschnitt (Graubild,
     12 Bildpunkte je mm) höchstens 12 Stunden im Cache bereitgelegt, das Gerät bekommt nur

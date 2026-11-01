@@ -13,6 +13,7 @@ import { errorMessage, useAutoSave, useForm, useLoad } from '../../components/fo
 import { PrivacyPublish } from '../../components/PrivacyPublish.tsx'
 import { Alert, Field, LoadError, SaveStatus, SelectField } from '../../components/ui.tsx'
 import { useActiveOrg, useOrg } from '../../org/OrgContext.tsx'
+import { PhotoSamplesCard } from '../competitions/PhotoSamples.tsx'
 import { PrivacyCard } from '../website/WebsitePrivacy.tsx'
 import { TextArea } from './TextArea.tsx'
 
@@ -238,6 +239,8 @@ export function PrivacySettingsPage() {
   // Mitglieder-Hinweise pflegt bei Untereinheiten die Einheit darüber (wie das Impressum)
   const members = org.type !== 'unit'
   const website = org.modules.includes('website') && can(PERM.websiteManage)
+  // Spiegelausschnitte aus der Fotoerkennung: Einwilligung des Vereins
+  const photos = org.modules.includes('competitions') && can(PERM.competitionsManage)
   return (
     <>
       <p className="muted small">
@@ -247,6 +250,7 @@ export function PrivacySettingsPage() {
       </p>
       {members && <MemberSection />}
       {website && <WebsiteSection />}
+      {photos && <PhotoSamplesCard org={org.id} />}
       {!members && !website && (
         <Alert kind="info">
           Die Datenschutzhinweise für Mitglieder pflegt die übergeordnete Einheit.

@@ -1,5 +1,6 @@
 // Bestätigte Spiegelausschnitte sammeln (Schießscheiben Schritt 6). Nur mit Einwilligung des
 // Vereins (Ralf 01.11.2026): standardmäßig aus, jederzeit abschaltbar und löschbar.
+// Steht unter Einstellungen › Datenschutz, nicht auf der Wettbewerbsliste (Ralf 01.11.).
 import { useState } from 'react'
 import { competitionsApi } from '../../api/competitions.ts'
 import { confirmDialog } from '../../components/dialog.ts'
@@ -37,11 +38,11 @@ export function PhotoSamplesCard({ org }: { org: number }) {
   }
 
   return (
-    <details className="card card-wide">
-      <summary>
-        <strong>Fotoerkennung verbessern</strong>{' '}
-        <span className="muted">({data.enabled ? 'Sammeln an' : 'Sammeln aus'})</span>
-      </summary>
+    <section className="card card-wide">
+      <h2>
+        Fotoerkennung verbessern{' '}
+        <span className="muted small">({data.enabled ? 'Sammeln an' : 'Sammeln aus'})</span>
+      </h2>
       <p className="muted small">
         Wenn ihr Treffer aus einem Foto bestätigt, kann HUBIplan den Ausschnitt des Spiegels mit den
         bestätigten Treffern aufbewahren. Damit lässt sich die Erkennung später an echten Scheiben
@@ -68,6 +69,6 @@ export function PhotoSamplesCard({ org }: { org: number }) {
       )}
       {error && <Alert kind="error">{error}</Alert>}
       <Why k="comp_photo_samples" />
-    </details>
+    </section>
   )
 }
