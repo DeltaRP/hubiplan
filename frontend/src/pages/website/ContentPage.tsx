@@ -1,10 +1,9 @@
-// Webseite › Texte und Bilder: Begrüßung, Textseiten (z. B. Chronik), Texte der
-// Untereinheiten und Bilder. Änderungen sind erst nach „Veröffentlichen“
-// sichtbar; frühere Fassungen lassen sich zurückholen.
+// Webseite › Texte: Begrüßung, Textseiten (z. B. Chronik) und Texte der
+// Untereinheiten. Änderungen sind erst nach „Veröffentlichen“ sichtbar; frühere
+// Fassungen lassen sich zurückholen. Bilder verwaltet Webseite › Bilder (images.tsx).
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ApiError } from '../../api/client.ts'
 import { contentApi } from '../../api/website.ts'
 import type {
   LinkTarget,
@@ -22,10 +21,10 @@ import {
 } from '../../components/forms.ts'
 import { Alert, Checkbox, Field, LoadError, SaveStatus, SelectField } from '../../components/ui.tsx'
 import { useActiveOrg } from '../../org/OrgContext.tsx'
-import { Why } from '../../learning/Aids.tsx'
-import { useImageCrop } from '../../components/ImageCrop.tsx'
-import { RightsHint } from '../../components/RightsHint.tsx'
 import { TextEditor } from '../../components/texteditor/TextEditor.tsx'
+import { ImageChoice, ImagePicker } from './images.tsx'
+import { imageLabel } from './imageTools.ts'
+import type { Unit } from './images.tsx'
 
 function status(t: WebsiteTextSummary): string {
   if (!t.is_published) return 'Entwurf, nicht veröffentlicht'
@@ -40,12 +39,18 @@ export function ContentPage() {
   // ?einheit=<id> (Link aus der Untereinheit): deren Text öffnen oder anlegen
   const [params] = useSearchParams()
   const wantedUnit = Number(params.get('einheit')) || null
-  const [handledUnit, setHandledUnit] = useState(false)
-  if (data && wantedUnit && !handledUnit) {
-    setHandledUnit(true)
-    const text = data.texts.find((t) => t.kind === 'unit' && t.department === wantedUnit)
-    if (text) setOpen(text.id)
-    else if (data.units.some((u) => u.id === wantedUnit)) setAdding('unit')
+  // ?text=<id> (Link aus „Bild bearbeiten › Verwendet in“): diesen Text öffnen
+  const wantedText = Number(params.get('text')) || null
+  const [handled, setHandled] = useState('')
+  const wanted = `${wantedUnit ?? ''}/${wantedText ?? ''}`
+  if (data && (wantedUnit || wantedText) && handled !== wanted) {
+    setHandled(wanted)
+    if (wantedText && data.texts.some((t) => t.id === wantedText)) setOpen(wantedText)
+    else if (wantedUnit) {
+      const text = data.texts.find((t) => t.kind === 'unit' && t.department === wantedUnit)
+      if (text) setOpen(text.id)
+      else if (data.units.some((u) => u.id === wantedUnit)) setAdding('unit')
+    }
   }
 
   if (error) return <LoadError message={error} onRetry={() => void reload()} />
@@ -64,7 +69,8 @@ export function ContentPage() {
         <p className="muted small">
           Texte gestaltest du mit den Knöpfen über dem Text: Überschriften, fett, kursiv, Listen,
           Links und Bilder. Wer lieber Markdown schreibt, schaltet mit „Markdown“ um. Besucher sehen
-          erst, was du veröffentlichst.
+          erst, was du veröffentlichst. Bilder lädst und bearbeitest du unter{' '}
+          <Link to="/webseite/bilder">Webseite › Bilder</Link>.
         </p>
         {groups.map((g) => {
           const items = data.texts.filter((t) => t.kind === g.kind)
@@ -95,6 +101,7 @@ export function ContentPage() {
                     {open === t.id && (
                       <TextPanel
                         id={t.id}
+                        units={data.units}
                         linkTargets={data.link_targets ?? []}
                         onChanged={() => void reload()}
                         onDeleted={() => {
@@ -139,7 +146,6 @@ export function ContentPage() {
           </div>
         )}
       </div>
-      <ImagesCard />
     </>
   )
 }
@@ -268,11 +274,13 @@ function NewText({
 
 function TextPanel({
   id,
+  units,
   linkTargets,
   onChanged,
   onDeleted,
 }: {
   id: number
+  units: Unit[]
   linkTargets: LinkTarget[]
   onChanged: () => void
   onDeleted: () => void
@@ -285,6 +293,7 @@ function TextPanel({
     <TextForm
       key={`${data.id}-${data.updated_at}-${data.revisions.length}`}
       text={data}
+      units={units}
       linkTargets={linkTargets}
       onSaved={(t) => {
         setData(t)
@@ -297,11 +306,13 @@ function TextPanel({
 
 function TextForm({
   text,
+  units,
   linkTargets,
   onSaved,
   onDeleted,
 }: {
   text: WebsiteText
+  units: Unit[]
   linkTargets: LinkTarget[]
   onSaved: (t: WebsiteText) => void
   onDeleted: () => void
@@ -322,6 +333,15 @@ function TextForm({
   })
   const images = useLoad(() => contentApi.images(org.id), [org.id])
   const [message, setMessage] = useState<string | null>(null)
+  // Text einer Untereinheit: in der Bildauswahl stehen deren Bilder vorn
+  const unit: Unit | null =
+    text.kind === 'unit' && text.department
+      ? (units.find((u) => u.id === text.department) ?? {
+          id: text.department,
+          name: text.department_name ?? 'Untereinheit',
+        })
+      : null
+  const reloadImages = () => void images.reload()
 
   async function act(action: () => Promise<WebsiteText>) {
     setMessage(null)
@@ -384,37 +404,36 @@ function TextForm({
         error={errors.body}
         rows={12}
         images={images.data ?? []}
-        onUploadImage={async (file, alt) => {
-          const image = await contentApi.upload(org.id, file, '', alt)
-          await images.reload()
-          return image
-        }}
+        renderImagePicker={(insert, cancel) => (
+          <ImagePicker
+            images={images.data ?? []}
+            unit={unit}
+            title="Bild einfügen"
+            onUploaded={reloadImages}
+            onPick={(picked) => (picked[0] ? insert(picked[0]) : cancel())}
+            onCancel={cancel}
+          />
+        )}
         linkTargets={linkTargets}
         onChange={(body) => set('body', body)}
       />
-      <SelectField
+      <ImageChoice
         label={text.kind === 'unit' ? 'Bild der Untereinheit' : 'Bild oben auf der Seite'}
-        value={v.image ?? ''}
-        onChange={(e) => set('image', e.target.value ? Number(e.target.value) : null)}
-      >
-        <option value="">kein Bild</option>
-        {(images.data ?? []).map((i) => (
-          <option key={i.id} value={i.id}>
-            {i.caption || i.alt_text || `Bild ${i.key}`}
-          </option>
-        ))}
-      </SelectField>
+        value={v.image}
+        images={images.data ?? []}
+        unit={unit}
+        units={units}
+        onChange={(id) => set('image', id)}
+        onImagesChanged={reloadImages}
+      />
       {text.kind !== 'page' && (
         <GalleryPicker
           images={images.data ?? []}
           value={v.gallery}
           error={errors.gallery}
+          unit={unit}
           onChange={(ids) => set('gallery', ids)}
-          onUpload={async (file, alt) => {
-            const image = await contentApi.upload(org.id, file, '', alt)
-            await images.reload()
-            return image.id
-          }}
+          onImagesChanged={reloadImages}
         />
       )}
       {message && <Alert kind="error">{message}</Alert>}
@@ -465,263 +484,27 @@ function TextForm({
   )
 }
 
-function ImagesCard() {
-  const org = useActiveOrg()
-  const { data, error, reload } = useLoad(() => contentApi.images(org.id), [org.id])
-  const [file, setFile] = useState<File | null>(null)
-  const crop = useImageCrop()
-  const [caption, setCaption] = useState('')
-  const [alt, setAlt] = useState('')
-  const [decorative, setDecorative] = useState(false)
-  const [message, setMessage] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
-
-  async function run(action: () => Promise<unknown>) {
-    setMessage(null)
-    setBusy(true)
-    try {
-      await action()
-      void reload()
-      return true
-    } catch (err) {
-      setMessage(errorMessage(err))
-      return false
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function remove(image: WebsiteImage) {
-    const ok = await confirmDialog({ title: 'Bild löschen?', confirmLabel: 'Löschen' })
-    if (!ok) return
-    try {
-      setBusy(true)
-      await contentApi.removeImage(org.id, image.id)
-      void reload()
-    } catch (err) {
-      // Wird das Bild noch verwendet, die Stellen nennen und nachfragen
-      if (!(err instanceof ApiError) || err.status !== 409) {
-        setMessage(errorMessage(err))
-        return
-      }
-      const again = await confirmDialog({
-        title: 'Bild trotzdem löschen?',
-        message: err.message,
-        confirmLabel: 'Trotzdem löschen',
-      })
-      if (again) await run(() => contentApi.removeImage(org.id, image.id, true))
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return (
-    <div className="card card-wide">
-      <h2>Bilder</h2>
-      <div className="aid-row">
-        <Why k="web_photos" />
-        <Why k="web_alt_text" />
-      </div>
-      <p className="muted small">
-        Bilder werden beim Hochladen verkleinert, und Angaben wie Kamera oder Aufnahmeort werden
-        entfernt. Für Fotos mit Personen braucht es deren Einverständnis.
-      </p>
-      {error && <LoadError message={error} onRetry={() => void reload()} />}
-      <ul className="plain-list">
-        {(data ?? []).map((i) => (
-          <li key={i.id}>
-            <img src={i.small_url} alt={i.alt_text} width={120} />{' '}
-            <strong>{i.caption || i.alt_text || 'ohne Beschriftung'}</strong>
-            <br />
-            <AltTextEditor
-              image={i}
-              busy={busy}
-              onSave={(data) => run(() => contentApi.saveImage(org.id, i.id, data))}
-            />
-            <code>{i.markdown}</code>
-            <div className="button-row">
-              <button
-                type="button"
-                className="button button-ghost"
-                onClick={() => void navigator.clipboard?.writeText(i.markdown)}
-              >
-                Schnipsel kopieren
-              </button>
-              <button
-                type="button"
-                className="button button-ghost"
-                aria-label={`Bild ${i.caption || i.key} löschen`}
-                onClick={() => void remove(i)}
-              >
-                Löschen
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
-      {message && <Alert kind="error">{message}</Alert>}
-      <form
-        className="subcard"
-        onSubmit={(e) => {
-          e.preventDefault()
-          if (!file) return
-          void run(() => contentApi.upload(org.id, file, caption, alt, decorative)).then((ok) => {
-            if (ok) {
-              setFile(null)
-              setCaption('')
-              setAlt('')
-              setDecorative(false)
-            }
-          })
-        }}
-      >
-        <h3>Bild hochladen</h3>
-        <label className="field">
-          <span>Datei (JPEG, PNG oder WebP)</span>
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            onChange={(e) => crop.choose(e, setFile)}
-          />
-          {crop.dialog}
-          <RightsHint />
-        </label>
-        <div className="grid-2">
-          <Field
-            label="Bildunterschrift"
-            value={caption}
-            onChange={(e) => setCaption(e.target.value)}
-          />
-          <Field
-            label="Alternativtext (was zu sehen ist)"
-            value={alt}
-            disabled={decorative}
-            hint={
-              !alt.trim() && !decorative
-                ? 'Ohne Beschreibung erfahren blinde Besucher nicht, was auf dem Bild zu sehen ist.'
-                : undefined
-            }
-            onChange={(e) => setAlt(e.target.value)}
-          />
-        </div>
-        <Checkbox
-          label="Nur Schmuck, das Bild zeigt nichts Wichtiges"
-          hint="dann ohne Beschreibung"
-          checked={decorative}
-          onChange={setDecorative}
-        />
-        <button type="submit" className="button" disabled={!file || busy}>
-          Hochladen
-        </button>
-      </form>
-    </div>
-  )
-}
-
 const MAX_GALLERY = 10
 
-/**
- * Hinweis bei Bildern ohne Alternativtext, mit Feld zum Ergänzen oder „nur Schmuck“
- * (Barrierefreiheit W-06). Ohne Text nutzt die Webseite die Bildunterschrift.
- */
-function AltTextEditor({
-  image,
-  busy,
-  onSave,
-}: {
-  image: WebsiteImage
-  busy: boolean
-  onSave: (data: { alt_text?: string; decorative?: boolean }) => Promise<unknown>
-}) {
-  const [open, setOpen] = useState(false)
-  const [text, setText] = useState('')
-  if (image.alt_text || image.decorative) return null
-  if (!open) {
-    return (
-      <p className="small field-error">
-        Ohne Beschreibung für blinde Besucher
-        {image.caption ? ' (die Webseite nimmt dafür die Bildunterschrift)' : ''}.{' '}
-        <button type="button" className="link-button" onClick={() => setOpen(true)}>
-          Beschreibung ergänzen
-        </button>
-      </p>
-    )
-  }
-  return (
-    <div className="subcard">
-      <Field
-        label="Was ist zu sehen? (Alternativtext)"
-        value={text}
-        maxLength={300}
-        onChange={(e) => setText(e.target.value)}
-      />
-      <div className="button-row">
-        <button
-          type="button"
-          className="button"
-          disabled={busy || !text.trim()}
-          onClick={() => void onSave({ alt_text: text.trim() })}
-        >
-          Speichern
-        </button>
-        <button
-          type="button"
-          className="button button-ghost"
-          disabled={busy}
-          onClick={() => void onSave({ decorative: true })}
-        >
-          Nur Schmuck
-        </button>
-        <button type="button" className="button button-ghost" onClick={() => setOpen(false)}>
-          Abbrechen
-        </button>
-      </div>
-    </div>
-  )
-}
-
-function imageLabel(i: WebsiteImage): string {
-  return i.caption || i.alt_text || `Bild ${i.key}`
-}
-
-/** Bilderkarussell der Begrüßung: Bilder wählen und ordnen */
+/** Bilderkarussell: Bilder im Auswahl-Dialog ankreuzen, Reihenfolge hier ändern */
 function GalleryPicker({
   images,
   value,
   error,
+  unit,
   onChange,
-  onUpload,
+  onImagesChanged,
 }: {
   images: WebsiteImage[]
   value: number[]
   error?: string
+  unit: Unit | null
   onChange: (ids: number[]) => void
-  /** Foto hochladen; liefert die ID des neuen Bildes */
-  onUpload: (file: File, alt: string) => Promise<number>
+  onImagesChanged: () => void
 }) {
-  const [file, setFile] = useState<File | null>(null)
-  const crop = useImageCrop()
-  const [alt, setAlt] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [uploadError, setUploadError] = useState<string | null>(null)
-  async function upload() {
-    if (!file) return
-    setBusy(true)
-    setUploadError(null)
-    try {
-      const id = await onUpload(file, alt)
-      onChange([...chosen, id])
-      setFile(null)
-      setAlt('')
-    } catch (err) {
-      setUploadError(errorMessage(err))
-    } finally {
-      setBusy(false)
-    }
-  }
+  const [picking, setPicking] = useState(false)
   const byId = new Map(images.map((i) => [i.id, i]))
   const chosen = value.filter((id) => byId.has(id))
-  const free = images.filter((i) => !value.includes(i.id))
   const move = (index: number, delta: number) => {
     const next = [...chosen]
     const [item] = next.splice(index, 1)
@@ -733,8 +516,8 @@ function GalleryPicker({
       <legend>Bilderkarussell (optional)</legend>
       <p className="muted small">
         Mit zwei oder mehr Bildern zeigt die Startseite statt des einzelnen Bildes ein Karussell zum
-        Durchblättern. Es wechselt alle 7 Sekunden von selbst und lässt sich anhalten. Bilder lädst
-        du unten unter „Bilder“ hoch.
+        Durchblättern. Es wechselt alle 7 Sekunden von selbst und lässt sich anhalten. Bis zu{' '}
+        {MAX_GALLERY} Bilder.
       </p>
       {chosen.length > 0 && (
         <ol className="gallery-list">
@@ -774,52 +557,27 @@ function GalleryPicker({
           ))}
         </ol>
       )}
-      {free.length > 0 && chosen.length < MAX_GALLERY && (
-        <SelectField
-          label="Bild hinzufügen"
-          value=""
-          onChange={(e) => e.target.value && onChange([...chosen, Number(e.target.value)])}
-        >
-          <option value="">Bild wählen …</option>
-          {free.map((i) => (
-            <option key={i.id} value={i.id}>
-              {imageLabel(i)}
-            </option>
-          ))}
-        </SelectField>
+      <div className="button-row">
+        <button type="button" className="button button-ghost" onClick={() => setPicking(true)}>
+          {chosen.length ? 'Bilder ändern' : 'Bilder wählen'}
+        </button>
+      </div>
+      {picking && (
+        <ImagePicker
+          images={images}
+          unit={unit}
+          title="Bilder fürs Karussell"
+          multiple
+          max={MAX_GALLERY}
+          initial={chosen}
+          onUploaded={onImagesChanged}
+          onPick={(picked) => {
+            setPicking(false)
+            onChange(picked.map((i) => i.id))
+          }}
+          onCancel={() => setPicking(false)}
+        />
       )}
-      {chosen.length < MAX_GALLERY && (
-        <div className="grid-2">
-          <label className="field">
-            <span>Neues Foto hochladen</span>
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={(e) => crop.choose(e, setFile)}
-            />
-            {crop.dialog}
-            <RightsHint />
-          </label>
-          <Field
-            label="Was ist zu sehen? (Alternativtext)"
-            value={alt}
-            hint={
-              file && !alt.trim()
-                ? 'Ohne Beschreibung erfahren blinde Besucher nicht, was auf dem Bild zu sehen ist.'
-                : undefined
-            }
-            onChange={(e) => setAlt(e.target.value)}
-          />
-        </div>
-      )}
-      {file && (
-        <div className="button-row">
-          <button type="button" className="button" disabled={busy} onClick={() => void upload()}>
-            Hochladen und hinzufügen
-          </button>
-        </div>
-      )}
-      {uploadError && <Alert kind="error">{uploadError}</Alert>}
       {error && <Alert kind="error">{error}</Alert>}
     </fieldset>
   )

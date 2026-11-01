@@ -13,6 +13,24 @@ import { Modal } from './Modal.tsx'
 import { croppedName, cropImage, prepareImage } from './photoCrop.ts'
 import { Alert } from './ui.tsx'
 
+/** Gewählter Ausschnitt in Prozent des (gedrehten) Originals, zum späteren Neuwählen */
+export interface CropArea {
+  x: number
+  y: number
+  width: number
+  height: number
+  /** Drehung in Grad (0, 90, 180, 270) */
+  rotation: number
+  /** Schlüssel des Formats, z. B. '1' oder '16:9' */
+  aspect?: string
+}
+
+/** Ergebnis mit Ausschnitt: ``crop`` ist null bei „Unverändert übernehmen“. */
+export interface CropResult {
+  file: File
+  crop: CropArea | null
+}
+
 export interface CropSettings {
   /** Titel des Dialogs */
   title?: string
@@ -20,6 +38,8 @@ export interface CropSettings {
   maxSide?: number
   /** Voreingestelltes Seitenverhältnis (Breite/Höhe); ohne Angabe wie das Original */
   aspect?: number
+  /** Zuletzt gewählter Ausschnitt (Bild neu zuschneiden) */
+  initial?: CropArea | null
 }
 
 const ASPECTS: { key: string; label: string; value: number | null }[] = [
@@ -32,6 +52,10 @@ const ASPECTS: { key: string; label: string; value: number | null }[] = [
 ]
 
 const TRANSPARENT_TYPES = ['image/png', 'image/webp']
+
+function round(value: number): number {
+  return Math.min(100, Math.max(0, Math.round(value * 10000) / 10000))
+}
 
 function aspectKey(value: number | undefined): string {
   if (value === undefined) return 'original'
@@ -48,17 +72,23 @@ export function ImageCropDialog({
 }: {
   file: File
   settings?: CropSettings
-  onDone: (file: File) => void
+  onDone: (file: File, crop: CropArea | null) => void
   onCancel: () => void
 }) {
+  const initial = settings.initial && settings.initial.width > 0 ? settings.initial : null
   const transparent = TRANSPARENT_TYPES.includes(file.type)
   const [src, setSrc] = useState<string | null>(null)
   const [natural, setNatural] = useState<number | null>(null)
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
-  const [rotation, setRotation] = useState(0)
-  const [aspectChoice, setAspectChoice] = useState(aspectKey(settings.aspect))
+  const [rotation, setRotation] = useState(initial?.rotation ?? 0)
+  const [aspectChoice, setAspectChoice] = useState(
+    initial?.aspect && ASPECTS.some((a) => a.key === initial.aspect)
+      ? initial.aspect
+      : aspectKey(settings.aspect),
+  )
   const [area, setArea] = useState<Area | null>(null)
+  const [percent, setPercent] = useState<Area | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -83,7 +113,10 @@ export function ImageCropDialog({
     }
   }, [file, transparent])
 
-  const onCropComplete = useCallback((_: Area, pixels: Area) => setArea(pixels), [])
+  const onCropComplete = useCallback((shown: Area, pixels: Area) => {
+    setPercent(shown)
+    setArea(pixels)
+  }, [])
 
   // Nach dem Drehen um 90° tauschen Breite und Höhe des Originals
   const turned = rotation % 180 !== 0
@@ -100,7 +133,17 @@ export function ImageCropDialog({
         maxSide: settings.maxSide ?? 2000,
         keepTransparency: transparent,
       })
-      onDone(new File([blob], croppedName(file.name, blob.type), { type: blob.type }))
+      const chosen: CropArea | null = percent
+        ? {
+            x: round(percent.x),
+            y: round(percent.y),
+            width: round(percent.width),
+            height: round(percent.height),
+            rotation,
+            aspect: aspectChoice,
+          }
+        : null
+      onDone(new File([blob], croppedName(file.name, blob.type), { type: blob.type }), chosen)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Das hat nicht geklappt.')
       setBusy(false)
@@ -122,6 +165,11 @@ export function ImageCropDialog({
               onCropChange={setCrop}
               onZoomChange={setZoom}
               onCropComplete={onCropComplete}
+              initialCroppedAreaPercentages={
+                initial
+                  ? { x: initial.x, y: initial.y, width: initial.width, height: initial.height }
+                  : undefined
+              }
               onMediaLoaded={(m) => setNatural(m.naturalWidth / m.naturalHeight)}
             />
           ) : (
@@ -205,7 +253,7 @@ export function ImageCropDialog({
             type="button"
             className="button button-ghost"
             disabled={busy}
-            onClick={() => onDone(file)}
+            onClick={() => onDone(file, null)}
           >
             Unverändert übernehmen
           </button>
@@ -225,12 +273,18 @@ export function ImageCropDialog({
  */
 export function useImageCrop(settings: CropSettings = {}): {
   pick: (file: File) => Promise<File | null>
+  /** Wie ``pick``, liefert zusätzlich den Ausschnitt; ``initial`` wählt ihn vor. */
+  pickArea: (file: File, initial?: CropArea | null) => Promise<CropResult | null>
   /** Für ``<input type="file" onChange>``: übergibt das Ergebnis (oder null) an ``done``. */
   choose: (e: ChangeEvent<HTMLInputElement>, done: (file: File | null) => void) => void
   dialog: ReactNode
 } {
-  const [pending, setPending] = useState<{ file: File; gen: number } | null>(null)
-  const resolver = useRef<((file: File | null) => void) | null>(null)
+  const [pending, setPending] = useState<{
+    file: File
+    gen: number
+    initial?: CropArea | null
+  } | null>(null)
+  const resolver = useRef<((result: CropResult | null) => void) | null>(null)
   // Jede Auswahl hat ihre Nummer: Ein später fertiger Zuschnitt einer abgebrochenen
   // Auswahl erfüllt nie eine neuere (Gesamtaudit 01.11., GA-F11)
   const generation = useRef(0)
@@ -244,14 +298,19 @@ export function useImageCrop(settings: CropSettings = {}): {
     [],
   )
 
-  const pick = useCallback((file: File) => {
+  const pickArea = useCallback((file: File, initial?: CropArea | null) => {
     resolver.current?.(null)
     generation.current += 1
-    setPending({ file, gen: generation.current })
-    return new Promise<File | null>((resolve) => {
+    setPending({ file, gen: generation.current, initial })
+    return new Promise<CropResult | null>((resolve) => {
       resolver.current = resolve
     })
   }, [])
+
+  const pick = useCallback(
+    (file: File) => pickArea(file).then((result) => result?.file ?? null),
+    [pickArea],
+  )
 
   function choose(e: ChangeEvent<HTMLInputElement>, done: (file: File | null) => void) {
     const input = e.target
@@ -267,10 +326,10 @@ export function useImageCrop(settings: CropSettings = {}): {
     })
   }
 
-  function finish(gen: number, file: File | null) {
+  function finish(gen: number, result: CropResult | null) {
     if (gen !== generation.current) return // veraltete Auswahl
     generation.current += 1
-    resolver.current?.(file)
+    resolver.current?.(result)
     resolver.current = null
     setPending(null)
   }
@@ -279,10 +338,10 @@ export function useImageCrop(settings: CropSettings = {}): {
     <ImageCropDialog
       key={pending.gen}
       file={pending.file}
-      settings={settings}
-      onDone={(file) => finish(pending.gen, file)}
+      settings={pending.initial ? { ...settings, initial: pending.initial } : settings}
+      onDone={(file, crop) => finish(pending.gen, { file, crop })}
       onCancel={() => finish(pending.gen, null)}
     />
   ) : null
-  return { pick, choose, dialog }
+  return { pick, pickArea, choose, dialog }
 }

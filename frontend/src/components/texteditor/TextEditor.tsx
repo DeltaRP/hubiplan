@@ -167,12 +167,16 @@ function makeNodeViews(
       const key = src.startsWith(IMAGE_PREFIX) ? src.slice(IMAGE_PREFIX.length) : ''
       const image = images()?.find((i) => i.key === key)
       if (image) img.src = image.small_url
-      const alt = String(node.attrs.alt || '')
+      // Die Webseite zeigt den aktuellen Alternativtext des Bildes, nicht den beim
+      // Einfügen in den Text geschriebenen
+      const current = image ? image.alt_text || (image.decorative ? '' : image.caption) : ''
+      const alt = current || String(node.attrs.alt || '')
+      const ok = !!alt || !!image?.decorative
       img.alt = alt || (image ? imageLabel(image) : 'Bild')
-      img.className = alt ? 'texteditor-image' : 'texteditor-image texteditor-image-noalt'
-      img.title = alt
+      img.className = ok ? 'texteditor-image' : 'texteditor-image texteditor-image-noalt'
+      img.title = ok
         ? alt
-        : 'Ohne Beschreibung für blinde Besucher; im Bereich „Bilder“ ergänzen und neu einfügen.'
+        : 'Ohne Beschreibung für blinde Besucher; unter Webseite › Bilder ergänzen.'
       return { dom: img }
     },
   }
@@ -188,6 +192,8 @@ export interface TextEditorProps {
   images?: WebsiteImage[]
   /** Bild hochladen; liefert das neue Bild */
   onUploadImage?: (file: File, alt: string) => Promise<WebsiteImage>
+  /** Eigener Auswahl-Dialog statt der einfachen Bilderliste (Webseite › Texte) */
+  renderImagePicker?: (insert: (image: WebsiteImage) => void, cancel: () => void) => ReactNode
   /** Seiten der eigenen Webseite für den Link-Dialog */
   linkTargets?: LinkTarget[]
   /** Mindesthöhe in Zeilen */
@@ -215,6 +221,7 @@ export function TextEditor({
   hint,
   images,
   onUploadImage,
+  renderImagePicker,
   linkTargets,
   rows = 8,
 }: TextEditorProps) {
@@ -382,6 +389,11 @@ export function TextEditor({
     }
     v.dispatch(tr)
     v.focus()
+  }
+
+  function closeDialog() {
+    setDialog(null)
+    view.current?.focus()
   }
 
   function insertImage(image: WebsiteImage) {
@@ -604,7 +616,10 @@ export function TextEditor({
           onApply={applyLink}
         />
       )}
-      {dialog === 'image' && (
+      {dialog === 'image' && renderImagePicker && (
+        <PickerSlot render={renderImagePicker} onPick={insertImage} onCancel={closeDialog} />
+      )}
+      {dialog === 'image' && !renderImagePicker && (
         <ImageDialog
           images={images ?? []}
           onUpload={onUploadImage}
@@ -617,6 +632,19 @@ export function TextEditor({
       )}
     </div>
   )
+}
+
+/** Eigener Auswahl-Dialog (renderImagePicker) als Bestandteil */
+function PickerSlot({
+  render,
+  onPick,
+  onCancel,
+}: {
+  render: NonNullable<TextEditorProps['renderImagePicker']>
+  onPick: (image: WebsiteImage) => void
+  onCancel: () => void
+}) {
+  return <>{render(onPick, onCancel)}</>
 }
 
 function LinkDialog({

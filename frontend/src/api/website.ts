@@ -1,5 +1,6 @@
 // Webseite der Einheit: Einrichtung, Zustand, Domains, Vorschau, Einwilligungen.
 import { api } from './client.ts'
+import type { CropArea } from '../components/ImageCrop.tsx'
 import type { PaletteColor } from './orgs.ts'
 
 export type WebsiteState = 'off' | 'maintenance' | 'public'
@@ -199,6 +200,47 @@ export interface WebsiteImage {
   small_url: string
   markdown: string
   uploaded_at: string
+  /** ganzes Original (zum neuen Zuschneiden) */
+  original_url?: string
+  /** gehört zu einer Untereinheit (leer: Verein allgemein) */
+  department?: number | null
+  department_name?: string | null
+  /** zuletzt gewählter Ausschnitt (leer: ganzes Bild) */
+  crop?: Partial<CropArea>
+  version?: number
+  updated_at?: string
+  /** steht in einem Text (Entwurf oder veröffentlicht) */
+  used?: boolean
+}
+
+/** Bild mit den Stellen, an denen es verwendet wird */
+export interface WebsiteImageDetail extends WebsiteImage {
+  usage: { text: number; label: string; places: string[] }[]
+}
+
+/** Neues Bild: ``file`` ist der Ausschnitt, ``original`` die ganze Datei */
+export interface ImageUpload {
+  file: File
+  original?: File | null
+  crop?: CropArea | null
+  caption?: string
+  alt_text?: string
+  decorative?: boolean
+  department?: number | null
+}
+
+function imageForm(data: ImageUpload): FormData {
+  const form = new FormData()
+  form.append('file', data.file)
+  if (data.original && data.crop) {
+    form.append('original', data.original)
+    form.append('crop', JSON.stringify(data.crop))
+  }
+  if (data.caption) form.append('caption', data.caption)
+  if (data.alt_text) form.append('alt_text', data.alt_text)
+  if (data.decorative) form.append('decorative', 'true')
+  if (data.department) form.append('department', String(data.department))
+  return form
 }
 
 export interface WebsiteTextSummary {
@@ -261,19 +303,36 @@ export const contentApi = {
   restore: (org: number, id: number, rev: number) =>
     api.post<WebsiteText>(`${base(org)}texts/${id}/revisions/${rev}/restore/`),
   images: (org: number) => api.get<WebsiteImage[]>(`${base(org)}images/`),
-  upload: (org: number, file: File, caption: string, altText: string, decorative = false) => {
-    const form = new FormData()
-    form.append('file', file)
-    form.append('caption', caption)
-    form.append('alt_text', altText)
-    if (decorative) form.append('decorative', 'true')
-    return api.post<WebsiteImage>(`${base(org)}images/`, form)
-  },
+  upload: (org: number, data: ImageUpload) =>
+    api.post<WebsiteImage>(`${base(org)}images/`, imageForm(data)),
+  image: (org: number, id: number) => api.get<WebsiteImageDetail>(`${base(org)}images/${id}/`),
   saveImage: (
     org: number,
     id: number,
-    data: { caption?: string; alt_text?: string; decorative?: boolean },
+    data: {
+      caption?: string
+      alt_text?: string
+      decorative?: boolean
+      department?: number | null
+    },
   ) => api.put<WebsiteImage>(`${base(org)}images/${id}/`, data),
+  /** Neuer Ausschnitt aus dem Original */
+  cropImage: (org: number, id: number, file: File, crop: CropArea) => {
+    const form = new FormData()
+    form.append('file', file)
+    form.append('crop', JSON.stringify(crop))
+    return api.post<WebsiteImage>(`${base(org)}images/${id}/crop/`, form)
+  },
+  /** Neue Datei für dasselbe Bild; Stellen und Angaben bleiben */
+  replaceImage: (org: number, id: number, data: ImageUpload) =>
+    api.post<WebsiteImage>(`${base(org)}images/${id}/replace/`, imageForm(data)),
+  /** Zweites Bild aus demselben Original */
+  copyImage: (org: number, id: number, file: File, crop: CropArea) => {
+    const form = new FormData()
+    form.append('file', file)
+    form.append('crop', JSON.stringify(crop))
+    return api.post<WebsiteImage>(`${base(org)}images/${id}/copy/`, form)
+  },
   /** Ohne `confirmed` lehnt der Server ein verwendetes Bild mit 409 und den Stellen ab. */
   removeImage: (org: number, id: number, confirmed = false) =>
     api.del(`${base(org)}images/${id}/${confirmed ? '?trotzdem=1' : ''}`),

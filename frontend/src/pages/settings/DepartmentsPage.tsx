@@ -678,7 +678,7 @@ function DepartmentCard({
             <p className="muted small" data-testid="unit-gallery-hint">
               Fotos fürs Bilderkarussell gehören nicht hierher:{' '}
               <Link to={`/webseite/inhalte?einheit=${dep.id}`}>
-                Webseite › Texte und Bilder › Text für {dep.name}
+                Webseite › Texte › Text für {dep.name}
               </Link>
             </p>
           )}

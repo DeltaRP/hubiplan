@@ -51,6 +51,21 @@ org_patterns = [
     path("website/images/", content_views.ImageListView.as_view(), name="website-images"),
     path("website/images/<int:pk>/", content_views.ImageDetailView.as_view(), name="website-image"),
     path(
+        "website/images/<int:pk>/crop/",
+        content_views.ImageCropView.as_view(),
+        name="website-image-crop",
+    ),
+    path(
+        "website/images/<int:pk>/replace/",
+        content_views.ImageReplaceView.as_view(),
+        name="website-image-replace",
+    ),
+    path(
+        "website/images/<int:pk>/copy/",
+        content_views.ImageCopyView.as_view(),
+        name="website-image-copy",
+    ),
+    path(
         "website/images/<int:pk>/file/",
         content_views.ImageFileView.as_view(),
         name="website-image-file",
