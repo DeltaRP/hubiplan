@@ -70,8 +70,8 @@ def photo_problem(t: Target) -> str:
     """Warum die Fotoerkennung (Schritt 4) diese Scheibe noch nicht kann; sonst leer."""
     if not t.black_diameter:
         return "Für Scheiben ohne schwarzen Spiegel gibt es noch keine Fotoerkennung."
-    if t.spots > 1:
-        return "Für Scheiben mit mehreren Spiegeln gibt es noch keine Fotoerkennung."
+    if t.spots > 5:
+        return "Für Karten mit mehr als fünf Spiegeln gibt es noch keine Fotoerkennung."
     return ""
 
 

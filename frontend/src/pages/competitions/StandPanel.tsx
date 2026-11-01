@@ -440,7 +440,7 @@ export function StandPanel({
                       <PhotoButton
                         disabled={!online}
                         blackShare={
-                          target.black_diameter && target.rings[0]
+                          target.black_diameter && target.rings[0] && target.spots === 1
                             ? target.black_diameter / target.rings[0].diameter
                             : null
                         }

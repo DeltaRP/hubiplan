@@ -34,7 +34,12 @@ export interface PhotoSuggestion {
 
 export function toSuggestion(r: PhotoResult): PhotoSuggestion {
   return {
-    hits: r.hits.map((h) => ({ x: Number(h.x), y: Number(h.y), source: 'foto' as const })),
+    hits: r.hits.map((h) => ({
+      x: Number(h.x),
+      y: Number(h.y),
+      spot: h.spot ?? null,
+      source: 'foto' as const,
+    })),
     needsReview: r.needs_review,
     note: r.note,
   }

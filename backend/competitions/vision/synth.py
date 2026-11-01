@@ -61,6 +61,9 @@ class Sample:
     hits_px: list[tuple[float, float]] = field(default_factory=list)
     homography: list[float] = field(default_factory=list)
     kind: str = ""  # wie die Treffer liegen (streuung, eng, loch_in_loch …)
+    # Karten mit mehreren Spiegeln: Spiegel je Treffer (ab 1, Lesereihenfolge auf der Karte);
+    # ``hits`` sind dann je Spiegel um dessen Mitte gemessen
+    spots: list[int] = field(default_factory=list)
 
     def truth(self) -> dict:
         data = asdict(self)
@@ -71,8 +74,30 @@ class Sample:
 # --- Scheibe zeichnen ---
 
 
+def spot_offsets(t: targets.Target) -> list[tuple[float, float]]:
+    """Mitten der Spiegel auf der Karte (mm, y nach oben), in Lesereihenfolge.
+
+    Fünf Spiegel in den vier Ecken und der Mitte (üblich laut Ralf, 01.11.2026; genaue Maße
+    der echten Karte nicht geprüft), sonst Reihen zu drei. Die Erkennung setzt keine
+    Anordnung voraus."""
+    if t.spots <= 1:
+        return [(0.0, 0.0)]
+    gap = t.outer_diameter + 4.0  # Abstand zweier Spiegelmitten mindestens
+    if t.spots == 5:
+        p = gap / math.sqrt(2)
+        return [(-p, p), (p, p), (0.0, 0.0), (-p, -p), (p, -p)]
+    cols = 3
+    rows = math.ceil(t.spots / cols)
+    out = []
+    for i in range(t.spots):
+        r, k = divmod(i, cols)
+        out.append(((k - (cols - 1) / 2) * gap, ((rows - 1) / 2 - r) * gap))
+    return out
+
+
 def card_size_mm(t: targets.Target) -> float:
-    return t.outer_diameter + max(12.0, t.outer_diameter * 0.15)
+    extent = max(max(abs(x), abs(y)) for x, y in spot_offsets(t))
+    return 2 * extent + t.outer_diameter + max(12.0, t.outer_diameter * 0.15)
 
 
 def _ragged(cx, cy, r, rng: random.Random, amount: float, steps: int = 48):
@@ -107,6 +132,19 @@ def render_card(
         r = r_mm * px_per_mm
         d.ellipse((c - r, c - r, c + r, c + r), **kw)
 
+    for ox, oy in spot_offsets(t):
+        _draw_spot(d, t, c + ox * px_per_mm, c - oy * px_per_mm, px_per_mm)
+    _draw_holes(d, hits, c, px_per_mm, t, rng, backdrop)
+    return img
+
+
+def _draw_spot(d: ImageDraw.ImageDraw, t: targets.Target, cx: float, cy: float, px_per_mm):
+    """Ein Scheibenbild (Spiegel, Ringe, Zahlen) mit Mitte ``cx``/``cy`` (Bildpunkte)."""
+
+    def circle(r_mm, **kw):
+        r = r_mm * px_per_mm
+        d.ellipse((cx - r, cy - r, cx + r, cy + r), **kw)
+
     black_r = (t.black_diameter or 0) / 2
     if black_r:
         circle(black_r, fill=BLACK)
@@ -125,9 +163,12 @@ def render_card(
         pos = (t.ring_diameter(ring) / 2 - t.ring_width / 2) * px_per_mm
         color = PAPER if pos / px_per_mm < black_r else BLACK
         for dx, dy in ((pos, 0), (-pos, 0), (0, pos), (0, -pos)):
-            d.text((c + dx, c + dy), str(ring), fill=color, font=font, anchor="mm")
+            d.text((cx + dx, cy + dy), str(ring), fill=color, font=font, anchor="mm")
 
-    # Löcher: erst Bleirand (Abrieb, nur auf Weiß sichtbar), dann das Loch selbst
+
+def _draw_holes(d, hits, c, px_per_mm, t, rng, backdrop):
+    """Löcher (Kartenmaße in mm um die Kartenmitte): erst Bleirand (Abrieb, nur auf Weiß
+    sichtbar), dann das Loch selbst."""
     hole_r = t.caliber / 2 * px_per_mm
     for x, y in hits:
         hx, hy = c + x * px_per_mm, c - y * px_per_mm
@@ -151,7 +192,6 @@ def render_card(
                 fill=(205, 200, 188),
                 width=max(1, int(px_per_mm * 0.08)),
             )
-    return img
 
 
 # --- Treffer erzeugen ---
@@ -331,9 +371,19 @@ def make_sample(
     rng = random.Random(seed)  # noqa: S311 (wiederholbare Prüfbilder)
     t = targets.BY_KEY[target_key]
     kind = kind or rng.choice(KINDS)
-    hits = random_hits(t, shots, rng, kind)
+    offsets = spot_offsets(t)
+    # je Spiegel ``shots`` Treffer (Karten mit mehreren Spiegeln: je Spiegel eine Serie)
+    hits: list[tuple[float, float]] = []
+    spots: list[int] = []
+    for n in range(len(offsets)):
+        hits += random_hits(t, shots, rng, kind)
+        spots += [n + 1] * shots
+    card_hits = [
+        (x + offsets[sp - 1][0], y + offsets[sp - 1][1])
+        for (x, y), sp in zip(hits, spots, strict=True)
+    ]
     params = random_params(rng, difficulty)
-    card = render_card(t, hits, px_per_mm=px_per_mm, rng=rng, backdrop=params.backdrop)
+    card = render_card(t, card_hits, px_per_mm=px_per_mm, rng=rng, backdrop=params.backdrop)
     photo, h = photograph(card, params, rng)
     c = card.width / 2
 
@@ -348,8 +398,9 @@ def make_sample(
         decimals=[str(v.decimal) for v in values],
         params=params,
         center_px=tuple(round(v, 2) for v in to_photo(0, 0)),
-        hits_px=[tuple(round(v, 2) for v in to_photo(x, y)) for x, y in hits],
+        hits_px=[tuple(round(v, 2) for v in to_photo(x, y)) for x, y in card_hits],
         homography=[round(v, 9) for v in h],
         kind=kind,
+        spots=spots if len(offsets) > 1 else [],
     )
     return jpeg_bytes(photo, params.jpeg), sample

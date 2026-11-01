@@ -159,7 +159,7 @@ export interface HitInput {
 /** Vorschlag der Fotoerkennung (Schießscheiben Schritt 4); gespeichert wird erst beim Bestätigen. */
 export interface PhotoResult {
   scoring: number
-  hits: { x: string; y: string; source: 'foto' }[]
+  hits: { x: string; y: string; spot?: number | null; source: 'foto' }[]
   needs_review: boolean
   note: string
 }
