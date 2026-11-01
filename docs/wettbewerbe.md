@@ -103,8 +103,13 @@ sind vor ernsthafter Nutzung gegen die aktuelle Sportordnung zu lesen.
   - „Bitte prüfen“, wenn die Schusszahl nicht passt, eine Fläche nicht eindeutig ist, drei
     oder mehr Löcher ineinander liegen (der Umriss lässt die Lage dann offen), ein Treffer
     0,1 mm oder näher an einer Ringlinie liegt oder der Spiegel unsicher erkannt wurde.
-  - Bisher nur Scheiben mit schwarzem Spiegel und einem Spiegel je Karte (`photo` in
-    `target_info`); Fünf-Spiegel-Karte folgt.
+  - Nur Scheiben mit schwarzem Spiegel (`photo` in `target_info`). Karten mit bis zu fünf
+    Spiegeln (üblich: vier Ecken und Mitte) werden Spiegel für Spiegel ausgewertet; die
+    Spiegel sind in Lesereihenfolge des Fotos nummeriert (oben links zuerst), jeder Treffer
+    trägt seine Spiegelnummer. Messlatte Fünf-Spiegel-Karte (künstliche Fotos, 10 Karten,
+    leicht): alle 50 Spiegel gefunden, 60–80 % der Spiegel ganz richtig, unbemerkt falsch 0 %,
+    etwa 1,3 s je Foto. Im Verein üblich ist aber die Karte mit einem Spiegel und mehreren
+    Schuss darin.
   - Stand der Messlatte (01.11.2026, künstliche Fotos, je 60, LG DSB und Kyffhäuser, Schwierigkeit
     leicht / mittel / schwer): Schusszahl richtig 93 / 87 / 85 %, alle Ringe richtig 68 / 52 /
     43 %, unbemerkt falsch 0 / 1,7 / 1,7 %, „bitte prüfen“ 87 / 88 / 88 %. Einzelne Löcher

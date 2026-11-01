@@ -264,7 +264,13 @@ def detect_photo(comp, data, files) -> dict:
     return {
         "scoring": scoring.pk,
         "hits": [
-            {"x": f"{x:.3f}", "y": f"{y:.3f}", "source": Hit.Source.PHOTO} for x, y in found.hits
+            {
+                "x": f"{x:.3f}",
+                "y": f"{y:.3f}",
+                "spot": found.spots[i] if found.spots else None,
+                "source": Hit.Source.PHOTO,
+            }
+            for i, (x, y) in enumerate(found.hits)
         ],
         "needs_review": found.needs_review,
         "note": found.note,

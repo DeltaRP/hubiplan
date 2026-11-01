@@ -60,12 +60,16 @@ class TestErkennung:
         assert summary["schusszahl_richtig"] >= 75, summary
         assert summary["unbemerkt_falsch"] <= 10, summary
 
+    def test_fuenf_spiegel_karte(self):
+        image, sample = synth.make_sample("lg10_kyf5", 4002, difficulty=0.3, kind="streuung")
+        found = detect.detect(image, "lg10_kyf5", len(sample.hits))
+        # alle fünf Spiegel, je fünf Treffer (Nummern in Lesereihenfolge des Fotos)
+        assert [found.spots.count(n) for n in range(1, 6)] == [5] * 5
+        assert _rings("lg10_kyf5", found.hits) == sorted(sample.rings)
+
     def test_nicht_auswertbar(self):
         with pytest.raises(detect.DetectError, match="lesen"):
             detect.detect(b"kein Bild", "lg10_dsb")
-        image, _ = synth.make_sample("lg10_kyf5", 1, difficulty=0.2)
-        with pytest.raises(detect.DetectError, match="mehreren Spiegeln"):
-            detect.detect(image, "lg10_kyf5")
         ohne = targets.get(
             targets.CUSTOM, {"name": "Weiß", "top_diameter": 3, "ring_width": 5, "caliber": 4.5}
         )

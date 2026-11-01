@@ -9,7 +9,7 @@ ein Mensch am Stand am ehesten übersehen.
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .. import targets
 
@@ -21,6 +21,8 @@ class Detection:
     hits: list[tuple[float, float]]
     needs_review: bool = False
     note: str = ""
+    # Karten mit mehreren Spiegeln: Spiegel je Treffer (ab 1); Treffer um dessen Mitte
+    spots: list[int] = field(default_factory=list)
 
 
 @dataclass

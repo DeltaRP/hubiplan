@@ -63,16 +63,22 @@ def _decode(image: bytes) -> np.ndarray:
     return img
 
 
-def find_black(gray: np.ndarray) -> tuple[tuple[float, float], tuple[float, float], float, float]:
-    """Spiegel als Ellipse: (Mitte, Achsen, Winkel, Güte 0–1).
+Ellipse = tuple[tuple[float, float], tuple[float, float], float, float]
 
-    Mehrere Schwellen, weil Tisch und Schatten auch dunkel sein können; gewählt wird die
-    rundeste, gut gefüllte dunkle Fläche (Löcher am Rand stören dank konvexer Hülle kaum)."""
+
+def find_blacks(gray: np.ndarray, count: int = 1) -> list[Ellipse]:
+    """Spiegel als Ellipsen: (Mitte, Achsen, Winkel, Güte 0–1), bis zu ``count`` Stück.
+
+    Mehrere Schwellen, weil Tisch und Schatten auch dunkel sein können; gewählt werden die
+    rundesten, gut gefüllten dunklen Flächen (Löcher am Rand stören dank konvexer Hülle
+    kaum). Bei mehreren Spiegeln (Fünf-Spiegel-Karte) nur gleich große, die sich nicht
+    überdecken; Reihenfolge wie beim Lesen (Zeilen von oben, darin von links)."""
     blur = cv2.GaussianBlur(gray, (0, 0), 3)
     otsu, _ = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     low = float(np.percentile(blur, 1))
     h, w = gray.shape
-    best = None
+    found: list[tuple[float, Ellipse]] = []
+    min_area = 0.002 * h * w / max(1, count)
     for share in (0.25, 0.4, 0.55, 0.7, 0.85):
         level = low + (otsu - low) * share
         dark = (blur < level).astype(np.uint8) * 255
@@ -80,7 +86,7 @@ def find_black(gray: np.ndarray) -> tuple[tuple[float, float], tuple[float, floa
         contours, _ = cv2.findContours(dark, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
         for c in contours:
             area = cv2.contourArea(c)
-            if area < 0.002 * h * w or len(c) < 20:
+            if area < min_area or len(c) < 20:
                 continue
             hull = cv2.convexHull(c)
             if len(hull) < 5:
@@ -99,14 +105,37 @@ def find_black(gray: np.ndarray) -> tuple[tuple[float, float], tuple[float, floa
                 continue
             quality = fit * solid * ratio
             score = quality**4 * math.sqrt(area)
-            if best is None or score > best[0]:
-                best = (score, (cx, cy), (a, b), ang, quality)
-    if best is None or best[4] < 0.5:
+            found.append((score, ((cx, cy), (a, b), ang, quality)))
+    found.sort(key=lambda f: f[0], reverse=True)
+    if not found or found[0][1][3] < 0.5:
         raise DetectError("Kein Spiegel gefunden. Bitte die ganze Scheibe gerade fotografieren.")
-    return best[1], best[2], best[3], best[4]
+    best = found[0][1]
+    size = math.sqrt(best[1][0] * best[1][1])
+    chosen: list[Ellipse] = [best]
+    for _, e in found[1:]:
+        if len(chosen) >= count:
+            break
+        if e[3] < 0.5 or abs(math.sqrt(e[1][0] * e[1][1]) / size - 1) > 0.3:
+            continue
+        if any(math.dist(e[0], o[0]) < size for o in chosen):
+            continue  # derselbe Spiegel bei anderer Schwelle oder überlappend
+        chosen.append(e)
+    # Lesereihenfolge: Zeilen (Mitten näher als ein halber Spiegel gelten als eine Zeile)
+    chosen.sort(key=lambda e: e[0][1])
+    rows: list[list[Ellipse]] = []
+    for e in chosen:
+        if rows and abs(e[0][1] - rows[-1][0][0][1]) < size / 2:
+            rows[-1].append(e)
+        else:
+            rows.append([e])
+    return [e for row in rows for e in sorted(row, key=lambda e: e[0][0])]
 
 
-def _normalize(img, t: targets.Target):
+def find_black(gray: np.ndarray) -> Ellipse:
+    return find_blacks(gray, 1)[0]
+
+
+def _normalize(img, t: targets.Target, ellipse: Ellipse | None = None):
     """Entzerrtes Graubild, Mitte in der Bildmitte, ``PX_PER_MM`` je mm.
 
     Zuerst grob über die Ellipse des Spiegels, dann genauer: Spiegelrand und Ringlinien
@@ -114,7 +143,7 @@ def _normalize(img, t: targets.Target):
     verschiebt sonst die Mitte) schätzen. Zurück: Bild, Güte, Spiegelradius (mm), Abbildung
     Foto → entzerrt (3×3)."""
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    center, (a, b), angle, quality = find_black(gray)
+    center, (a, b), angle, quality = ellipse or find_black(gray)
     black_r = (t.black_diameter or t.ring_diameter(t.lowest)) / 2
     radius_mm = t.outer_diameter / 2 + 2 * t.caliber
     size = int(2 * radius_mm * PX_PER_MM)
@@ -393,6 +422,8 @@ def unsupported(t: targets.Target) -> str:
 
 
 def detect(image: bytes, target: targets.Target | str, expected: int | None = None) -> Detection:
+    """Treffer auf dem Foto; ``expected``: Schusszahl insgesamt (bei mehreren Spiegeln über
+    alle zusammen, gleich verteilt)."""
     t = targets.BY_KEY.get(target) if isinstance(target, str) else target
     if t is None:
         raise DetectError("Unbekannte Scheibe.")
@@ -400,7 +431,41 @@ def detect(image: bytes, target: targets.Target | str, expected: int | None = No
     if reason:
         raise DetectError(reason)
     img = _decode(image)
-    norm, quality, black_r, _ = _normalize(img, t)
+    if t.spots <= 1:
+        hits, notes = _detect_spot(img, t, None, expected)
+        return Detection(hits=hits, needs_review=bool(notes), note="; ".join(notes))
+
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    ellipses = find_blacks(gray, t.spots)
+    per_spot = expected // t.spots if expected and expected % t.spots == 0 else None
+    hits: list[tuple[float, float]] = []
+    spots: list[int] = []
+    notes: list[str] = []
+    if len(ellipses) < t.spots:
+        notes.append(f"nur {len(ellipses)} von {t.spots} Spiegeln gefunden")
+    # außerhalb des äußersten Rings liegt schon der Nachbarspiegel
+    reach = t.outer_diameter / 2 + t.caliber / 2
+    for n, ellipse in enumerate(ellipses, start=1):
+        found, spot_notes = _detect_spot(img, t, ellipse, per_spot, first=len(hits) + 1)
+        found = [h for h in found if math.hypot(*h) <= reach]
+        hits += found
+        spots += [n] * len(found)
+        notes += [f"Spiegel {n}: {x}" for x in spot_notes]
+    if expected is not None and len(hits) != expected and per_spot is None:
+        notes.append(f"{len(hits)} statt {expected} Treffer gefunden")
+    return Detection(hits=hits, needs_review=bool(notes), note="; ".join(notes), spots=spots)
+
+
+def _detect_spot(
+    img: np.ndarray,
+    t: targets.Target,
+    ellipse: Ellipse | None,
+    expected: int | None,
+    first: int = 1,
+) -> tuple[list[tuple[float, float]], list[str]]:
+    """Ein Spiegel: Treffer (mm um seine Mitte, von innen nach außen) und Prüfhinweise;
+    ``first``: Nummer des ersten Schusses in den Hinweisen."""
+    norm, quality, black_r, _ = _normalize(img, t, ellipse)
     mask = hole_mask(norm, t, black_r)
     n, labels, stats, _ = cv2.connectedComponentsWithStats(mask, connectivity=8)
     r_px = t.caliber / 2 * PX_PER_MM
@@ -447,8 +512,9 @@ def detect(image: bytes, target: targets.Target | str, expected: int | None = No
         notes.append("Spiegel unsicher erkannt")
     edge = _near_ring_line(t, hits)
     if edge:
-        notes.append(f"Schuss {', '.join(map(str, edge))} nah an einer Ringlinie")
-    return Detection(hits=hits, needs_review=bool(notes), note="; ".join(notes))
+        numbers = ", ".join(str(i + first - 1) for i in edge)
+        notes.append(f"Schuss {numbers} nah an einer Ringlinie")
+    return hits, notes
 
 
 def _near_ring_line(t: targets.Target, hits, tolerance_mm: float = 0.1) -> list[int]:
