@@ -706,6 +706,7 @@ def portal_summary(access: PortalAccess) -> dict:
             "theme": effective_theme(club.ancestors()),
             "events_enabled": "events" in (club.enabled_modules or []),
             "entries_enabled": "entries" in (club.enabled_modules or []),
+            "competitions_enabled": "competitions" in (club.enabled_modules or []),
             "terms": department_terms(club),
             "imprint_key": ensure_imprint(club).public_key,
         }

@@ -19,6 +19,7 @@ import { OwnCardPanel } from '../../components/CardPanel.tsx'
 import { useOrg } from '../../org/OrgContext.tsx'
 import { PortalInvoices, PortalMandate } from '../billing/MyInvoices.tsx'
 import { PortalEntries } from './PortalEntries.tsx'
+import { PortalResults } from './PortalResults.tsx'
 import { useTerms } from '../../org/terms.ts'
 import { NotFoundPage } from '../NoticePages.tsx'
 import { t } from '../../i18n/index.ts'
@@ -119,6 +120,14 @@ export function PortalPage() {
           </PortalSection>
         }
       />
+      <Route
+        path="ergebnisse"
+        element={
+          <PortalSection title="Meine Ergebnisse">
+            <PortalResults key={activePortal.id} accessId={activePortal.id} />
+          </PortalSection>
+        }
+      />
       <Route path="daten" element={<PortalData key={activePortal.id} entry={activePortal} />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
@@ -160,6 +169,15 @@ export function PortalTasks({ entry }: { entry: PortalEntry }) {
             to: '/mein-bereich/gemeldet',
             title: t('Gemeldet'),
             text: t('Wettbewerbe, für die der Verein dich gemeldet hat'),
+          },
+        ]
+      : []),
+    ...(entry.competitions_enabled
+      ? [
+          {
+            to: '/mein-bereich/ergebnisse',
+            title: 'Meine Ergebnisse',
+            text: 'Plätze, Werte und Titel aus Wettbewerben',
           },
         ]
       : []),

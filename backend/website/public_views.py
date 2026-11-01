@@ -20,7 +20,7 @@ from rest_framework.views import APIView
 from core.ratelimit import client_ip, too_many
 from core.tenancy import rls_bypass
 
-from . import contact, designs, menu, services
+from . import contact, designs, menu, results, services
 from .models import BLOCKS, Website, WebsiteDomain
 from .public import SiteView
 
@@ -168,7 +168,9 @@ class SiteInfoView(_Public):
             # Menü „Würdenträger“: Unterpunkte je Würde und „Ehrungen“ (Ralf 2026-10-31)
             "honors_menu": site.honors_menu(),
             # Bausteine der Startseite (eingeschaltet, in Reihenfolge)
-            "home": site.site.home(),
+            "home": [k for k in site.site.home() if k != "results" or results.enabled(site)],
+            # Wettbewerbsergebnisse (Schritt 5 der Wettbewerbe): Übersicht und Startseite
+            "results_url": site.url("results/") if results.enabled(site) else None,
             "menu": site.menu(),
             # Ganzes Menü in Reihenfolge mit Unterpunkten (Ralf 2026-10-31: per Ziehen)
             "nav": menu.public_nav(site),
@@ -315,6 +317,64 @@ class HonorsView(_Public):
         if not site.site.block_on("honors"):
             raise Http404
         return self.respond({"dignities": site.honors()}, site)
+
+
+class _ResultsBase(_Public):
+    """Wettbewerbsergebnisse. Laufende Wettbewerbe ändern sich: kurze Zwischenspeicherung."""
+
+    def short(self, response, live: bool):
+        if live and not getattr(self, "preview", False):
+            response["Cache-Control"] = "public, max-age=5"
+        return response
+
+
+class ResultsView(_ResultsBase):
+    """GET: veröffentlichte Wettbewerbe, Reihen und Wanderpokale; ``?start=1``: die
+    neuesten Wettbewerbe mit Siegern für die Startseite."""
+
+    def get(self, request, key: str):
+        site = self.load(request, key)
+        if not results.enabled(site):
+            raise Http404
+        if request.query_params.get("start"):
+            items = results.home(site)
+            data = {"competitions": items, "poll_seconds": results.POLL_SECONDS}
+            live = any(not c["final"] for c in items)
+        else:
+            data = results.overview(site)
+            live = any(not c["final"] for c in data["competitions"])
+        return self.short(self.respond(data, site), live)
+
+
+class ResultDetailView(_ResultsBase):
+    def get(self, request, key: str, token: str):
+        site = self.load(request, key)
+        comp = results.find(site, token) if results.enabled(site) else None
+        if comp is None:
+            raise Http404
+        data = results.detail(site, comp)
+        return self.short(self.respond(data, site), not data["final"])
+
+
+class ResultVersionView(_ResultsBase):
+    """Kleiner Stand eines Wettbewerbs: Die Seite fragt ihn während „live“ alle 15 Sekunden
+    ab und lädt die Tabelle nur bei einer Änderung neu."""
+
+    def get(self, request, key: str, token: str):
+        site = self.load(request, key)
+        comp = results.find(site, token) if results.enabled(site) else None
+        if comp is None:
+            raise Http404
+        return self.short(self.respond(results.version(site, comp), site), True)
+
+
+class ResultSeriesView(_ResultsBase):
+    def get(self, request, key: str, token: str):
+        site = self.load(request, key)
+        series = results.find_series(site, token)
+        if series is None:
+            raise Http404
+        return self.respond(results.series_detail(site, series), site)
 
 
 class HonorsPhotoView(_Public):

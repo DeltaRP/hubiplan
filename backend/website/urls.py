@@ -131,6 +131,20 @@ public_patterns = [
     path(f"{SITE}images/<str:image_key>/", public_views.ImageView.as_view(), name="site-image"),
     path(f"{SITE}photos/<str:token>/", public_views.PhotoView.as_view(), name="site-photo"),
     path(f"{SITE}honors/", public_views.HonorsView.as_view(), name="site-honors"),
+    path(f"{SITE}results/", public_views.ResultsView.as_view(), name="site-results"),
+    path(
+        f"{SITE}results/series/<str:token>/",
+        public_views.ResultSeriesView.as_view(),
+        name="site-results-series",
+    ),
+    path(
+        f"{SITE}results/<str:token>/", public_views.ResultDetailView.as_view(), name="site-result"
+    ),
+    path(
+        f"{SITE}results/<str:token>/version/",
+        public_views.ResultVersionView.as_view(),
+        name="site-result-version",
+    ),
     path(
         f"{SITE}honors/photos/<str:token>/",
         public_views.HonorsPhotoView.as_view(),

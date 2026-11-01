@@ -35,6 +35,7 @@ export interface PortalEntry {
   theme: EffectiveTheme
   events_enabled?: boolean
   entries_enabled?: boolean
+  competitions_enabled?: boolean
   terms?: DeptTerms
   imprint_key?: string
 }

@@ -81,6 +81,8 @@ def items(website: Website, *, public_site=None) -> dict[str, dict]:
                     visible=p.published_at is not None and p.show_in_menu,
                     public_label=p.published_title or p.slug,
                 )
+        if key == "results" and "competitions" not in (org.enabled_modules or []):
+            continue
         label = BLOCKS[key]
         if key == "units":
             label = org.department_label_plural or label
@@ -259,4 +261,8 @@ def _available(site, key: str) -> bool:
         return site.page(HISTORY_SLUG) is not None
     if key == "offices":
         return bool(site.chairs())
+    if key == "results":
+        from . import results
+
+        return results.available(site)
     return True

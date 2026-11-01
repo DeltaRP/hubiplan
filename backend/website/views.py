@@ -186,6 +186,8 @@ class WebsiteView(_WebsiteMixin, APIView):
     """GET: Stand · POST: Webseite einrichten · PUT: Einstellungen · DELETE: entfernen."""
 
     def payload(self, website: Website | None) -> dict:
+        # „Ergebnisse“ nur, wenn das Modul Wettbewerbe freigeschaltet ist
+        hide = set() if "competitions" in (self.org.enabled_modules or []) else {"results"}
         data = {
             "module_enabled": services.module_enabled(self.org),
             "can_manage": WEBSITE_MANAGE in self.org_permissions,
@@ -193,12 +195,12 @@ class WebsiteView(_WebsiteMixin, APIView):
             or WEBSITE_MANAGE in self.org_permissions,
             "preview_only": services.preview_only(),
             "block_labels": {
-                **BLOCKS,
+                **{k: v for k, v in BLOCKS.items() if k not in hide},
                 "units": self.org.department_label_plural or BLOCKS["units"],
             },
             "block_hints": BLOCK_HINTS,
             "home_labels": {
-                **HOME_SECTIONS,
+                **{k: v for k, v in HOME_SECTIONS.items() if k not in hide},
                 "units": self.org.department_label_plural or HOME_SECTIONS["units"],
             },
             "home_hints": HOME_HINTS,
