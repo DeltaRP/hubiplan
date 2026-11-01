@@ -26,17 +26,18 @@ import { useActiveOrg } from '../../org/OrgContext.tsx'
 import { Term, Why } from '../../learning/Aids.tsx'
 import { Checklist } from '../../learning/Checklist.tsx'
 import { donationChecks } from '../../learning/checks.ts'
+import { t } from '../../i18n/index.ts'
 
 const KIND_LABEL: Record<DonationKind, string> = {
-  money: 'Geldzuwendung',
-  fee: 'Mitgliedsbeitrag',
-  goods: 'Sachzuwendung',
+  money: t('Geldzuwendung'),
+  fee: t('Mitgliedsbeitrag'),
+  goods: t('Sachzuwendung'),
 }
 
 const ORIGIN_LABEL: Record<Exclude<GoodsOrigin, ''>, string> = {
-  private: 'aus dem Privatvermögen',
-  business: 'aus dem Betriebsvermögen',
-  unknown: 'keine Angaben trotz Nachfrage',
+  private: t('aus dem Privatvermögen'),
+  business: t('aus dem Betriebsvermögen'),
+  unknown: t('keine Angaben trotz Nachfrage'),
 }
 
 function thisYear() {
@@ -151,23 +152,27 @@ function DonationsList({ canEdit }: { canEdit: boolean }) {
     await run(async () => {
       const { created } = await donationApi.importBookings(org.id, year)
       return created
-        ? `${created} Einnahmen aus Spenden-Kategorien übernommen.`
-        : `Keine neuen Einnahmen ${year} in Kategorien mit Kennzeichen „Spenden“.`
+        ? t('{created} Einnahmen aus Spenden-Kategorien übernommen.', { created })
+        : t('Keine neuen Einnahmen {year} in Kategorien mit Kennzeichen „Spenden“.', { year })
     })
   }
 
   async function issueSelected() {
     const signer = await promptDialog({
-      title: 'Zuwendungsbestätigung ausstellen',
-      message:
+      title: t('Zuwendungsbestätigung ausstellen'),
+      message: t(
         'Mehrere Zuwendungen eines Zuwendenden aus einem Jahr ergeben eine Sammelbestätigung. Das PDF wird als Doppel gespeichert.',
-      label: 'Unterschrift durch (Name)',
-      confirmLabel: 'Ausstellen',
+      ),
+      label: t('Unterschrift durch (Name)'),
+      confirmLabel: t('Ausstellen'),
     })
     if (signer === null) return
     await run(async () => {
       const st = await donationApi.issue(org.id, selected, signer)
-      return `Bestätigung ${st.number} für ${st.donor_name} ausgestellt.`
+      return t('Bestätigung {number} für {donor_name} ausgestellt.', {
+        number: st.number,
+        donor_name: st.donor_name,
+      })
     })
   }
 
@@ -181,7 +186,9 @@ function DonationsList({ canEdit }: { canEdit: boolean }) {
     } catch (err) {
       setMessage({
         kind: 'error',
-        text: `Die Vorschau konnte nicht geladen werden (${errorMessage(err)}). Bitte erneut versuchen.`,
+        text: t('Die Vorschau konnte nicht geladen werden ({x}). Bitte erneut versuchen.', {
+          x: errorMessage(err),
+        }),
       })
       return
     } finally {
@@ -190,7 +197,9 @@ function DonationsList({ canEdit }: { canEdit: boolean }) {
     if (preview.problems.length > 0) {
       setMessage({
         kind: 'error',
-        text: `Noch keine Bestätigungen möglich: ${preview.problems.join(' ')} Bitte unter „Einstellungen“ ergänzen.`,
+        text: t('Noch keine Bestätigungen möglich: {x} Bitte unter „Einstellungen“ ergänzen.', {
+          x: preview.problems.join(' '),
+        }),
       })
       await settings.reload()
       return
@@ -200,38 +209,52 @@ function DonationsList({ canEdit }: { canEdit: boolean }) {
     const missing = preview.donors.filter((d) => d.incomplete)
     const missingText =
       missing.length > 0
-        ? ` Noch offen, weil Angaben fehlen: ${missing.map((d) => `${d.donor_name} (${d.incomplete})`).join(', ')}.`
+        ? t(' Noch offen, weil Angaben fehlen: {x}.', {
+            x: missing.map((d) => `${d.donor_name} (${d.incomplete})`).join(', '),
+          })
         : ''
     if (ready.length === 0) {
       setMessage(
         missing.length > 0
-          ? { kind: 'error', text: `Keine Bestätigung möglich.${missingText}` }
-          : { kind: 'success', text: `Für ${year} sind alle Geldzuwendungen bestätigt.` },
+          ? { kind: 'error', text: t('Keine Bestätigung möglich.{missingText}', { missingText }) }
+          : {
+              kind: 'success',
+              text: t('Für {year} sind alle Geldzuwendungen bestätigt.', { year }),
+            },
       )
       return
     }
     const sum = ready.reduce((s, d) => s + Number(d.total), 0)
     const signer = await promptDialog({
-      title: `Bestätigungen für ${year} ausstellen?`,
-      message: `${ready.length} Zuwendende, zusammen ${euro(sum)}. Je Zuwendendem eine Bestätigung (bei mehreren Zuwendungen eine Sammelbestätigung). Sachzuwendungen bleiben offen und werden einzeln bestätigt.${missingText}`,
-      label: 'Unterschrift durch (Name)',
-      confirmLabel: 'Alle ausstellen',
+      title: t('Bestätigungen für {year} ausstellen?', { year }),
+      message: t(
+        '{n} Zuwendende, zusammen {x}. Je Zuwendendem eine Bestätigung (bei mehreren Zuwendungen eine Sammelbestätigung). Sachzuwendungen bleiben offen und werden einzeln bestätigt.{missingText}',
+        { n: ready.length, x: euro(sum), missingText },
+      ),
+      label: t('Unterschrift durch (Name)'),
+      confirmLabel: t('Alle ausstellen'),
     })
     if (signer === null) return
     await run(async () => {
       const { created } = await donationApi.issueYearEnd(org.id, year, signer)
-      return `${created} Bestätigungen ausgestellt. Sie stehen unter „Bestätigungen“.`
+      return t('{created} Bestätigungen ausgestellt. Sie stehen unter „Bestätigungen“.', {
+        created,
+      })
     })
   }
 
   async function remove(d: Donation) {
     const ok = await confirmDialog({
-      title: 'Zuwendung löschen?',
-      message: `${euro(d.amount)} von ${d.donor_name} am ${formatDate(d.date)}`,
-      confirmLabel: 'Löschen',
+      title: t('Zuwendung löschen?'),
+      message: t('{x} von {donor_name} am {x2}', {
+        x: euro(d.amount),
+        donor_name: d.donor_name,
+        x2: formatDate(d.date),
+      }),
+      confirmLabel: t('Löschen'),
       danger: true,
     })
-    if (ok) await run(async () => (await donationApi.remove(org.id, d.id), 'Gelöscht.'))
+    if (ok) await run(async () => (await donationApi.remove(org.id, d.id), t('Gelöscht.')))
   }
 
   const count = list.data?.count ?? 0
@@ -245,19 +268,22 @@ function DonationsList({ canEdit }: { canEdit: boolean }) {
     <div className="card card-wide">
       {settings.error && (
         <LoadError
-          message={`Die Angaben zur Steuerbegünstigung konnten nicht geladen werden (${settings.error}). Ausstellen ist erst danach möglich.`}
+          message={t(
+            'Die Angaben zur Steuerbegünstigung konnten nicht geladen werden ({error}). Ausstellen ist erst danach möglich.',
+            { error: settings.error },
+          )}
           onRetry={() => void settings.reload()}
         />
       )}
       {problems.length > 0 && (
         <Alert kind="info">
-          Noch keine Bestätigungen möglich: {problems.join(' ')} Bitte unter „Einstellungen“
-          ergänzen.
+          {t('Noch keine Bestätigungen möglich:')} {problems.join(' ')}{' '}
+          {t('Bitte unter „Einstellungen“ ergänzen.')}
         </Alert>
       )}
       <div className="filters">
         <SelectField
-          label="Jahr"
+          label={t('Jahr')}
           value={year}
           onChange={(e) => {
             setYear(Number(e.target.value))
@@ -272,7 +298,7 @@ function DonationsList({ canEdit }: { canEdit: boolean }) {
           ))}
         </SelectField>
         <Checkbox
-          label="nur noch nicht bestätigte"
+          label={t('nur noch nicht bestätigte')}
           checked={onlyOpen}
           onChange={(on) => {
             setOnlyOpen(on)
@@ -283,7 +309,7 @@ function DonationsList({ canEdit }: { canEdit: boolean }) {
       {canEdit && editing === null && (
         <div className="button-row">
           <button type="button" className="button button-primary" onClick={() => void edit('new')}>
-            Zuwendung erfassen
+            {t('Zuwendung erfassen')}
           </button>
           <button
             type="button"
@@ -291,7 +317,7 @@ function DonationsList({ canEdit }: { canEdit: boolean }) {
             disabled={busy}
             onClick={importBookings}
           >
-            Aus dem Kassenbuch übernehmen
+            {t('Aus dem Kassenbuch übernehmen')}
           </button>
           <button
             type="button"
@@ -299,7 +325,7 @@ function DonationsList({ canEdit }: { canEdit: boolean }) {
             disabled={busy || !settingsReady || problems.length > 0}
             onClick={yearEnd}
           >
-            Jahresende: alle bestätigen
+            {t('Jahresende: alle bestätigen')}
           </button>
           {selected.length > 0 && (
             <button
@@ -308,16 +334,18 @@ function DonationsList({ canEdit }: { canEdit: boolean }) {
               disabled={busy || !settingsReady || problems.length > 0}
               onClick={issueSelected}
             >
-              {selected.length === 1 ? 'Bestätigung ausstellen' : 'Sammelbestätigung ausstellen'}
+              {selected.length === 1
+                ? t('Bestätigung ausstellen')
+                : t('Sammelbestätigung ausstellen')}
             </button>
           )}
         </div>
       )}
       <p className="muted small">
-        Übernehmen holt Einnahmen aus Kategorien mit dem Kennzeichen „Spenden“ (Finanzen ›
-        Einrichtung › Kategorien). Name und Anschrift kommen aus dem Mitglied oder dem Zahler. Bis
-        300 € genügt dem Spender oft der{' '}
-        <Term k="simplified_proof">vereinfachte Zuwendungsnachweis</Term>.
+        {t(
+          'Übernehmen holt Einnahmen aus Kategorien mit dem Kennzeichen „Spenden“ (Finanzen › Einrichtung › Kategorien). Name und Anschrift kommen aus dem Mitglied oder dem Zahler. Bis 300 € genügt dem Spender oft der',
+        )}{' '}
+        <Term k="simplified_proof">{t('vereinfachte Zuwendungsnachweis')}</Term>.
       </p>
       <div className="aid-row">
         <Why k="donation_year_end" />
@@ -325,7 +353,7 @@ function DonationsList({ canEdit }: { canEdit: boolean }) {
       </div>
       {canEdit && checks.data && (
         <Checklist
-          title={`Vor den Jahresbestätigungen ${year}`}
+          title={t('Vor den Jahresbestätigungen {year}', { year })}
           items={donationChecks({ problems, ...checks.data })}
         />
       )}
@@ -350,19 +378,19 @@ function DonationsList({ canEdit }: { canEdit: boolean }) {
       {message && <Alert kind={message.kind}>{message.text}</Alert>}
       {list.error && <LoadError message={list.error} onRetry={() => void list.reload()} />}
       {!list.data ? (
-        !list.error && <p className="muted">Lädt …</p>
+        !list.error && <p className="muted">{t('Lädt …')}</p>
       ) : rows.length === 0 ? (
-        <p className="muted">Keine Zuwendungen {year}.</p>
+        <p className="muted">{t('Keine Zuwendungen {year}.', { year })}</p>
       ) : (
         <table className="table">
           <thead>
             <tr>
-              {canEdit && <th aria-label="Auswahl" />}
-              <th>Datum</th>
-              <th>Zuwendender</th>
-              <th>Art</th>
-              <th className="num">Betrag</th>
-              <th>Bestätigung</th>
+              {canEdit && <th aria-label={t('Auswahl')} />}
+              <th>{t('Datum')}</th>
+              <th>{t('Zuwendender')}</th>
+              <th>{t('Art')}</th>
+              <th className="num">{t('Betrag')}</th>
+              <th>{t('Bestätigung')}</th>
               <th />
             </tr>
           </thead>
@@ -374,7 +402,10 @@ function DonationsList({ canEdit }: { canEdit: boolean }) {
                     {!d.statement && (
                       <input
                         type="checkbox"
-                        aria-label={`${d.donor_name} ${formatDate(d.date)} auswählen`}
+                        aria-label={t('{donor_name} {x} auswählen', {
+                          donor_name: d.donor_name,
+                          x: formatDate(d.date),
+                        })}
                         checked={selected.includes(d.id)}
                         onChange={(e) => toggle(d.id, e.target.checked)}
                       />
@@ -385,13 +416,16 @@ function DonationsList({ canEdit }: { canEdit: boolean }) {
                 <td>
                   <strong>{d.donor_name}</strong>
                   {d.booking_number && (
-                    <span className="muted small"> · Buchung {d.booking_number}</span>
+                    <span className="muted small">
+                      {' '}
+                      {t('· Buchung')} {d.booking_number}
+                    </span>
                   )}
                 </td>
                 <td>
                   {d.kind_label}
                   {d.waiver && (
-                    <span className="muted small"> · Verzicht auf Aufwendungsersatz</span>
+                    <span className="muted small"> {t('· Verzicht auf Aufwendungsersatz')}</span>
                   )}
                 </td>
                 <td className="num">{euro(d.amount)}</td>
@@ -400,10 +434,10 @@ function DonationsList({ canEdit }: { canEdit: boolean }) {
                   {canEdit && !d.statement && (
                     <>
                       <button type="button" className="link-button" onClick={() => void edit(d)}>
-                        Ändern
+                        {t('Ändern')}
                       </button>{' '}
                       <button type="button" className="link-button" onClick={() => void remove(d)}>
-                        Löschen
+                        {t('Löschen')}
                       </button>
                     </>
                   )}
@@ -413,10 +447,10 @@ function DonationsList({ canEdit }: { canEdit: boolean }) {
           </tbody>
         </table>
       )}
-      <PageNav page={page} count={count} onPage={setPage} noun="Zuwendungen" />
+      <PageNav page={page} count={count} onPage={setPage} noun={t('Zuwendungen')} />
       {canEdit && openRows.length > 1 && selected.length === 0 && (
         <p className="muted small">
-          Mehrere Zuwendungen eines Zuwendenden ankreuzen ergibt eine Sammelbestätigung.
+          {t('Mehrere Zuwendungen eines Zuwendenden ankreuzen ergibt eine Sammelbestätigung.')}
         </p>
       )}
     </div>
@@ -474,7 +508,7 @@ function DonationForm({
       if (initial) await donationApi.update(org.id, initial.id, data)
       else await donationApi.create(org.id, data)
       setSaved(true)
-      await onDone(initial ? 'Zuwendung geändert.' : 'Zuwendung erfasst.')
+      await onDone(initial ? t('Zuwendung geändert.') : t('Zuwendung erfasst.'))
     } catch (err) {
       setErrors(fieldErrors(err))
       setFailure(errorMessage(err))
@@ -485,10 +519,10 @@ function DonationForm({
 
   return (
     <form className="subcard" onSubmit={submit}>
-      <h3>{initial ? 'Zuwendung ändern' : 'Zuwendung erfassen'}</h3>
+      <h3>{initial ? t('Zuwendung ändern') : t('Zuwendung erfassen')}</h3>
       <div className="grid-3">
         <SelectField
-          label="Art"
+          label={t('Art')}
           value={v.kind}
           onChange={(e) => {
             const kind = e.target.value as DonationKind
@@ -504,7 +538,7 @@ function DonationForm({
           <option value="goods">{KIND_LABEL.goods}</option>
         </SelectField>
         <Field
-          label="Tag der Zuwendung"
+          label={t('Tag der Zuwendung')}
           type="date"
           value={v.date ?? ''}
           onChange={(e) => set('date', e.target.value)}
@@ -512,7 +546,7 @@ function DonationForm({
           required
         />
         <Field
-          label={goods ? 'Wert in €' : 'Betrag in €'}
+          label={goods ? t('Wert in €') : t('Betrag in €')}
           inputMode="decimal"
           value={amountText}
           onChange={(e) => setAmountText(e.target.value)}
@@ -530,13 +564,13 @@ function DonationForm({
             // Name und Anschrift ergänzt der Server aus dem Mitglied
             if (m) setV((old) => ({ ...old, membership: m.id, donor_name: '', donor_address: '' }))
           }}
-          label="Mitglied (optional)"
+          label={t('Mitglied (optional)')}
         />
       )}
       {!member && (
         <div className="grid-2">
           <Field
-            label="Name des Zuwendenden"
+            label={t('Name des Zuwendenden')}
             value={v.donor_name ?? ''}
             onChange={(e) => set('donor_name', e.target.value)}
             error={errors.donor_name}
@@ -544,7 +578,7 @@ function DonationForm({
             required={!v.membership}
           />
           <label className="field">
-            <span>Anschrift</span>
+            <span>{t('Anschrift')}</span>
             <textarea
               rows={2}
               value={v.donor_address ?? ''}
@@ -557,7 +591,7 @@ function DonationForm({
       {goods ? (
         <>
           <label className={`field${errors.goods_description ? ' field-invalid' : ''}`}>
-            <span>Genaue Bezeichnung der Sache (Alter, Zustand, Kaufpreis)</span>
+            <span>{t('Genaue Bezeichnung der Sache (Alter, Zustand, Kaufpreis)')}</span>
             <textarea
               rows={2}
               value={v.goods_description ?? ''}
@@ -569,12 +603,12 @@ function DonationForm({
             )}
           </label>
           <SelectField
-            label="Herkunft"
+            label={t('Herkunft')}
             value={v.goods_origin ?? ''}
             onChange={(e) => set('goods_origin', e.target.value as GoodsOrigin)}
             error={errors.goods_origin}
           >
-            <option value="">bitte wählen</option>
+            <option value="">{t('bitte wählen')}</option>
             {Object.entries(ORIGIN_LABEL).map(([k, label]) => (
               <option key={k} value={k}>
                 {label}
@@ -582,7 +616,7 @@ function DonationForm({
             ))}
           </SelectField>
           <Checkbox
-            label="Unterlagen zur Wertermittlung liegen vor (z. B. Rechnung, Gutachten)"
+            label={t('Unterlagen zur Wertermittlung liegen vor (z. B. Rechnung, Gutachten)')}
             checked={!!v.goods_documents}
             onChange={(on) => set('goods_documents', on)}
           />
@@ -590,8 +624,8 @@ function DonationForm({
         </>
       ) : (
         <Checkbox
-          label="Verzicht auf Erstattung von Aufwendungen"
-          hint="z. B. Fahrtkosten, auf deren Erstattung jemand verzichtet"
+          label={t('Verzicht auf Erstattung von Aufwendungen')}
+          hint={t('z. B. Fahrtkosten, auf deren Erstattung jemand verzichtet')}
           checked={!!v.waiver}
           onChange={(on) => set('waiver', on)}
         />
@@ -599,13 +633,14 @@ function DonationForm({
       {!goods && (
         <>
           <p className="muted small">
-            Ein solcher Verzicht ist eine <Term k="expense_donation">Aufwandsspende</Term>.
+            {t('Ein solcher Verzicht ist eine')}{' '}
+            <Term k="expense_donation">{t('Aufwandsspende')}</Term>.
           </p>
           <Why k="donation_waiver" />
         </>
       )}
       <Field
-        label="Notiz (nur intern)"
+        label={t('Notiz (nur intern)')}
         value={v.note ?? ''}
         maxLength={300}
         onChange={(e) => set('note', e.target.value)}
@@ -621,14 +656,14 @@ function DonationForm({
         ))}
       <div className="button-row">
         <button type="submit" className="button button-primary" disabled={busy}>
-          Speichern
+          {t('Speichern')}
         </button>
         <button
           type="button"
           className="button button-ghost"
           onClick={() => void confirmDiscard(dirty).then((ok) => ok && onCancel())}
         >
-          Abbrechen
+          {t('Abbrechen')}
         </button>
       </div>
     </form>
@@ -650,17 +685,18 @@ function StatementsList({ canEdit }: { canEdit: boolean }) {
 
   async function cancel(id: number, number: string) {
     const reason = await promptDialog({
-      title: `Bestätigung ${number} stornieren?`,
-      message:
+      title: t('Bestätigung {number} stornieren?', { number }),
+      message: t(
         'Das Doppel bleibt gespeichert, die Zuwendungen werden wieder frei. Bitte das Original vom Zuwendenden zurückfordern.',
-      label: 'Grund',
-      confirmLabel: 'Stornieren',
+      ),
+      label: t('Grund'),
+      confirmLabel: t('Stornieren'),
       danger: true,
     })
     if (reason === null) return
     try {
       await donationApi.cancel(org.id, id, reason)
-      setMessage({ kind: 'success', text: `${number} storniert.` })
+      setMessage({ kind: 'success', text: t('{number} storniert.', { number }) })
       await list.reload()
     } catch (err) {
       setMessage({ kind: 'error', text: errorMessage(err) })
@@ -672,7 +708,7 @@ function StatementsList({ canEdit }: { canEdit: boolean }) {
     <div className="card card-wide">
       <div className="filters">
         <SelectField
-          label="Ausgestellt"
+          label={t('Ausgestellt')}
           value={year}
           onChange={(e) => {
             setYear(Number(e.target.value))
@@ -687,25 +723,26 @@ function StatementsList({ canEdit }: { canEdit: boolean }) {
         </SelectField>
       </div>
       <p className="muted small">
-        Jede <Term k="donation_receipt">Zuwendungsbestätigung</Term> wird als Doppel gespeichert (§
-        50 Abs. 7 EStDV) und lässt sich jederzeit wieder herunterladen. Fehlerhafte Bestätigungen
-        stornieren und neu ausstellen.
+        {t('Jede')} <Term k="donation_receipt">{t('Zuwendungsbestätigung')}</Term>{' '}
+        {t(
+          'wird als Doppel gespeichert (§ 50 Abs. 7 EStDV) und lässt sich jederzeit wieder herunterladen. Fehlerhafte Bestätigungen stornieren und neu ausstellen.',
+        )}
       </p>
       {message && <Alert kind={message.kind}>{message.text}</Alert>}
       {list.error && <LoadError message={list.error} onRetry={() => void list.reload()} />}
       {!list.data ? (
-        !list.error && <p className="muted">Lädt …</p>
+        !list.error && <p className="muted">{t('Lädt …')}</p>
       ) : rows.length === 0 ? (
-        <p className="muted">Keine Bestätigungen {year}.</p>
+        <p className="muted">{t('Keine Bestätigungen {year}.', { year })}</p>
       ) : (
         <table className="table">
           <thead>
             <tr>
-              <th>Nummer</th>
+              <th>{t('Nummer')}</th>
               <th>ausgestellt</th>
-              <th>Zuwendender</th>
-              <th>Art</th>
-              <th className="num">Betrag</th>
+              <th>{t('Zuwendender')}</th>
+              <th>{t('Art')}</th>
+              <th className="num">{t('Betrag')}</th>
               <th />
             </tr>
           </thead>
@@ -715,12 +752,15 @@ function StatementsList({ canEdit }: { canEdit: boolean }) {
                 <td>
                   <strong>{s.number}</strong>
                   {s.cancelled_at && (
-                    <span className="field-error small"> · storniert ({s.cancel_reason})</span>
+                    <span className="field-error small">
+                      {' '}
+                      {t('· storniert ({cancel_reason})', { cancel_reason: s.cancel_reason })}
+                    </span>
                   )}
                 </td>
                 <td>{formatDate(s.issued_on)}</td>
                 <td>{s.donor_name}</td>
-                <td>{s.goods ? 'Sachzuwendung' : s.kind_label}</td>
+                <td>{s.goods ? t('Sachzuwendung') : s.kind_label}</td>
                 <td className="num">{euro(s.total)}</td>
                 <td className="actions">
                   <a href={donationApi.pdfUrl(org.id, s.id)} target="_blank" rel="noreferrer">
@@ -734,7 +774,7 @@ function StatementsList({ canEdit }: { canEdit: boolean }) {
                         className="link-button"
                         onClick={() => void cancel(s.id, s.number)}
                       >
-                        Stornieren
+                        {t('Stornieren')}
                       </button>
                     </>
                   )}
@@ -744,7 +784,12 @@ function StatementsList({ canEdit }: { canEdit: boolean }) {
           </tbody>
         </table>
       )}
-      <PageNav page={page} count={list.data?.count ?? 0} onPage={setPage} noun="Bestätigungen" />
+      <PageNav
+        page={page}
+        count={list.data?.count ?? 0}
+        onPage={setPage}
+        noun={t('Bestätigungen')}
+      />
     </div>
   )
 }
@@ -755,7 +800,7 @@ function DonationSettingsForm({ canEdit }: { canEdit: boolean }) {
   const org = useActiveOrg()
   const load = useLoad(() => donationApi.settings(org.id), [org.id])
   if (load.error) return <LoadError message={load.error} onRetry={() => void load.reload()} />
-  if (!load.data) return <p className="muted">Lädt …</p>
+  if (!load.data) return <p className="muted">{t('Lädt …')}</p>
   return <SettingsEditor key={org.id} initial={load.data} canEdit={canEdit} />
 }
 
@@ -789,7 +834,7 @@ function SettingsEditor({ initial, canEdit }: { initial: DonationSettings; canEd
       })
       setV(saved)
       guard.markSaved()
-      setMessage({ kind: 'success', text: 'Gespeichert.' })
+      setMessage({ kind: 'success', text: t('Gespeichert.') })
     } catch (err) {
       setErrors(fieldErrors(err))
       setMessage({ kind: 'error', text: errorMessage(err) })
@@ -800,12 +845,14 @@ function SettingsEditor({ initial, canEdit }: { initial: DonationSettings; canEd
 
   return (
     <form className="card card-wide" onSubmit={submit}>
-      <h2>Angaben zur Steuerbegünstigung</h2>
+      <h2>{t('Angaben zur Steuerbegünstigung')}</h2>
       <p className="muted small">
-        Diese Angaben stehen auf jeder Bestätigung. Sie stammen aus dem letzten Bescheid des
-        Finanzamts. Ein <Term k="exemption_notice">Freistellungsbescheid</Term> reicht 5 Jahre, eine{' '}
-        <Term k="statute_notice">Feststellung nach § 60a AO</Term> 3 Jahre (§ 63 Abs. 5 AO); danach
-        stellt HUBIplan keine Bestätigungen mehr aus.
+        {t(
+          'Diese Angaben stehen auf jeder Bestätigung. Sie stammen aus dem letzten Bescheid des Finanzamts. Ein',
+        )}{' '}
+        <Term k="exemption_notice">{t('Freistellungsbescheid')}</Term> {t('reicht 5 Jahre, eine')}{' '}
+        <Term k="statute_notice">{t('Feststellung nach § 60a AO')}</Term>{' '}
+        {t('3 Jahre (§ 63 Abs. 5 AO); danach stellt HUBIplan keine Bestätigungen mehr aus.')}
       </p>
       <Why k="donation_notice" />
       {v.problems.length > 0 ? (
@@ -813,60 +860,66 @@ function SettingsEditor({ initial, canEdit }: { initial: DonationSettings; canEd
       ) : (
         v.valid_until && (
           <Alert kind="success">
-            Bestätigungen möglich bis {formatDate(v.valid_until)} (danach neuen Bescheid eintragen).
+            {t('Bestätigungen möglich bis {x} (danach neuen Bescheid eintragen).', {
+              x: formatDate(v.valid_until),
+            })}
           </Alert>
         )
       )}
       <fieldset disabled={!canEdit}>
         <Checkbox
-          label="Steuerbegünstigt mit eigenem Bescheid des Finanzamts"
-          hint="gilt auch für nicht eingetragene Vereine; unselbständige Untereinheiten haben meist keinen eigenen Bescheid"
+          label={t('Steuerbegünstigt mit eigenem Bescheid des Finanzamts')}
+          hint={t(
+            'gilt auch für nicht eingetragene Vereine; unselbständige Untereinheiten haben meist keinen eigenen Bescheid',
+          )}
           checked={v.enabled}
           onChange={(on) => set('enabled', on)}
         />
         <Why k="donation_enabled" />
         <SelectField
-          label="Art des Bescheids"
+          label={t('Art des Bescheids')}
           value={v.notice}
           onChange={(e) => set('notice', e.target.value as DonationSettings['notice'])}
         >
           <option value="exemption">
-            Freistellungsbescheid bzw. Anlage zum Körperschaftsteuerbescheid
+            {t('Freistellungsbescheid bzw. Anlage zum Körperschaftsteuerbescheid')}
           </option>
           <option value="statute">
-            Feststellung der Satzungsmäßigkeit nach § 60a AO (neu gegründet)
+            {t('Feststellung der Satzungsmäßigkeit nach § 60a AO (neu gegründet)')}
           </option>
         </SelectField>
         <label className={`field${errors.purposes ? ' field-invalid' : ''}`}>
-          <span>Begünstigte Zwecke (wie im Bescheid)</span>
+          <span>{t('Begünstigte Zwecke (wie im Bescheid)')}</span>
           <textarea
             rows={2}
             value={v.purposes}
             maxLength={1000}
-            placeholder="z. B. des traditionellen Brauchtums einschließlich des Schützenwesens"
+            placeholder={t('z. B. des traditionellen Brauchtums einschließlich des Schützenwesens')}
             onChange={(e) => set('purposes', e.target.value)}
           />
           <small className="muted">
-            Steht im Satz „Wir sind wegen Förderung … befreit“ und „nur zur Förderung … verwendet“.
+            {t(
+              'Steht im Satz „Wir sind wegen Förderung … befreit“ und „nur zur Förderung … verwendet“.',
+            )}
           </small>
         </label>
         <div className="grid-3">
           <Field
-            label="Finanzamt"
+            label={t('Finanzamt')}
             value={v.tax_office}
             onChange={(e) => set('tax_office', e.target.value)}
             error={errors.tax_office}
             maxLength={200}
           />
           <Field
-            label="Steuernummer"
+            label={t('Steuernummer')}
             value={v.tax_number}
             onChange={(e) => set('tax_number', e.target.value)}
             error={errors.tax_number}
             maxLength={50}
           />
           <Field
-            label="Datum des Bescheids"
+            label={t('Datum des Bescheids')}
             type="date"
             value={v.notice_date ?? ''}
             onChange={(e) => set('notice_date', e.target.value || null)}
@@ -876,24 +929,26 @@ function SettingsEditor({ initial, canEdit }: { initial: DonationSettings; canEd
         <div className="grid-2">
           {exemption && (
             <Field
-              label="Letzter Veranlagungszeitraum"
+              label={t('Letzter Veranlagungszeitraum')}
               value={v.assessment_period}
-              placeholder="z. B. 2022 bis 2024"
+              placeholder={t('z. B. 2022 bis 2024')}
               onChange={(e) => set('assessment_period', e.target.value)}
               error={errors.assessment_period}
               maxLength={50}
             />
           )}
           <Field
-            label="Ort der Ausstellung"
+            label={t('Ort der Ausstellung')}
             value={v.place}
             onChange={(e) => set('place', e.target.value)}
             maxLength={100}
           />
         </div>
         <Checkbox
-          label="Auch Mitgliedsbeiträge bestätigen"
-          hint="nur, wenn die Beiträge abziehbar sind; bei Sport-, Heimat- und Brauchtumsvereinen meist nicht (§ 10b Abs. 1 Satz 8 EStG)"
+          label={t('Auch Mitgliedsbeiträge bestätigen')}
+          hint={t(
+            'nur, wenn die Beiträge abziehbar sind; bei Sport-, Heimat- und Brauchtumsvereinen meist nicht (§ 10b Abs. 1 Satz 8 EStG)',
+          )}
           checked={v.fees_allowed}
           onChange={(on) => set('fees_allowed', on)}
         />
@@ -903,7 +958,7 @@ function SettingsEditor({ initial, canEdit }: { initial: DonationSettings; canEd
       {canEdit && (
         <div className="button-row">
           <button type="submit" className="button button-primary" disabled={busy}>
-            Speichern
+            {t('Speichern')}
           </button>
         </div>
       )}

@@ -21,6 +21,7 @@ import { Alert, Checkbox, Field, SelectField } from '../../components/ui.tsx'
 import { ApiError } from '../../api/client.ts'
 import { useActiveOrg } from '../../org/OrgContext.tsx'
 import { Term, Why } from '../../learning/Aids.tsx'
+import { t } from '../../i18n/index.ts'
 
 export function CashReceiptsArea({ canEdit }: { canEdit: boolean }) {
   return (
@@ -42,40 +43,40 @@ function CashReceiptList({ canEdit }: { canEdit: boolean }) {
     <div className="card card-wide">
       <div className="card-head">
         <h2>
-          <Term k="cash_receipt">Quittungen</Term>
+          <Term k="cash_receipt">{t('Quittungen')}</Term>
         </h2>
         {canEdit && (
           <Link className="button button-primary" to="/finanzen/quittungen/neu">
-            Quittung ausstellen
+            {t('Quittung ausstellen')}
           </Link>
         )}
       </div>
       <p className="muted small">
-        Für Barzahlungen: Du bereitest die Quittung vor, beide unterschreiben auf dem Bildschirm,
-        und beim Abschluss bekommt sie die Belegnummer aus dem Kassenbuch. Das PDF hängt dann als
-        Beleg an der Buchung.
+        {t(
+          'Für Barzahlungen: Du bereitest die Quittung vor, beide unterschreiben auf dem Bildschirm, und beim Abschluss bekommt sie die Belegnummer aus dem Kassenbuch. Das PDF hängt dann als Beleg an der Buchung.',
+        )}
       </p>
       {error && <Alert kind="error">{error}</Alert>}
-      {!data && !error && <p className="muted">Lädt …</p>}
-      {data && data.results.length === 0 && <p className="muted">Noch keine Quittungen.</p>}
+      {!data && !error && <p className="muted">{t('Lädt …')}</p>}
+      {data && data.results.length === 0 && <p className="muted">{t('Noch keine Quittungen.')}</p>}
       {data && data.results.length > 0 && (
         <div className="table-scroll">
           <table className="table">
             <thead>
               <tr>
-                <th>Beleg-Nr.</th>
-                <th>Datum</th>
-                <th>Richtung</th>
-                <th>Gegenseite</th>
-                <th className="num">Betrag</th>
-                <th>Status</th>
+                <th>{t('Beleg-Nr.')}</th>
+                <th>{t('Datum')}</th>
+                <th>{t('Richtung')}</th>
+                <th>{t('Gegenseite')}</th>
+                <th className="num">{t('Betrag')}</th>
+                <th>{t('Status')}</th>
               </tr>
             </thead>
             <tbody>
               {data.results.map((r) => (
                 <tr key={r.id}>
                   <td>
-                    <Link to={`/finanzen/quittungen/${r.id}`}>{r.number || 'Entwurf'}</Link>
+                    <Link to={`/finanzen/quittungen/${r.id}`}>{r.number || t('Entwurf')}</Link>
                   </td>
                   <td>{r.receipt_date ? formatDate(r.receipt_date) : '–'}</td>
                   <td>{r.direction === 'in' ? 'erhalten' : 'ausgezahlt'}</td>
@@ -173,20 +174,21 @@ function CashReceiptForm({
   }
 
   if (choices.error) return <Alert kind="error">{choices.error}</Alert>
-  if (!choices.data) return <p className="muted">Lädt …</p>
+  if (!choices.data) return <p className="muted">{t('Lädt …')}</p>
   if (cash.length === 0)
     return (
       <Alert kind="info">
-        Für Quittungen braucht es eine Barkasse. Lege sie unter{' '}
-        <Link to="/finanzen/einstellungen/konten">Einrichtung › Konten</Link> an (Art „Barkasse“).
+        {t('Für Quittungen braucht es eine Barkasse. Lege sie unter')}{' '}
+        <Link to="/finanzen/einstellungen/konten">{t('Einrichtung › Konten')}</Link>{' '}
+        {t('an (Art „Barkasse“).')}
       </Alert>
     )
 
   return (
     <form className="card receipt-form" onSubmit={submit}>
-      <h2>{initial ? 'Quittung ändern' : 'Quittung ausstellen'}</h2>
+      <h2>{initial ? t('Quittung ändern') : t('Quittung ausstellen')}</h2>
       {!fromInvoice && (
-        <div className="segmented" role="group" aria-label="Richtung">
+        <div className="segmented" role="group" aria-label={t('Richtung')}>
           <button
             type="button"
             className={`button button-ghost${v.direction === 'in' ? ' is-active' : ''}`}
@@ -196,7 +198,7 @@ function CashReceiptForm({
               set('category', null)
             }}
           >
-            Verein erhält Geld
+            {t('Verein erhält Geld')}
           </button>
           <button
             type="button"
@@ -207,13 +209,13 @@ function CashReceiptForm({
               set('category', null)
             }}
           >
-            Verein zahlt aus
+            {t('Verein zahlt aus')}
           </button>
         </div>
       )}
       {!fromInvoice && <MemberPicker orgId={org.id} value={member} onChange={pickMember} />}
       <Field
-        label={v.direction === 'in' ? 'Zahler (Name)' : 'Empfänger (Name)'}
+        label={v.direction === 'in' ? t('Zahler (Name)') : t('Empfänger (Name)')}
         value={v.counterparty_name}
         onChange={(e) => set('counterparty_name', e.target.value)}
         error={errors.counterparty_name}
@@ -221,7 +223,7 @@ function CashReceiptForm({
         maxLength={200}
       />
       <label className="field">
-        <span>Anschrift (optional)</span>
+        <span>{t('Anschrift (optional)')}</span>
         <textarea
           rows={2}
           value={v.counterparty_address}
@@ -230,7 +232,7 @@ function CashReceiptForm({
         />
       </label>
       <Field
-        label="Betrag in €"
+        label={t('Betrag in €')}
         inputMode="decimal"
         value={amountText}
         onChange={(e) => setAmountText(e.target.value)}
@@ -239,23 +241,23 @@ function CashReceiptForm({
         required
       />
       <Field
-        label="Zweck"
+        label={t('Zweck')}
         value={v.purpose}
         onChange={(e) => set('purpose', e.target.value)}
         error={errors.purpose}
         required
         maxLength={200}
-        hint="z. B. Auslagen Kranzniederlegung"
+        hint={t('z. B. Auslagen Kranzniederlegung')}
       />
       {cash.length > 1 && (
         <SelectField
-          label="Barkasse"
+          label={t('Barkasse')}
           value={v.account ?? ''}
           onChange={(e) => set('account', e.target.value ? Number(e.target.value) : null)}
           error={errors.account}
           required
         >
-          <option value="">bitte wählen</option>
+          <option value="">{t('bitte wählen')}</option>
           {cash.map((a) => (
             <option key={a.id} value={a.id}>
               {a.name}
@@ -266,13 +268,13 @@ function CashReceiptForm({
       {errors.account && cash.length <= 1 && <Alert kind="error">{errors.account}</Alert>}
       {!fromInvoice && (
         <SelectField
-          label="Kategorie"
+          label={t('Kategorie')}
           value={v.category ?? ''}
           onChange={(e) => set('category', e.target.value ? Number(e.target.value) : null)}
           error={errors.category}
           required
         >
-          <option value="">bitte wählen</option>
+          <option value="">{t('bitte wählen')}</option>
           {cats.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
@@ -281,22 +283,22 @@ function CashReceiptForm({
         </SelectField>
       )}
       <Field
-        label="E-Mail für das PDF (optional)"
+        label={t('E-Mail für das PDF (optional)')}
         type="email"
         value={v.email}
         onChange={(e) => set('email', e.target.value)}
         error={errors.email}
       />
       <Checkbox
-        label="Umsatzsteuer ausweisen"
+        label={t('Umsatzsteuer ausweisen')}
         checked={vat}
         onChange={setVat}
-        hint="nur bei Bedarf"
+        hint={t('nur bei Bedarf')}
       />
       <Why k="receipt_vat" />
       {vat && (
         <Field
-          label="Steuersatz in %"
+          label={t('Steuersatz in %')}
           inputMode="decimal"
           value={v.vat_rate ?? ''}
           onChange={(e) => set('vat_rate', parseAmount(e.target.value) || null)}
@@ -306,7 +308,7 @@ function CashReceiptForm({
       {message && <Alert kind="error">{message}</Alert>}
       <div className="button-row">
         <button className="button button-primary" type="submit" disabled={busy}>
-          {initial ? 'Speichern' : 'Weiter zur Unterschrift'}
+          {initial ? t('Speichern') : t('Weiter zur Unterschrift')}
         </button>
         <Link
           className="button button-ghost"
@@ -318,7 +320,7 @@ function CashReceiptForm({
             }
           }}
         >
-          Abbrechen
+          {t('Abbrechen')}
         </Link>
       </div>
     </form>
@@ -358,7 +360,7 @@ function CashReceiptDetail({ canEdit }: { canEdit: boolean }) {
   }, [r, org.id, canEdit, setData])
 
   if (error) return <Alert kind="error">{error}</Alert>
-  if (!r) return <p className="muted">Lädt …</p>
+  if (!r) return <p className="muted">{t('Lädt …')}</p>
   if (editing)
     return (
       <CashReceiptForm
@@ -407,10 +409,10 @@ function CashReceiptDetail({ canEdit }: { canEdit: boolean }) {
   async function decline() {
     if (!r) return
     const reason = await promptDialog({
-      title: 'Zahler unterschreibt nicht',
-      message: 'Dann gilt nur deine Unterschrift als Kassierer, wie bei einer Papierquittung.',
-      label: 'Grund',
-      confirmLabel: 'Übernehmen',
+      title: t('Zahler unterschreibt nicht'),
+      message: t('Dann gilt nur deine Unterschrift als Kassierer, wie bei einer Papierquittung.'),
+      label: t('Grund'),
+      confirmLabel: t('Übernehmen'),
       danger: false,
     })
     if (reason === null) return
@@ -422,7 +424,7 @@ function CashReceiptDetail({ canEdit }: { canEdit: boolean }) {
     const ok = await act(
       () =>
         financeApi.finalizeCashReceipt(org.id, r.id, finalizeKey.current, sendMail && !!r.email),
-      'Die Quittung ist abgeschlossen.',
+      t('Die Quittung ist abgeschlossen.'),
     )
     if (ok) finalizeKey.current = newRequestKey()
   }
@@ -430,37 +432,38 @@ function CashReceiptDetail({ canEdit }: { canEdit: boolean }) {
   async function cancel() {
     if (!r) return
     const reason = await promptDialog({
-      title: `Quittung ${r.number} stornieren?`,
+      title: t('Quittung {number} stornieren?', { number: r.number }),
       message:
-        'Es entsteht eine Gegenbuchung im laufenden Geschäftsjahr und ein neues PDF mit ' +
-        'Storno-Vermerk. Die Quittung bleibt sichtbar. Ist ihr Jahr schon abgeschlossen, ' +
-        'bleibt es unverändert; die Gegenbuchung verweist auf die alte Quittung.',
-      label: 'Grund',
-      confirmLabel: 'Stornieren',
+        t('Es entsteht eine Gegenbuchung im laufenden Geschäftsjahr und ein neues PDF mit ') +
+        t('Storno-Vermerk. Die Quittung bleibt sichtbar. Ist ihr Jahr schon abgeschlossen, ') +
+        t('bleibt es unverändert; die Gegenbuchung verweist auf die alte Quittung.'),
+      label: t('Grund'),
+      confirmLabel: t('Stornieren'),
     })
     if (reason === null) return
     await act(
       () => financeApi.cancelCashReceipt(org.id, r.id, reason),
-      'Die Quittung ist storniert.',
+      t('Die Quittung ist storniert.'),
     )
   }
 
   async function send() {
     if (!r) return
     const email = await promptDialog({
-      title: 'Quittung per Mail senden',
-      label: 'E-Mail-Adresse',
+      title: t('Quittung per Mail senden'),
+      label: t('E-Mail-Adresse'),
       defaultValue: r.email,
-      confirmLabel: 'Senden',
+      confirmLabel: t('Senden'),
       danger: false,
     })
     if (email === null) return
-    await act(() => financeApi.sendCashReceipt(org.id, r.id, email), 'Die Mail ist unterwegs.')
+    await act(() => financeApi.sendCashReceipt(org.id, r.id, email), t('Die Mail ist unterwegs.'))
   }
 
   async function discard() {
     if (!r) return
-    if (!(await confirmDialog({ title: 'Entwurf verwerfen?', confirmLabel: 'Verwerfen' }))) return
+    if (!(await confirmDialog({ title: t('Entwurf verwerfen?'), confirmLabel: t('Verwerfen') })))
+      return
     try {
       await financeApi.deleteCashReceipt(org.id, r.id)
       navigate('/finanzen/quittungen')
@@ -469,38 +472,55 @@ function CashReceiptDetail({ canEdit }: { canEdit: boolean }) {
     }
   }
 
-  const treasurerRole = receives ? 'Betrag erhalten (Kassierer)' : 'Betrag ausgezahlt (Kassierer)'
+  const treasurerRole = receives
+    ? t('Betrag erhalten (Kassierer)')
+    : t('Betrag ausgezahlt (Kassierer)')
   const otherRole = receives
-    ? `Betrag gezahlt: ${r.counterparty_name}`
-    : `Betrag erhalten: ${r.counterparty_name}`
+    ? t('Betrag gezahlt: {counterparty_name}', { counterparty_name: r.counterparty_name })
+    : t('Betrag erhalten: {counterparty_name}', { counterparty_name: r.counterparty_name })
 
   return (
     <div className="card card-wide">
       <p className="muted small">
-        <Link to="/finanzen/quittungen">Alle Quittungen</Link>
+        <Link to="/finanzen/quittungen">{t('Alle Quittungen')}</Link>
       </p>
       <div className="card-head">
-        <h2>{r.number ? `Quittung ${r.number}` : 'Quittung (Entwurf)'}</h2>
+        <h2>{r.number ? t('Quittung {number}', { number: r.number }) : t('Quittung (Entwurf)')}</h2>
         <span className="muted small">{r.status_label}</span>
       </div>
       <p className="receipt-amount">{euro(r.amount)}</p>
       <p>
-        {receives ? 'erhalten von ' : 'ausgezahlt an '}
+        {receives ? t('erhalten von ') : t('ausgezahlt an ')}
         <strong>{r.counterparty_name}</strong>
         <br />
-        für {r.purpose}
-        {r.invoice_number && <> · Rechnung {r.invoice_number}</>}
+        {t('für')} {r.purpose}
+        {r.invoice_number && (
+          <>
+            {' '}
+            {t('· Rechnung')} {r.invoice_number}
+          </>
+        )}
       </p>
       {r.receipt_date && (
         <p className="muted small">
-          Datum {formatDate(r.receipt_date)}
-          {r.finalized_at && <> · abgeschlossen {formatDateTime(r.finalized_at)}</>}
-          {r.booking_number && <> · Buchung {r.booking_number}</>}
+          {t('Datum')} {formatDate(r.receipt_date)}
+          {r.finalized_at && (
+            <>
+              {' '}
+              {t('· abgeschlossen')} {formatDateTime(r.finalized_at)}
+            </>
+          )}
+          {r.booking_number && (
+            <>
+              {' '}
+              {t('· Buchung')} {r.booking_number}
+            </>
+          )}
         </p>
       )}
       {r.status === 'cancelled' && (
         <Alert kind="info">
-          Storniert am {r.cancelled_at ? formatDateTime(r.cancelled_at) : ''} (Gegenbuchung{' '}
+          {t('Storniert am')} {r.cancelled_at ? formatDateTime(r.cancelled_at) : ''} (Gegenbuchung{' '}
           {r.cancel_number}): {r.cancel_reason}
         </Alert>
       )}
@@ -515,14 +535,14 @@ function CashReceiptDetail({ canEdit }: { canEdit: boolean }) {
             onClick={() => setSigning('treasurer')}
             aria-label={
               r.treasurer_signature
-                ? 'Kassierer neu unterschreiben'
-                : 'Als Kassierer unterschreiben'
+                ? t('Kassierer neu unterschreiben')
+                : t('Als Kassierer unterschreiben')
             }
           >
             {r.treasurer_signature ? (
-              <SignatureImage shape={r.treasurer_signature} label="Unterschrift Kassierer" />
+              <SignatureImage shape={r.treasurer_signature} label={t('Unterschrift Kassierer')} />
             ) : (
-              'Antippen zum Unterschreiben'
+              t('Antippen zum Unterschreiben')
             )}
           </button>
           {r.treasurer_name && <span className="muted small">{r.treasurer_name}</span>}
@@ -530,28 +550,34 @@ function CashReceiptDetail({ canEdit }: { canEdit: boolean }) {
         <div className="receipt-signature">
           <span className="small">{otherRole}</span>
           {r.no_signature_reason ? (
-            <div className="receipt-signature-box">ohne Unterschrift: {r.no_signature_reason}</div>
+            <div className="receipt-signature-box">
+              {t('ohne Unterschrift:')} {r.no_signature_reason}
+            </div>
           ) : (
             <button
               type="button"
               className="receipt-signature-box"
               disabled={!draft || !canEdit || busy}
               onClick={() => setSigning('counterparty')}
-              aria-label={`${r.counterparty_name} unterschreiben lassen`}
+              aria-label={t('{counterparty_name} unterschreiben lassen', {
+                counterparty_name: r.counterparty_name,
+              })}
             >
               {r.counterparty_signature ? (
                 <SignatureImage
                   shape={r.counterparty_signature}
-                  label={`Unterschrift ${r.counterparty_name}`}
+                  label={t('Unterschrift {counterparty_name}', {
+                    counterparty_name: r.counterparty_name,
+                  })}
                 />
               ) : (
-                'Antippen: im Vollbild unterschreiben lassen'
+                t('Antippen: im Vollbild unterschreiben lassen')
               )}
             </button>
           )}
           {draft && canEdit && receives && !r.counterparty_signature && !r.no_signature_reason && (
             <button type="button" className="link-button small" onClick={decline} disabled={busy}>
-              Zahler unterschreibt nicht
+              {t('Zahler unterschreibt nicht')}
             </button>
           )}
         </div>
@@ -562,20 +588,22 @@ function CashReceiptDetail({ canEdit }: { canEdit: boolean }) {
       {draft && canEdit && (
         <>
           {r.missing.length > 0 && (
-            <p className="muted small">Es fehlt noch: {r.missing.join(', ')}.</p>
+            <p className="muted small">
+              {t('Es fehlt noch:')} {r.missing.join(', ')}.
+            </p>
           )}
           <Checkbox
             label={
               receives
-                ? `Ich bestätige, ${euro(r.amount)} erhalten zu haben.`
-                : `Ich bestätige, ${euro(r.amount)} ausgezahlt zu haben.`
+                ? t('Ich bestätige, {x} erhalten zu haben.', { x: euro(r.amount) })
+                : t('Ich bestätige, {x} ausgezahlt zu haben.', { x: euro(r.amount) })
             }
             checked={confirmed}
             onChange={setConfirmed}
           />
           {r.email && (
             <Checkbox
-              label={`PDF an ${r.email} senden`}
+              label={t('PDF an {email} senden', { email: r.email })}
               checked={sendMail}
               onChange={setSendMail}
             />
@@ -587,10 +615,10 @@ function CashReceiptDetail({ canEdit }: { canEdit: boolean }) {
               disabled={busy || r.missing.length > 0 || !confirmed}
               onClick={finalize}
             >
-              Quittung abschließen
+              {t('Quittung abschließen')}
             </button>
             <button type="button" className="button button-ghost" onClick={() => setEditing(true)}>
-              Angaben ändern
+              {t('Angaben ändern')}
             </button>
             <a
               className="button button-ghost"
@@ -598,14 +626,14 @@ function CashReceiptDetail({ canEdit }: { canEdit: boolean }) {
               target="_blank"
               rel="noreferrer"
             >
-              Vorschau
+              {t('Vorschau')}
             </a>
             <button type="button" className="button button-ghost" onClick={discard}>
-              Entwurf verwerfen
+              {t('Entwurf verwerfen')}
             </button>
           </div>
           <p className="muted small">
-            Ändern sich Betrag, Name, Zweck oder Richtung, müssen beide neu unterschreiben.
+            {t('Ändern sich Betrag, Name, Zweck oder Richtung, müssen beide neu unterschreiben.')}
           </p>
         </>
       )}
@@ -618,23 +646,26 @@ function CashReceiptDetail({ canEdit }: { canEdit: boolean }) {
             target="_blank"
             rel="noreferrer"
           >
-            PDF öffnen
+            {t('PDF öffnen')}
           </a>
           {canEdit && (
             <button type="button" className="button button-ghost" onClick={send} disabled={busy}>
-              Per Mail senden
+              {t('Per Mail senden')}
             </button>
           )}
           {canEdit && r.status === 'final' && (
             <button type="button" className="button button-ghost" onClick={cancel} disabled={busy}>
-              Stornieren
+              {t('Stornieren')}
             </button>
           )}
         </div>
       )}
       {r.sent_at && (
         <p className="muted small">
-          Zuletzt an {r.email} verschickt am {formatDateTime(r.sent_at)}.
+          {t('Zuletzt an {email} verschickt am {x}.', {
+            email: r.email,
+            x: formatDateTime(r.sent_at),
+          })}
         </p>
       )}
 
@@ -644,8 +675,16 @@ function CashReceiptDetail({ canEdit }: { canEdit: boolean }) {
           text={
             signing === 'treasurer'
               ? receives
-                ? `${euro(r.amount)} von ${r.counterparty_name} erhalten. Zweck: ${r.purpose}`
-                : `${euro(r.amount)} an ${r.counterparty_name} ausgezahlt. Zweck: ${r.purpose}`
+                ? t('{x} von {counterparty_name} erhalten. Zweck: {purpose}', {
+                    x: euro(r.amount),
+                    counterparty_name: r.counterparty_name,
+                    purpose: r.purpose,
+                  })
+                : t('{x} an {counterparty_name} ausgezahlt. Zweck: {purpose}', {
+                    x: euro(r.amount),
+                    counterparty_name: r.counterparty_name,
+                    purpose: r.purpose,
+                  })
               : r.confirmation_text
           }
           busy={busy}

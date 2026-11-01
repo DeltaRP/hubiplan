@@ -24,6 +24,7 @@ import { confirmDialog } from '../../components/dialog.ts'
 import { useTerms } from '../../org/terms.ts'
 import { Term } from '../../learning/Aids.tsx'
 import { locale } from '../../i18n/index.ts'
+import { t } from '../../i18n/index.ts'
 
 export function StatusBadge({
   row,
@@ -32,7 +33,9 @@ export function StatusBadge({
 }) {
   const cls = row.overdue ? 'overdue' : row.status
   return (
-    <span className={`status status-${cls}`}>{row.overdue ? 'überfällig' : row.status_label}</span>
+    <span className={`status status-${cls}`}>
+      {row.overdue ? t('überfällig') : row.status_label}
+    </span>
   )
 }
 
@@ -95,7 +98,7 @@ export function InvoicesPage() {
   }
 
   if (settings.error) return <Alert kind="error">{settings.error}</Alert>
-  if (!settings.data) return <p className="muted">Lädt …</p>
+  if (!settings.data) return <p className="muted">{t('Lädt …')}</p>
   const s = settings.data
   const refresh = () => setVersion((v) => v + 1)
 
@@ -110,14 +113,14 @@ export function InvoicesPage() {
         >
           <input
             type="search"
-            aria-label="Rechnungen durchsuchen"
-            placeholder="Name, Betreff oder Rechnungsnummer"
+            aria-label={t('Rechnungen durchsuchen')}
+            placeholder={t('Name, Betreff oder Rechnungsnummer')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </form>
         <select
-          aria-label="Status"
+          aria-label={t('Status')}
           value={overdue ? 'ueberfaellig' : status}
           onChange={(e) => {
             const next = new URLSearchParams(params)
@@ -129,10 +132,10 @@ export function InvoicesPage() {
             setParams(next)
           }}
         >
-          <option value="">alle Status</option>
-          <option value="draft">Entwürfe</option>
+          <option value="">{t('alle Status')}</option>
+          <option value="draft">{t('Entwürfe')}</option>
           <option value="open">offen</option>
-          <option value="ueberfaellig">überfällig</option>
+          <option value="ueberfaellig">{t('überfällig')}</option>
           <option value="paid">bezahlt</option>
           <option value="cancelled">storniert</option>
         </select>
@@ -152,21 +155,21 @@ export function InvoicesPage() {
         )}
         {org.type !== 'unit' && (
           <select
-            aria-label="Beitragslauf"
+            aria-label={t('Beitragslauf')}
             value={run}
             onChange={(e) => setParam('lauf', e.target.value)}
           >
-            <option value="">alle Rechnungen</option>
+            <option value="">{t('alle Rechnungen')}</option>
             {(runs.data ?? []).map((r) => (
               <option key={r.id} value={r.id}>
-                Beitragslauf {r.label}
+                {t('Beitragslauf')} {r.label}
               </option>
             ))}
           </select>
         )}
         {runs.error && (
           <button type="button" className="link-button" onClick={() => void runs.reload()}>
-            Beitragsläufe nicht geladen, erneut laden
+            {t('Beitragsläufe nicht geladen, erneut laden')}
           </button>
         )}
         {s.can_edit && !creating && (
@@ -175,7 +178,7 @@ export function InvoicesPage() {
             className="button button-ghost push-right"
             onClick={() => detail.open('neu')}
           >
-            Neue Rechnung
+            {t('Neue Rechnung')}
           </button>
         )}
       </div>
@@ -210,17 +213,17 @@ export function InvoicesPage() {
       {data && (
         <div className="card card-wide">
           {data.results.length === 0 ? (
-            <p className="muted">Keine Rechnungen gefunden.</p>
+            <p className="muted">{t('Keine Rechnungen gefunden.')}</p>
           ) : (
             <div className="table-scroll">
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Nummer</th>
-                    <th>Empfänger</th>
-                    <th>Datum</th>
-                    <th>Status</th>
-                    <th className="num">Betrag</th>
+                    <th>{t('Nummer')}</th>
+                    <th>{t('Empfänger')}</th>
+                    <th>{t('Datum')}</th>
+                    <th>{t('Status')}</th>
+                    <th className="num">{t('Betrag')}</th>
                     <th className="num">
                       <Term k="outstanding">offen</Term>
                     </th>
@@ -242,8 +245,9 @@ export function InvoicesPage() {
                         {r.recipient_name.split('\n')[0]}
                         <div className="muted small">
                           {r.subject}
-                          {r.sent_at && ' · per E-Mail verschickt'}
-                          {r.dunning_level > 0 && ` · ${r.dunning_level}. Mahnstufe`}
+                          {r.sent_at && t(' · per E-Mail verschickt')}
+                          {r.dunning_level > 0 &&
+                            t(' · {dunning_level}. Mahnstufe', { dunning_level: r.dunning_level })}
                         </div>
                       </td>
                       <td>{formatDate(r.date)}</td>
@@ -268,10 +272,10 @@ export function InvoicesPage() {
                   setParams({ ...Object.fromEntries(params), seite: String(page - 1) })
                 }
               >
-                Zurück
+                {t('Zurück')}
               </button>
               <span className="muted small">
-                Seite {page} · {data.count} Rechnungen
+                {t('Seite {page} · {count} Rechnungen', { page, count: data.count })}
               </span>
               <button
                 type="button"
@@ -281,7 +285,7 @@ export function InvoicesPage() {
                   setParams({ ...Object.fromEntries(params), seite: String(page + 1) })
                 }
               >
-                Weiter
+                {t('Weiter')}
               </button>
             </div>
           )}
@@ -312,7 +316,7 @@ function InvoiceDetail({
   const canEdit = settings.can_edit
 
   if (error) return <Alert kind="error">{error}</Alert>
-  if (!inv) return <p className="muted">Lädt …</p>
+  if (!inv) return <p className="muted">{t('Lädt …')}</p>
 
   async function act(action: () => Promise<unknown>, text: string, deleted = false) {
     setBusy(true)
@@ -354,11 +358,13 @@ function InvoiceDetail({
     <div className="card card-wide">
       <div className="card-head">
         <h2>
-          {inv.status === 'draft' ? 'Rechnungsentwurf' : `Rechnung ${inv.number}`}{' '}
+          {inv.status === 'draft'
+            ? t('Rechnungsentwurf')
+            : t('Rechnung {number}', { number: inv.number })}{' '}
           <StatusBadge row={inv} />
         </h2>
         <button type="button" className="button button-ghost push-right" onClick={onClose}>
-          Schließen
+          {t('Schließen')}
         </button>
       </div>
       <div className="grid-2">
@@ -367,24 +373,24 @@ function InvoiceDetail({
             <strong>{inv.recipient_name}</strong>
             {inv.recipient_address && `\n${inv.recipient_address}`}
           </p>
-          <p className="muted small">{inv.recipient_email || 'keine E-Mail-Adresse bekannt'}</p>
+          <p className="muted small">{inv.recipient_email || t('keine E-Mail-Adresse bekannt')}</p>
         </div>
         <dl className="facts">
-          <dt>Betreff</dt>
+          <dt>{t('Betreff')}</dt>
           <dd>{inv.subject}</dd>
-          <dt>Rechnungsdatum</dt>
+          <dt>{t('Rechnungsdatum')}</dt>
           <dd>{formatDate(inv.date)}</dd>
-          <dt>fällig</dt>
+          <dt>{t('fällig')}</dt>
           <dd>{formatDate(inv.due_date)}</dd>
           {inv.run_label && (
             <>
-              <dt>Beitragslauf</dt>
+              <dt>{t('Beitragslauf')}</dt>
               <dd>{inv.run_label}</dd>
             </>
           )}
           {inv.project_name && (
             <>
-              <dt>Veranstaltung</dt>
+              <dt>{t('Veranstaltung')}</dt>
               <dd>{inv.project_name}</dd>
             </>
           )}
@@ -399,9 +405,9 @@ function InvoiceDetail({
       <table className="table">
         <thead>
           <tr>
-            <th>{collective ? 'Mitglied' : 'Posten'}</th>
+            <th>{collective ? t('Mitglied') : t('Posten')}</th>
             <th />
-            <th className="num">Betrag</th>
+            <th className="num">{t('Betrag')}</th>
           </tr>
         </thead>
         <tbody>
@@ -410,7 +416,8 @@ function InvoiceDetail({
               <td>{l.text}</td>
               <td className="muted small">
                 {l.detail}
-                {l.vat_rate && ` · ${Number(l.vat_rate).toLocaleString(locale())} % USt`}
+                {l.vat_rate &&
+                  t(' · {x} % USt', { x: Number(l.vat_rate).toLocaleString(locale()) })}
               </td>
               <td className="num">{euro(l.amount)}</td>
             </tr>
@@ -418,14 +425,14 @@ function InvoiceDetail({
         </tbody>
         <tfoot>
           <tr>
-            <th>Gesamt</th>
+            <th>{t('Gesamt')}</th>
             <th />
             <th className="num">{euro(inv.total)}</th>
           </tr>
           {inv.vat.map((v) => (
             <tr key={v.rate} className="muted small">
               <td>
-                darin {v.rate.replace('.', ',')} % <Term k="vat">Umsatzsteuer</Term>
+                darin {v.rate.replace('.', ',')} % <Term k="vat">{t('Umsatzsteuer')}</Term>
               </td>
               <td>netto {euro(v.net)}</td>
               <td className="num">{euro(v.vat)}</td>
@@ -433,7 +440,7 @@ function InvoiceDetail({
           ))}
           {Number(inv.paid) > 0 && (
             <tr>
-              <th>noch offen</th>
+              <th>{t('noch offen')}</th>
               <th />
               <th className="num">{euro(inv.outstanding)}</th>
             </tr>
@@ -444,7 +451,7 @@ function InvoiceDetail({
 
       {inv.dunnings.length > 0 && (
         <>
-          <h3>Mahnungen</h3>
+          <h3>{t('Mahnungen')}</h3>
           <table className="table">
             <tbody>
               {inv.dunnings.map((d) => (
@@ -453,9 +460,11 @@ function InvoiceDetail({
                   <td>
                     {d.name}
                     <div className="muted small">
-                      zahlbar bis {formatDate(d.due_date)}
-                      {Number(d.fee) > 0 && ` · Gebühr ${euro(d.fee)}`}
-                      {d.sent_at ? ' · per E-Mail verschickt' : ' · nicht per E-Mail verschickt'}
+                      {t('zahlbar bis')} {formatDate(d.due_date)}
+                      {Number(d.fee) > 0 && t(' · Gebühr {x}', { x: euro(d.fee) })}
+                      {d.sent_at
+                        ? t(' · per E-Mail verschickt')
+                        : t(' · nicht per E-Mail verschickt')}
                     </div>
                   </td>
                   <td className="actions">
@@ -477,7 +486,7 @@ function InvoiceDetail({
 
       {inv.payments.length > 0 && (
         <>
-          <h3>Zahlungen</h3>
+          <h3>{t('Zahlungen')}</h3>
           <table className="table">
             <tbody>
               {inv.payments.map((p) => (
@@ -485,7 +494,9 @@ function InvoiceDetail({
                   <td>{formatDate(p.date)}</td>
                   <td>
                     {p.method_label} · {p.account_name}
-                    <div className="muted small">Buchung {p.booking_number}</div>
+                    <div className="muted small">
+                      {t('Buchung')} {p.booking_number}
+                    </div>
                   </td>
                   <td className="num">{euro(p.amount)}</td>
                   <td className="actions">
@@ -495,7 +506,7 @@ function InvoiceDetail({
                       target="_blank"
                       rel="noreferrer"
                     >
-                      Quittung
+                      {t('Quittung')}
                     </a>
                     {canEdit && (
                       <button
@@ -505,18 +516,20 @@ function InvoiceDetail({
                         onClick={async () => {
                           if (
                             await confirmDialog({
-                              title: 'Zahlung entfernen?',
-                              message: 'Die Zahlung und ihre Buchung in der Kasse werden entfernt.',
-                              confirmLabel: 'Entfernen',
+                              title: t('Zahlung entfernen?'),
+                              message: t(
+                                'Die Zahlung und ihre Buchung in der Kasse werden entfernt.',
+                              ),
+                              confirmLabel: t('Entfernen'),
                             })
                           )
                             void act(
                               () => billingApi.deletePayment(org.id, p.id),
-                              'Zahlung entfernt.',
+                              t('Zahlung entfernt.'),
                             )
                         }}
                       >
-                        Entfernen
+                        {t('Entfernen')}
                       </button>
                     )}
                   </td>
@@ -536,7 +549,7 @@ function InvoiceDetail({
             setData(saved)
             setNotice({
               kind: 'success',
-              text: saved.status === 'paid' ? 'Bezahlt.' : 'Teilzahlung erfasst.',
+              text: saved.status === 'paid' ? t('Bezahlt.') : t('Teilzahlung erfasst.'),
             })
             onChanged()
           }}
@@ -551,33 +564,35 @@ function InvoiceDetail({
           target="_blank"
           rel="noreferrer"
         >
-          PDF ansehen
+          {t('PDF ansehen')}
         </a>
         {canEdit && inv.status === 'draft' && (
           <>
             <button type="button" className="button button-ghost" onClick={() => setEditing(true)}>
-              Bearbeiten
+              {t('Bearbeiten')}
             </button>
             <button
               type="button"
               className="button button-primary"
               disabled={busy}
               onClick={() =>
-                void act(() => billingApi.finalize(org.id, inv.id), 'Festgeschrieben.')
+                void act(() => billingApi.finalize(org.id, inv.id), t('Festgeschrieben.'))
               }
             >
-              Festschreiben
+              {t('Festschreiben')}
             </button>
             <button
               type="button"
               className="button button-danger push-right"
               disabled={busy}
               onClick={async () => {
-                if (await confirmDialog({ title: 'Entwurf löschen?', confirmLabel: 'Löschen' }))
+                if (
+                  await confirmDialog({ title: t('Entwurf löschen?'), confirmLabel: t('Löschen') })
+                )
                   void act(() => billingApi.deleteInvoice(org.id, inv.id), '', true)
               }}
             >
-              Löschen
+              {t('Löschen')}
             </button>
           </>
         )}
@@ -589,11 +604,11 @@ function InvoiceDetail({
             onClick={() =>
               void act(
                 () => billingApi.send(org.id, inv.id),
-                `An ${inv.recipient_email} verschickt.`,
+                t('An {recipient_email} verschickt.', { recipient_email: inv.recipient_email }),
               )
             }
           >
-            {inv.sent_at ? 'Erneut per E-Mail senden' : 'Per E-Mail senden'}
+            {inv.sent_at ? t('Erneut per E-Mail senden') : t('Per E-Mail senden')}
           </button>
         )}
         {canEdit && inv.status === 'open' && inv.payments.length === 0 && (
@@ -604,14 +619,14 @@ function InvoiceDetail({
             onClick={async () => {
               if (
                 await confirmDialog({
-                  title: `Rechnung ${inv.number} stornieren?`,
-                  confirmLabel: 'Stornieren',
+                  title: t('Rechnung {number} stornieren?', { number: inv.number }),
+                  confirmLabel: t('Stornieren'),
                 })
               )
-                void act(() => billingApi.cancel(org.id, inv.id), 'Storniert.')
+                void act(() => billingApi.cancel(org.id, inv.id), t('Storniert.'))
             }}
           >
-            Stornieren
+            {t('Stornieren')}
           </button>
         )}
       </div>
@@ -685,10 +700,10 @@ function PaymentForm({
 
   return (
     <form className="subcard" onSubmit={save}>
-      <h3>Zahlungseingang erfassen</h3>
+      <h3>{t('Zahlungseingang erfassen')}</h3>
       <div className="grid-3">
         <SelectField
-          label="Zahlungsweg"
+          label={t('Zahlungsweg')}
           value={method}
           onChange={(e) => {
             const m = e.target.value as 'transfer' | 'cash'
@@ -700,10 +715,14 @@ function PaymentForm({
             if (fit) setAccount(String(fit.id))
           }}
         >
-          <option value="transfer">Überweisung</option>
+          <option value="transfer">{t('Überweisung')}</option>
           <option value="cash">bar</option>
         </SelectField>
-        <SelectField label="Konto" value={account} onChange={(e) => setAccount(e.target.value)}>
+        <SelectField
+          label={t('Konto')}
+          value={account}
+          onChange={(e) => setAccount(e.target.value)}
+        >
           {settings.accounts.map((a) => (
             <option key={a.id} value={a.id}>
               {a.name}
@@ -711,25 +730,27 @@ function PaymentForm({
           ))}
         </SelectField>
         <Field
-          label="Datum"
+          label={t('Datum')}
           type="date"
           required
           value={date}
           onChange={(e) => setDate(e.target.value)}
         />
         <Field
-          label="Betrag (€)"
+          label={t('Betrag (€)')}
           inputMode="decimal"
           required
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
         />
       </div>
-      <p className="muted small">Die Zahlung wird automatisch als Einnahme in der Kasse gebucht.</p>
+      <p className="muted small">
+        {t('Die Zahlung wird automatisch als Einnahme in der Kasse gebucht.')}
+      </p>
       {error && <Alert kind="error">{error}</Alert>}
       <div className="button-row">
         <button type="submit" className="button button-primary" disabled={busy || !account}>
-          Zahlung buchen
+          {t('Zahlung buchen')}
         </button>
         {method === 'cash' && canSign && (
           <button
@@ -738,14 +759,15 @@ function PaymentForm({
             disabled={busy || !account}
             onClick={() => void sign()}
           >
-            Mit Unterschrift quittieren
+            {t('Mit Unterschrift quittieren')}
           </button>
         )}
       </div>
       {method === 'cash' && canSign && (
         <p className="muted small">
-          „Mit Unterschrift quittieren“ bucht die Zahlung erst, wenn beide auf dem Bildschirm
-          unterschrieben haben. Das Datum ist dann der Tag der Unterschrift.
+          {t(
+            '„Mit Unterschrift quittieren“ bucht die Zahlung erst, wenn beide auf dem Bildschirm unterschrieben haben. Das Datum ist dann der Tag der Unterschrift.',
+          )}
         </p>
       )}
     </form>
@@ -828,26 +850,28 @@ function InvoiceForm({
     const n = l.index + 1
     if (!l.text.trim())
       lineErrors[l.index] = {
-        text: `Posten ${n}: Bitte eine Bezeichnung ergänzen oder den gesamten Posten entfernen.`,
+        text: t('Posten {n}: Bitte eine Bezeichnung ergänzen oder den gesamten Posten entfernen.', {
+          n,
+        }),
       }
     const amount = parseAmount(l.amount)
     if (!amount)
       lineErrors[l.index] = {
         ...lineErrors[l.index],
-        amount: 'Bitte einen Betrag eintragen (0 für einen Posten ohne Betrag).',
+        amount: t('Bitte einen Betrag eintragen (0 für einen Posten ohne Betrag).'),
       }
     else if (Number.isNaN(Number(amount)))
       lineErrors[l.index] = {
         ...lineErrors[l.index],
-        amount: 'Bitte einen gültigen Betrag eintragen.',
+        amount: t('Bitte einen gültigen Betrag eintragen.'),
       }
   }
   const [showLineErrors, setShowLineErrors] = useState(false)
   const incompleteText =
     filled.length === 0
-      ? 'Bitte mindestens einen Posten eintragen.'
+      ? t('Bitte mindestens einen Posten eintragen.')
       : Object.keys(lineErrors).length > 0
-        ? 'Bitte die markierten Posten vervollständigen oder entfernen.'
+        ? t('Bitte die markierten Posten vervollständigen oder entfernen.')
         : null
 
   const data = {
@@ -924,20 +948,21 @@ function InvoiceForm({
 
   return (
     <form className="card card-wide" onSubmit={save}>
-      <h2>{invoice ? 'Entwurf bearbeiten' : 'Neue Rechnung'}</h2>
+      <h2>{invoice ? t('Entwurf bearbeiten') : t('Neue Rechnung')}</h2>
       {invoice && <SaveStatus auto={auto} />}
       <p className="muted small">
-        Für Aufnahmegebühren, Umlagen, Uniformen und andere Einzelposten. Eine Ermäßigung trägst du
-        als Posten mit Minusbetrag ein.
+        {t(
+          'Für Aufnahmegebühren, Umlagen, Uniformen und andere Einzelposten. Eine Ermäßigung trägst du als Posten mit Minusbetrag ein.',
+        )}
       </p>
       <div className="grid-3">
         {canMember && subUnits.length > 0 && (
           <SelectField
-            label="Empfänger"
+            label={t('Empfänger')}
             value={kind}
             onChange={(e) => setKind(e.target.value as 'member' | 'unit')}
           >
-            <option value="member">Mitglied</option>
+            <option value="member">{t('Mitglied')}</option>
             <option value="unit">{settings.department_label}</option>
           </SelectField>
         )}
@@ -947,7 +972,7 @@ function InvoiceForm({
               orgId={org.id}
               value={member}
               onChange={setMember}
-              label="Mitglied"
+              label={t('Mitglied')}
               search={unit ? searchUnitMembers : undefined}
             />
             {keepMember && (
@@ -960,7 +985,7 @@ function InvoiceForm({
             value={unitId}
             onChange={(e) => setUnitId(e.target.value)}
           >
-            <option value="">bitte wählen</option>
+            <option value="">{t('bitte wählen')}</option>
             {subUnits.map((u) => (
               <option key={u.id} value={u.id}>
                 {u.name}
@@ -969,7 +994,7 @@ function InvoiceForm({
           </SelectField>
         )}
         <Field
-          label="Rechnungsdatum"
+          label={t('Rechnungsdatum')}
           type="date"
           required
           value={date}
@@ -977,22 +1002,25 @@ function InvoiceForm({
         />
       </div>
       <Field
-        label="Betreff"
+        label={t('Betreff')}
         required
         value={subject}
         onChange={(e) => setSubject(e.target.value)}
       />
       {projects.error && (
         <LoadError
-          message={`Die Veranstaltungen konnten nicht geladen werden; deine Eingaben bleiben erhalten. ${projects.error}`}
+          message={t(
+            'Die Veranstaltungen konnten nicht geladen werden; deine Eingaben bleiben erhalten. {error}',
+            { error: projects.error },
+          )}
           onRetry={() => void projects.reload()}
         />
       )}
       {usableProjects.length > 0 && (
         <SelectField
-          label="Veranstaltung (optional)"
+          label={t('Veranstaltung (optional)')}
           value={project}
-          hint="Zahlungen werden in der Kasse dieser Veranstaltung zugeordnet"
+          hint={t('Zahlungen werden in der Kasse dieser Veranstaltung zugeordnet')}
           onChange={(e) => setProject(e.target.value)}
         >
           <option value="">keine</option>
@@ -1003,22 +1031,22 @@ function InvoiceForm({
           ))}
         </SelectField>
       )}
-      <h3>Posten</h3>
+      <h3>{t('Posten')}</h3>
       {lines.map((l, i) => (
         <div key={i} className={settings.vat_enabled ? 'line-row line-row-vat' : 'line-row'}>
           <Field
-            label={`Posten ${i + 1}`}
+            label={t('Posten {x}', { x: i + 1 })}
             value={l.text}
             error={showLineErrors ? lineErrors[i]?.text : undefined}
             onChange={(e) => setLine(i, { text: e.target.value })}
           />
           <Field
-            label="Zusatz (optional)"
+            label={t('Zusatz (optional)')}
             value={l.detail}
             onChange={(e) => setLine(i, { detail: e.target.value })}
           />
           <Field
-            label="Betrag (€)"
+            label={t('Betrag (€)')}
             inputMode="decimal"
             value={l.amount}
             error={showLineErrors ? lineErrors[i]?.amount : undefined}
@@ -1026,14 +1054,14 @@ function InvoiceForm({
           />
           {settings.vat_enabled && (
             <SelectField
-              label="Umsatzsteuer"
+              label={t('Umsatzsteuer')}
               value={l.vat_rate ? String(Number(l.vat_rate)) : ''}
               onChange={(e) => setLine(i, { vat_rate: e.target.value })}
             >
               <option value="">keine</option>
               {[...new Set([Number(settings.vat_rate), 19, 7])].map((r) => (
                 <option key={r} value={String(r)}>
-                  {r.toLocaleString(locale())} % enthalten
+                  {r.toLocaleString(locale())} {t('% enthalten')}
                 </option>
               ))}
             </SelectField>
@@ -1044,7 +1072,7 @@ function InvoiceForm({
             disabled={lines.length === 1}
             onClick={() => setLines((ls) => ls.filter((_, n) => n !== i))}
           >
-            Entfernen
+            {t('Entfernen')}
           </button>
         </div>
       ))}
@@ -1056,15 +1084,15 @@ function InvoiceForm({
             setLines((ls) => [...ls, { text: '', detail: '', amount: '', vat_rate: '' }])
           }
         >
-          Posten hinzufügen
+          {t('Posten hinzufügen')}
         </button>
         <strong className="push-right">
-          Summe {euro(total)}
+          {t('Summe')} {euro(total)}
           {incomplete && <span className="muted small"> (unvollständige Posten offen)</span>}
         </strong>
       </div>
       <label className="field">
-        <span>Hinweis auf der Rechnung (optional)</span>
+        <span>{t('Hinweis auf der Rechnung (optional)')}</span>
         <textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
       </label>
       {error && <Alert kind="error">{error}</Alert>}
@@ -1074,11 +1102,11 @@ function InvoiceForm({
           className={invoice ? 'button button-ghost' : 'button button-primary'}
           disabled={busy}
         >
-          {invoice ? 'Schließen' : 'Entwurf anlegen'}
+          {invoice ? t('Schließen') : t('Entwurf anlegen')}
         </button>
         {!invoice && (
           <button type="button" className="button button-ghost" onClick={onCancel}>
-            Abbrechen
+            {t('Abbrechen')}
           </button>
         )}
       </div>

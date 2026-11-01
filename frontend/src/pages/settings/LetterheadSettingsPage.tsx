@@ -11,6 +11,7 @@ import { errorMessage, useAutoSave, useForm, useLoad } from '../../components/fo
 import { flushAllForms } from '../../components/leaveGuard.ts'
 import { Alert, Checkbox, Field, LoadError, SaveStatus, SelectField } from '../../components/ui.tsx'
 import { useActiveOrg, useOrg } from '../../org/OrgContext.tsx'
+import { t } from '../../i18n/index.ts'
 
 const FIELDS: (keyof LetterheadFields)[] = [
   'mode',
@@ -63,19 +64,24 @@ export function LetterPreview({ load, version }: { load: () => Promise<Blob>; ve
       if (current) URL.revokeObjectURL(current)
     }
   }, [version])
-  if (error) return <Alert kind="error">Vorschau nicht verfügbar: {error}</Alert>
-  if (!url) return <p className="muted">Vorschau lädt …</p>
+  if (error)
+    return (
+      <Alert kind="error">
+        {t('Vorschau nicht verfügbar:')} {error}
+      </Alert>
+    )
+  if (!url) return <p className="muted">{t('Vorschau lädt …')}</p>
   return (
     <>
       {/* view=Fit (Chrome/Edge) bzw. zoom=page-fit (Firefox): ganze Seite einpassen, kein Querscrollen */}
       <iframe
         className="letter-preview"
         src={`${url}#view=Fit&zoom=page-fit`}
-        title="Vorschau der ersten Seite"
+        title={t('Vorschau der ersten Seite')}
       />
       <p className="small">
         <a href={url} target="_blank" rel="noreferrer">
-          Vorschau in neuem Fenster öffnen
+          {t('Vorschau in neuem Fenster öffnen')}
         </a>
       </p>
     </>
@@ -106,70 +112,76 @@ function LetterheadEditor({
   return (
     <form className="card card-wide" onSubmit={(e) => e.preventDefault()}>
       {editable && <SaveStatus auto={auto} />}
-      <h2>Briefbogen {state.organization.name}</h2>
+      <h2>
+        {t('Briefbogen')} {state.organization.name}
+      </h2>
       <p className="muted small">
-        Vorstandsmitglieder erzeugen daraus unter{' '}
-        <Link to="/briefvorlage">Briefvorlage erstellen</Link> ihre eigene Word-Vorlage mit Funktion
-        und Kontaktweg. Gespeichert werden die erzeugten Dateien nicht.
+        {t('Vorstandsmitglieder erzeugen daraus unter')}{' '}
+        <Link to="/briefvorlage">{t('Briefvorlage erstellen')}</Link>{' '}
+        {t(
+          'ihre eigene Word-Vorlage mit Funktion und Kontaktweg. Gespeichert werden die erzeugten Dateien nicht.',
+        )}
       </p>
       {isUnit && (
         <SelectField
-          label="Briefbogen"
+          label={t('Briefbogen')}
           value={current.may_have_own ? v.mode : 'inherit'}
           disabled={!editable || !current.may_have_own}
           error={errors.mode}
           hint={
             current.may_have_own
               ? undefined
-              : 'Einen eigenen Briefbogen gibt es nur mit eigenem Arbeitsbereich.'
+              : t('Einen eigenen Briefbogen gibt es nur mit eigenem Arbeitsbereich.')
           }
           onChange={(e) => set('mode', e.target.value as LetterheadFields['mode'])}
         >
           <option value="inherit">
-            wie {current.owner.is_self ? 'darüber' : current.owner.name}, mit eigenem Namen als
-            Zusatzzeile
+            wie {current.owner.is_self ? t('darüber') : current.owner.name}
+            {t(', mit eigenem Namen als Zusatzzeile')}
           </option>
-          <option value="own">eigener Briefbogen</option>
+          <option value="own">{t('eigener Briefbogen')}</option>
         </SelectField>
       )}
       {inherits ? (
         <p className="muted">
-          Es gilt der Briefbogen von {current.owner.name}. Der Name {state.organization.name}{' '}
-          erscheint im Kopf als Zusatzzeile; Logo/Wappen ist das eigene, falls hinterlegt.
+          {t(
+            'Es gilt der Briefbogen von {name}. Der Name {name2}  erscheint im Kopf als Zusatzzeile; Logo/Wappen ist das eigene, falls hinterlegt.',
+            { name: current.owner.name, name2: state.organization.name },
+          )}
         </p>
       ) : (
         <fieldset disabled={!editable}>
           <div className="grid-2">
             <SelectField
-              label="Aufbau"
+              label={t('Aufbau')}
               value={v.form}
               onChange={(e) => set('form', e.target.value as LetterheadFields['form'])}
             >
-              <option value="b">DIN 5008 Form B (Anschriftfeld 45 mm von oben)</option>
-              <option value="a">DIN 5008 Form A (Anschriftfeld 27 mm von oben)</option>
+              <option value="b">{t('DIN 5008 Form B (Anschriftfeld 45 mm von oben)')}</option>
+              <option value="a">{t('DIN 5008 Form A (Anschriftfeld 27 mm von oben)')}</option>
             </SelectField>
             <SelectField
-              label="Logo/Wappen"
+              label={t('Logo/Wappen')}
               value={v.logo_position}
               onChange={(e) =>
                 set('logo_position', e.target.value as LetterheadFields['logo_position'])
               }
             >
-              <option value="right">rechts im Kopf</option>
-              <option value="left">links im Kopf</option>
-              <option value="none">ohne Logo/Wappen</option>
+              <option value="right">{t('rechts im Kopf')}</option>
+              <option value="left">{t('links im Kopf')}</option>
+              <option value="none">{t('ohne Logo/Wappen')}</option>
             </SelectField>
             <Field
-              label="Zusatzzeile im Kopf"
+              label={t('Zusatzzeile im Kopf')}
               value={v.tagline}
               error={errors.tagline}
-              placeholder="z. B. gegründet 1920"
+              placeholder={t('z. B. gegründet 1920')}
               onChange={(e) => set('tagline', e.target.value)}
             />
             <SelectField
-              label="Schriftart"
+              label={t('Schriftart')}
               value={v.font}
-              hint="Überall vorhandene Schriften; die Vorlage bettet keine Schrift ein."
+              hint={t('Überall vorhandene Schriften; die Vorlage bettet keine Schrift ein.')}
               onChange={(e) => set('font', e.target.value)}
             >
               {FONTS.map((f) => (
@@ -179,37 +191,39 @@ function LetterheadEditor({
               ))}
             </SelectField>
             <Field
-              label="Anrede"
+              label={t('Anrede')}
               value={v.salutation}
               error={errors.salutation}
               onChange={(e) => set('salutation', e.target.value)}
             />
             <Field
-              label="Grußformel"
+              label={t('Grußformel')}
               value={v.closing}
               error={errors.closing}
               onChange={(e) => set('closing', e.target.value)}
             />
           </div>
-          <h3>Fußzeile</h3>
+          <h3>{t('Fußzeile')}</h3>
           <Checkbox
-            label="Bankverbindung"
+            label={t('Bankverbindung')}
             checked={v.show_bank}
             onChange={(val) => set('show_bank', val)}
           />
           {v.show_bank && (
             <SelectField
-              label="Bankkonto"
+              label={t('Bankkonto')}
               value={v.account ?? ''}
               error={errors.account}
               hint={
                 current.accounts.length === 0
-                  ? 'Es gibt noch kein aktives Bankkonto mit IBAN (Finanzen › Einrichtung › Konten).'
+                  ? t(
+                      'Es gibt noch kein aktives Bankkonto mit IBAN (Finanzen › Einrichtung › Konten).',
+                    )
                   : undefined
               }
               onChange={(e) => set('account', e.target.value ? Number(e.target.value) : null)}
             >
-              <option value="">erstes aktives Bankkonto</option>
+              <option value="">{t('erstes aktives Bankkonto')}</option>
               {current.accounts.map((a) => (
                 <option key={a.id} value={a.id}>
                   {a.name} ({a.iban})
@@ -218,42 +232,46 @@ function LetterheadEditor({
             </SelectField>
           )}
           <Checkbox
-            label="Telefon der Einheit"
+            label={t('Telefon der Einheit')}
             checked={v.show_phone}
             onChange={(val) => set('show_phone', val)}
           />
           <Checkbox
-            label="E-Mail der Einheit"
+            label={t('E-Mail der Einheit')}
             checked={v.show_email}
             onChange={(val) => set('show_email', val)}
           />
           <Checkbox
-            label="Webseite"
+            label={t('Webseite')}
             checked={v.show_website}
             onChange={(val) => set('show_website', val)}
           />
           <Checkbox
-            label="Social-Media-Kanäle (Einstellungen › Organisation)"
+            label={t('Social-Media-Kanäle (Einstellungen › Organisation)')}
             checked={v.show_social}
             onChange={(val) => set('show_social', val)}
           />
           <Checkbox
-            label="Vorstand: Vertretungsberechtigte und Rollen mit „auf dem Briefbogen nennen“"
+            label={t('Vorstand: Vertretungsberechtigte und Rollen mit „auf dem Briefbogen nennen“')}
             checked={v.show_board}
             onChange={(val) => set('show_board', val)}
           />
           {v.show_board && (
             <p className="muted small">
               {current.board.length > 0
-                ? `Heute: ${current.board.map((b) => (b.role ? `${b.name} (${b.role})` : b.name)).join(', ')}.`
-                : 'Heute steht dort niemand.'}{' '}
-              Welche Rollen erscheinen, legst du unter{' '}
-              <Link to="/einstellungen/rollen">Rollen &amp; Benutzer</Link> fest; private
-              Kontaktdaten anderer erscheinen nie.
+                ? t('Heute: {x}.', {
+                    x: current.board
+                      .map((b) => (b.role ? `${b.name} (${b.role})` : b.name))
+                      .join(', '),
+                  })
+                : t('Heute steht dort niemand.')}{' '}
+              {t('Welche Rollen erscheinen, legst du unter')}{' '}
+              <Link to="/einstellungen/rollen">{t('Rollen & Benutzer')}</Link>{' '}
+              {t('fest; private Kontaktdaten anderer erscheinen nie.')}
             </p>
           )}
           <Checkbox
-            label="Registerangaben und USt-IdNr. aus dem Impressum"
+            label={t('Registerangaben und USt-IdNr. aus dem Impressum')}
             checked={v.show_register}
             onChange={(val) => set('show_register', val)}
           />
@@ -268,13 +286,13 @@ function LetterheadEditor({
           </ul>
         </Alert>
       )}
-      <h3>Vorschau</h3>
+      <h3>{t('Vorschau')}</h3>
       {/* Vorschau zeigt den gespeicherten Stand; offene Änderungen kenntlich machen (NAF-01) */}
       {editable && auto.state !== 'saved' && auto.state !== 'idle' && (
         <p className="small" role="status">
           {auto.state === 'error'
-            ? 'Vorschau veraltet: Die letzten Änderungen sind noch nicht gespeichert.'
-            : 'Änderungen werden gespeichert, danach erneuert sich die Vorschau.'}
+            ? t('Vorschau veraltet: Die letzten Änderungen sind noch nicht gespeichert.')
+            : t('Änderungen werden gespeichert, danach erneuert sich die Vorschau.')}
         </p>
       )}
       <LetterPreview load={preview} version={current.letterhead.updated_at} />
@@ -310,7 +328,7 @@ function NeutralCard({
     if (await flushAllForms()) return true
     setMessage({
       kind: 'error',
-      text: 'Die Vorlage wurde noch nicht erstellt. Bitte zuerst die Änderungen speichern.',
+      text: t('Die Vorlage wurde noch nicht erstellt. Bitte zuerst die Änderungen speichern.'),
     })
     return false
   }
@@ -335,8 +353,8 @@ function NeutralCard({
       setMessage({
         kind: 'info',
         text: res.created
-          ? `„${res.title}“ liegt jetzt in der Dokumentenablage.`
-          : `„${res.title}“ hat eine neue Fassung bekommen.`,
+          ? t('„{title}“ liegt jetzt in der Dokumentenablage.', { title: res.title })
+          : t('„{title}“ hat eine neue Fassung bekommen.', { title: res.title }),
       })
     } catch (err) {
       setMessage({ kind: 'error', text: errorMessage(err) })
@@ -347,32 +365,35 @@ function NeutralCard({
 
   return (
     <div className="card card-wide">
-      <h2>Neutrale Vorlage</h2>
+      <h2>{t('Neutrale Vorlage')}</h2>
       <p className="muted small">
-        Ohne persönliche Angaben: Name, Funktion und Kontakt sind Felder zum Ausfüllen in Word. So
-        finden alle Vorstände dieselbe Grundvorlage.
+        {t(
+          'Ohne persönliche Angaben: Name, Funktion und Kontakt sind Felder zum Ausfüllen in Word. So finden alle Vorstände dieselbe Grundvorlage.',
+        )}
       </p>
       <SelectField
-        label="Dateiformat"
+        label={t('Dateiformat')}
         value={format}
         onChange={(e) => setFormat(e.target.value as FileFormat)}
       >
-        <option value="dotx">Word-Vorlage (.dotx): öffnet jedes Mal ein neues Dokument</option>
-        <option value="docx">Word-Dokument (.docx): z. B. für Word im Browser</option>
+        <option value="dotx">
+          {t('Word-Vorlage (.dotx): öffnet jedes Mal ein neues Dokument')}
+        </option>
+        <option value="docx">{t('Word-Dokument (.docx): z. B. für Word im Browser')}</option>
       </SelectField>
       <div className="button-row">
         <button type="button" className="button" onClick={() => void download()}>
-          Herunterladen
+          {t('Herunterladen')}
         </button>
       </div>
       {withDocs && (
         <div className="grid-2">
           <SelectField
-            label="In der Dokumentenablage ablegen"
+            label={t('In der Dokumentenablage ablegen')}
             value={folder}
             onChange={(e) => setFolder(e.target.value ? Number(e.target.value) : '')}
           >
-            <option value="">Ordner wählen …</option>
+            <option value="">{t('Ordner wählen …')}</option>
             {(folders.data ?? []).map((f) => (
               <option key={f.id} value={f.id}>
                 {f.name} ({f.visibility_label})
@@ -381,13 +402,17 @@ function NeutralCard({
           </SelectField>
           {folders.error && (
             <LoadError
-              message={`Die Ordner konnten nicht geladen werden. Deine Eingaben bleiben erhalten. ${folders.error}`}
+              message={t(
+                'Die Ordner konnten nicht geladen werden. Deine Eingaben bleiben erhalten. {error}',
+                { error: folders.error },
+              )}
               onRetry={() => void folders.reload()}
             />
           )}
           {folders.data?.length === 0 && (
             <p className="muted small">
-              Noch kein Ordner vorhanden. <Link to="/dokumente">Dokumentenablage öffnen</Link>
+              {t('Noch kein Ordner vorhanden.')}{' '}
+              <Link to="/dokumente">{t('Dokumentenablage öffnen')}</Link>
             </p>
           )}
           <div className="button-row">
@@ -397,7 +422,7 @@ function NeutralCard({
               disabled={!folder || busy}
               onClick={() => void publish()}
             >
-              Ablegen
+              {t('Ablegen')}
             </button>
           </div>
         </div>
@@ -428,16 +453,22 @@ export function LetterheadSettingsPage() {
     <>
       {units.error && (
         <LoadError
-          message={`Die ${org.department_label_plural} konnten nicht geladen werden; ihre Briefbögen sind deshalb gerade nicht wählbar. ${units.error}`}
+          message={t(
+            'Die {department_label_plural} konnten nicht geladen werden; ihre Briefbögen sind deshalb gerade nicht wählbar. {error}',
+            { department_label_plural: org.department_label_plural, error: units.error },
+          )}
           onRetry={() => void units.reload()}
         />
       )}
       {list.length > 0 && (
         <div className="card card-wide">
           <SelectField
-            label="Briefbogen für"
+            label={t('Briefbogen für')}
             value={unitId ?? ''}
-            hint={`${org.department_label_plural} übernehmen standardmäßig den Briefbogen von ${org.name}.`}
+            hint={t(
+              '{department_label_plural} übernehmen standardmäßig den Briefbogen von {name}.',
+              { department_label_plural: org.department_label_plural, name: org.name },
+            )}
             onChange={(e) => setUnitId(e.target.value ? Number(e.target.value) : null)}
           >
             <option value="">{org.name}</option>
@@ -450,7 +481,7 @@ export function LetterheadSettingsPage() {
         </div>
       )}
       {state.error && <Alert kind="error">{state.error}</Alert>}
-      {!state.data && !state.error && <p className="muted">Lädt …</p>}
+      {!state.data && !state.error && <p className="muted">{t('Lädt …')}</p>}
       {state.data && state.data.organization.id === (unitId ?? org.id) && (
         <>
           <LetterheadEditor

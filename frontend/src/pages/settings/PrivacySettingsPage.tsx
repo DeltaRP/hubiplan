@@ -16,10 +16,12 @@ import { useActiveOrg, useOrg } from '../../org/OrgContext.tsx'
 import { PhotoSamplesCard } from '../competitions/PhotoSamples.tsx'
 import { PrivacyCard } from '../website/WebsitePrivacy.tsx'
 import { TextArea } from './TextArea.tsx'
+import { t } from '../../i18n/index.ts'
 
 // Gleicher Hinweis wie bei der Webseite (WebsitePrivacy.tsx), damit beide Abschnitte gleich lauten
-const TEXT_HINT =
-  'HUBIplan erzeugt einen Entwurf passend zu den Einstellungen (Module, Lastschrift, Meldung an übergeordnete Einheiten, Löschfrist); Angaben in eckigen Klammern bitte ergänzen. Erzeugen und Bearbeiten ändern nur den Entwurf (er speichert automatisch), öffentlich wird er erst mit „Veröffentlichen“. Ein Vorschlag, keine Rechtsberatung.'
+const TEXT_HINT = t(
+  'HUBIplan erzeugt einen Entwurf passend zu den Einstellungen (Module, Lastschrift, Meldung an übergeordnete Einheiten, Löschfrist); Angaben in eckigen Klammern bitte ergänzen. Erzeugen und Bearbeiten ändern nur den Entwurf (er speichert automatisch), öffentlich wird er erst mit „Veröffentlichen“. Ein Vorschlag, keine Rechtsberatung.',
+)
 
 type PrivacyFields = Pick<ImprintFields, 'privacy_mode' | 'privacy_text' | 'privacy_url'>
 
@@ -54,37 +56,43 @@ export function MemberPrivacyEditor({
   return (
     <form className="card card-wide" onSubmit={(e) => e.preventDefault()}>
       <h2>
-        {isPlatform ? 'Datenschutzerklärung der Plattform' : 'Datenschutzhinweise für Mitglieder'}
+        {isPlatform
+          ? t('Datenschutzerklärung der Plattform')
+          : t('Datenschutzhinweise für Mitglieder')}
       </h2>
       {!isPlatform && (
         <p className="muted small">
-          Für Mitglieder von {state.organization.name}: Stammdaten, Beiträge, Lastschrift, Meldung
-          an übergeordnete Einheiten, Löschfristen. Öffentlich unter{' '}
-          <Link to={privacyPath(key)}>Datenschutzhinweise</Link>. {!inherits && TEXT_HINT}
+          {t(
+            'Für Mitglieder von {name}: Stammdaten, Beiträge, Lastschrift, Meldung an übergeordnete Einheiten, Löschfristen. Öffentlich unter',
+            { name: state.organization.name },
+          )}{' '}
+          <Link to={privacyPath(key)}>{t('Datenschutzhinweise')}</Link>. {!inherits && TEXT_HINT}
         </p>
       )}
       {isPlatform && <p className="muted small">{TEXT_HINT}</p>}
       {editable && !inherits && <SaveStatus auto={auto} />}
       {inherits ? (
         <p className="muted">
-          Es gelten die Datenschutzhinweise von {current.owner.name}, weil {state.organization.name}{' '}
-          dessen Impressum übernimmt. Eigene Hinweise gibt es mit einem eigenen Impressum (
-          <Link to="/einstellungen/impressum">Einstellungen › Impressum</Link>).
+          {t(
+            'Es gelten die Datenschutzhinweise von {name}, weil {name2}  dessen Impressum übernimmt. Eigene Hinweise gibt es mit einem eigenen Impressum (',
+            { name: current.owner.name, name2: state.organization.name },
+          )}
+          <Link to="/einstellungen/impressum">{t('Einstellungen › Impressum')}</Link>).
         </p>
       ) : (
         <fieldset disabled={!editable}>
           <SelectField
-            label="Datenschutzhinweise"
+            label={t('Datenschutzhinweise')}
             value={v.privacy_mode}
             error={errors.privacy_mode}
             onChange={(e) => set('privacy_mode', e.target.value as PrivacyFields['privacy_mode'])}
           >
-            <option value="text">eigener Text</option>
-            <option value="link">auf eigene Seite verlinken</option>
+            <option value="text">{t('eigener Text')}</option>
+            <option value="link">{t('auf eigene Seite verlinken')}</option>
           </SelectField>
           {v.privacy_mode === 'link' ? (
             <Field
-              label="Adresse der Datenschutzhinweise"
+              label={t('Adresse der Datenschutzhinweise')}
               type="url"
               placeholder="https://"
               value={v.privacy_url}
@@ -94,7 +102,7 @@ export function MemberPrivacyEditor({
           ) : (
             <>
               <TextArea
-                label="Entwurf der Datenschutzhinweise"
+                label={t('Entwurf der Datenschutzhinweise')}
                 rows={14}
                 value={v.privacy_text}
                 error={errors.privacy_text}
@@ -109,17 +117,18 @@ export function MemberPrivacyEditor({
                       if (
                         v.privacy_text.trim() &&
                         !(await confirmDialog({
-                          title: 'Datenschutzhinweise neu erzeugen?',
-                          message:
+                          title: t('Datenschutzhinweise neu erzeugen?'),
+                          message: t(
                             'Der bisherige Text wird ersetzt. Eigene Ergänzungen bitte vorher sichern.',
-                          confirmLabel: 'Neu erzeugen',
+                          ),
+                          confirmLabel: t('Neu erzeugen'),
                         }))
                       )
                         return
                       set('privacy_text', current.template)
                     }}
                   >
-                    {v.privacy_text.trim() ? 'Entwurf neu erzeugen' : 'Textentwurf erzeugen'}
+                    {v.privacy_text.trim() ? t('Entwurf neu erzeugen') : t('Textentwurf erzeugen')}
                   </button>
                 </div>
               )}
@@ -134,7 +143,7 @@ export function MemberPrivacyEditor({
                   try {
                     if (!(await auto.flush())) {
                       setPublishError(
-                        'Der Entwurf ist noch nicht gespeichert. Bitte zuerst speichern.',
+                        t('Der Entwurf ist noch nicht gespeichert. Bitte zuerst speichern.'),
                       )
                       return
                     }
@@ -173,16 +182,22 @@ function MemberSection() {
     <>
       {units.error && (
         <LoadError
-          message={`Die ${org.department_label_plural} konnten nicht geladen werden; ihre Hinweise sind deshalb gerade nicht wählbar. ${units.error}`}
+          message={t(
+            'Die {department_label_plural} konnten nicht geladen werden; ihre Hinweise sind deshalb gerade nicht wählbar. {error}',
+            { department_label_plural: org.department_label_plural, error: units.error },
+          )}
           onRetry={() => void units.reload()}
         />
       )}
       {list.length > 0 && (
         <div className="card card-wide">
           <SelectField
-            label="Datenschutzhinweise für Mitglieder von"
+            label={t('Datenschutzhinweise für Mitglieder von')}
             value={unitId ?? ''}
-            hint={`${org.department_label_plural} übernehmen standardmäßig die Hinweise von ${org.name}.`}
+            hint={t('{department_label_plural} übernehmen standardmäßig die Hinweise von {name}.', {
+              department_label_plural: org.department_label_plural,
+              name: org.name,
+            })}
             onChange={(e) => setUnitId(e.target.value ? Number(e.target.value) : null)}
           >
             <option value="">{org.name}</option>
@@ -195,7 +210,7 @@ function MemberSection() {
         </div>
       )}
       {state.error && <Alert kind="error">{state.error}</Alert>}
-      {!state.data && !state.error && <p className="muted">Lädt …</p>}
+      {!state.data && !state.error && <p className="muted">{t('Lädt …')}</p>}
       {state.data && state.data.organization.id === (unitId ?? org.id) && (
         <MemberPrivacyEditor
           key={state.data.organization.id}
@@ -218,14 +233,16 @@ function WebsiteSection() {
   const org = useActiveOrg()
   const { data, error, reload, setData } = useLoad(() => websiteApi.get(org.id), [org.id])
   if (error) return <LoadError message={error} onRetry={() => void reload()} />
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
   if (!data.website) {
     return (
       <div className="card card-wide">
-        <h2>Datenschutzhinweise der Webseite</h2>
+        <h2>{t('Datenschutzhinweise der Webseite')}</h2>
         <p className="muted">
-          Noch keine Webseite eingerichtet. Die Hinweise für Besucher erscheinen hier, sobald die
-          Webseite unter <Link to="/webseite">Webseite</Link> eingerichtet ist.
+          {t(
+            'Noch keine Webseite eingerichtet. Die Hinweise für Besucher erscheinen hier, sobald die Webseite unter',
+          )}{' '}
+          <Link to="/webseite">{t('Webseite')}</Link> {t('eingerichtet ist.')}
         </p>
       </div>
     )
@@ -244,16 +261,16 @@ export function PrivacySettingsPage() {
   return (
     <>
       <p className="muted small">
-        Zwei getrennte Texte für zwei Personengruppen: Mitglieder erfahren, wie die
-        Mitgliederverwaltung mit ihren Daten umgeht; Besucher der Webseite, was beim Besuch der
-        Webseite verarbeitet wird.
+        {t(
+          'Zwei getrennte Texte für zwei Personengruppen: Mitglieder erfahren, wie die Mitgliederverwaltung mit ihren Daten umgeht; Besucher der Webseite, was beim Besuch der Webseite verarbeitet wird.',
+        )}
       </p>
       {members && <MemberSection />}
       {website && <WebsiteSection />}
       {photos && <PhotoSamplesCard org={org.id} />}
       {!members && !website && (
         <Alert kind="info">
-          Die Datenschutzhinweise für Mitglieder pflegt die übergeordnete Einheit.
+          {t('Die Datenschutzhinweise für Mitglieder pflegt die übergeordnete Einheit.')}
         </Alert>
       )}
     </>

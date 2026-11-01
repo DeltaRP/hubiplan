@@ -33,15 +33,16 @@ import { CardPanel } from '../../components/CardPanel.tsx'
 import { cardApi, cardBase } from '../../api/cards.ts'
 import { confirmDialog } from '../../components/dialog.ts'
 import { Term } from '../../learning/Aids.tsx'
+import { t } from '../../i18n/index.ts'
 
 type Tab = 'stammdaten' | 'mitgliedschaft' | 'zusatzfelder' | 'rollen' | 'verlauf'
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'stammdaten', label: 'Stammdaten' },
-  { id: 'mitgliedschaft', label: 'Mitgliedschaft' },
-  { id: 'zusatzfelder', label: 'Zusatzfelder' },
-  { id: 'rollen', label: 'Rollen & Ehrungen' },
-  { id: 'verlauf', label: 'Verlauf' },
+  { id: 'stammdaten', label: t('Stammdaten') },
+  { id: 'mitgliedschaft', label: t('Mitgliedschaft') },
+  { id: 'zusatzfelder', label: t('Zusatzfelder') },
+  { id: 'rollen', label: t('Rollen & Ehrungen') },
+  { id: 'verlauf', label: t('Verlauf') },
 ]
 
 export function MemberFilePage() {
@@ -54,12 +55,12 @@ export function MemberFilePage() {
   const canEdit = org.permissions.includes(PERM.membersEdit)
 
   if (error) return <LoadError message={error} onRetry={() => void reload()} />
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
 
   return (
     <section>
       <p>
-        <Link to="/mitglieder">← Mitglieder</Link>
+        <Link to="/mitglieder">{t('← Mitglieder')}</Link>
       </p>
       <div className="page-head">
         {data.photo.approved && (
@@ -70,13 +71,14 @@ export function MemberFilePage() {
             {data.first_name} {data.last_name}
           </h1>
           <p className="muted">
-            {data.status === 'active' ? 'Mitglied' : 'ehemaliges Mitglied'}
-            {data.current_type && ` · ${data.current_type.member_type_name}`}
-            {currentTitles(data).length > 0 && ` · ${currentTitles(data).join(', ')}`}
+            {data.status === 'active' ? t('Mitglied') : t('ehemaliges Mitglied')}
+            {data.current_type &&
+              t(' · {member_type_name}', { member_type_name: data.current_type.member_type_name })}
+            {currentTitles(data).length > 0 && t(' · {x}', { x: currentTitles(data).join(', ') })}
           </p>
         </div>
       </div>
-      <nav className="tabs" aria-label="Bereiche der Mitgliedsakte">
+      <nav className="tabs" aria-label={t('Bereiche der Mitgliedsakte')}>
         {TABS.map((tmx) => (
           <Link
             key={tmx.id}
@@ -203,14 +205,14 @@ function MasterData({
       <fieldset disabled={!canEdit}>
         <div className="grid-4">
           <Field
-            label="Name"
+            label={t('Name')}
             required
             value={v.last_name}
             error={e.last_name}
             onChange={(ev) => form.set('last_name', ev.target.value)}
           />
           <Field
-            label="Vorname"
+            label={t('Vorname')}
             required
             value={v.first_name}
             error={e.first_name}
@@ -218,14 +220,14 @@ function MasterData({
           />
           {member.birth_year_only && v.birth_date === member.birth_date ? (
             <Field
-              label="Geburtsjahr"
+              label={t('Geburtsjahr')}
               value={member.birth_date.slice(0, 4)}
-              hint="Nach der Löschfrist ist nur noch das Jahr gespeichert."
+              hint={t('Nach der Löschfrist ist nur noch das Jahr gespeichert.')}
               readOnly
             />
           ) : (
             <Field
-              label="Geburtsdatum"
+              label={t('Geburtsdatum')}
               type="date"
               required
               value={v.birth_date}
@@ -234,7 +236,7 @@ function MasterData({
             />
           )}
           <SelectField
-            label="Geschlecht"
+            label={t('Geschlecht')}
             value={v.gender}
             error={e.gender}
             onChange={(ev) => form.set('gender', ev.target.value as Gender)}
@@ -248,21 +250,21 @@ function MasterData({
         </div>
         <div className="grid-2">
           <Field
-            label="E-Mail-Adresse (optional)"
+            label={t('E-Mail-Adresse (optional)')}
             type="email"
             value={v.email}
             error={e.email}
             onChange={(ev) => form.set('email', ev.target.value)}
           />
           <Field
-            label="Telefon"
+            label={t('Telefon')}
             value={v.phone}
             error={e.phone}
             onChange={(ev) => form.set('phone', ev.target.value)}
           />
         </div>
         <Field
-          label="Straße und Hausnummer"
+          label={t('Straße und Hausnummer')}
           required
           value={v.street}
           error={e.street}
@@ -277,14 +279,14 @@ function MasterData({
             onChange={(ev) => form.set('postal_code', ev.target.value)}
           />
           <Field
-            label="Ort"
+            label={t('Ort')}
             required
             value={v.city}
             error={e.city}
             onChange={(ev) => form.set('city', ev.target.value)}
           />
           <Field
-            label="Land"
+            label={t('Land')}
             value={v.country}
             error={e.country}
             onChange={(ev) => form.set('country', ev.target.value)}
@@ -292,7 +294,7 @@ function MasterData({
         </div>
         <div className="grid-2">
           <Field
-            label={`Mitgliedsnummer ${tm.e_im}`}
+            label={t('Mitgliedsnummer {e_im}', { e_im: tm.e_im })}
             value={v.club_number}
             error={e.club_number}
             onChange={(ev) => form.set('club_number', ev.target.value)}
@@ -301,8 +303,8 @@ function MasterData({
       </fieldset>
       <p className="muted small">
         {member.contact_shared
-          ? `Kontaktdaten werden für alle ${tm.e_pl} gemeinsam gepflegt.`
-          : `Kontaktdaten gelten nur für ${org.name}.`}
+          ? t('Kontaktdaten werden für alle {e_pl} gemeinsam gepflegt.', { e_pl: tm.e_pl })
+          : t('Kontaktdaten gelten nur für {name}.', { name: org.name })}
       </p>
     </form>
   )
@@ -354,23 +356,26 @@ function MembershipTab({
     <div className="stack">
       {canEdit && <MembershipActions org={org} member={member} onChanged={setData} />}
 
-      <Section title="Mitgliedsdauer">
+      <Section title={t('Mitgliedsdauer')}>
         <DurationLine label={tm.e_im} info={member.duration.club} />
         {member.duration.federation && (
           <DurationLine
-            label={`${terms.dv_im} (${member.duration.federation.rule})`}
+            label={t('{dv_im} ({rule})', {
+              dv_im: terms.dv_im,
+              rule: member.duration.federation.rule,
+            })}
             info={member.duration.federation}
           />
         )}
       </Section>
 
-      <Section title="Zeiträume">
+      <Section title={t('Zeiträume')}>
         <table className="table">
           <thead>
             <tr>
-              <th>Eintritt</th>
-              <th>Austritt</th>
-              <th>Grund</th>
+              <th>{t('Eintritt')}</th>
+              <th>{t('Austritt')}</th>
+              <th>{t('Grund')}</th>
               <th />
             </tr>
           </thead>
@@ -388,15 +393,15 @@ function MembershipTab({
                       onClick={async () => {
                         if (
                           await confirmDialog({
-                            title: 'Diesen Zeitraum löschen?',
-                            confirmLabel: 'Löschen',
+                            title: t('Diesen Zeitraum löschen?'),
+                            confirmLabel: t('Löschen'),
                           })
                         ) {
                           void run(() => memberApi.deletePeriod(org.id, member.id, p.id))
                         }
                       }}
                     >
-                      Löschen
+                      {t('Löschen')}
                     </button>
                   )}
                 </td>
@@ -407,7 +412,7 @@ function MembershipTab({
         {canEdit && <AddPeriod org={org} member={member} onAdded={reload} />}
       </Section>
 
-      <Section title="Mitgliedsarten">
+      <Section title={t('Mitgliedsarten')}>
         <ul className="plain-list">
           {member.type_history.map((tmx) => (
             <li key={tmx.id}>
@@ -416,8 +421,8 @@ function MembershipTab({
               {tmx.valid_until ? formatMemberDate(tmx.valid_until, precision) : 'heute'}
               <span className="muted small">
                 {' '}
-                ({tmx.active ? 'aktiv' : 'nicht aktiv'},{' '}
-                {tmx.reported ? 'gemeldet' : 'nicht gemeldet'})
+                ({tmx.active ? 'aktiv' : t('nicht aktiv')},{' '}
+                {tmx.reported ? 'gemeldet' : t('nicht gemeldet')})
               </span>
             </li>
           ))}
@@ -428,15 +433,15 @@ function MembershipTab({
         <Section title={member.federation.name}>
           <p>
             {/* Die Verbandsnummer steht hier bewusst nicht (Ralf 2026-10-30). */}
-            {member.federation.is_member ? 'Mitglied' : 'derzeit kein Mitglied'}
+            {member.federation.is_member ? t('Mitglied') : t('derzeit kein Mitglied')}
           </p>
           {member.federation.remote ? (
             <p className="muted small">
-              Der Dachverband führt sein Register auf einer eigenen Instanz (Verbund).
+              {t('Der Dachverband führt sein Register auf einer eigenen Instanz (Verbund).')}
             </p>
           ) : (
             <p>
-              Eintritt:{' '}
+              {t('Eintritt:')}{' '}
               {formatMemberDate(
                 member.federation.entry_date,
                 member.duration.federation?.precision ?? precision,
@@ -451,7 +456,7 @@ function MembershipTab({
       )}
 
       {member.other_memberships && member.other_memberships.length > 0 && (
-        <Section title={`Mitgliedschaften in anderen ${tm.e_pl_dat}`}>
+        <Section title={t('Mitgliedschaften in anderen {e_pl_dat}', { e_pl_dat: tm.e_pl_dat })}>
           <ul className="plain-list">
             {member.other_memberships.map((m, i) => (
               <li key={i}>
@@ -465,7 +470,7 @@ function MembershipTab({
 
       <Section title={org.department_label_plural}>
         {member.departments.length === 0 ? (
-          <p className="muted">Keine Zuordnung.</p>
+          <p className="muted">{t('Keine Zuordnung.')}</p>
         ) : (
           <ul className="plain-list">
             {member.departments.map((d) => (
@@ -489,7 +494,7 @@ function MembershipTab({
         )}
         {canEdit && departments.data && departments.data.length > 0 && (
           <AddWithDate
-            label={`${org.department_label} hinzufügen`}
+            label={t('{department_label} hinzufügen', { department_label: org.department_label })}
             options={departments.data
               .filter((d) => d.is_active)
               .map((d) => ({ id: d.id, name: unitName(d) }))}
@@ -502,7 +507,9 @@ function MembershipTab({
         )}
         {org.modules.includes('billing') && member.departments.some((d) => !d.valid_until) && (
           <Checkbox
-            label={`zahlt den Beitrag selbst (nicht über die Sammelrechnung ${org.department_terms?.gen ?? `der ${org.department_label}`})`}
+            label={t('zahlt den Beitrag selbst (nicht über die Sammelrechnung {x})', {
+              x: org.department_terms?.gen ?? `der ${org.department_label}`,
+            })}
             checked={member.pays_fee_self}
             disabled={!canEdit}
             onChange={(val) =>
@@ -512,9 +519,9 @@ function MembershipTab({
         )}
       </Section>
       {/* Eigene Region, unabhängig von Untereinheiten (UX-Audit 31.10. W08) */}
-      <Section title="Kommunikation & Zustellung">
+      <Section title={t('Kommunikation & Zustellung')}>
         <Checkbox
-          label="Rundschreiben der Art „Information“ erwünscht"
+          label={t('Rundschreiben der Art „Information“ erwünscht')}
           checked={!member.info_opt_out_at}
           disabled={!canEdit}
           onChange={(val) =>
@@ -524,16 +531,18 @@ function MembershipTab({
         <p className="small" role="status">
           {member.info_opt_out_at ? (
             <>
-              Seit {formatDate(member.info_opt_out_at)} abbestellt (
-              <Term k="opt_out">Widerspruch</Term>): keine Informationen per E-Mail oder Brief.
+              {t('Seit {x} abbestellt (', { x: formatDate(member.info_opt_out_at) })}
+              <Term k="opt_out">{t('Widerspruch')}</Term>
+              {t('): keine Informationen per E-Mail oder Brief.')}
             </>
           ) : (
-            'Erhält Informationen.'
+            t('Erhält Informationen.')
           )}
         </p>
         <p className="muted small">
-          Vereinsmitteilungen, Kurzmitteilungen, Rechnungen und Post an Vorstände oder Rolleninhaber
-          kommen unabhängig davon.
+          {t(
+            'Vereinsmitteilungen, Kurzmitteilungen, Rechnungen und Post an Vorstände oder Rolleninhaber kommen unabhängig davon.',
+          )}
         </p>
       </Section>
       {error && <Alert kind="error">{error}</Alert>}
@@ -545,17 +554,20 @@ function DurationLine({ label, info }: { label: string; info: DurationInfo }) {
   return (
     <p>
       <strong>
-        {info.years} {info.years === 1 ? 'Jahr' : 'Jahre'}
+        {info.years} {info.years === 1 ? t('Jahr') : t('Jahre')}
       </strong>{' '}
       {label}
       <span className="muted small">
         {' '}
         (
         {info.precision === 'day' || !info.precision
-          ? `${info.days} Tage gezählt`
-          : DATE_PRECISION_WORD[info.precision] + ' gezählt'}
+          ? t('{days} Tage gezählt', { days: info.days })
+          : DATE_PRECISION_WORD[info.precision] + t(' gezählt')}
         {info.next &&
-          ` · nächstes Jubiläum: ${info.next.years} Jahre ${jubileeWhen(info.next.date, info.precision)}`}
+          t(' · nächstes Jubiläum: {years} Jahre {x}', {
+            years: info.next.years,
+            x: jubileeWhen(info.next.date, info.precision),
+          })}
         )
       </span>
     </p>
@@ -589,7 +601,7 @@ function AddPeriod({
   if (!open) {
     return (
       <button type="button" className="button button-ghost" onClick={() => setOpen(true)}>
-        Früheren Zeitraum nachtragen
+        {t('Früheren Zeitraum nachtragen')}
       </button>
     )
   }
@@ -612,7 +624,7 @@ function AddPeriod({
     <form className="subcard" onSubmit={save}>
       <div className="grid-3">
         <Field
-          label="Eintritt"
+          label={t('Eintritt')}
           type="date"
           required
           value={form.values.entry_date}
@@ -620,7 +632,7 @@ function AddPeriod({
           onChange={(e) => form.set('entry_date', e.target.value)}
         />
         <Field
-          label="Austritt"
+          label={t('Austritt')}
           type="date"
           required
           value={form.values.exit_date}
@@ -628,7 +640,7 @@ function AddPeriod({
           onChange={(e) => form.set('exit_date', e.target.value)}
         />
         <SelectField
-          label="Grund"
+          label={t('Grund')}
           value={form.values.exit_reason}
           error={form.errors.exit_reason}
           onChange={(e) => form.set('exit_reason', e.target.value)}
@@ -641,12 +653,12 @@ function AddPeriod({
         </SelectField>
       </div>
       <SelectField
-        label="Mitgliedsart in diesem Zeitraum"
+        label={t('Mitgliedsart in diesem Zeitraum')}
         value={form.values.member_type}
         error={form.errors.member_type}
         onChange={(e) => form.set('member_type', e.target.value)}
       >
-        <option value="">– unbekannt –</option>
+        <option value="">{t('– unbekannt –')}</option>
         {types.data?.map((tmx) => (
           <option key={tmx.id} value={tmx.id}>
             {tmx.name}
@@ -655,13 +667,15 @@ function AddPeriod({
       </SelectField>
       {orgTerms(org).dv_has && (
         <p className="muted small">
-          Nur Zeiten mit einer gemeldeten Art zählen für {orgTerms(org).dv_akk}.
+          {t('Nur Zeiten mit einer gemeldeten Art zählen für {dv_akk}.', {
+            dv_akk: orgTerms(org).dv_akk,
+          })}
         </p>
       )}
       {form.message?.kind === 'error' && <Alert kind="error">{form.message.text}</Alert>}
       <div className="button-row">
         <button type="submit" className="button button-primary" disabled={form.busy}>
-          Speichern
+          {t('Speichern')}
         </button>
         <button
           type="button"
@@ -674,7 +688,7 @@ function AddPeriod({
             })
           }
         >
-          Abbrechen
+          {t('Abbrechen')}
         </button>
       </div>
     </form>
@@ -704,12 +718,12 @@ function FederationEntry({
     <form className="inline-add" onSubmit={save}>
       <input
         type="date"
-        aria-label={`Eintritt in ${orgTerms(org).dv_akk} (Altdaten)`}
+        aria-label={t('Eintritt in {dv_akk} (Altdaten)', { dv_akk: orgTerms(org).dv_akk })}
         value={form.values.date}
         onChange={(e) => form.set('date', e.target.value)}
       />
       <button type="submit" className="button button-ghost" disabled={form.busy}>
-        {form.values.date ? 'Eintritt von Hand setzen' : 'Berechnen lassen'}
+        {form.values.date ? t('Eintritt von Hand setzen') : t('Berechnen lassen')}
       </button>
     </form>
   )
@@ -744,7 +758,7 @@ function AddWithDate({
       </select>
       <input type="date" aria-label="ab" value={date} onChange={(e) => setDate(e.target.value)} />
       <button type="submit" className="button button-ghost">
-        Hinzufügen
+        {t('Hinzufügen')}
       </button>
     </form>
   )
@@ -765,7 +779,10 @@ function RolesTab({
   const [error, setError] = useState<string | null>(null)
   const roleOptions =
     departments.data?.flatMap((d) =>
-      d.roles.map((r) => ({ id: r.id, name: `${r.name} (${d.name})` })),
+      d.roles.map((r) => ({
+        id: r.id,
+        name: t('{name} ({name2})', { name: r.name, name2: d.name }),
+      })),
     ) ?? []
 
   async function run(action: () => Promise<unknown>) {
@@ -789,10 +806,10 @@ function RolesTab({
         canEdit={canEdit}
         onChanged={reload}
       />
-      <Section title="Vorstandsrollen">
+      <Section title={t('Vorstandsrollen')}>
         {member.board_roles.length === 0 ? (
           <p className="muted">
-            Keine. Vorstandsrollen vergibst du unter Einstellungen → Rollen & Benutzer.
+            {t('Keine. Vorstandsrollen vergibst du unter Einstellungen → Rollen & Benutzer.')}
           </p>
         ) : (
           <ul className="plain-list">
@@ -805,9 +822,13 @@ function RolesTab({
           </ul>
         )}
       </Section>
-      <Section title={`Rollen in ${org.department_terms?.pl_dat ?? org.department_label_plural}`}>
+      <Section
+        title={t('Rollen in {x}', {
+          x: org.department_terms?.pl_dat ?? org.department_label_plural,
+        })}
+      >
         {member.department_roles.length === 0 ? (
-          <p className="muted">Keine.</p>
+          <p className="muted">{t('Keine.')}</p>
         ) : (
           <ul className="plain-list">
             {member.department_roles.map((r) => (
@@ -833,7 +854,7 @@ function RolesTab({
         )}
         {canEdit && roleOptions.length > 0 && (
           <AddWithDate
-            label="Rolle hinzufügen"
+            label={t('Rolle hinzufügen')}
             options={roleOptions}
             onAdd={(id, date) =>
               run(() =>
@@ -852,11 +873,11 @@ function HistoryTab({ orgId, memberId }: { orgId: number; memberId: number }) {
   const { data, error } = useLoad(() => memberApi.history(orgId, memberId), [orgId, memberId])
   const first = firstOfSet(data ?? [])
   if (error) return <Alert kind="error">{error}</Alert>
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
   return (
-    <Section title="Verlauf">
+    <Section title={t('Verlauf')}>
       {data.length === 0 ? (
-        <p className="muted">Noch keine Einträge.</p>
+        <p className="muted">{t('Noch keine Einträge.')}</p>
       ) : (
         <ul className="audit-list">
           {data.map((entry) => (
@@ -865,8 +886,8 @@ function HistoryTab({ orgId, memberId }: { orgId: number; memberId: number }) {
                 <strong>{entry.object_type}</strong> {entry.action_label}
               </div>
               <div className="muted small">
-                {formatDateTime(entry.timestamp)} · {entry.user_email || 'System'}
-                {entry.via ? ` · über ${entry.via}` : ''}
+                {formatDateTime(entry.timestamp)} · {entry.user_email || t('System')}
+                {entry.via ? t(' · über {via}', { via: entry.via }) : ''}
               </div>
               {Object.keys(entry.changes).length > 0 && (
                 <ul className="changes small">

@@ -10,6 +10,7 @@ import { formatDate, useForm, useLoad } from '../../components/forms.ts'
 import { Alert, Field, LoadError, SelectField } from '../../components/ui.tsx'
 import { confirmDialog } from '../../components/dialog.ts'
 import { Term } from '../../learning/Aids.tsx'
+import { t } from '../../i18n/index.ts'
 
 type Action = 'type' | 'exit' | 'reentry' | null
 
@@ -35,20 +36,21 @@ export function MembershipActions({
 
   return (
     <div className="card card-wide">
-      <h2>Abläufe</h2>
+      <h2>{t('Abläufe')}</h2>
       {member.status === 'former' && (
         <p className="muted small">
-          Ehemaliges Mitglied (Archiv).{' '}
+          {t('Ehemaliges Mitglied (Archiv).')}{' '}
           {member.purged ? (
             <>
-              Die Daten wurden nach Ablauf der <Term k="deletion_period_term">Löschfrist</Term> auf
-              das Minimum reduziert.
+              {t('Die Daten wurden nach Ablauf der')}{' '}
+              <Term k="deletion_period_term">{t('Löschfrist')}</Term>{' '}
+              {t('auf das Minimum reduziert.')}
             </>
           ) : (
             member.purge_due && (
               <>
-                Nach Ablauf der <Term k="deletion_period_term">Löschfrist</Term> werden die Daten am{' '}
-                {formatDate(member.purge_due)} gelöscht.
+                {t('Nach Ablauf der')} <Term k="deletion_period_term">{t('Löschfrist')}</Term>{' '}
+                {t('werden die Daten am  {x} gelöscht.', { x: formatDate(member.purge_due) })}
               </>
             )
           )}
@@ -63,14 +65,14 @@ export function MembershipActions({
                 className="button button-ghost"
                 onClick={() => setAction('type')}
               >
-                Mitgliedsart wechseln
+                {t('Mitgliedsart wechseln')}
               </button>
               <button
                 type="button"
                 className="button button-ghost"
                 onClick={() => setAction('exit')}
               >
-                Austritt erfassen
+                {t('Austritt erfassen')}
               </button>
             </>
           ) : (
@@ -79,7 +81,7 @@ export function MembershipActions({
               className="button button-primary"
               onClick={() => setAction('reentry')}
             >
-              Wiedereintritt
+              {t('Wiedereintritt')}
             </button>
           )}
         </div>
@@ -89,24 +91,28 @@ export function MembershipActions({
         <div className="subcard stack-sm">
           {types.error ? (
             <LoadError
-              message={`Die Mitgliedsarten konnten nicht geladen werden. ${types.error}`}
+              message={t('Die Mitgliedsarten konnten nicht geladen werden. {error}', {
+                error: types.error,
+              })}
               onRetry={() => void types.reload()}
             />
           ) : !types.data ? (
-            <p className="muted">Mitgliedsarten werden geladen …</p>
+            <p className="muted">{t('Mitgliedsarten werden geladen …')}</p>
           ) : (
             <Alert kind="info">
-              Es ist keine Mitgliedsart verfügbar.{' '}
+              {t('Es ist keine Mitgliedsart verfügbar.')}{' '}
               {canSetup ? (
-                <Link to="/mitglieder/einrichtung/mitgliedsarten">Mitgliedsarten einrichten</Link>
+                <Link to="/mitglieder/einrichtung/mitgliedsarten">
+                  {t('Mitgliedsarten einrichten')}
+                </Link>
               ) : (
-                'Bitte wende dich an den Vorstand, der die Mitgliederverwaltung einrichtet.'
+                t('Bitte wende dich an den Vorstand, der die Mitgliederverwaltung einrichtet.')
               )}
             </Alert>
           )}
           <div className="button-row">
             <button type="button" className="button" onClick={() => setAction(null)}>
-              Abbrechen
+              {t('Abbrechen')}
             </button>
           </div>
         </div>
@@ -157,7 +163,10 @@ function Privacy({
     member.purge_due !== null &&
     member.periods.every((p) => !p.exit_date || p.exit_date <= todayIso())
   if (!canExport && !canErase) return null
-  const name = `${member.first_name} ${member.last_name}`
+  const name = t('{first_name} {last_name}', {
+    first_name: member.first_name,
+    last_name: member.last_name,
+  })
 
   async function disclose() {
     setBusy(true)
@@ -175,12 +184,12 @@ function Privacy({
   async function erase() {
     if (
       !(await confirmDialog({
-        title: `Daten von ${name} jetzt löschen?`,
+        title: t('Daten von {name} jetzt löschen?', { name }),
         message:
-          'Wie nach Ablauf der Löschfrist bleiben nur Name, Geburtsjahr und Mitgliedszeiten. ' +
-          'Rechnungen und Buchungen bleiben wegen der Aufbewahrungspflicht. Das lässt sich ' +
-          'nicht rückgängig machen und gilt auch nach dem Einspielen eines älteren Backups.',
-        confirmLabel: 'Endgültig löschen',
+          t('Wie nach Ablauf der Löschfrist bleiben nur Name, Geburtsjahr und Mitgliedszeiten. ') +
+          t('Rechnungen und Buchungen bleiben wegen der Aufbewahrungspflicht. Das lässt sich ') +
+          t('nicht rückgängig machen und gilt auch nach dem Einspielen eines älteren Backups.'),
+        confirmLabel: t('Endgültig löschen'),
       }))
     )
       return
@@ -197,21 +206,22 @@ function Privacy({
 
   return (
     <div className="subcard stack-sm">
-      <h3>Datenschutz</h3>
+      <h3>{t('Datenschutz')}</h3>
       <p className="muted small">
-        Auskunft: ein ZIP nur mit den Daten dieser Person (Akte, Rechnungen, versandte Mails, Zugang
-        und Geräte, Verbund-Meldungen).
+        {t(
+          'Auskunft: ein ZIP nur mit den Daten dieser Person (Akte, Rechnungen, versandte Mails, Zugang und Geräte, Verbund-Meldungen).',
+        )}
       </p>
       {error && <Alert kind="error">{error}</Alert>}
       <div className="button-row">
         {canExport && (
           <button type="button" className="button button-ghost" disabled={busy} onClick={disclose}>
-            Auskunft für dieses Mitglied (ZIP)
+            {t('Auskunft für dieses Mitglied (ZIP)')}
           </button>
         )}
         {canErase && (
           <button type="button" className="button button-danger" disabled={busy} onClick={erase}>
-            Daten auf Verlangen löschen
+            {t('Daten auf Verlangen löschen')}
           </button>
         )}
       </div>
@@ -253,20 +263,21 @@ function ChangeType({
   }
   return (
     <form className="subcard" onSubmit={save}>
-      <h3>Mitgliedsart wechseln</h3>
+      <h3>{t('Mitgliedsart wechseln')}</h3>
       <p className="muted small">
-        Die bisherige Art ({member.current_type?.member_type_name ?? '–'}) endet am Vortag, die
-        Mitgliedschaft läuft weiter.
+        {t('Die bisherige Art (')}
+        {member.current_type?.member_type_name ?? '–'}
+        {t(') endet am Vortag, die Mitgliedschaft läuft weiter.')}
       </p>
       <div className="grid-2">
         <SelectField
-          label="Neue Mitgliedsart"
+          label={t('Neue Mitgliedsart')}
           required
           value={form.values.member_type}
           error={form.errors.member_type}
           onChange={(e) => form.set('member_type', e.target.value)}
         >
-          <option value="">– bitte wählen –</option>
+          <option value="">{t('– bitte wählen –')}</option>
           {types
             .filter((tm) => tm.id !== member.current_type?.member_type)
             .map((tm) => (
@@ -286,7 +297,7 @@ function ChangeType({
         />
       </div>
       {form.message?.kind === 'error' && <Alert kind="error">{form.message.text}</Alert>}
-      <Buttons busy={form.busy} label="Wechseln" onCancel={onCancel} />
+      <Buttons busy={form.busy} label={t('Wechseln')} onCancel={onCancel} />
     </form>
   )
 }
@@ -307,8 +318,11 @@ function Exit({
     e.preventDefault()
     if (
       !(await confirmDialog({
-        title: `Austritt von ${member.first_name} ${member.last_name} erfassen?`,
-        confirmLabel: 'Austritt erfassen',
+        title: t('Austritt von {first_name} {last_name} erfassen?', {
+          first_name: member.first_name,
+          last_name: member.last_name,
+        }),
+        confirmLabel: t('Austritt erfassen'),
       }))
     )
       return
@@ -317,14 +331,16 @@ function Exit({
   }
   return (
     <form className="subcard" onSubmit={save}>
-      <h3>Austritt erfassen</h3>
+      <h3>{t('Austritt erfassen')}</h3>
       <p className="muted small">
-        Der Zeitraum wird geschlossen, die Person kommt ins Archiv. Mitgliedsart,{' '}
-        {org.department_label_plural} und Rollen enden mit dem Austritt.
+        {t(
+          'Der Zeitraum wird geschlossen, die Person kommt ins Archiv. Mitgliedsart,  {department_label_plural} und Rollen enden mit dem Austritt.',
+          { department_label_plural: org.department_label_plural },
+        )}
       </p>
       <div className="grid-2">
         <Field
-          label="Austrittsdatum"
+          label={t('Austrittsdatum')}
           type="date"
           required
           value={form.values.exit_date}
@@ -332,7 +348,7 @@ function Exit({
           onChange={(e) => form.set('exit_date', e.target.value)}
         />
         <SelectField
-          label="Grund"
+          label={t('Grund')}
           value={form.values.exit_reason}
           error={form.errors.exit_reason}
           onChange={(e) => form.set('exit_reason', e.target.value)}
@@ -345,13 +361,13 @@ function Exit({
         </SelectField>
       </div>
       <Field
-        label="Bemerkung (optional)"
+        label={t('Bemerkung (optional)')}
         value={form.values.note}
         error={form.errors.note}
         onChange={(e) => form.set('note', e.target.value)}
       />
       {form.message?.kind === 'error' && <Alert kind="error">{form.message.text}</Alert>}
-      <Buttons busy={form.busy} label="Austritt speichern" onCancel={onCancel} />
+      <Buttons busy={form.busy} label={t('Austritt speichern')} onCancel={onCancel} />
     </form>
   )
 }
@@ -400,13 +416,15 @@ function Reentry({
   }
   return (
     <form className="subcard" onSubmit={save}>
-      <h3>Wiedereintritt</h3>
+      <h3>{t('Wiedereintritt')}</h3>
       <p className="muted small">
-        Es entsteht ein neuer Zeitraum. Frühere Zeiträume und die Verbandsnummer bleiben erhalten.
+        {t(
+          'Es entsteht ein neuer Zeitraum. Frühere Zeiträume und die Verbandsnummer bleiben erhalten.',
+        )}
       </p>
       <div className="grid-2">
         <Field
-          label="Eintritt"
+          label={t('Eintritt')}
           type="date"
           required
           value={v.entry_date}
@@ -414,13 +432,13 @@ function Reentry({
           onChange={(ev) => form.set('entry_date', ev.target.value)}
         />
         <SelectField
-          label="Mitgliedsart"
+          label={t('Mitgliedsart')}
           required
           value={v.member_type}
           error={e.member_type}
           onChange={(ev) => form.set('member_type', ev.target.value)}
         >
-          <option value="">– bitte wählen –</option>
+          <option value="">{t('– bitte wählen –')}</option>
           {types.map((tm) => (
             <option key={tm.id} value={tm.id}>
               {tm.name}
@@ -430,23 +448,25 @@ function Reentry({
       </div>
       {needsContact && (
         <>
-          <p className="muted small">Die Kontaktdaten wurden gelöscht – bitte neu erfassen.</p>
+          <p className="muted small">
+            {t('Die Kontaktdaten wurden gelöscht – bitte neu erfassen.')}
+          </p>
           <div className="grid-2">
             <Field
-              label="E-Mail-Adresse (optional)"
+              label={t('E-Mail-Adresse (optional)')}
               type="email"
               value={v.email}
               error={e.email}
               onChange={(ev) => form.set('email', ev.target.value)}
             />
             <Field
-              label="Telefon"
+              label={t('Telefon')}
               value={v.phone}
               onChange={(ev) => form.set('phone', ev.target.value)}
             />
           </div>
           <Field
-            label="Straße und Hausnummer"
+            label={t('Straße und Hausnummer')}
             required
             value={v.street}
             error={e.street}
@@ -461,7 +481,7 @@ function Reentry({
               onChange={(ev) => form.set('postal_code', ev.target.value)}
             />
             <Field
-              label="Ort"
+              label={t('Ort')}
               required
               value={v.city}
               error={e.city}
@@ -471,7 +491,7 @@ function Reentry({
         </>
       )}
       {form.message?.kind === 'error' && <Alert kind="error">{form.message.text}</Alert>}
-      <Buttons busy={form.busy} label="Wiedereintritt speichern" onCancel={onCancel} />
+      <Buttons busy={form.busy} label={t('Wiedereintritt speichern')} onCancel={onCancel} />
     </form>
   )
 }
@@ -491,7 +511,7 @@ function Buttons({
         {label}
       </button>
       <button type="button" className="button button-ghost" onClick={onCancel}>
-        Abbrechen
+        {t('Abbrechen')}
       </button>
     </div>
   )

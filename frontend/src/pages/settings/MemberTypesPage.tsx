@@ -10,6 +10,7 @@ import { fillTerms, useTerms } from '../../org/terms.ts'
 import { Term, Why } from '../../learning/Aids.tsx'
 import { SortHint } from '../../components/Sortable.tsx'
 import { useSortable } from '../../components/useSortable.tsx'
+import { t } from '../../i18n/index.ts'
 
 export function MemberTypesPage() {
   const org = useActiveOrg()
@@ -33,7 +34,7 @@ export function MemberTypesPage() {
   })
 
   if (error) return <Alert kind="error">{error}</Alert>
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
 
   async function run(action: () => Promise<unknown>, success: string) {
     setBusy(true)
@@ -64,9 +65,15 @@ export function MemberTypesPage() {
     if (!removing) return
     const { type, usage } = removing
     if (usage.deletable) {
-      void run(() => memberApi.deleteType(org.id, type.id), `„${type.name}“ wurde gelöscht.`)
+      void run(
+        () => memberApi.deleteType(org.id, type.id),
+        t('„{name}“ wurde gelöscht.', { name: type.name }),
+      )
     } else {
-      void run(() => memberApi.archiveType(org.id, type.id), `„${type.name}“ wurde archiviert.`)
+      void run(
+        () => memberApi.archiveType(org.id, type.id),
+        t('„{name}“ wurde archiviert.', { name: type.name }),
+      )
     }
   }
 
@@ -74,7 +81,7 @@ export function MemberTypesPage() {
     <div className="card card-wide">
       <div className="card-head">
         <h2>
-          <Term k="member_type">Mitgliedsarten</Term>
+          <Term k="member_type">{t('Mitgliedsarten')}</Term>
         </h2>
         {editable && editing === null && (
           <button
@@ -82,20 +89,25 @@ export function MemberTypesPage() {
             className="button button-ghost push-right"
             onClick={() => setEditing('new')}
           >
-            Neue Mitgliedsart
+            {t('Neue Mitgliedsart')}
           </button>
         )}
       </div>
       {fed ? (
         <p className="muted small">
-          Jede Art hat drei Kennzeichen: <strong>{fillTerms('an {dv_akk} melden', terms)}</strong>{' '}
-          (zählt für {terms.dv_akk}), <strong>aktiv</strong> ({terms.dv_im} nur in {terms.e_einem}{' '}
-          erlaubt) und <strong>zählt für Mitgliedsdauer</strong>.
+          {t('Jede Art hat drei Kennzeichen:')}{' '}
+          <strong>{fillTerms(t('an {dv_akk} melden'), terms)}</strong>{' '}
+          {t('(zählt für {dv_akk}),', { dv_akk: terms.dv_akk })} <strong>aktiv</strong>{' '}
+          {t('({dv_im} nur in {e_einem}  erlaubt) und', {
+            dv_im: terms.dv_im,
+            e_einem: terms.e_einem,
+          })}{' '}
+          <strong>{t('zählt für Mitgliedsdauer')}</strong>.
         </p>
       ) : (
         <p className="muted small">
-          Jede Art hat zwei Kennzeichen: <strong>aktiv</strong> und{' '}
-          <strong>zählt für Mitgliedsdauer</strong>.
+          {t('Jede Art hat zwei Kennzeichen:')} <strong>aktiv</strong> und{' '}
+          <strong>{t('zählt für Mitgliedsdauer')}</strong>.
         </p>
       )}
       {editing !== null && (
@@ -112,16 +124,17 @@ export function MemberTypesPage() {
         />
       )}
       {removing && (
-        <div className="subcard" role="dialog" aria-label="Mitgliedsart entfernen">
+        <div className="subcard" role="dialog" aria-label={t('Mitgliedsart entfernen')}>
           {removing.usage.deletable ? (
             <p>
-              „{removing.type.name}“ wird nirgends verwendet und wird <strong>gelöscht</strong>.
+              {t('„{name}“ wird nirgends verwendet und wird', { name: removing.type.name })}{' '}
+              <strong>{t('gelöscht')}</strong>.
             </p>
           ) : (
             <>
               <p>
-                „{removing.type.name}“ wird noch verwendet und wird deshalb{' '}
-                <strong>archiviert</strong> statt gelöscht:
+                {t('„{name}“ wird noch verwendet und wird deshalb', { name: removing.type.name })}{' '}
+                <strong>archiviert</strong> {t('statt gelöscht:')}
               </p>
               <ul>
                 {removing.usage.reasons.map((r) => (
@@ -129,9 +142,9 @@ export function MemberTypesPage() {
                 ))}
               </ul>
               <p className="muted small">
-                Archivierte Arten stehen nicht mehr zur Auswahl für neue Einträge. In Historie,
-                Mitgliederakte, Filtern und Exporten bleiben sie sichtbar und lassen sich jederzeit
-                wiederherstellen.
+                {t(
+                  'Archivierte Arten stehen nicht mehr zur Auswahl für neue Einträge. In Historie, Mitgliederakte, Filtern und Exporten bleiben sie sichtbar und lassen sich jederzeit wiederherstellen.',
+                )}
               </p>
             </>
           )}
@@ -142,10 +155,10 @@ export function MemberTypesPage() {
               disabled={busy}
               onClick={confirmRemove}
             >
-              {removing.usage.deletable ? 'Löschen' : 'Archivieren'}
+              {removing.usage.deletable ? t('Löschen') : t('Archivieren')}
             </button>
             <button type="button" className="button button-ghost" onClick={() => setRemoving(null)}>
-              Abbrechen
+              {t('Abbrechen')}
             </button>
           </div>
         </div>
@@ -157,16 +170,16 @@ export function MemberTypesPage() {
           <tr>
             {sort.active && (
               <th className="drag-cell">
-                <span className="sr-only">Reihenfolge</span>
+                <span className="sr-only">{t('Reihenfolge')}</span>
               </th>
             )}
-            <th>Art</th>
+            <th>{t('Art')}</th>
             {fed && <th>melden</th>}
             <th>
               <Term k="active_passive">aktiv</Term>
             </th>
             <th>
-              <Term k="membership_duration">zählt für Dauer</Term>
+              <Term k="membership_duration">{t('zählt für Dauer')}</Term>
             </th>
             <th />
           </tr>
@@ -183,15 +196,15 @@ export function MemberTypesPage() {
                 {editable && (
                   <>
                     <button type="button" className="link-button" onClick={() => setEditing(tm)}>
-                      Bearbeiten
+                      {t('Bearbeiten')}
                     </button>{' '}
                     <button
                       type="button"
                       className="link-button"
-                      aria-label={`${tm.name} löschen`}
+                      aria-label={t('{name} löschen', { name: tm.name })}
                       onClick={() => void askRemove(tm)}
                     >
-                      Löschen
+                      {t('Löschen')}
                     </button>
                   </>
                 )}
@@ -204,9 +217,11 @@ export function MemberTypesPage() {
 
       {archived.length > 0 && (
         <>
-          <h3>Archivierte Mitgliedsarten</h3>
+          <h3>{t('Archivierte Mitgliedsarten')}</h3>
           <p className="muted small">
-            Nicht mehr für neue Einträge wählbar, in Historie und Auswertungen weiter sichtbar.
+            {t(
+              'Nicht mehr für neue Einträge wählbar, in Historie und Auswertungen weiter sichtbar.',
+            )}
           </p>
           <ul className="role-list">
             {archived.map((tm) => (
@@ -220,11 +235,11 @@ export function MemberTypesPage() {
                     onClick={() =>
                       void run(
                         () => memberApi.restoreType(org.id, tm.id),
-                        `„${tm.name}“ ist wieder verfügbar.`,
+                        t('„{name}“ ist wieder verfügbar.', { name: tm.name }),
                       )
                     }
                   >
-                    Wiederherstellen
+                    {t('Wiederherstellen')}
                   </button>
                 )}
               </li>
@@ -278,7 +293,7 @@ function TypeForm({
       {type && <SaveStatus auto={auto} />}
       <div className="grid-2">
         <Field
-          label="Name"
+          label={t('Name')}
           required
           value={v.name}
           error={form.errors.name}
@@ -287,7 +302,7 @@ function TypeForm({
       </div>
       {terms.dv_has && (
         <Checkbox
-          label={fillTerms('an {dv_akk} melden', terms)}
+          label={fillTerms(t('an {dv_akk} melden'), terms)}
           checked={v.reported}
           onChange={(x) => form.set('reported', x)}
         />
@@ -296,7 +311,7 @@ function TypeForm({
       <Checkbox label="aktiv" checked={v.active} onChange={(x) => form.set('active', x)} />
       <Why k="member_type_active" />
       <Checkbox
-        label="zählt für Mitgliedsdauer"
+        label={t('zählt für Mitgliedsdauer')}
         checked={v.counts_for_duration}
         onChange={(x) => form.set('counts_for_duration', x)}
       />
@@ -308,11 +323,11 @@ function TypeForm({
           className={type ? 'button button-ghost' : 'button button-primary'}
           disabled={form.busy}
         >
-          {type ? 'Schließen' : 'Anlegen'}
+          {type ? t('Schließen') : t('Anlegen')}
         </button>
         {!type && (
           <button type="button" className="button button-ghost" onClick={onCancel}>
-            Abbrechen
+            {t('Abbrechen')}
           </button>
         )}
       </div>

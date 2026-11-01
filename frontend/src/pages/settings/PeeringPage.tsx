@@ -20,22 +20,23 @@ import { errorMessage, formatDate, formatDateTime, useLoad } from '../../compone
 import { Alert, Checkbox, Field, LoadError, SelectField } from '../../components/ui.tsx'
 import { useActiveOrg } from '../../org/OrgContext.tsx'
 import { HowTo, Why } from '../../learning/Aids.tsx'
+import { t } from '../../i18n/index.ts'
 
 const KIND_LABELS: Record<string, string> = {
-  'coupling.accept': 'Kopplung bestätigt',
-  'coupling.config': 'Freigaben geändert',
-  'coupling.end': 'Kopplung gelöst',
-  'register.numbers': 'Verbandsnummern',
-  'circular.forward': 'Rundschreiben zur Weitergabe',
-  'circular.report': 'Rückmeldung zum Rundschreiben',
-  'register.suggest': 'Korrekturvorschlag',
-  'transfer.request': 'Wechselanfrage',
-  'transfer.decision': 'Entscheidung zum Wechsel',
-  'transfer.cancel': 'Wechselanfrage zurückgezogen',
-  'invoice.issue': 'Rechnung',
-  'invoice.cancel': 'Rechnung storniert',
-  'invoice.status': 'Zahlungsstand',
-  'invoice.paid': 'als bezahlt gemeldet',
+  'coupling.accept': t('Kopplung bestätigt'),
+  'coupling.config': t('Freigaben geändert'),
+  'coupling.end': t('Kopplung gelöst'),
+  'register.numbers': t('Verbandsnummern'),
+  'circular.forward': t('Rundschreiben zur Weitergabe'),
+  'circular.report': t('Rückmeldung zum Rundschreiben'),
+  'register.suggest': t('Korrekturvorschlag'),
+  'transfer.request': t('Wechselanfrage'),
+  'transfer.decision': t('Entscheidung zum Wechsel'),
+  'transfer.cancel': t('Wechselanfrage zurückgezogen'),
+  'invoice.issue': t('Rechnung'),
+  'invoice.cancel': t('Rechnung storniert'),
+  'invoice.status': t('Zahlungsstand'),
+  'invoice.paid': t('als bezahlt gemeldet'),
 }
 
 function kindLabel(kind: string, coupling: Coupling): string {
@@ -50,14 +51,15 @@ export function PeeringPage() {
   const org = useActiveOrg()
   const { data, error, reload } = useLoad(() => peeringApi.overview(org.id), [org.id])
   if (error) return <LoadError message={error} onRetry={() => void reload()} />
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
   if (!data.enabled) {
     return (
       <div className="card card-wide">
-        <h2>Verbund</h2>
+        <h2>{t('Verbund')}</h2>
         <Alert kind="info">
-          Der Verbund mit anderen HUBIplan-Instanzen ist auf dieser Instanz nicht eingeschaltet.
-          Alles läuft wie bisher auf dieser Instanz. Einschalten kann ihn die Plattformverwaltung.
+          {t(
+            'Der Verbund mit anderen HUBIplan-Instanzen ist auf dieser Instanz nicht eingeschaltet. Alles läuft wie bisher auf dieser Instanz. Einschalten kann ihn die Plattformverwaltung.',
+          )}
         </Alert>
       </div>
     )
@@ -67,11 +69,13 @@ export function PeeringPage() {
   return (
     <>
       <div className="card card-wide">
-        <h2>Verbund</h2>
+        <h2>{t('Verbund')}</h2>
         <p className="muted small">
-          Einheiten auf anderen HUBIplan-Instanzen koppeln. Es fließen nur die Daten, die du unten
-          freigibst, verschlüsselt und unterschrieben. Diese Instanz: {data.instance?.base_url} ·
-          Fingerabdruck <code>{data.instance?.fingerprint}</code>
+          {t(
+            'Einheiten auf anderen HUBIplan-Instanzen koppeln. Es fließen nur die Daten, die du unten freigibst, verschlüsselt und unterschrieben. Diese Instanz: {base_url} · Fingerabdruck',
+            { base_url: data.instance?.base_url },
+          )}{' '}
+          <code>{data.instance?.fingerprint}</code>
         </p>
         <HowTo k="how_peering" />
       </div>
@@ -86,12 +90,12 @@ export function PeeringPage() {
       )}
       {closed.length > 0 && (
         <div className="card card-wide">
-          <h3>Frühere Kopplungen</h3>
+          <h3>{t('Frühere Kopplungen')}</h3>
           <ul className="plain-list">
             {closed.map((c) => (
               <li key={c.id}>
                 {c.remote.name} ({c.remote.base_url}) · {c.state_label}
-                {c.ended_at && ` am ${formatDateTime(c.ended_at)}`}
+                {c.ended_at && t(' am {x}', { x: formatDateTime(c.ended_at) })}
               </li>
             ))}
           </ul>
@@ -99,9 +103,9 @@ export function PeeringPage() {
       )}
       {!data.can_offer && !data.can_join && open.length === 0 && (
         <Alert kind="info">
-          Diese Einheit kann sich nicht mit anderen Instanzen koppeln: Nur Einheiten mit eigenem
-          Datenbereich nehmen ferne Einheiten auf, und nur Einheiten mit eigenen Mitgliedern ohne
-          Einheit darüber koppeln sich unter eine ferne Einheit.
+          {t(
+            'Diese Einheit kann sich nicht mit anderen Instanzen koppeln: Nur Einheiten mit eigenem Datenbereich nehmen ferne Einheiten auf, und nur Einheiten mit eigenen Mitgliedern ohne Einheit darüber koppeln sich unter eine ferne Einheit.',
+          )}
         </Alert>
       )}
     </>
@@ -131,11 +135,11 @@ function MoveCard({ onMoved }: { onMoved: () => void }) {
   async function announce() {
     if (!target) return
     const ok = await confirmDialog({
-      title: 'Umzug melden?',
+      title: t('Umzug melden?'),
       message:
-        'Alle Gegenstellen koppeln sich danach mit der neuen Instanz. Diese Instanz nimmt für ' +
-        'die Kopplungen dieser Einheit nichts mehr an. Das lässt sich nicht rückgängig machen.',
-      confirmLabel: 'Umzug melden',
+        t('Alle Gegenstellen koppeln sich danach mit der neuen Instanz. Diese Instanz nimmt für ') +
+        t('die Kopplungen dieser Einheit nichts mehr an. Das lässt sich nicht rückgängig machen.'),
+      confirmLabel: t('Umzug melden'),
       danger: true,
     })
     if (!ok) return
@@ -153,24 +157,26 @@ function MoveCard({ onMoved }: { onMoved: () => void }) {
   return (
     <details className="card card-wide">
       <summary>
-        <strong>Umzug auf eine andere Instanz</strong>
+        <strong>{t('Umzug auf eine andere Instanz')}</strong>
       </summary>
       <ol className="small">
-        <li>Unter Datenübernahme diese Einheit exportieren. Die Kopplungen ziehen mit.</li>
-        <li>Die Datei auf der neuen Instanz einlesen lassen.</li>
+        <li>{t('Unter Datenübernahme diese Einheit exportieren. Die Kopplungen ziehen mit.')}</li>
+        <li>{t('Die Datei auf der neuen Instanz einlesen lassen.')}</li>
         <li>
-          Hier die neue Instanz eintragen, den Fingerabdruck vergleichen und den Umzug melden.
+          {t(
+            'Hier die neue Instanz eintragen, den Fingerabdruck vergleichen und den Umzug melden.',
+          )}
         </li>
       </ol>
       {result ? (
         <Alert kind={result.failed.length ? 'error' : 'success'}>
-          {result.done} Gegenstelle(n) haben den Umzug übernommen.
-          {result.failed.length > 0 && ` Nicht erreicht: ${result.failed.join('; ')}`}
+          {result.done} {t('Gegenstelle(n) haben den Umzug übernommen.')}
+          {result.failed.length > 0 && t(' Nicht erreicht: {x}', { x: result.failed.join('; ') })}
         </Alert>
       ) : (
         <>
           <Field
-            label="Adresse der neuen Instanz"
+            label={t('Adresse der neuen Instanz')}
             type="url"
             value={url}
             placeholder="https://"
@@ -182,11 +188,12 @@ function MoveCard({ onMoved }: { onMoved: () => void }) {
           {target && (
             <>
               <p className="small">
-                Fingerabdruck von {target.base_url}: <code>{target.fingerprint}</code>
+                {t('Fingerabdruck von {base_url}:', { base_url: target.base_url })}{' '}
+                <code>{target.fingerprint}</code>
               </p>
               <Field
-                label="Fingerabdruck zur Bestätigung"
-                hint="Von der Plattformverwaltung der neuen Instanz auf anderem Weg erfragen."
+                label={t('Fingerabdruck zur Bestätigung')}
+                hint={t('Von der Plattformverwaltung der neuen Instanz auf anderem Weg erfragen.')}
                 value={fingerprint}
                 onChange={(e) => setFingerprint(e.target.value)}
               />
@@ -201,7 +208,7 @@ function MoveCard({ onMoved }: { onMoved: () => void }) {
                 disabled={busy || !url.trim()}
                 onClick={() => void inspect()}
               >
-                Neue Instanz prüfen
+                {t('Neue Instanz prüfen')}
               </button>
             ) : (
               <button
@@ -210,7 +217,7 @@ function MoveCard({ onMoved }: { onMoved: () => void }) {
                 disabled={busy || !fingerprint.trim()}
                 onClick={() => void announce()}
               >
-                Umzug melden
+                {t('Umzug melden')}
               </button>
             )}
           </div>
@@ -247,11 +254,13 @@ function SpinOffCard({ onChange }: { onChange: () => void }) {
 
   async function prepare() {
     const ok = await confirmDialog({
-      title: 'Ausgliederung vorbereiten?',
+      title: t('Ausgliederung vorbereiten?'),
       message:
-        'Es entstehen ein Export der Untereinheit mit ihren Mitgliedern und ein Kopplungscode ' +
-        '(30 Tage gültig). Gib die Datei nur an die Plattformverwaltung der neuen Instanz weiter.',
-      confirmLabel: 'Vorbereiten',
+        t('Es entstehen ein Export der Untereinheit mit ihren Mitgliedern und ein Kopplungscode ') +
+        t(
+          '(30 Tage gültig). Gib die Datei nur an die Plattformverwaltung der neuen Instanz weiter.',
+        ),
+      confirmLabel: t('Vorbereiten'),
     })
     if (!ok) return
     setErr(null)
@@ -287,28 +296,32 @@ function SpinOffCard({ onChange }: { onChange: () => void }) {
 
   return (
     <div className="card card-wide">
-      <h3>Untereinheit auf eigene Instanz ausgliedern</h3>
+      <h3>{t('Untereinheit auf eigene Instanz ausgliedern')}</h3>
       <p className="muted small">
-        Für eine Untereinheit, die künftig eine eigene HUBIplan-Instanz betreibt. Sie bekommt einen
-        Export ihrer Daten mit einem Kopplungscode. Die neue Instanz liest ihn ein und koppelt sich
-        damit unter den Verein. Nach deiner Bestätigung ist die Untereinheit hier nur noch zu sehen.
+        {t(
+          'Für eine Untereinheit, die künftig eine eigene HUBIplan-Instanz betreibt. Sie bekommt einen Export ihrer Daten mit einem Kopplungscode. Die neue Instanz liest ihn ein und koppelt sich damit unter den Verein. Nach deiner Bestätigung ist die Untereinheit hier nur noch zu sehen.',
+        )}
       </p>
       {data.spin_offs.length > 0 && (
         <ul className="plain-list">
           {data.spin_offs.map((s) => (
             <li key={s.id}>
-              <strong>{s.unit.name}</strong>: {s.way_label}, Stichtag {formatDate(s.cutoff)} ·{' '}
+              <strong>{s.unit.name}</strong>
+              {t(': {way_label}, Stichtag {x} ·', {
+                way_label: s.way_label,
+                x: formatDate(s.cutoff),
+              })}{' '}
               {s.state_label}
               {s.state === 'prepared' && s.export_job?.has_file && canExport && (
                 <>
                   {' · '}
                   <a href={transferApi.downloadUrl({ org: org.id }, s.export_job.id)}>
-                    Export herunterladen
+                    {t('Export herunterladen')}
                   </a>
                 </>
               )}
               {s.state === 'prepared' && s.export_job && !s.export_job.has_file && (
-                <> · Export läuft noch</>
+                <> {t('· Export läuft noch')}</>
               )}
               {s.state === 'prepared' && (
                 <>
@@ -318,17 +331,25 @@ function SpinOffCard({ onChange }: { onChange: () => void }) {
                     className="button button-ghost"
                     onClick={() => void cancel(s.id)}
                   >
-                    Abbrechen
+                    {t('Abbrechen')}
                   </button>
                 </>
               )}
               {s.state === 'requested' && (
-                <> · Die Anfrage steht unten bei den Kopplungen und wartet auf deine Bestätigung.</>
+                <>
+                  {' '}
+                  {t(
+                    '· Die Anfrage steht unten bei den Kopplungen und wartet auf deine Bestätigung.',
+                  )}
+                </>
               )}
               {s.exited_at && (
                 <>
                   {' '}
-                  · Sammelaustritt: {s.exited_count} Mitglieder zum {formatDate(s.cutoff)}
+                  {t('· Sammelaustritt: {exited_count} Mitglieder zum', {
+                    exited_count: s.exited_count,
+                  })}{' '}
+                  {formatDate(s.cutoff)}
                 </>
               )}
               {s.state === 'done' && s.way === 'move' && !s.exited_at && (
@@ -340,17 +361,17 @@ function SpinOffCard({ onChange }: { onChange: () => void }) {
       )}
       {!canExport ? (
         <Alert kind="info">
-          Ausgliedern darf nur, wer den vollständigen Export erstellen darf.
+          {t('Ausgliedern darf nur, wer den vollständigen Export erstellen darf.')}
         </Alert>
       ) : (
         <>
           <SelectField
-            label="Untereinheit"
+            label={t('Untereinheit')}
             value={unit}
             onChange={(e) => setUnit(e.target.value)}
-            hint="Nur Untereinheiten ohne eigene Untereinheiten."
+            hint={t('Nur Untereinheiten ohne eigene Untereinheiten.')}
           >
-            <option value="">bitte wählen</option>
+            <option value="">{t('bitte wählen')}</option>
             {candidates.map((u) => (
               <option key={u.id} value={u.id}>
                 {u.name}
@@ -358,7 +379,7 @@ function SpinOffCard({ onChange }: { onChange: () => void }) {
             ))}
           </SelectField>
           <fieldset>
-            <legend className="small">Was wird aus den Mitgliedern?</legend>
+            <legend className="small">{t('Was wird aus den Mitgliedern?')}</legend>
             <label className="checkbox">
               <input
                 type="radio"
@@ -370,8 +391,9 @@ function SpinOffCard({ onChange }: { onChange: () => void }) {
                 }}
               />
               <span>
-                Sie bleiben Mitglieder des Vereins (empfohlen). Die Untereinheit pflegt sie auf
-                ihrer Instanz, der Verein sieht sie weiter.
+                {t(
+                  'Sie bleiben Mitglieder des Vereins (empfohlen). Die Untereinheit pflegt sie auf ihrer Instanz, der Verein sieht sie weiter.',
+                )}
               </span>
             </label>
             <label className="checkbox">
@@ -385,19 +407,20 @@ function SpinOffCard({ onChange }: { onChange: () => void }) {
                 }}
               />
               <span>
-                Sie werden Mitglieder der Untereinheit. Beim Verein treten sie zum Stichtag mit
-                Grund „Wechsel“ aus.
+                {t(
+                  'Sie werden Mitglieder der Untereinheit. Beim Verein treten sie zum Stichtag mit Grund „Wechsel“ aus.',
+                )}
               </span>
             </label>
           </fieldset>
           <Field
-            label="Stichtag"
+            label={t('Stichtag')}
             type="date"
             value={cutoff}
             onChange={(e) => setCutoff(e.target.value)}
           />
           <fieldset>
-            <legend className="small">Vorher erledigt</legend>
+            <legend className="small">{t('Vorher erledigt')}</legend>
             {items.map((i) => (
               <Checkbox
                 key={i.key}
@@ -408,7 +431,7 @@ function SpinOffCard({ onChange }: { onChange: () => void }) {
             ))}
           </fieldset>
           <Checkbox
-            label="Mit Dateien (Fotos, Belege, Satzung)"
+            label={t('Mit Dateien (Fotos, Belege, Satzung)')}
             checked={withFiles}
             onChange={setWithFiles}
           />
@@ -420,7 +443,7 @@ function SpinOffCard({ onChange }: { onChange: () => void }) {
               disabled={!ready || busy}
               onClick={() => void prepare()}
             >
-              Ausgliederung vorbereiten
+              {t('Ausgliederung vorbereiten')}
             </button>
           </div>
         </>
@@ -454,11 +477,13 @@ function CollectiveExit({ spin, onDone }: { spin: SpinOff; onDone: () => void })
     if (!members) return
     const leaving = members.filter((m) => !keep[m.id]).length
     const ok = await confirmDialog({
-      title: 'Sammelaustritt ausführen?',
+      title: t('Sammelaustritt ausführen?'),
       message:
-        `${leaving} Mitglieder treten zum ${formatDate(spin.cutoff)} mit Grund „Wechsel“ aus. ` +
-        'Die Zeiträume bleiben, danach gilt die Löschfrist wie bei jedem Austritt.',
-      confirmLabel: 'Austritt erfassen',
+        t('{leaving} Mitglieder treten zum {x} mit Grund „Wechsel“ aus. ', {
+          leaving,
+          x: formatDate(spin.cutoff),
+        }) + t('Die Zeiträume bleiben, danach gilt die Löschfrist wie bei jedem Austritt.'),
+      confirmLabel: t('Austritt erfassen'),
     })
     if (!ok) return
     setBusy(true)
@@ -481,19 +506,23 @@ function CollectiveExit({ spin, onDone }: { spin: SpinOff; onDone: () => void })
     <div className="subcard">
       {!members ? (
         <button type="button" className="button" onClick={() => void load()}>
-          Sammelaustritt vorbereiten
+          {t('Sammelaustritt vorbereiten')}
         </button>
       ) : (
         <>
           <p className="small">
-            Austritt zum {formatDate(spin.cutoff)} mit Grund „Wechsel“. Häkchen heißt: bleibt
-            Vereinsmitglied.
+            {t('Austritt zum {x} mit Grund „Wechsel“. Häkchen heißt: bleibt Vereinsmitglied.', {
+              x: formatDate(spin.cutoff),
+            })}
           </p>
-          {members.length === 0 && <p className="muted small">Niemand mehr zugeordnet.</p>}
+          {members.length === 0 && <p className="muted small">{t('Niemand mehr zugeordnet.')}</p>}
           {members.map((m) => (
             <Checkbox
               key={m.id}
-              label={`${m.name} bleibt${m.also_in.length ? ` (auch in ${m.also_in.join(', ')})` : ''}`}
+              label={t('{name} bleibt{x}', {
+                name: m.name,
+                x: m.also_in.length ? ` (auch in ${m.also_in.join(', ')})` : '',
+              })}
               checked={!!keep[m.id]}
               onChange={(on) => setKeep({ ...keep, [m.id]: on })}
             />
@@ -505,7 +534,7 @@ function CollectiveExit({ spin, onDone }: { spin: SpinOff; onDone: () => void })
               disabled={busy}
               onClick={() => void run()}
             >
-              Sammelaustritt ausführen
+              {t('Sammelaustritt ausführen')}
             </button>
           </div>
         </>
@@ -529,31 +558,34 @@ function OfferCard() {
   }
   return (
     <div className="card card-wide">
-      <h3>Ferne Einheit aufnehmen</h3>
+      <h3>{t('Ferne Einheit aufnehmen')}</h3>
       {org.type === 'club' && (
         <p className="muted small">
-          Für eine Untereinheit, die eine eigene HUBIplan-Instanz betreibt: Sie erscheint hier unter
-          den Untereinheiten und teilt Stammdaten, Termine, Vorstand und Satzung.
+          {t(
+            'Für eine Untereinheit, die eine eigene HUBIplan-Instanz betreibt: Sie erscheint hier unter den Untereinheiten und teilt Stammdaten, Termine, Vorstand und Satzung.',
+          )}
         </p>
       )}
       <p className="muted small">
-        Erzeuge einen Kopplungscode und gib ihn auf anderem Weg (Telefon, Mail, Papier) an den
-        Vorstand der anderen Einheit. Der Code gilt 48 Stunden und nur einmal. Danach bestätigst du
-        die Anfrage hier.
+        {t(
+          'Erzeuge einen Kopplungscode und gib ihn auf anderem Weg (Telefon, Mail, Papier) an den Vorstand der anderen Einheit. Der Code gilt 48 Stunden und nur einmal. Danach bestätigst du die Anfrage hier.',
+        )}
       </p>
       {code && (
         <>
           <label className="field">
-            <span>Kopplungscode</span>
+            <span>{t('Kopplungscode')}</span>
             <textarea readOnly rows={4} value={code.code} onFocus={(e) => e.target.select()} />
           </label>
-          <p className="muted small">Gültig bis {formatDateTime(code.expires_at)}.</p>
+          <p className="muted small">
+            {t('Gültig bis {x}.', { x: formatDateTime(code.expires_at) })}
+          </p>
         </>
       )}
       {err && <Alert kind="error">{err}</Alert>}
       <div className="button-row">
         <button type="button" className="button" onClick={() => void create()}>
-          {code ? 'Neuen Code erzeugen' : 'Kopplungscode erzeugen'}
+          {code ? t('Neuen Code erzeugen') : t('Kopplungscode erzeugen')}
         </button>
         {code && (
           <button
@@ -561,7 +593,7 @@ function OfferCard() {
             className="button"
             onClick={() => void navigator.clipboard?.writeText(code.code)}
           >
-            Kopieren
+            {t('Kopieren')}
           </button>
         )}
       </div>
@@ -595,8 +627,11 @@ function JoinCard({ onJoined }: { onJoined: () => void }) {
   async function join() {
     if (!preview) return
     const ok = await confirmDialog({
-      message: `${org.name} unter „${preview.remote.name}“ (${preview.remote.base_url}) koppeln? Die andere Seite muss noch bestätigen.`,
-      confirmLabel: 'Koppeln',
+      message: t(
+        '{name} unter „{name2}“ ({base_url}) koppeln? Die andere Seite muss noch bestätigen.',
+        { name: org.name, name2: preview.remote.name, base_url: preview.remote.base_url },
+      ),
+      confirmLabel: t('Koppeln'),
       danger: false,
     })
     if (!ok) return
@@ -615,13 +650,14 @@ function JoinCard({ onJoined }: { onJoined: () => void }) {
 
   return (
     <div className="card card-wide">
-      <h3>Unter eine ferne Einheit koppeln</h3>
+      <h3>{t('Unter eine ferne Einheit koppeln')}</h3>
       <p className="muted small">
-        Den Kopplungscode bekommst du vom Vorstand der Einheit darüber. Vor dem Koppeln siehst du,
-        wer die andere Seite ist und welche Daten fließen.
+        {t(
+          'Den Kopplungscode bekommst du vom Vorstand der Einheit darüber. Vor dem Koppeln siehst du, wer die andere Seite ist und welche Daten fließen.',
+        )}
       </p>
       <label className="field">
-        <span>Kopplungscode</span>
+        <span>{t('Kopplungscode')}</span>
         <textarea rows={3} value={code} onChange={(e) => setCode(e.target.value)} />
       </label>
       {err && <Alert kind="error">{err}</Alert>}
@@ -632,19 +668,22 @@ function JoinCard({ onJoined }: { onJoined: () => void }) {
             {preview.remote.country && ` (Server in ${preview.remote.country})`}
             <br />
             <span className="muted small">
-              Fingerabdruck <code>{preview.remote.fingerprint}</code>. Vergleiche ihn am besten am
-              Telefon mit der anderen Seite.
+              {t('Fingerabdruck')} <code>{preview.remote.fingerprint}</code>. Vergleiche ihn am
+              besten am Telefon mit der anderen Seite.
             </span>
           </p>
           {preview.remote.kind === 'club' && (
             <Alert kind="info">
-              Die andere Seite ist ein Verein. {org.name} erscheint dort als Untereinheit auf einer
-              eigenen Instanz.
+              {t(
+                'Die andere Seite ist ein Verein. {name} erscheint dort als Untereinheit auf einer eigenen Instanz.',
+                { name: org.name },
+              )}
             </Alert>
           )}
           <PacketToggles choices={preview.send} levels={levels} onChange={setLevels} />
           <p className="muted small">
-            Von dort kann kommen: {preview.receive.map((r) => r.label).join(', ') || 'nichts'}.
+            {t('Von dort kann kommen:')}{' '}
+            {preview.receive.map((r) => r.label).join(', ') || 'nichts'}.
           </p>
         </>
       )}
@@ -655,7 +694,7 @@ function JoinCard({ onJoined }: { onJoined: () => void }) {
           disabled={busy || !code}
           onClick={() => void check()}
         >
-          Prüfen
+          {t('Prüfen')}
         </button>
         {preview && (
           <button
@@ -664,7 +703,7 @@ function JoinCard({ onJoined }: { onJoined: () => void }) {
             disabled={busy}
             onClick={() => void join()}
           >
-            Koppeln
+            {t('Koppeln')}
           </button>
         )}
       </div>
@@ -685,12 +724,17 @@ function PacketToggles({
 }) {
   return (
     <fieldset className="fieldset">
-      <legend>Diese Einheit gibt frei</legend>
+      <legend>{t('Diese Einheit gibt frei')}</legend>
       {choices.map((c) => (
         <label key={c.key} className="field">
           <span>
             {c.label}
-            {c.personal && <span className="muted small"> · Personenbezug: {c.personal}</span>}
+            {c.personal && (
+              <span className="muted small">
+                {' '}
+                {t('· Personenbezug:')} {c.personal}
+              </span>
+            )}
           </span>
           <select
             value={levels[c.key] ?? ''}
@@ -724,11 +768,11 @@ function PacketToggles({
 function confirmNamed(): Promise<boolean> {
   return confirmDialog({
     message:
-      'Namentliche Meldung: Name, Vorname, Geburtsdatum, Verbandsnummer, Mitgliedsart und ' +
-      'Zeiträume gehen an die Einheit darüber (nie Anschrift, Kontakt, Bankdaten, Fotos). ' +
-      'Bitte vorher prüfen: Steht die Meldepflicht in der Satzung? Nennen die ' +
-      'Datenschutzhinweise die Einheit darüber als Empfänger?',
-    confirmLabel: 'Geprüft, namentlich melden',
+      t('Namentliche Meldung: Name, Vorname, Geburtsdatum, Verbandsnummer, Mitgliedsart und ') +
+      t('Zeiträume gehen an die Einheit darüber (nie Anschrift, Kontakt, Bankdaten, Fotos). ') +
+      t('Bitte vorher prüfen: Steht die Meldepflicht in der Satzung? Nennen die ') +
+      t('Datenschutzhinweise die Einheit darüber als Empfänger?'),
+    confirmLabel: t('Geprüft, namentlich melden'),
   })
 }
 
@@ -755,8 +799,11 @@ function CouplingCard({ coupling, onChange }: { coupling: Coupling; onChange: ()
 
   async function end() {
     const ok = await confirmDialog({
-      message: `Kopplung mit „${coupling.remote.name}“ lösen? Übermittelte Kopien werden auf beiden Seiten entfernt; Rechnungen bleiben.`,
-      confirmLabel: 'Lösen',
+      message: t(
+        'Kopplung mit „{name}“ lösen? Übermittelte Kopien werden auf beiden Seiten entfernt; Rechnungen bleiben.',
+        { name: coupling.remote.name },
+      ),
+      confirmLabel: t('Lösen'),
     })
     if (ok) await run(() => peeringApi.end(org.id, coupling.id))
   }
@@ -767,34 +814,43 @@ function CouplingCard({ coupling, onChange }: { coupling: Coupling; onChange: ()
       <h3>
         {coupling.remote.name}{' '}
         <span className="muted small">
-          ({above ? 'Einheit darüber' : 'Einheit darunter'} · {coupling.state_label})
+          ({above ? t('Einheit darüber') : t('Einheit darunter')} · {coupling.state_label})
         </span>
       </h3>
       <p className="muted small">
         {coupling.remote.base_url}
-        {coupling.remote.country && ` · Server in ${coupling.remote.country}`} · Fingerabdruck{' '}
-        <code>{coupling.remote.fingerprint}</code>
+        {coupling.remote.country &&
+          t(' · Server in {country}', { country: coupling.remote.country })}{' '}
+        {t('· Fingerabdruck')} <code>{coupling.remote.fingerprint}</code>
         <br />
         {coupling.last_contact_at
-          ? `Zuletzt Kontakt ${formatDateTime(coupling.last_contact_at)}`
-          : 'Noch kein Kontakt'}
-        {coupling.last_sync_at && ` · abgeglichen ${formatDateTime(coupling.last_sync_at)}`}
-        {coupling.queued > 0 && ` · ${coupling.queued} Paket(e) warten`}
+          ? t('Zuletzt Kontakt {x}', { x: formatDateTime(coupling.last_contact_at) })
+          : t('Noch kein Kontakt')}
+        {coupling.last_sync_at &&
+          t(' · abgeglichen {x}', { x: formatDateTime(coupling.last_sync_at) })}
+        {coupling.queued > 0 && t(' · {queued} Paket(e) warten', { queued: coupling.queued })}
       </p>
       {coupling.error_since && (
         <Alert kind="error">
-          Seit {formatDateTime(coupling.error_since)} nicht zustellbar: {coupling.last_error}. Die
-          Pakete werden automatisch nachgeschickt.
+          {t(
+            'Seit {x} nicht zustellbar: {last_error}. Die Pakete werden automatisch nachgeschickt.',
+            { x: formatDateTime(coupling.error_since), last_error: coupling.last_error },
+          )}
         </Alert>
       )}
       {coupling.state === 'pending' && (
         <Alert kind="info">
-          {coupling.remote.name} möchte sich unter {org.name} koppeln. Prüfe Adresse und
-          Fingerabdruck mit der anderen Seite.
+          {coupling.remote.name}{' '}
+          {t(
+            'möchte sich unter {name} koppeln. Prüfe Adresse und Fingerabdruck mit der anderen Seite.',
+            { name: org.name },
+          )}
         </Alert>
       )}
       {coupling.state === 'requested' && (
-        <Alert kind="info">Angefragt. Die andere Seite muss die Kopplung noch bestätigen.</Alert>
+        <Alert kind="info">
+          {t('Angefragt. Die andere Seite muss die Kopplung noch bestätigen.')}
+        </Alert>
       )}
       {coupling.state === 'moving' && coupling.move && (
         <MoveConfirm coupling={coupling} onChange={onChange} />
@@ -808,7 +864,7 @@ function CouplingCard({ coupling, onChange }: { coupling: Coupling; onChange: ()
         disabled={busy || coupling.state === 'requested'}
       />
       <p className="muted small">
-        Die andere Seite gibt frei:{' '}
+        {t('Die andere Seite gibt frei:')}{' '}
         {coupling.receive
           .filter((r) => r.value)
           .map((r) => r.label)
@@ -826,12 +882,12 @@ function CouplingCard({ coupling, onChange }: { coupling: Coupling; onChange: ()
       {coupling.invoices?.length > 0 && <InvoiceList coupling={coupling} onChange={onChange} />}
       {(coupling.hidden?.length ?? 0) > 0 && (
         <p className="muted small">
-          Ausgeblendet, weil dir das Recht fehlt:{' '}
+          {t('Ausgeblendet, weil dir das Recht fehlt:')}{' '}
           {coupling
             .hidden!.map((h) =>
               h === 'names'
-                ? 'Namen bei Klärfällen und Wechseln (Mitglieder ansehen)'
-                : 'Eingangsrechnungen (Beiträge/Rechnungen ansehen)',
+                ? t('Namen bei Klärfällen und Wechseln (Mitglieder ansehen)')
+                : t('Eingangsrechnungen (Beiträge/Rechnungen ansehen)'),
             )
             .join('; ')}
           .
@@ -849,7 +905,7 @@ function CouplingCard({ coupling, onChange }: { coupling: Coupling; onChange: ()
                 void run(() => peeringApi.action(org.id, coupling.id, 'accept', levels))
               }
             >
-              Bestätigen
+              {t('Bestätigen')}
             </button>
             <button
               type="button"
@@ -857,7 +913,7 @@ function CouplingCard({ coupling, onChange }: { coupling: Coupling; onChange: ()
               disabled={busy}
               onClick={() => void run(() => peeringApi.action(org.id, coupling.id, 'decline'))}
             >
-              Ablehnen
+              {t('Ablehnen')}
             </button>
           </>
         )}
@@ -868,7 +924,7 @@ function CouplingCard({ coupling, onChange }: { coupling: Coupling; onChange: ()
             disabled={busy}
             onClick={() => void run(() => peeringApi.setPackets(org.id, coupling.id, levels))}
           >
-            Freigaben speichern
+            {t('Freigaben speichern')}
           </button>
         )}
         {coupling.state === 'active' && (
@@ -879,7 +935,7 @@ function CouplingCard({ coupling, onChange }: { coupling: Coupling; onChange: ()
               disabled={busy}
               onClick={() => void run(() => peeringApi.action(org.id, coupling.id, 'sync'))}
             >
-              Jetzt abgleichen
+              {t('Jetzt abgleichen')}
             </button>
             <button
               type="button"
@@ -887,7 +943,7 @@ function CouplingCard({ coupling, onChange }: { coupling: Coupling; onChange: ()
               disabled={busy}
               onClick={() => void run(() => peeringApi.action(org.id, coupling.id, 'pause'))}
             >
-              Pausieren
+              {t('Pausieren')}
             </button>
           </>
         )}
@@ -898,7 +954,7 @@ function CouplingCard({ coupling, onChange }: { coupling: Coupling; onChange: ()
             disabled={busy}
             onClick={() => void run(() => peeringApi.action(org.id, coupling.id, 'resume'))}
           >
-            Fortsetzen
+            {t('Fortsetzen')}
           </button>
         )}
         {coupling.state !== 'pending' && coupling.state !== 'moving' && (
@@ -908,7 +964,7 @@ function CouplingCard({ coupling, onChange }: { coupling: Coupling; onChange: ()
             disabled={busy}
             onClick={() => void end()}
           >
-            Lösen
+            {t('Lösen')}
           </button>
         )}
         <button
@@ -922,18 +978,18 @@ function CouplingCard({ coupling, onChange }: { coupling: Coupling; onChange: ()
                   .then(setDetails, (e) => setErr(errorMessage(e)))
           }
         >
-          {details ? 'Datenfluss ausblenden' : 'Datenfluss anzeigen'}
+          {details ? t('Datenfluss ausblenden') : t('Datenfluss anzeigen')}
         </button>
       </div>
       {details?.messages && (
         <table className="table">
           <thead>
             <tr>
-              <th>Zeit</th>
-              <th>Richtung</th>
-              <th>Inhalt</th>
-              <th>Personen</th>
-              <th>Stand</th>
+              <th>{t('Zeit')}</th>
+              <th>{t('Richtung')}</th>
+              <th>{t('Inhalt')}</th>
+              <th>{t('Personen')}</th>
+              <th>{t('Stand')}</th>
             </tr>
           </thead>
           <tbody>
@@ -979,18 +1035,18 @@ function MoveConfirm({ coupling, onChange }: { coupling: Coupling; onChange: () 
   return (
     <div className="move-confirm">
       <Alert kind="info">
-        {coupling.remote.name} meldet einen Umzug von <strong>{move.from}</strong> nach{' '}
+        {coupling.remote.name} {t('meldet einen Umzug von')} <strong>{move.from}</strong> nach{' '}
         <strong>{move.base_url}</strong>
         {move.country && ` (Server in ${move.country})`}. Bis zur Bestätigung ruht die Kopplung, es
         gehen keine Daten hinaus.
       </Alert>
       <p>
-        Fingerabdruck der neuen Instanz: <code>{move.fingerprint}</code>. Lass ihn dir von der
-        anderen Seite auf anderem Weg (Telefon, Mail) nennen und gib ihn hier ein. Wenn ihr nichts
-        von einem Umzug wisst: ablehnen.
+        {t('Fingerabdruck der neuen Instanz:')} <code>{move.fingerprint}</code>. Lass ihn dir von
+        der anderen Seite auf anderem Weg (Telefon, Mail) nennen und gib ihn hier ein. Wenn ihr
+        nichts von einem Umzug wisst: ablehnen.
       </p>
       <label className="field">
-        <span>Fingerabdruck von der anderen Seite</span>
+        <span>{t('Fingerabdruck von der anderen Seite')}</span>
         <input
           value={fingerprint}
           onChange={(e) => setFingerprint(e.target.value)}
@@ -1006,7 +1062,7 @@ function MoveConfirm({ coupling, onChange }: { coupling: Coupling; onChange: () 
           disabled={busy || !fingerprint.trim()}
           onClick={() => void run(() => peeringApi.confirmMove(org.id, coupling.id, fingerprint))}
         >
-          Umzug bestätigen
+          {t('Umzug bestätigen')}
         </button>
         <button
           type="button"
@@ -1014,7 +1070,7 @@ function MoveConfirm({ coupling, onChange }: { coupling: Coupling; onChange: () 
           disabled={busy}
           onClick={() => void run(() => peeringApi.action(org.id, coupling.id, 'move-decline'))}
         >
-          Ablehnen und Kopplung lösen
+          {t('Ablehnen und Kopplung lösen')}
         </button>
       </div>
     </div>
@@ -1043,8 +1099,10 @@ function MoreWanted({ coupling, onChange }: { coupling: Coupling; onChange: () =
   return (
     <div className="move-confirm">
       <Alert kind="info">
-        {coupling.remote.name} möchte mehr senden, als ihr beim Koppeln angenommen habt. Bis ihr
-        zustimmt, nimmt HUBIplan nur die bisherige Stufe an.
+        {coupling.remote.name}{' '}
+        {t(
+          'möchte mehr senden, als ihr beim Koppeln angenommen habt. Bis ihr zustimmt, nimmt HUBIplan nur die bisherige Stufe an.',
+        )}
       </Alert>
       <ul className="plain-list">
         {coupling.wants_more.map((w) => (
@@ -1058,7 +1116,7 @@ function MoreWanted({ coupling, onChange }: { coupling: Coupling; onChange: () =
                 disabled={busy}
                 onClick={() => void decide(w.key, true)}
               >
-                Annehmen
+                {t('Annehmen')}
               </button>
               <button
                 type="button"
@@ -1066,14 +1124,14 @@ function MoreWanted({ coupling, onChange }: { coupling: Coupling; onChange: () =
                 disabled={busy}
                 onClick={() => void decide(w.key, false)}
               >
-                Ablehnen
+                {t('Ablehnen')}
               </button>
             </div>
           </li>
         ))}
       </ul>
       <p className="muted small">
-        Nach dem Annehmen kommen die Daten spätestens beim täglichen Abgleich.
+        {t('Nach dem Annehmen kommen die Daten spätestens beim täglichen Abgleich.')}
       </p>
       {err && <Alert kind="error">{err}</Alert>}
     </div>
@@ -1086,14 +1144,16 @@ function KeysPending({ coupling }: { coupling: Coupling }) {
   return (
     <div className="move-confirm">
       <Alert kind="error">
-        {coupling.remote.base_url} meldet einen Notfallwechsel der Schlüssel: Die alten wurden dort
-        vermutlich gestohlen. Bis zur Bestätigung ruht der Austausch mit dieser Instanz.
+        {coupling.remote.base_url}{' '}
+        {t(
+          'meldet einen Notfallwechsel der Schlüssel: Die alten wurden dort vermutlich gestohlen. Bis zur Bestätigung ruht der Austausch mit dieser Instanz.',
+        )}
       </Alert>
       <p>
-        Neuer Fingerabdruck: <code>{keys.fingerprint}</code>. Den Wechsel prüft und bestätigt die
-        Plattformverwaltung dieser HUBIplan-Instanz, weil er für alle Kopplungen mit dieser Instanz
-        gilt. Ihr bekommt danach eine Mitteilung. Wisst ihr von keinem Notfall bei der anderen
-        Seite, sagt bitte der Plattformverwaltung Bescheid.
+        {t('Neuer Fingerabdruck:')} <code>{keys.fingerprint}</code>. Den Wechsel prüft und bestätigt
+        die Plattformverwaltung dieser HUBIplan-Instanz, weil er für alle Kopplungen mit dieser
+        Instanz gilt. Ihr bekommt danach eine Mitteilung. Wisst ihr von keinem Notfall bei der
+        anderen Seite, sagt bitte der Plattformverwaltung Bescheid.
       </p>
     </div>
   )
@@ -1107,23 +1167,28 @@ function ReceivedInfo({ coupling }: { coupling: Coupling }) {
     <div className="muted small">
       {r.members && (
         <p>
-          Gemeldete Mitglieder am {formatDate(r.members.on)}: {r.members.total} (
+          {t('Gemeldete Mitglieder am {x}: {total} (', {
+            x: formatDate(r.members.on),
+            total: r.members.total,
+          })}
           {r.members.counts.filter((c) => c.kind === 'active').reduce((a, c) => a + c.n, 0)} aktiv,{' '}
           {r.members.counts.filter((c) => c.kind === 'passive').reduce((a, c) => a + c.n, 0)}{' '}
-          passiv). Die Beitragsrechnung an diese Einheit nutzt diese Zahlen.
+          {t('passiv). Die Beitragsrechnung an diese Einheit nutzt diese Zahlen.')}
         </p>
       )}
       {typeof r.events === 'number' && r.events > 0 && (
-        <p>{r.events} übermittelte Termine stehen im Kalender.</p>
+        <p>
+          {r.events} {t('übermittelte Termine stehen im Kalender.')}
+        </p>
       )}
       {r.statute && (
         <p>
-          Satzung vom {formatDate(r.statute.valid_from)}
+          {t('Satzung vom')} {formatDate(r.statute.valid_from)}
           {r.statute.download_url && (
             <>
               {' · '}
               <a href={r.statute.download_url} target="_blank" rel="noreferrer">
-                öffnen
+                {t('öffnen')}
               </a>
             </>
           )}
@@ -1134,7 +1199,7 @@ function ReceivedInfo({ coupling }: { coupling: Coupling }) {
           {roles.map((role) => (
             <li key={role.role}>
               {role.role}: {role.holders.map((h) => h.name).join(', ') || '–'}
-              {role.email && ` · ${role.email}`}
+              {role.email && t(' · {email}', { email: role.email })}
             </li>
           ))}
         </ul>
@@ -1148,15 +1213,15 @@ function InvoiceList({ coupling, onChange }: { coupling: Coupling; onChange: () 
   const incoming = coupling.direction === 'parent'
   return (
     <div>
-      <h4>{incoming ? 'Eingangsrechnungen' : 'Rechnungen an diese Einheit'}</h4>
+      <h4>{incoming ? t('Eingangsrechnungen') : t('Rechnungen an diese Einheit')}</h4>
       <table className="table">
         <thead>
           <tr>
-            <th>Nummer</th>
-            <th>Betreff</th>
-            <th>fällig</th>
-            <th className="num">Betrag</th>
-            <th>Stand</th>
+            <th>{t('Nummer')}</th>
+            <th>{t('Betreff')}</th>
+            <th>{t('fällig')}</th>
+            <th className="num">{t('Betrag')}</th>
+            <th>{t('Stand')}</th>
             <th />
           </tr>
         </thead>
@@ -1184,7 +1249,7 @@ function InvoiceList({ coupling, onChange }: { coupling: Coupling; onChange: () 
                       className="link-button"
                       onClick={() => setOpen(open === inv.id ? null : inv.id)}
                     >
-                      bezahlt melden
+                      {t('bezahlt melden')}
                     </button>
                   </>
                 )}
@@ -1211,10 +1276,10 @@ function InvoiceState({ inv }: { inv: CouplingInvoice }) {
   if (inv.status === 'cancelled') return <>storniert</>
   const parts: string[] = []
   if (inv.settled) parts.push('ausgeglichen')
-  else if (inv.paid && Number(inv.paid) > 0) parts.push(`${euro(inv.paid)} eingegangen`)
+  else if (inv.paid && Number(inv.paid) > 0) parts.push(t('{x} eingegangen', { x: euro(inv.paid) }))
   else parts.push('offen')
   if (inv.paid_reported_on)
-    parts.push(`als bezahlt gemeldet am ${formatDate(inv.paid_reported_on)}`)
+    parts.push(t('als bezahlt gemeldet am {x}', { x: formatDate(inv.paid_reported_on) }))
   return <>{parts.join(' · ')}</>
 }
 
@@ -1263,30 +1328,34 @@ function ReportPaid({
   return (
     <div className="card">
       <h4>
-        Rechnung {inv.number} über {euro(inv.total)} als bezahlt melden
+        {t('Rechnung {number} über {x} als bezahlt melden', {
+          number: inv.number,
+          x: euro(inv.total),
+        })}
       </h4>
       {inv.bank.iban && (
         <p className="muted small">
-          Zahlung an {inv.bank.holder}, IBAN {inv.bank.iban}
-          {inv.bank.bank_name && ` (${inv.bank.bank_name})`}, Verwendungszweck {inv.number}.
+          {t('Zahlung an {holder}, IBAN', { holder: inv.bank.holder })} {inv.bank.iban}
+          {inv.bank.bank_name && ` (${inv.bank.bank_name})`}
+          {t(', Verwendungszweck {number}.', { number: inv.number })}
         </p>
       )}
       <label className="field">
-        <span>bezahlt am</span>
+        <span>{t('bezahlt am')}</span>
         <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
       </label>
       {canBook && (
         <>
           <label className="checkbox">
             <input type="checkbox" checked={book} onChange={(e) => setBook(e.target.checked)} />{' '}
-            Ausgabe in der eigenen Kasse buchen (mit der Rechnung als Beleg)
+            {t('Ausgabe in der eigenen Kasse buchen (mit der Rechnung als Beleg)')}
           </label>
           {book && (
             <>
               <label className="field">
-                <span>Konto</span>
+                <span>{t('Konto')}</span>
                 <select value={account} onChange={(e) => setAccount(e.target.value)}>
-                  <option value="">bitte wählen</option>
+                  <option value="">{t('bitte wählen')}</option>
                   {(accounts ?? [])
                     .filter((a) => a.is_active)
                     .map((a) => (
@@ -1297,9 +1366,9 @@ function ReportPaid({
                 </select>
               </label>
               <label className="field">
-                <span>Kategorie</span>
+                <span>{t('Kategorie')}</span>
                 <select value={category} onChange={(e) => setCategory(e.target.value)}>
-                  <option value="">bitte wählen</option>
+                  <option value="">{t('bitte wählen')}</option>
                   {(categories ?? [])
                     .filter((c) => c.is_active && c.kind !== 'income')
                     .map((c) => (
@@ -1314,8 +1383,10 @@ function ReportPaid({
         </>
       )}
       <p className="muted small">
-        Die Meldung geht an {coupling.remote.name}. Als ausgeglichen gilt die Rechnung erst, wenn
-        das Geld dort eingegangen ist.
+        {t(
+          'Die Meldung geht an {name}. Als ausgeglichen gilt die Rechnung erst, wenn das Geld dort eingegangen ist.',
+          { name: coupling.remote.name },
+        )}
       </p>
       {err && <Alert kind="error">{err}</Alert>}
       <div className="button-row">
@@ -1325,7 +1396,7 @@ function ReportPaid({
           disabled={busy || (book && canBook && (!account || !category))}
           onClick={() => void submit()}
         >
-          Melden
+          {t('Melden')}
         </button>
       </div>
     </div>
@@ -1364,18 +1435,25 @@ function RegisterCard({ coupling, onChange }: { coupling: Coupling; onChange: ()
     }
   }
 
-  const fieldLabel = { last_name: 'Nachname', first_name: 'Vorname', birth_date: 'Geburtsdatum' }
+  const fieldLabel = {
+    last_name: t('Nachname'),
+    first_name: t('Vorname'),
+    birth_date: t('Geburtsdatum'),
+  }
   const shown = (field: string, value?: string) =>
     !value ? '–' : field === 'birth_date' ? formatDate(value) : value
 
   return (
     <div>
-      <h4>Namentliche Meldung</h4>
+      <h4>{t('Namentliche Meldung')}</h4>
       <p className="muted small">
         {reg.counts.active} gemeldet
-        {reg.counts.withdrawn > 0 && ` · ${reg.counts.withdrawn} nicht mehr gemeldet (nur Minimum)`}
-        {reg.counts.unclear > 0 && ` · ${reg.counts.unclear} Klärfälle`}. Die Personen stehen in der
-        Mitgliederliste des Dachverbands unter {coupling.remote.name}.
+        {reg.counts.withdrawn > 0 &&
+          t(' · {withdrawn} nicht mehr gemeldet (nur Minimum)', {
+            withdrawn: reg.counts.withdrawn,
+          })}
+        {reg.counts.unclear > 0 && t(' · {unclear} Klärfälle', { unclear: reg.counts.unclear })}.
+        Die Personen stehen in der Mitgliederliste des Dachverbands unter {coupling.remote.name}.
       </p>
       {reg.unclear.map((u) => (
         <div key={u.id} className="card">
@@ -1383,21 +1461,24 @@ function RegisterCard({ coupling, onChange }: { coupling: Coupling; onChange: ()
             <strong>
               {u.first_name} {u.last_name}
             </strong>
-            {u.birth_date && `, geboren ${formatDate(u.birth_date)}`}: Ist das dieselbe Person?
+            {u.birth_date && t(', geboren {x}', { x: formatDate(u.birth_date) })}
+            {t(': Ist das dieselbe Person?')}
           </p>
           <ul className="plain-list">
             {u.candidates.map((p) => (
               <li key={p.id}>
-                {p.name}, geboren {formatDate(p.birth_date)}
-                {p.member_number && ` · Verbandsnr. ${p.member_number}`}
-                {p.units.length > 0 && ` · ${p.units.join(', ')}`}{' '}
+                {p.name}
+                {t(', geboren')} {formatDate(p.birth_date)}
+                {p.member_number &&
+                  t(' · Verbandsnr. {member_number}', { member_number: p.member_number })}
+                {p.units.length > 0 && t(' · {x}', { x: p.units.join(', ') })}{' '}
                 <button
                   type="button"
                   className="link-button"
                   disabled={busy}
                   onClick={() => void resolve(u.id, p.id)}
                 >
-                  dieselbe Person
+                  {t('dieselbe Person')}
                 </button>
               </li>
             ))}
@@ -1408,15 +1489,15 @@ function RegisterCard({ coupling, onChange }: { coupling: Coupling; onChange: ()
             disabled={busy}
             onClick={() => void resolve(u.id, null)}
           >
-            Andere Person, neu anlegen
+            {t('Andere Person, neu anlegen')}
           </button>
         </div>
       ))}
       {(reg.corrections ?? []).map((c) => (
         <div key={`b${c.id}`} className="card">
           <p>
-            <strong>{c.name}</strong> ist auch in einem anderen Verein Mitglied. Der Verein meldet
-            eine Änderung:
+            <strong>{c.name}</strong>{' '}
+            {t('ist auch in einem anderen Verein Mitglied. Der Verein meldet eine Änderung:')}
           </p>
           <ul className="plain-list">
             {(Object.keys(c.proposed) as (keyof typeof fieldLabel)[]).map((f) => (
@@ -1431,7 +1512,7 @@ function RegisterCard({ coupling, onChange }: { coupling: Coupling; onChange: ()
             disabled={busy}
             onClick={() => void decide(c.id, true)}
           >
-            Änderung übernehmen
+            {t('Änderung übernehmen')}
           </button>{' '}
           <button
             type="button"
@@ -1439,15 +1520,22 @@ function RegisterCard({ coupling, onChange }: { coupling: Coupling; onChange: ()
             disabled={busy}
             onClick={() => void decide(c.id, false)}
           >
-            Verwerfen
+            {t('Verwerfen')}
           </button>
         </div>
       ))}
       {reg.conflicts.length > 0 && (
         <Alert kind="info">
-          Doppelt aktiv gemeldet:{' '}
-          {reg.conflicts.map((c) => `${c.name} (auch aktiv in ${c.active_elsewhere})`).join(', ')}.
-          Bitte mit den Vereinen klären.
+          {t('Doppelt aktiv gemeldet:')}{' '}
+          {reg.conflicts
+            .map((c) =>
+              t('{name} (auch aktiv in {active_elsewhere})', {
+                name: c.name,
+                active_elsewhere: c.active_elsewhere,
+              }),
+            )
+            .join(', ')}
+          . Bitte mit den Vereinen klären.
         </Alert>
       )}
       {err && <Alert kind="error">{err}</Alert>}
@@ -1490,11 +1578,14 @@ function TransferCard({ coupling, onChange }: { coupling: Coupling; onChange: ()
   const passive = (types ?? []).filter((tm) => !tm.active && !tm.is_archived)
   return (
     <div>
-      <h4>Wechselanfragen über {coupling.remote.name}</h4>
+      <h4>
+        {t('Wechselanfragen über')} {coupling.remote.name}
+      </h4>
       <p className="muted small">
-        Ist jemand in einer anderen Einheit {coupling.remote.name} aktiv, läuft die Aufnahme als
-        aktives Mitglied über eine Wechselanfrage. Die andere Einheit bestätigt Austritt oder eine
-        nicht aktive Art.
+        {t(
+          'Ist jemand in einer anderen Einheit {name} aktiv, läuft die Aufnahme als aktives Mitglied über eine Wechselanfrage. Die andere Einheit bestätigt Austritt oder eine nicht aktive Art.',
+          { name: coupling.remote.name },
+        )}
       </p>
       {coupling.transfers.length > 0 && (
         <ul className="plain-list">
@@ -1513,42 +1604,42 @@ function TransferCard({ coupling, onChange }: { coupling: Coupling; onChange: ()
       )}
       {canEdit && !showForm && (
         <button type="button" className="button" onClick={() => setShowForm(true)}>
-          Wechselanfrage stellen
+          {t('Wechselanfrage stellen')}
         </button>
       )}
       {showForm && (
         <div className="card">
           <div className="grid-2">
             <Field
-              label="Name"
+              label={t('Name')}
               value={form.last_name}
               onChange={(e) => setForm({ ...form, last_name: e.target.value })}
             />
             <Field
-              label="Vorname"
+              label={t('Vorname')}
               value={form.first_name}
               onChange={(e) => setForm({ ...form, first_name: e.target.value })}
             />
             <Field
-              label="Geburtsdatum"
+              label={t('Geburtsdatum')}
               type="date"
               value={form.birth_date}
               onChange={(e) => setForm({ ...form, birth_date: e.target.value })}
             />
             <Field
-              label="Eintritt"
+              label={t('Eintritt')}
               type="date"
               value={form.entry_date}
               onChange={(e) => setForm({ ...form, entry_date: e.target.value })}
             />
           </div>
           <label className="field">
-            <span>Mitgliedsart</span>
+            <span>{t('Mitgliedsart')}</span>
             <select
               value={form.member_type}
               onChange={(e) => setForm({ ...form, member_type: e.target.value })}
             >
-              <option value="">bitte wählen</option>
+              <option value="">{t('bitte wählen')}</option>
               {active.map((tm) => (
                 <option key={tm.id} value={tm.id}>
                   {tm.name}
@@ -1557,7 +1648,7 @@ function TransferCard({ coupling, onChange }: { coupling: Coupling; onChange: ()
             </select>
           </label>
           <Field
-            label="Nachricht"
+            label={t('Nachricht')}
             value={form.message}
             onChange={(e) => setForm({ ...form, message: e.target.value })}
           />
@@ -1575,10 +1666,10 @@ function TransferCard({ coupling, onChange }: { coupling: Coupling; onChange: ()
                 ).then((ok) => ok && setShowForm(false))
               }
             >
-              Anfrage senden
+              {t('Anfrage senden')}
             </button>
             <button type="button" className="link-button" onClick={() => setShowForm(false)}>
-              Abbrechen
+              {t('Abbrechen')}
             </button>
           </div>
         </div>
@@ -1610,11 +1701,19 @@ function TransferRow({
     <li>
       <strong>{tm.name}</strong>{' '}
       {outgoing
-        ? `· Aufnahme als ${tm.member_type_name || 'aktives Mitglied'}`
-        : `· möchte zu ${tm.to_unit} wechseln (${tm.member_type_name})`}
-      {tm.entry_date && ` ab ${formatDate(tm.entry_date)}`} · {tm.status_label}
+        ? t('· Aufnahme als {x}', { x: tm.member_type_name || 'aktives Mitglied' })
+        : t('· möchte zu {to_unit} wechseln ({member_type_name})', {
+            to_unit: tm.to_unit,
+            member_type_name: tm.member_type_name,
+          })}
+      {tm.entry_date && t(' ab {x}', { x: formatDate(tm.entry_date) })} · {tm.status_label}
       {tm.message && <span className="muted small"> · „{tm.message}“</span>}
-      {tm.response && <span className="muted small"> · Antwort: {tm.response}</span>}
+      {tm.response && (
+        <span className="muted small">
+          {' '}
+          {t('· Antwort:')} {tm.response}
+        </span>
+      )}
       {!outgoing && tm.status === 'pending' && (
         <div className="button-row">
           <button
@@ -1623,15 +1722,15 @@ function TransferRow({
             disabled={disabled}
             onClick={() => onDecide({ decision: 'exit', response })}
           >
-            Austritt bestätigen
+            {t('Austritt bestätigen')}
           </button>
           <select
-            aria-label="nicht aktive Art"
+            aria-label={t('nicht aktive Art')}
             value={type}
             onChange={(e) => setType(e.target.value)}
             disabled={disabled}
           >
-            <option value="">nicht aktive Art …</option>
+            <option value="">{t('nicht aktive Art …')}</option>
             {passive.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
@@ -1646,11 +1745,11 @@ function TransferRow({
               onDecide({ decision: 'change_type', member_type: Number(type), response })
             }
           >
-            Art ändern
+            {t('Art ändern')}
           </button>
           <input
-            aria-label="Antwort"
-            placeholder="Antwort (optional)"
+            aria-label={t('Antwort')}
+            placeholder={t('Antwort (optional)')}
             value={response}
             onChange={(e) => setResponse(e.target.value)}
             disabled={disabled}
@@ -1688,7 +1787,10 @@ function CircularsInfo({ coupling, onChange }: { coupling: Coupling; onChange: (
 
   return (
     <div>
-      <h4>Rundschreiben {above ? `von ${coupling.remote.name}` : 'zur Weitergabe'}</h4>
+      <h4>
+        {t('Rundschreiben')}{' '}
+        {above ? t('von {name}', { name: coupling.remote.name }) : t('zur Weitergabe')}
+      </h4>
       {above && (
         <label className="checkbox">
           <input
@@ -1696,7 +1798,7 @@ function CircularsInfo({ coupling, onChange }: { coupling: Coupling; onChange: (
             checked={!!coupling.options?.circulars_auto}
             onChange={(e) => void toggle(e.target.checked)}
           />{' '}
-          Automatisch an die eigenen Mitglieder weitergeben (sonst als Entwurf zum Prüfen)
+          {t('Automatisch an die eigenen Mitglieder weitergeben (sonst als Entwurf zum Prüfen)')}
         </label>
       )}
       {coupling.circulars.length > 0 && (
@@ -1705,9 +1807,11 @@ function CircularsInfo({ coupling, onChange }: { coupling: Coupling; onChange: (
             <li key={c.id}>
               {formatDate(c.created_at)} · {c.subject} · {c.status_label}
               {c.status === 'sent' &&
-                ` · ${c.report.sent ?? 0} Mails versandt` +
-                  (c.report.failed ? `, ${c.report.failed} fehlgeschlagen` : '') +
-                  (c.report.letter ? `, ${c.report.letter} Briefe` : '')}
+                t(' · {x} Mails versandt', { x: c.report.sent ?? 0 }) +
+                  (c.report.failed
+                    ? t(', {failed} fehlgeschlagen', { failed: c.report.failed })
+                    : '') +
+                  (c.report.letter ? t(', {letter} Briefe', { letter: c.report.letter }) : '')}
             </li>
           ))}
         </ul>

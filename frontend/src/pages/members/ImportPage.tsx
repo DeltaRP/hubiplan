@@ -18,13 +18,14 @@ import { confirmDiscard, useChangesGuard } from '../../components/leaveGuard.ts'
 import { useActiveOrg } from '../../org/OrgContext.tsx'
 import { fillTerms, useTerms } from '../../org/terms.ts'
 import { confirmDialog } from '../../components/dialog.ts'
+import { t } from '../../i18n/index.ts'
 
 const EXIT_REASONS = [
-  { value: 'exit', label: 'Austritt' },
-  { value: 'exclusion', label: 'Ausschluss' },
-  { value: 'strike_off', label: 'Streichung' },
-  { value: 'death', label: 'Tod' },
-  { value: 'transfer', label: 'Wechsel in {e_einen_anderen}' },
+  { value: 'exit', label: t('Austritt') },
+  { value: 'exclusion', label: t('Ausschluss') },
+  { value: 'strike_off', label: t('Streichung') },
+  { value: 'death', label: t('Tod') },
+  { value: 'transfer', label: t('Wechsel in {e_einen_anderen}') },
 ]
 
 /** Import von Altdaten in Schritten: Datei → Spalten → Werte → Prüfen → Importieren. */
@@ -57,18 +58,18 @@ export function ImportPage() {
   return (
     <>
       <p className="muted">
-        Excel- oder CSV-Datei mit einer Zeile je Person. Gespeichert wird erst nach der Prüfung.
-        Frühere Zeiträume gehen als zusätzliche Spalten (Eintritt 2, Austritt 2 …) oder als weitere
-        Zeile derselben Person.
+        {t(
+          'Excel- oder CSV-Datei mit einer Zeile je Person. Gespeichert wird erst nach der Prüfung. Frühere Zeiträume gehen als zusätzliche Spalten (Eintritt 2, Austritt 2 …) oder als weitere Zeile derselben Person.',
+        )}
       </p>
       {error && <Alert kind="error">{error}</Alert>}
 
       {!job ? (
         <div className="stack">
           <div className="card card-wide">
-            <h2>1. Datei hochladen</h2>
+            <h2>{t('1. Datei hochladen')}</h2>
             <label className="button button-primary">
-              {busy ? 'Wird gelesen …' : 'Datei wählen (.xlsx, .csv)'}
+              {busy ? t('Wird gelesen …') : t('Datei wählen (.xlsx, .csv)')}
               <input
                 type="file"
                 accept=".xlsx,.csv,.txt"
@@ -80,7 +81,7 @@ export function ImportPage() {
           </div>
           {history.data && history.data.length > 0 && (
             <div className="card card-wide">
-              <h2>Bisherige Importe</h2>
+              <h2>{t('Bisherige Importe')}</h2>
               <ul className="plain-list">
                 {history.data.map((j) => (
                   <li key={j.id}>
@@ -89,7 +90,8 @@ export function ImportPage() {
                     </button>{' '}
                     <span className="muted small">
                       · {j.status_label} · {formatDateTime(j.created_at)}
-                      {j.counts.imported !== undefined && ` · ${j.counts.imported} importiert`}
+                      {j.counts.imported !== undefined &&
+                        t(' · {imported} importiert', { imported: j.counts.imported })}
                     </span>
                   </li>
                 ))}
@@ -160,10 +162,13 @@ function ImportWizard({
         value_mapping: valueMapping,
       })
       setTemplateName('')
-      setTemplateMsg({ kind: 'success', text: 'Vorlage gespeichert.' })
+      setTemplateMsg({ kind: 'success', text: t('Vorlage gespeichert.') })
       await templates.reload()
     } catch (err) {
-      setTemplateMsg({ kind: 'error', text: `Vorlage nicht gespeichert: ${errorMessage(err)}` })
+      setTemplateMsg({
+        kind: 'error',
+        text: t('Vorlage nicht gespeichert: {x}', { x: errorMessage(err) }),
+      })
     } finally {
       setTemplateBusy(false)
     }
@@ -193,8 +198,8 @@ function ImportWizard({
   async function startImport() {
     if (
       !(await confirmDialog({
-        title: `${job.counts.ok} Personen importieren?`,
-        confirmLabel: 'Importieren',
+        title: t('{ok} Personen importieren?', { ok: job.counts.ok }),
+        confirmLabel: t('Importieren'),
         danger: false,
       }))
     )
@@ -211,14 +216,14 @@ function ImportWizard({
         <div className="card-head">
           <h2>{job.file_name}</h2>
           <span className="muted small">
-            {job.row_count} Zeilen · {job.status_label}
+            {job.row_count} {t('Zeilen ·')} {job.status_label}
           </span>
           <button
             type="button"
             className="link-button push-right"
             onClick={() => void confirmDiscard(guard.dirty).then((ok) => ok && onClose())}
           >
-            zur Übersicht
+            {t('zur Übersicht')}
           </button>
         </div>
         {job.error && <Alert kind="error">{job.error}</Alert>}
@@ -226,16 +231,21 @@ function ImportWizard({
 
       {editable && (
         <div className="card card-wide">
-          <h2>2. Spalten zuordnen</h2>
+          <h2>{t('2. Spalten zuordnen')}</h2>
           {targets.error && (
             <LoadError
-              message={`Die Felder von HUBIplan konnten nicht geladen werden (${targets.error}). Deine Zuordnung bleibt erhalten.`}
+              message={t(
+                'Die Felder von HUBIplan konnten nicht geladen werden ({error}). Deine Zuordnung bleibt erhalten.',
+                { error: targets.error },
+              )}
               onRetry={() => void targets.reload()}
             />
           )}
           {templates.error && (
             <LoadError
-              message={`Die gespeicherten Vorlagen konnten nicht geladen werden (${templates.error}).`}
+              message={t('Die gespeicherten Vorlagen konnten nicht geladen werden ({error}).', {
+                error: templates.error,
+              })}
               onRetry={() => void templates.reload()}
             />
           )}
@@ -251,7 +261,7 @@ function ImportWizard({
                     setValueMapping(tmx.value_mapping)
                   }}
                 >
-                  Vorlage: {tmx.name}
+                  {t('Vorlage:')} {tmx.name}
                 </button>
               ))}
             </div>
@@ -260,9 +270,9 @@ function ImportWizard({
             <table className="table">
               <thead>
                 <tr>
-                  <th>Spalte in der Datei</th>
-                  <th>Beispielwerte</th>
-                  <th>Feld in HUBIplan</th>
+                  <th>{t('Spalte in der Datei')}</th>
+                  <th>{t('Beispielwerte')}</th>
+                  <th>{t('Feld in HUBIplan')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -281,7 +291,7 @@ function ImportWizard({
                     </td>
                     <td>
                       <select
-                        aria-label={`Feld für ${h}`}
+                        aria-label={t('Feld für {h}', { h })}
                         disabled={!targets.data}
                         value={mapping[String(i)] ?? ''}
                         onChange={(e) =>
@@ -293,7 +303,7 @@ function ImportWizard({
                           })
                         }
                       >
-                        <option value="">– nicht importieren –</option>
+                        <option value="">{t('– nicht importieren –')}</option>
                         {(targets.data ?? []).map((tmx) => (
                           <option
                             key={tmx.key}
@@ -312,8 +322,8 @@ function ImportWizard({
           </div>
           <div className="inline-add">
             <input
-              aria-label="Name der Vorlage"
-              placeholder="Zuordnung als Vorlage speichern"
+              aria-label={t('Name der Vorlage')}
+              placeholder={t('Zuordnung als Vorlage speichern')}
               value={templateName}
               onChange={(e) => setTemplateName(e.target.value)}
             />
@@ -323,7 +333,7 @@ function ImportWizard({
               disabled={templateBusy || !templateName.trim()}
               onClick={() => void saveTemplate()}
             >
-              {templateBusy ? 'Wird gespeichert …' : 'Vorlage speichern'}
+              {templateBusy ? t('Wird gespeichert …') : t('Vorlage speichern')}
             </button>
           </div>
           {templateMsg && (
@@ -351,7 +361,7 @@ function ImportWizard({
 
       {editable && (
         <div className="card card-wide">
-          <h2>4. Prüfen</h2>
+          <h2>{t('4. Prüfen')}</h2>
           <label className="checkbox">
             <input
               type="checkbox"
@@ -360,8 +370,10 @@ function ImportWizard({
             />
             <span>
               {terms.dv_has
-                ? `Gefundene Personen ${terms.dv_im} verknüpfen (Verbandsnummer bleibt erhalten)`
-                : 'Gefundene Personen verknüpfen'}
+                ? t('Gefundene Personen {dv_im} verknüpfen (Verbandsnummer bleibt erhalten)', {
+                    dv_im: terms.dv_im,
+                  })
+                : t('Gefundene Personen verknüpfen')}
             </span>
           </label>
           <button
@@ -370,14 +382,16 @@ function ImportWizard({
             disabled={busy}
             onClick={() => void validate()}
           >
-            {busy ? 'Wird geprüft …' : 'Prüfen'}
+            {busy ? t('Wird geprüft …') : t('Prüfen')}
           </button>
         </div>
       )}
 
       {stale && (
         <Alert kind="error">
-          Zuordnung geändert – bitte erneut prüfen. Die Vorschau unten zeigt noch den alten Stand.
+          {t(
+            'Zuordnung geändert – bitte erneut prüfen. Die Vorschau unten zeigt noch den alten Stand.',
+          )}
         </Alert>
       )}
 
@@ -385,11 +399,14 @@ function ImportWizard({
 
       {job.status === 'validated' && (
         <div className="card card-wide">
-          <h2>5. Importieren</h2>
-          {stale && <p className="muted">Erst nach erneutem Prüfen möglich.</p>}
+          <h2>{t('5. Importieren')}</h2>
+          {stale && <p className="muted">{t('Erst nach erneutem Prüfen möglich.')}</p>}
           <p>
-            {job.counts.ok} Personen werden importiert
-            {job.counts.errors ? `, ${job.counts.errors} mit Fehlern nicht` : ''}.
+            {job.counts.ok} {t('Personen werden importiert')}
+            {job.counts.errors
+              ? t(', {errors} mit Fehlern nicht', { errors: job.counts.errors })
+              : ''}
+            .
           </p>
           <button
             type="button"
@@ -397,24 +414,26 @@ function ImportWizard({
             disabled={busy || stale || !job.counts.ok}
             onClick={() => void startImport()}
           >
-            {busy ? 'Wird importiert …' : 'Jetzt importieren'}
+            {busy ? t('Wird importiert …') : t('Jetzt importieren')}
           </button>
         </div>
       )}
 
       {job.status === 'imported' && (
         <div className="card card-wide">
-          <h2>Ergebnis</h2>
+          <h2>{t('Ergebnis')}</h2>
           <p>
-            {job.counts.imported} Personen importiert
-            {job.imported_at && ` am ${formatDateTime(job.imported_at)}`}.
+            {job.counts.imported} {t('Personen importiert')}
+            {job.imported_at && t(' am {x}', { x: formatDateTime(job.imported_at) })}.
             {job.keep_until &&
-              ` Protokoll und „Rückgängig“ bleiben bis ${formatDateTime(job.keep_until)}.`}
+              t(' Protokoll und „Rückgängig“ bleiben bis {x}.', {
+                x: formatDateTime(job.keep_until),
+              })}
           </p>
           {job.has_error_file && (
             <p>
-              <a href={exchangeApi.errorFileUrl(orgId, job.id)}>Fehlerliste herunterladen</a> – zum
-              Nachbearbeiten und erneuten Import.
+              <a href={exchangeApi.errorFileUrl(orgId, job.id)}>{t('Fehlerliste herunterladen')}</a>{' '}
+              {t('– zum Nachbearbeiten und erneuten Import.')}
             </p>
           )}
           {job.undo_blockers.length === 0 ? (
@@ -425,25 +444,25 @@ function ImportWizard({
               onClick={async () => {
                 if (
                   await confirmDialog({
-                    title: 'Import vollständig rückgängig machen?',
-                    confirmLabel: 'Rückgängig machen',
+                    title: t('Import vollständig rückgängig machen?'),
+                    confirmLabel: t('Rückgängig machen'),
                   })
                 ) {
                   void run(() => exchangeApi.undo(orgId, job.id))
                 }
               }}
             >
-              Import rückgängig machen
+              {t('Import rückgängig machen')}
             </button>
           ) : (
             <p className="muted small">
-              Rückgängig nicht mehr möglich: {job.undo_blockers.join(' ')}
+              {t('Rückgängig nicht mehr möglich:')} {job.undo_blockers.join(' ')}
             </p>
           )}
         </div>
       )}
       {job.status === 'undone' && (
-        <Alert kind="info">Dieser Import wurde rückgängig gemacht.</Alert>
+        <Alert kind="info">{t('Dieser Import wurde rückgängig gemacht.')}</Alert>
       )}
     </div>
   )
@@ -486,9 +505,9 @@ function ValueMappings({
   }
   return (
     <div className="card card-wide">
-      <h2>3. Werte zuordnen</h2>
+      <h2>{t('3. Werte zuordnen')}</h2>
       <p className="muted small">
-        Bezeichnungen aus der Datei den Werten in HUBIplan zuordnen, z. B. „Akt.“ → „aktiv“.
+        {t('Bezeichnungen aus der Datei den Werten in HUBIplan zuordnen, z. B. „Akt.“ → „aktiv“.')}
       </p>
       {needed.map((tmx) => (
         <ValueTable
@@ -540,11 +559,11 @@ function ValueTable({
               <td>„{v}“</td>
               <td>
                 <select
-                  aria-label={`${label}: ${v}`}
+                  aria-label={t('{label}: {v}', { label, v })}
                   value={values[v] ?? ''}
                   onChange={(e) => onChange(v, e.target.value)}
                 >
-                  <option value="">– gleichnamig / unbekannt –</option>
+                  <option value="">{t('– gleichnamig / unbekannt –')}</option>
                   {choices.map((c) => (
                     <option key={c.value} value={c.value}>
                       {c.label}
@@ -572,11 +591,15 @@ function Preview({ job }: { job: ImportJob }) {
   const problems = job.preview.filter((p) => p.status !== 'ok')
   return (
     <div className="card card-wide">
-      <h2>Vorschau</h2>
+      <h2>{t('Vorschau')}</h2>
       <p>
-        {job.counts.persons} Personen aus {job.counts.rows} Zeilen ·{' '}
-        <strong>{job.counts.ok} fehlerfrei</strong> · {job.counts.errors} mit Fehlern ·{' '}
-        {job.counts.duplicates} schon {terms.dv_has ? `${terms.dv_im} ` : ''}vorhanden
+        {job.counts.persons} {t('Personen aus {rows} Zeilen ·', { rows: job.counts.rows })}{' '}
+        <strong>{job.counts.ok} fehlerfrei</strong>{' '}
+        {t('· {errors} mit Fehlern ·  {duplicates} schon', {
+          errors: job.counts.errors,
+          duplicates: job.counts.duplicates,
+        })}{' '}
+        {terms.dv_has ? `${terms.dv_im} ` : ''}vorhanden
       </p>
       <label className="checkbox">
         <input
@@ -587,7 +610,7 @@ function Preview({ job }: { job: ImportJob }) {
             setPage(1)
           }}
         />
-        <span>nur Fehler und Dubletten zeigen</span>
+        <span>{t('nur Fehler und Dubletten zeigen')}</span>
       </label>
       {problems.length > 0 && (
         <p>
@@ -595,8 +618,8 @@ function Preview({ job }: { job: ImportJob }) {
             type="button"
             className="link-button"
             onClick={() =>
-              downloadCsv(`Pruefliste-${job.file_name.replace(/\.[^.]+$/, '')}.csv`, [
-                ['Zeile', 'Person', 'Geburtsdatum', 'Ergebnis'],
+              downloadCsv(t('Pruefliste-{x}.csv', { x: job.file_name.replace(/\.[^.]+$/, '') }), [
+                [t('Zeile'), t('Person'), t('Geburtsdatum'), t('Ergebnis')],
                 ...problems.map((p) => [
                   p.rows.join(', '),
                   p.name,
@@ -606,17 +629,17 @@ function Preview({ job }: { job: ImportJob }) {
               ])
             }
           >
-            Prüfliste herunterladen (CSV, {problems.length} Einträge)
+            {t('Prüfliste herunterladen (CSV, {n} Einträge)', { n: problems.length })}
           </button>
         </p>
       )}
-      {rows.length === 0 && <p className="muted">Keine Einträge.</p>}
+      {rows.length === 0 && <p className="muted">{t('Keine Einträge.')}</p>}
       <table className="table">
         <thead>
           <tr>
-            <th>Zeile</th>
-            <th>Person</th>
-            <th>Ergebnis</th>
+            <th>{t('Zeile')}</th>
+            <th>{t('Person')}</th>
+            <th>{t('Ergebnis')}</th>
           </tr>
         </thead>
         <tbody>
@@ -637,7 +660,7 @@ function Preview({ job }: { job: ImportJob }) {
         size={size}
         total={rows.length}
         onPage={setPage}
-        noun="Einträgen"
+        noun={t('Einträgen')}
       />
     </div>
   )

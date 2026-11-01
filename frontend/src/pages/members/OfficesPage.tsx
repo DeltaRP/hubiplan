@@ -16,17 +16,18 @@ import { Alert, Checkbox, Field, SaveStatus, SelectField } from '../../component
 import { useActiveOrg } from '../../org/OrgContext.tsx'
 import { MembersSection } from '../MembersPage.tsx'
 import { CandidateSelect, PersonField } from './ChroniclePage.tsx'
+import { t } from '../../i18n/index.ts'
 
 export function OfficesPage() {
   const org = useActiveOrg()
   const canEdit = org.permissions.includes(PERM.membersEdit)
   const tabs = [
-    { to: '/mitglieder/aemter', label: 'Amtsinhaber' },
-    { to: '/mitglieder/aemter/statistik', label: 'Statistik' },
-    ...(canEdit ? [{ to: '/mitglieder/aemter/import', label: 'Import' }] : []),
+    { to: '/mitglieder/aemter', label: t('Amtsinhaber') },
+    { to: '/mitglieder/aemter/statistik', label: t('Statistik') },
+    ...(canEdit ? [{ to: '/mitglieder/aemter/import', label: t('Import') }] : []),
   ]
   return (
-    <MembersSection title="Ämter" tabs={tabs}>
+    <MembersSection title={t('Ämter')} tabs={tabs}>
       <Routes>
         <Route index element={<HoldersPanel />} />
         <Route path="statistik" element={<StatsPanel />} />
@@ -37,13 +38,13 @@ export function OfficesPage() {
 }
 
 function officeLabel(o: { name: string; unit_name: string | null }) {
-  return o.unit_name ? `${o.name} (${o.unit_name})` : o.name
+  return o.unit_name ? t('{name} ({unit_name})', { name: o.name, unit_name: o.unit_name }) : o.name
 }
 
 function periodText(h: { from_year: number; until_year: number | null; current: boolean }) {
-  if (h.current) return `${h.from_year} bis heute`
+  if (h.current) return t('{from_year} bis heute', { from_year: h.from_year })
   if (h.until_year === null || h.until_year === h.from_year) return String(h.from_year)
-  return `${h.from_year} bis ${h.until_year}`
+  return t('{from_year} bis {until_year}', { from_year: h.from_year, until_year: h.until_year })
 }
 
 interface Row extends OfficeHolder {
@@ -58,7 +59,7 @@ function HoldersPanel() {
   const [message, setMessage] = useState<string | null>(null)
 
   if (offices.error) return <Alert kind="error">{offices.error}</Alert>
-  if (!offices.data) return <p className="muted">Lädt …</p>
+  if (!offices.data) return <p className="muted">{t('Lädt …')}</p>
   // Je Amt eine eigene Tabelle (Ralf 2026-10-31)
   // Nur Ämter der eigenen Einheit, keine der Untereinheiten (Ralf 2026-10-31)
   const own = offices.data.filter((o) => o.unit === null)
@@ -66,9 +67,9 @@ function HoldersPanel() {
 
   async function remove(r: Row) {
     const ok = await confirmDialog({
-      title: 'Eintrag löschen?',
-      message: `${officeLabel(r.office)} ${periodText(r)}: ${r.name}`,
-      confirmLabel: 'Löschen',
+      title: t('Eintrag löschen?'),
+      message: t('{x} {x2}: {name}', { x: officeLabel(r.office), x2: periodText(r), name: r.name }),
+      confirmLabel: t('Löschen'),
     })
     if (!ok) return
     try {
@@ -83,28 +84,27 @@ function HoldersPanel() {
     <>
       <div className="card card-wide">
         <div className="card-head">
-          <h2>Amtsinhaber</h2>
+          <h2>{t('Amtsinhaber')}</h2>
           {canEdit && editing === null && own.length > 0 && (
             <button
               type="button"
               className="button button-ghost push-right"
               onClick={() => setEditing('new')}
             >
-              Früheren Inhaber eintragen
+              {t('Früheren Inhaber eintragen')}
             </button>
           )}
         </div>
         <p className="muted small">
-          Wer wann welches Amt hatte, auf das Jahr genau. Heutige Inhaber vergebt ihr wie bisher
-          unter den Rollen. Frühere Inhaber, die keine Mitglieder mehr sind, tragt ihr hier mit
-          Namen ein oder importiert eine Liste. Auf der Webseite erscheinen die Ämter, bei denen in
-          der Rolle „unter Ämter zeigen“ eingeschaltet ist.
+          {t(
+            'Wer wann welches Amt hatte, auf das Jahr genau. Heutige Inhaber vergebt ihr wie bisher unter den Rollen. Frühere Inhaber, die keine Mitglieder mehr sind, tragt ihr hier mit Namen ein oder importiert eine Liste. Auf der Webseite erscheinen die Ämter, bei denen in der Rolle „unter Ämter zeigen“ eingeschaltet ist.',
+          )}
         </p>
         {own.length === 0 && (
-          <Alert kind="info">Legt zuerst unter Einstellungen › Rollen die Ämter an.</Alert>
+          <Alert kind="info">{t('Legt zuerst unter Einstellungen › Rollen die Ämter an.')}</Alert>
         )}
         {own.length > 0 && groups.length === 0 && (
-          <p className="muted">Noch keine Amtsinhaber erfasst.</p>
+          <p className="muted">{t('Noch keine Amtsinhaber erfasst.')}</p>
         )}
         {editing !== null && (
           <EntryForm
@@ -123,16 +123,16 @@ function HoldersPanel() {
       {groups.map((o) => (
         <div className="card card-wide" key={o.id}>
           <h2>{officeLabel(o)}</h2>
-          {o.in_chronicle && <p className="muted small">Auf der Webseite unter „Ämter“.</p>}
+          {o.in_chronicle && <p className="muted small">{t('Auf der Webseite unter „Ämter“.')}</p>}
           <div className="table-scroll">
-            <table className="table" aria-label={`${officeLabel(o)}: Inhaber`}>
+            <table className="table" aria-label={t('{x}: Inhaber', { x: officeLabel(o) })}>
               <thead>
                 <tr>
-                  <th scope="col">Zeitraum</th>
-                  <th scope="col">Name</th>
+                  <th scope="col">{t('Zeitraum')}</th>
+                  <th scope="col">{t('Name')}</th>
                   {canEdit && (
                     <th scope="col">
-                      <span className="sr-only">Aktionen</span>
+                      <span className="sr-only">{t('Aktionen')}</span>
                     </th>
                   )}
                 </tr>
@@ -158,12 +158,15 @@ function HoldersPanel() {
                           {h.former_entry && (
                             <>
                               <IconButton
-                                label={`${h.name} ${periodText(h)} bearbeiten`}
+                                label={t('{name} {x} bearbeiten', {
+                                  name: h.name,
+                                  x: periodText(h),
+                                })}
                                 icon={<EditIcon />}
                                 onClick={() => setEditing(r)}
                               />
                               <IconButton
-                                label={`${h.name} ${periodText(h)} löschen`}
+                                label={t('{name} {x} löschen', { name: h.name, x: periodText(h) })}
                                 icon={<DeleteIcon />}
                                 danger
                                 onClick={() => void remove(r)}
@@ -240,10 +243,10 @@ function EntryForm({
           })
       }}
     >
-      <h3>{entry ? 'Eintrag bearbeiten' : 'Früheren Inhaber eintragen'}</h3>
+      <h3>{entry ? t('Eintrag bearbeiten') : t('Früheren Inhaber eintragen')}</h3>
       {entry && <SaveStatus auto={auto} />}
       <SelectField
-        label="Amt"
+        label={t('Amt')}
         value={String(v.role)}
         error={errors.role}
         onChange={(e) => set('role', Number(e.target.value))}
@@ -255,7 +258,7 @@ function EntryForm({
         ))}
       </SelectField>
       <PersonField
-        label="Inhaber"
+        label={t('Inhaber')}
         person={v.person}
         name={v.name}
         onChange={(person, name) => form.setValues({ ...v, person, name })}
@@ -264,15 +267,15 @@ function EntryForm({
       {errors.person && <Alert kind="error">{errors.person}</Alert>}
       {v.person === null && (
         <Checkbox
-          label="Name darf auf der Webseite erscheinen"
-          hint="Ohne Häkchen erscheint der Name nicht unter „Ämter“ auf der Webseite."
+          label={t('Name darf auf der Webseite erscheinen')}
+          hint={t('Ohne Häkchen erscheint der Name nicht unter „Ämter“ auf der Webseite.')}
           checked={v.name_public}
           onChange={(checked) => set('name_public', checked)}
         />
       )}
       <div className="grid-2">
         <Field
-          label="von (Jahr)"
+          label={t('von (Jahr)')}
           type="number"
           min={1000}
           max={2999}
@@ -281,7 +284,7 @@ function EntryForm({
           onChange={(e) => set('from_year', year(e.target.value))}
         />
         <Field
-          label="bis (Jahr)"
+          label={t('bis (Jahr)')}
           type="number"
           min={1000}
           max={2999}
@@ -293,11 +296,11 @@ function EntryForm({
       {form.message?.kind === 'error' && <Alert kind="error">{form.message.text}</Alert>}
       <div className="button-row">
         <button type="submit" className="button button-primary" disabled={form.busy}>
-          {entry ? 'Schließen' : 'Anlegen'}
+          {entry ? t('Schließen') : t('Anlegen')}
         </button>
         {!entry && (
           <button type="button" className="button button-ghost" onClick={onCancel}>
-            Abbrechen
+            {t('Abbrechen')}
           </button>
         )}
       </div>
@@ -372,7 +375,7 @@ function tally(entries: { holder: OfficeHolder; office: Office }[]): Tally[] {
 }
 
 function yearsText(n: number) {
-  return n === 1 ? '1 Jahr' : `${n} Jahre`
+  return n === 1 ? t('1 Jahr') : t('{n} Jahre', { n })
 }
 
 function StatsPanel() {
@@ -381,7 +384,7 @@ function StatsPanel() {
   const [boardOnly, setBoardOnly] = useState(false)
 
   if (offices.error) return <Alert kind="error">{offices.error}</Alert>
-  if (!offices.data) return <p className="muted">Lädt …</p>
+  if (!offices.data) return <p className="muted">{t('Lädt …')}</p>
   // Nur Ämter der eigenen Ebene, keine der Untereinheiten (Ralf 2026-10-31)
   const used = offices.data.filter((o) => o.unit === null && o.holders.length > 0)
   const people = tally(
@@ -391,65 +394,64 @@ function StatsPanel() {
   )
 
   const personColumns: Column<Tally>[] = [
-    { key: 'name', label: 'Name', value: (tm) => tm.name },
+    { key: 'name', label: t('Name'), value: (tm) => tm.name },
     {
       key: 'years',
-      label: 'Jahre insgesamt',
+      label: t('Jahre insgesamt'),
       value: (tm) => tm.years,
       render: (tm) => yearsText(tm.years),
       numeric: true,
     },
-    { key: 'offices', label: 'Ämter', value: (tm) => tm.offices, optional: true },
+    { key: 'offices', label: t('Ämter'), value: (tm) => tm.offices, optional: true },
     {
       key: 'current',
-      label: 'heute im Amt',
+      label: t('heute im Amt'),
       value: (tm) => (tm.current ? 'ja' : ''),
       optional: true,
     },
   ]
   // Feste Breiten, damit die Spalten in allen Blöcken gleich stehen (Ralf 2026-10-31)
   const officeColumns: Column<Tally>[] = [
-    { key: 'name', label: 'Name', value: (tm) => tm.name, width: '40%' },
+    { key: 'name', label: t('Name'), value: (tm) => tm.name, width: '40%' },
     {
       key: 'years',
-      label: 'Jahre',
+      label: t('Jahre'),
       width: '9rem',
       value: (tm) => tm.years,
       render: (tm) => yearsText(tm.years),
       numeric: true,
     },
-    { key: 'periods', label: 'Zeiträume', value: (tm) => tm.periods, optional: true },
+    { key: 'periods', label: t('Zeiträume'), value: (tm) => tm.periods, optional: true },
   ]
 
   return (
     <>
       <div className="card card-wide">
-        <h2>Personen nach Jahren im Amt</h2>
+        <h2>{t('Personen nach Jahren im Amt')}</h2>
         <p className="muted small">
-          Alle, die je ein Amt der eigenen Ebene hatten (ohne Ämter der Untereinheiten), nach der
-          Zahl der Jahre insgesamt. Gezählt wird jahresgenau („1955 bis 1972“ sind 17 Jahre, ein
-          einzelnes Jahr zählt als eines); wer mehrere Ämter gleichzeitig hatte, bekommt diese Jahre
-          nur einmal. Gleiche Person heißt: dieselbe Mitgliedsakte, sonst derselbe Name.
+          {t(
+            'Alle, die je ein Amt der eigenen Ebene hatten (ohne Ämter der Untereinheiten), nach der Zahl der Jahre insgesamt. Gezählt wird jahresgenau („1955 bis 1972“ sind 17 Jahre, ein einzelnes Jahr zählt als eines); wer mehrere Ämter gleichzeitig hatte, bekommt diese Jahre nur einmal. Gleiche Person heißt: dieselbe Mitgliedsakte, sonst derselbe Name.',
+          )}
         </p>
         <Checkbox
-          label="nur Vorstandsrollen zählen"
+          label={t('nur Vorstandsrollen zählen')}
           checked={boardOnly}
           onChange={(val) => setBoardOnly(val)}
         />
         <DataTable
-          label="Personen nach Jahren im Amt"
+          label={t('Personen nach Jahren im Amt')}
           rows={people}
           rowKey={(tm) => tm.key}
           columns={personColumns}
           initialSort={{ key: 'years', dir: 'desc' }}
-          emptyText="Noch keine Amtsinhaber erfasst."
+          emptyText={t('Noch keine Amtsinhaber erfasst.')}
         />
       </div>
       {used.map((o) => (
         <div className="card card-wide" key={o.id}>
           <h2>{officeLabel(o)}</h2>
           <DataTable
-            label={`${officeLabel(o)}: Inhaber nach Jahren`}
+            label={t('{x}: Inhaber nach Jahren', { x: officeLabel(o) })}
             rows={tally(o.holders.map((holder) => ({ holder, office: o })))}
             rowKey={(tm) => tm.key}
             columns={officeColumns}
@@ -525,9 +527,12 @@ function ImportPanel() {
         }))
       const res = await officesApi.importRows(org.id, chosen, requestKey)
       setResult(
-        `${res.created} Einträge übernommen.` +
+        t('{created} Einträge übernommen.', { created: res.created }) +
           (res.roles_created.length
-            ? ` Neu angelegte Ämter (Rollen ohne Rechte): ${res.roles_created.join(', ')}. Sie stehen noch nicht auf der Webseite; schaltet dafür in der Rolle „unter Ämter zeigen“ ein.`
+            ? t(
+                ' Neu angelegte Ämter (Rollen ohne Rechte): {x}. Sie stehen noch nicht auf der Webseite; schaltet dafür in der Rolle „unter Ämter zeigen“ ein.',
+                { x: res.roles_created.join(', ') },
+              )
             : ''),
       )
       setRows(null)
@@ -542,19 +547,22 @@ function ImportPanel() {
 
   return (
     <div className="card card-wide">
-      <h2>Frühere Amtsinhaber importieren</h2>
+      <h2>{t('Frühere Amtsinhaber importieren')}</h2>
       <p className="muted small">
-        Excel- oder CSV-Datei mit den Spalten <strong>Amt</strong>, <strong>Name</strong>,{' '}
-        <strong>von</strong> und <strong>bis</strong> (jeweils das Jahr; ohne „bis“ gilt nur das
-        eine Jahr). Für Ämter einer Untereinheit (z. B. Zugführer) zusätzlich die Spalte{' '}
-        <strong>Einheit</strong> mit ihrem Namen. HUBIplan schlägt zu jedem Namen passende
-        Mitglieder vor, auch ehemalige; ohne Zuordnung bleibt es beim Namen. Unbekannte Ämter werden
-        als Rollen ohne Rechte angelegt.
+        {t('Excel- oder CSV-Datei mit den Spalten')} <strong>{t('Amt')}</strong>,{' '}
+        <strong>{t('Name')}</strong>, <strong>von</strong> und <strong>bis</strong>{' '}
+        {t(
+          '(jeweils das Jahr; ohne „bis“ gilt nur das eine Jahr). Für Ämter einer Untereinheit (z. B. Zugführer) zusätzlich die Spalte',
+        )}{' '}
+        <strong>{t('Einheit')}</strong>{' '}
+        {t(
+          'mit ihrem Namen. HUBIplan schlägt zu jedem Namen passende Mitglieder vor, auch ehemalige; ohne Zuordnung bleibt es beim Namen. Unbekannte Ämter werden als Rollen ohne Rechte angelegt.',
+        )}
       </p>
       <input
         type="file"
         accept=".xlsx,.xlsm,.csv,.txt"
-        aria-label="Datei auswählen"
+        aria-label={t('Datei auswählen')}
         disabled={busy}
         onChange={(e) => {
           const file = e.target.files?.[0]
@@ -567,7 +575,7 @@ function ImportPanel() {
         <>
           {newRoles.length > 0 && (
             <Alert kind="info">
-              Neue Ämter werden angelegt: {newRoles.join(', ')}. Sie erscheinen nicht auf der
+              {t('Neue Ämter werden angelegt:')} {newRoles.join(', ')}. Sie erscheinen nicht auf der
               Webseite, bis ihr in der Rolle „unter Ämter zeigen“ einschaltet.
             </Alert>
           )}
@@ -575,11 +583,11 @@ function ImportPanel() {
             <table className="table">
               <thead>
                 <tr>
-                  <th>Übernehmen</th>
-                  <th>Zeile</th>
-                  <th>Amt</th>
-                  <th>Zeitraum</th>
-                  <th>Name und Zuordnung</th>
+                  <th>{t('Übernehmen')}</th>
+                  <th>{t('Zeile')}</th>
+                  <th>{t('Amt')}</th>
+                  <th>{t('Zeitraum')}</th>
+                  <th>{t('Name und Zuordnung')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -588,14 +596,16 @@ function ImportPanel() {
                     <td>
                       <input
                         type="checkbox"
-                        aria-label={`Zeile ${r.line} übernehmen`}
+                        aria-label={t('Zeile {line} übernehmen', { line: r.line })}
                         checked={decisions[i].take}
                         disabled={r.errors.length > 0}
                         onChange={(e) => decide(i, { take: e.target.checked })}
                       />
                     </td>
                     <td>{r.line}</td>
-                    <td>{r.unit ? `${r.role} (${r.unit})` : r.role}</td>
+                    <td>
+                      {r.unit ? t('{role} ({unit})', { role: r.role, unit: r.unit }) : r.role}
+                    </td>
                     <td>
                       {r.from_year === null
                         ? ''
@@ -610,10 +620,10 @@ function ImportPanel() {
                       {r.errors.length > 0 && (
                         <div className="field-error small">{r.errors.join(' ')}</div>
                       )}
-                      {r.duplicate && <div className="muted small">Schon vorhanden.</div>}
+                      {r.duplicate && <div className="muted small">{t('Schon vorhanden.')}</div>}
                       {r.name && (
                         <CandidateSelect
-                          label={`Zuordnung Zeile ${r.line}`}
+                          label={t('Zuordnung Zeile {line}', { line: r.line })}
                           candidates={r.candidates}
                           value={decisions[i].person_id}
                           onChange={(id) => decide(i, { person_id: id })}
@@ -632,7 +642,7 @@ function ImportPanel() {
               disabled={busy || count === 0}
               onClick={() => void commit()}
             >
-              {count} Einträge übernehmen
+              {count} {t('Einträge übernehmen')}
             </button>
           </div>
         </>

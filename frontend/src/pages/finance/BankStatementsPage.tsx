@@ -17,6 +17,7 @@ import { billingApi } from '../../api/billing.ts'
 import type { InvoiceRow } from '../../api/billing.ts'
 import { useActiveOrg } from '../../org/OrgContext.tsx'
 import { HowTo, Term } from '../../learning/Aids.tsx'
+import { t } from '../../i18n/index.ts'
 
 type Message = { kind: 'success' | 'error'; text: string } | null
 
@@ -36,9 +37,12 @@ export function BankStatementsPage({ canEdit }: { canEdit: boolean }) {
 
   async function removeStatement(st: BankStatement) {
     const ok = await confirmDialog({
-      title: 'Kontoauszug entfernen?',
-      message: `${st.file_name}: Die ${st.line_count} Umsätze werden entfernt. Das geht nur, solange nichts daraus gebucht ist.`,
-      confirmLabel: 'Entfernen',
+      title: t('Kontoauszug entfernen?'),
+      message: t(
+        '{file_name}: Die {line_count} Umsätze werden entfernt. Das geht nur, solange nichts daraus gebucht ist.',
+        { file_name: st.file_name, line_count: st.line_count },
+      ),
+      confirmLabel: t('Entfernen'),
       danger: true,
     })
     if (!ok) return
@@ -68,21 +72,21 @@ export function BankStatementsPage({ canEdit }: { canEdit: boolean }) {
         <LoadError message={statements.error} onRetry={() => void statements.reload()} />
       )}
       {!statements.data ? (
-        !statements.error && <p className="muted">Lädt …</p>
+        !statements.error && <p className="muted">{t('Lädt …')}</p>
       ) : list.length === 0 ? (
-        <p className="muted">Noch keine Kontoauszüge eingelesen.</p>
+        <p className="muted">{t('Noch keine Kontoauszüge eingelesen.')}</p>
       ) : (
         <div className="card card-wide">
-          <h2>Eingelesene Auszüge</h2>
+          <h2>{t('Eingelesene Auszüge')}</h2>
           <table className="table">
             <thead>
               <tr>
-                <th>Auszug</th>
-                <th>Konto</th>
-                <th>Zeitraum</th>
-                <th className="num">Umsätze</th>
+                <th>{t('Auszug')}</th>
+                <th>{t('Konto')}</th>
+                <th>{t('Zeitraum')}</th>
+                <th className="num">{t('Umsätze')}</th>
                 <th className="num">offen</th>
-                <th>Saldo</th>
+                <th>{t('Saldo')}</th>
                 <th />
               </tr>
             </thead>
@@ -98,7 +102,12 @@ export function BankStatementsPage({ canEdit }: { canEdit: boolean }) {
                       {st.reference || st.file_name}
                     </button>
                     {st.duplicate_count > 0 && (
-                      <span className="muted small"> · {st.duplicate_count} schon eingelesen</span>
+                      <span className="muted small">
+                        {' '}
+                        {t('· {duplicate_count} schon eingelesen', {
+                          duplicate_count: st.duplicate_count,
+                        })}
+                      </span>
                     )}
                   </td>
                   <td>{st.account_name}</td>
@@ -110,10 +119,11 @@ export function BankStatementsPage({ canEdit }: { canEdit: boolean }) {
                   <td>
                     {st.balance ? (
                       st.balance.ok ? (
-                        <span>stimmt ({euro(st.balance.bank)})</span>
+                        <span>{t('stimmt ({x})', { x: euro(st.balance.bank) })}</span>
                       ) : (
                         <span className="field-error">
-                          Bank {euro(st.balance.bank)}, Kassenbuch {euro(st.balance.book)}
+                          {t('Bank {x}, Kassenbuch', { x: euro(st.balance.bank) })}{' '}
+                          {euro(st.balance.book)}
                         </span>
                       )
                     ) : (
@@ -127,7 +137,7 @@ export function BankStatementsPage({ canEdit }: { canEdit: boolean }) {
                         className="link-button"
                         onClick={() => void removeStatement(st)}
                       >
-                        Entfernen
+                        {t('Entfernen')}
                       </button>
                     )}
                   </td>
@@ -144,7 +154,7 @@ export function BankStatementsPage({ canEdit }: { canEdit: boolean }) {
               setStatementPage(p)
               setSelected(null)
             }}
-            noun="Auszügen"
+            noun={t('Auszügen')}
           />
         </div>
       )}
@@ -182,10 +192,15 @@ function UploadForm({
     setError(null)
     try {
       const r = await bankApi.upload(org.id, file, account)
-      const dup = r.duplicates ? ` ${r.duplicates} waren schon eingelesen.` : ''
+      const dup = r.duplicates
+        ? t(' {duplicates} waren schon eingelesen.', { duplicates: r.duplicates })
+        : ''
       setFile(null)
       setInputKey((k) => k + 1)
-      await onDone(`${r.lines} Umsätze eingelesen.${dup}`, r.statements[0]?.id ?? null)
+      await onDone(
+        t('{lines} Umsätze eingelesen.{dup}', { lines: r.lines, dup }),
+        r.statements[0]?.id ?? null,
+      )
     } catch (err) {
       setError(errorMessage(err))
     } finally {
@@ -195,20 +210,22 @@ function UploadForm({
 
   return (
     <form className="card card-wide" onSubmit={submit}>
-      <h2>Kontoauszug einlesen</h2>
+      <h2>{t('Kontoauszug einlesen')}</h2>
       <p className="muted small">
-        Im Online-Banking die Umsätze als{' '}
+        {t('Im Online-Banking die Umsätze als')}{' '}
         <strong>
           <Term k="camt">CAMT.053</Term>
         </strong>{' '}
-        (auch „CAMT-Export“, XML oder ZIP) herunterladen und hier hochladen. HUBIplan erkennt das
-        Konto an der IBAN, schlägt passende Rechnungen und schon vorhandene Buchungen vor, erkennt{' '}
-        <Term k="return_debit">Rücklastschriften</Term> und liest keinen Umsatz zweimal ein.
+        {t(
+          '(auch „CAMT-Export“, XML oder ZIP) herunterladen und hier hochladen. HUBIplan erkennt das Konto an der IBAN, schlägt passende Rechnungen und schon vorhandene Buchungen vor, erkennt',
+        )}{' '}
+        <Term k="return_debit">{t('Rücklastschriften')}</Term>{' '}
+        {t('und liest keinen Umsatz zweimal ein.')}
       </p>
       <HowTo k="how_bank_match" />
       <div className="grid-2">
         <label className="field">
-          <span>Datei (XML oder ZIP)</span>
+          <span>{t('Datei (XML oder ZIP)')}</span>
           <input
             key={inputKey}
             type="file"
@@ -217,12 +234,12 @@ function UploadForm({
           />
         </label>
         <SelectField
-          label="Konto"
+          label={t('Konto')}
           value={account ?? ''}
           onChange={(e) => setAccount(e.target.value ? Number(e.target.value) : null)}
-          hint="nur nötig, wenn beim Konto keine IBAN eingetragen ist"
+          hint={t('nur nötig, wenn beim Konto keine IBAN eingetragen ist')}
         >
-          <option value="">an der IBAN erkennen</option>
+          <option value="">{t('an der IBAN erkennen')}</option>
           {accounts.map((a) => (
             <option key={a.id} value={a.id}>
               {a.name}
@@ -233,7 +250,7 @@ function UploadForm({
       {error && <Alert kind="error">{error}</Alert>}
       <div className="button-row">
         <button type="submit" className="button button-primary" disabled={!file || busy}>
-          {busy ? 'Liest ein …' : 'Einlesen'}
+          {busy ? t('Liest ein …') : t('Einlesen')}
         </button>
       </div>
     </form>
@@ -244,7 +261,7 @@ function suggestionText(l: BankLine): string | null {
   const text = suggestionBase(l)
   // Nur nach Betrag und Datum gefunden: einzeln prüfen (Audit 31.10. FIN31-03)
   return text && l.suggestion !== 'return' && !l.suggestion_sure
-    ? `${text} (nur Betrag und Datum passen, bitte prüfen)`
+    ? t('{text} (nur Betrag und Datum passen, bitte prüfen)', { text })
     : text
 }
 
@@ -253,15 +270,27 @@ function suggestionBase(l: BankLine): string | null {
   switch (l.suggestion) {
     case 'invoice':
       return s.invoice
-        ? `Zahlung zu ${s.invoice.number} (${s.invoice.recipient}, offen ${euro(s.invoice.outstanding)})`
+        ? t('Zahlung zu {number} ({recipient}, offen {x})', {
+            number: s.invoice.number,
+            recipient: s.invoice.recipient,
+            x: euro(s.invoice.outstanding),
+          })
         : null
     case 'debit_run':
-      return s.run ? `Lastschriftlauf vom ${formatDate(s.run.date)} buchen` : null
+      return s.run ? t('Lastschriftlauf vom {x} buchen', { x: formatDate(s.run.date) }) : null
     case 'booked':
-      return s.booking ? `schon im Kassenbuch: ${s.booking.number} ${s.booking.text}` : null
+      return s.booking
+        ? t('schon im Kassenbuch: {number} {text}', {
+            number: s.booking.number,
+            text: s.booking.text,
+          })
+        : null
     case 'return':
       return s.invoice
-        ? `Rücklastschrift zu ${s.invoice.number}: als Ausgabe buchen und bei der Rechnung die Zahlung entfernen`
+        ? t(
+            'Rücklastschrift zu {number}: als Ausgabe buchen und bei der Rechnung die Zahlung entfernen',
+            { number: s.invoice.number },
+          )
         : null
     default:
       return null
@@ -332,12 +361,17 @@ function LinesCard({
   async function applyAll() {
     const ok = await confirmDialog({
       title: complete
-        ? `${withSuggestion} Vorschläge übernehmen?`
-        : 'Alle Vorschläge dieses Auszugs übernehmen?',
+        ? t('{withSuggestion} Vorschläge übernehmen?', { withSuggestion })
+        : t('Alle Vorschläge dieses Auszugs übernehmen?'),
       message: complete
-        ? 'Rechnungen werden als bezahlt gebucht, Lastschriftläufe gebucht und schon vorhandene Buchungen zugeordnet.'
-        : `Der Auszug hat ${total} Umsätze in dieser Ansicht; übernommen werden alle sicheren Vorschläge, auch auf den anderen Seiten.`,
-      confirmLabel: 'Übernehmen',
+        ? t(
+            'Rechnungen werden als bezahlt gebucht, Lastschriftläufe gebucht und schon vorhandene Buchungen zugeordnet.',
+          )
+        : t(
+            'Der Auszug hat {total} Umsätze in dieser Ansicht; übernommen werden alle sicheren Vorschläge, auch auf den anderen Seiten.',
+            { total },
+          ),
+      confirmLabel: t('Übernehmen'),
       danger: false,
     })
     if (!ok) return
@@ -350,9 +384,13 @@ function LinesCard({
         r.failed.length
           ? {
               kind: 'error',
-              text: `${r.done} übernommen, ${r.failed.length} nicht übernommen: ${r.failed.join('; ')}`,
+              text: t('{done} übernommen, {n} nicht übernommen: {x}', {
+                done: r.done,
+                n: r.failed.length,
+                x: r.failed.join('; '),
+              }),
             }
-          : { kind: 'success', text: `${r.done} Vorschläge übernommen.` },
+          : { kind: 'success', text: t('{done} Vorschläge übernommen.', { done: r.done }) },
       )
       closeForms()
       await lines.reload()
@@ -367,7 +405,9 @@ function LinesCard({
   return (
     <div className="card card-wide">
       <div className="card-head">
-        <h2>Umsätze {statement.reference || statement.file_name}</h2>
+        <h2>
+          {t('Umsätze')} {statement.reference || statement.file_name}
+        </h2>
         {canEdit && withSuggestion > 0 && (
           <button
             type="button"
@@ -376,14 +416,14 @@ function LinesCard({
             onClick={() => void applyAll()}
           >
             {complete
-              ? `Alle ${withSuggestion} Vorschläge übernehmen`
-              : 'Alle Vorschläge übernehmen'}
+              ? t('Alle {withSuggestion} Vorschläge übernehmen', { withSuggestion })
+              : t('Alle Vorschläge übernehmen')}
           </button>
         )}
       </div>
       <div className="filters">
         <SelectField
-          label="Zeigen"
+          label={t('Zeigen')}
           value={status}
           onChange={(e) => {
             setStatus(e.target.value as BankLineStatus | '')
@@ -392,26 +432,26 @@ function LinesCard({
         >
           <option value="open">offene</option>
           <option value="done">erledigte</option>
-          <option value="ignored">übergangene</option>
+          <option value="ignored">{t('übergangene')}</option>
           <option value="">alle</option>
         </SelectField>
       </div>
       {message && <Alert kind={message.kind}>{message.text}</Alert>}
       {lines.error && <LoadError message={lines.error} onRetry={() => void lines.reload()} />}
       {!lines.data ? (
-        !lines.error && <p className="muted">Lädt …</p>
+        !lines.error && <p className="muted">{t('Lädt …')}</p>
       ) : rows.length === 0 ? (
         <p className="muted">
-          {status === 'open' ? 'Alles erledigt.' : 'Keine Umsätze in dieser Ansicht.'}
+          {status === 'open' ? t('Alles erledigt.') : t('Keine Umsätze in dieser Ansicht.')}
         </p>
       ) : (
         <table className="table">
           <thead>
             <tr>
-              <th>Datum</th>
-              <th>Gegenseite und Verwendungszweck</th>
-              <th className="num">Betrag</th>
-              <th>Vorschlag bzw. Stand</th>
+              <th>{t('Datum')}</th>
+              <th>{t('Gegenseite und Verwendungszweck')}</th>
+              <th className="num">{t('Betrag')}</th>
+              <th>{t('Vorschlag bzw. Stand')}</th>
               <th />
             </tr>
           </thead>
@@ -423,7 +463,10 @@ function LinesCard({
                   <td>{formatDate(l.date)}</td>
                   <td>
                     <strong>
-                      {l.name || (l.batch_count > 1 ? `Sammelbuchung (${l.batch_count})` : '–')}
+                      {l.name ||
+                        (l.batch_count > 1
+                          ? t('Sammelbuchung ({batch_count})', { batch_count: l.batch_count })
+                          : '–')}
                     </strong>
                     <br />
                     <span className="small">{l.purpose}</span>
@@ -432,7 +475,7 @@ function LinesCard({
                         {l.details.map((d, i) => (
                           <li key={i}>
                             {d.amount ? euro(d.amount) : '–'} {d.name}
-                            {d.purpose ? `: ${d.purpose}` : ''}
+                            {d.purpose ? t(': {purpose}', { purpose: d.purpose }) : ''}
                           </li>
                         ))}
                       </ul>
@@ -448,7 +491,7 @@ function LinesCard({
                               action: 'invoice',
                               invoice: invoice.id,
                             })
-                            return `Als Zahlung zu ${invoice.number} gebucht.`
+                            return t('Als Zahlung zu {number} gebucht.', { number: invoice.number })
                           })
                         }
                       />
@@ -465,7 +508,9 @@ function LinesCard({
                               action: 'booking',
                               ...data,
                             })
-                            return `Gebucht als ${r.booking_number}.`
+                            return t('Gebucht als {booking_number}.', {
+                              booking_number: r.booking_number,
+                            })
                           })
                         }
                       />
@@ -477,9 +522,12 @@ function LinesCard({
                   </td>
                   <td className="small">
                     {l.status === 'open'
-                      ? (hint ?? <span className="muted">kein Vorschlag</span>)
+                      ? (hint ?? <span className="muted">{t('kein Vorschlag')}</span>)
                       : l.booking_number
-                        ? `${l.status_label}: ${l.booking_number}`
+                        ? t('{status_label}: {booking_number}', {
+                            status_label: l.status_label,
+                            booking_number: l.booking_number,
+                          })
                         : l.status_label}
                   </td>
                   <td className="actions">
@@ -494,11 +542,11 @@ function LinesCard({
                               onClick={() =>
                                 void run(async () => {
                                   await bankApi.assign(org.id, l.id, { action: 'suggestion' })
-                                  return 'Vorschlag übernommen.'
+                                  return t('Vorschlag übernommen.')
                                 })
                               }
                             >
-                              Übernehmen
+                              {t('Übernehmen')}
                             </button>{' '}
                           </>
                         )}
@@ -509,7 +557,7 @@ function LinesCard({
                               className="link-button"
                               onClick={() => void openForm('invoice', l.id)}
                             >
-                              Rechnung zuordnen
+                              {t('Rechnung zuordnen')}
                             </button>{' '}
                           </>
                         )}
@@ -518,7 +566,7 @@ function LinesCard({
                           className="link-button"
                           onClick={() => void openForm('booking', l.id)}
                         >
-                          Neue Buchung
+                          {t('Neue Buchung')}
                         </button>{' '}
                         <button
                           type="button"
@@ -527,11 +575,11 @@ function LinesCard({
                           onClick={() =>
                             void run(async () => {
                               await bankApi.assign(org.id, l.id, { action: 'ignore' })
-                              return 'Übergangen.'
+                              return t('Übergangen.')
                             })
                           }
                         >
-                          Übergehen
+                          {t('Übergehen')}
                         </button>
                       </>
                     )}
@@ -543,11 +591,11 @@ function LinesCard({
                         onClick={() =>
                           void run(async () => {
                             await bankApi.assign(org.id, l.id, { action: 'reopen' })
-                            return 'Wieder offen.'
+                            return t('Wieder offen.')
                           })
                         }
                       >
-                        Wieder öffnen
+                        {t('Wieder öffnen')}
                       </button>
                     )}
                   </td>
@@ -557,11 +605,11 @@ function LinesCard({
           </tbody>
         </table>
       )}
-      <RangePager page={page} size={size} total={total} onPage={setPage} noun="Umsätzen" />
+      <RangePager page={page} size={size} total={total} onPage={setPage} noun={t('Umsätzen')} />
       <p className="muted small">
-        „Rechnung zuordnen“ bucht den Eingang als Zahlung einer offenen Rechnung. „Neue Buchung“
-        legt eine Buchung im Kassenbuch an, ohne Rechnung. „Übergehen“ für Umsätze, die schon anders
-        erfasst sind. Gebuchte Umsätze korrigierst du im Kassenbuch.
+        {t(
+          '„Rechnung zuordnen“ bucht den Eingang als Zahlung einer offenen Rechnung. „Neue Buchung“ legt eine Buchung im Kassenbuch an, ohne Rechnung. „Übergehen“ für Umsätze, die schon anders erfasst sind. Gebuchte Umsätze korrigierst du im Kassenbuch.',
+        )}
       </p>
     </div>
   )
@@ -594,11 +642,11 @@ function BookingForm({
   return (
     <div className="subcard">
       <SelectField
-        label={line.credit ? 'Kategorie (Einnahme)' : 'Kategorie (Ausgabe)'}
+        label={line.credit ? t('Kategorie (Einnahme)') : t('Kategorie (Ausgabe)')}
         value={category ?? ''}
         onChange={(e) => setCategory(e.target.value ? Number(e.target.value) : null)}
       >
-        <option value="">bitte wählen</option>
+        <option value="">{t('bitte wählen')}</option>
         {cats.map((c) => (
           <option key={c.id} value={c.id}>
             {c.name}
@@ -606,7 +654,7 @@ function BookingForm({
         ))}
       </SelectField>
       <Field
-        label="Buchungstext"
+        label={t('Buchungstext')}
         value={text}
         maxLength={200}
         onChange={(e) => setText(e.target.value)}
@@ -616,7 +664,9 @@ function BookingForm({
         value={member}
         onChange={setMember}
         label={
-          suggested ? `Mitglied (optional, erkannt: ${suggested.name})` : 'Mitglied (optional)'
+          suggested
+            ? t('Mitglied (optional, erkannt: {name})', { name: suggested.name })
+            : t('Mitglied (optional)')
         }
       />
       <div className="button-row">
@@ -629,14 +679,14 @@ function BookingForm({
             void onSubmit({ category, membership: member?.id ?? suggested?.id ?? null, text })
           }
         >
-          Buchen
+          {t('Buchen')}
         </button>
         <button
           type="button"
           className="button button-ghost"
           onClick={() => void confirmDiscard(dirty).then((ok) => ok && onCancel())}
         >
-          Abbrechen
+          {t('Abbrechen')}
         </button>
       </div>
     </div>
@@ -680,23 +730,23 @@ function InvoiceAssignForm({
       >
         <input
           type="search"
-          aria-label="Offene Rechnung suchen (Nummer oder Name)"
-          placeholder="Nummer oder Name"
+          aria-label={t('Offene Rechnung suchen (Nummer oder Name)')}
+          placeholder={t('Nummer oder Name')}
           value={term}
           onChange={(e) => setTerm(e.target.value)}
         />
         <button type="submit" className="button button-ghost">
-          Suchen
+          {t('Suchen')}
         </button>
       </form>
       {found.error && <LoadError message={found.error} onRetry={() => void found.reload()} />}
-      {!found.data && !found.error && <p className="muted small">Lädt …</p>}
+      {!found.data && !found.error && <p className="muted small">{t('Lädt …')}</p>}
       {found.data && rows.length === 0 && (
-        <p className="muted small">Keine offene Rechnung gefunden.</p>
+        <p className="muted small">{t('Keine offene Rechnung gefunden.')}</p>
       )}
       {rows.length > 0 && (
         <fieldset>
-          <legend className="small">Offene Rechnung wählen</legend>
+          <legend className="small">{t('Offene Rechnung wählen')}</legend>
           {rows.slice(0, 20).map((inv) => (
             <label key={inv.id} className="checkbox">
               <input
@@ -706,14 +756,16 @@ function InvoiceAssignForm({
                 onChange={() => setChosen(inv)}
               />
               <span>
-                {inv.number} · {inv.recipient_name} · offen {euro(inv.outstanding)}
+                {inv.number}{' '}
+                {t('· {recipient_name} · offen', { recipient_name: inv.recipient_name })}{' '}
+                {euro(inv.outstanding)}
                 <span className="muted small"> · {formatDate(inv.date)}</span>
               </span>
             </label>
           ))}
           {found.data && found.data.count > 20 && (
             <p className="muted small">
-              {found.data.count} Treffer, die ersten 20 stehen hier. Bitte genauer suchen.
+              {found.data.count} {t('Treffer, die ersten 20 stehen hier. Bitte genauer suchen.')}
             </p>
           )}
         </fieldset>
@@ -721,8 +773,8 @@ function InvoiceAssignForm({
       {chosen && Math.abs(diff) >= 0.005 && (
         <p className="small">
           {diff < 0
-            ? `Teilzahlung: Es bleiben ${euro(String(-diff))} offen.`
-            : `Der Eingang ist ${euro(String(diff))} höher als der offene Betrag.`}
+            ? t('Teilzahlung: Es bleiben {x} offen.', { x: euro(String(-diff)) })
+            : t('Der Eingang ist {x} höher als der offene Betrag.', { x: euro(String(diff)) })}
         </p>
       )}
       <div className="button-row">
@@ -732,14 +784,14 @@ function InvoiceAssignForm({
           disabled={!chosen}
           onClick={() => chosen && void onSubmit(chosen)}
         >
-          Zuordnen
+          {t('Zuordnen')}
         </button>
         <button
           type="button"
           className="button button-ghost"
           onClick={() => void confirmDiscard(dirty).then((ok) => ok && onCancel())}
         >
-          Abbrechen
+          {t('Abbrechen')}
         </button>
       </div>
     </div>

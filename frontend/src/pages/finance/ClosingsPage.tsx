@@ -9,6 +9,7 @@ import { confirmDialog, promptDialog } from '../../components/dialog.ts'
 import { Term, Why } from '../../learning/Aids.tsx'
 import { Checklist } from '../../learning/Checklist.tsx'
 import { closingChecks } from '../../learning/checks.ts'
+import { t } from '../../i18n/index.ts'
 
 function todayIso(): string {
   const d = new Date()
@@ -24,7 +25,7 @@ export function ClosingsPage() {
   const [busy, setBusy] = useState(false)
 
   if (error) return <LoadError message={error} onRetry={() => void reload()} />
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
   // Prüfliste für das älteste Jahr, das jetzt abgeschlossen werden kann
   const next = [...data.years]
     .sort((a, b) => a.year - b.year)
@@ -33,10 +34,11 @@ export function ClosingsPage() {
   async function close(year: number, label: string) {
     if (
       !(await confirmDialog({
-        title: `Geschäftsjahr ${label} abschließen?`,
-        message:
+        title: t('Geschäftsjahr {label} abschließen?', { label }),
+        message: t(
           'Danach lassen sich Buchungen dieses Jahres nicht mehr ändern, löschen oder neu nummerieren.',
-        confirmLabel: 'Abschließen',
+        ),
+        confirmLabel: t('Abschließen'),
         danger: false,
       }))
     )
@@ -45,7 +47,7 @@ export function ClosingsPage() {
     setNotice(null)
     try {
       setData(await financeApi.closeYear(org.id, year))
-      setNotice({ kind: 'success', text: `Geschäftsjahr ${label} ist abgeschlossen.` })
+      setNotice({ kind: 'success', text: t('Geschäftsjahr {label} ist abgeschlossen.', { label }) })
     } catch (err) {
       setNotice({ kind: 'error', text: errorMessage(err) })
     } finally {
@@ -55,19 +57,19 @@ export function ClosingsPage() {
 
   async function reopen(year: number, label: string) {
     const reason = await promptDialog({
-      title: `Abschluss ${label} aufheben?`,
+      title: t('Abschluss {label} aufheben?', { label }),
       message:
-        'Der bisherige Stand bleibt mit Grund gespeichert. Beim erneuten Abschluss siehst du, ' +
-        'was sich gegenüber diesem Stand geändert hat.',
-      label: 'Grund',
-      confirmLabel: 'Aufheben',
+        t('Der bisherige Stand bleibt mit Grund gespeichert. Beim erneuten Abschluss siehst du, ') +
+        t('was sich gegenüber diesem Stand geändert hat.'),
+      label: t('Grund'),
+      confirmLabel: t('Aufheben'),
     })
     if (reason === null) return
     setBusy(true)
     setNotice(null)
     try {
       setData(await financeApi.reopenYear(org.id, year, reason))
-      setNotice({ kind: 'success', text: `Abschluss ${label} aufgehoben.` })
+      setNotice({ kind: 'success', text: t('Abschluss {label} aufgehoben.', { label }) })
     } catch (err) {
       setNotice({ kind: 'error', text: errorMessage(err) })
     } finally {
@@ -78,15 +80,19 @@ export function ClosingsPage() {
   async function purge(year: number, label: string, records: boolean) {
     if (
       !(await confirmDialog({
-        title: `Geschäftsjahr ${label} bereinigen?`,
+        title: t('Geschäftsjahr {label} bereinigen?', { label }),
         message: records
-          ? 'Die Aufbewahrungsfrist ist abgelaufen. Belegdateien und PDFs werden gelöscht; ' +
-            'Namen, Anschriften, Buchungstexte und Bankdaten werden anonymisiert. Beträge, ' +
-            'Konten und Kategorien bleiben. Das lässt sich nicht rückgängig machen.'
-          : 'Die Aufbewahrungsfrist für Belege ist abgelaufen. Belegdateien, archivierte PDFs, ' +
-            'Kontoauszugs- und SEPA-Dateien sowie Unterschriften werden gelöscht. Die Buchungen ' +
-            'bleiben. Das lässt sich nicht rückgängig machen.',
-        confirmLabel: 'Endgültig bereinigen',
+          ? t('Die Aufbewahrungsfrist ist abgelaufen. Belegdateien und PDFs werden gelöscht; ') +
+            t('Namen, Anschriften, Buchungstexte und Bankdaten werden anonymisiert. Beträge, ') +
+            t('Konten und Kategorien bleiben. Das lässt sich nicht rückgängig machen.')
+          : t(
+              'Die Aufbewahrungsfrist für Belege ist abgelaufen. Belegdateien, archivierte PDFs, ',
+            ) +
+            t(
+              'Kontoauszugs- und SEPA-Dateien sowie Unterschriften werden gelöscht. Die Buchungen ',
+            ) +
+            t('bleiben. Das lässt sich nicht rückgängig machen.'),
+        confirmLabel: t('Endgültig bereinigen'),
         danger: true,
       }))
     )
@@ -95,7 +101,10 @@ export function ClosingsPage() {
     setNotice(null)
     try {
       const result = await financeApi.purgeYear(org.id, year)
-      setNotice({ kind: 'success', text: `Geschäftsjahr ${label}: ${result.done}.` })
+      setNotice({
+        kind: 'success',
+        text: t('Geschäftsjahr {label}: {done}.', { label, done: result.done }),
+      })
       await reload()
     } catch (err) {
       setNotice({ kind: 'error', text: errorMessage(err) })
@@ -108,11 +117,11 @@ export function ClosingsPage() {
     if (!lockDate) return
     if (
       !(await confirmDialog({
-        title: `Kasse bis ${formatDate(lockDate)} festschreiben?`,
+        title: t('Kasse bis {x} festschreiben?', { x: formatDate(lockDate) }),
         message:
-          'Buchungen bis zu diesem Tag lassen sich danach nicht mehr ändern oder löschen, nur ' +
-          'stornieren. Das lässt sich nicht zurücknehmen.',
-        confirmLabel: 'Festschreiben',
+          t('Buchungen bis zu diesem Tag lassen sich danach nicht mehr ändern oder löschen, nur ') +
+          t('stornieren. Das lässt sich nicht zurücknehmen.'),
+        confirmLabel: t('Festschreiben'),
         danger: false,
       }))
     )
@@ -122,7 +131,10 @@ export function ClosingsPage() {
     try {
       settings.setData(await financeApi.lockUntil(org.id, lockDate))
       setLockDate('')
-      setNotice({ kind: 'success', text: `Kasse bis ${formatDate(lockDate)} festgeschrieben.` })
+      setNotice({
+        kind: 'success',
+        text: t('Kasse bis {x} festgeschrieben.', { x: formatDate(lockDate) }),
+      })
     } catch (err) {
       setNotice({ kind: 'error', text: errorMessage(err) })
     } finally {
@@ -141,28 +153,29 @@ export function ClosingsPage() {
     <div className="card card-wide">
       {settings.data && (
         <section className="subcard">
-          <h3>Festschreibung</h3>
+          <h3>{t('Festschreibung')}</h3>
           <p className="muted small">
-            Buchungen werden automatisch festgeschrieben, sobald der Folgemonat vorbei ist; danach
-            lassen sie sich nur noch stornieren. Nachträglich erfasste Buchungen bleiben bis zum
-            Ende des Folgemonats ihrer Erfassung änderbar. <Why k="booking_fixed" />
+            {t(
+              'Buchungen werden automatisch festgeschrieben, sobald der Folgemonat vorbei ist; danach lassen sie sich nur noch stornieren. Nachträglich erfasste Buchungen bleiben bis zum Ende des Folgemonats ihrer Erfassung änderbar.',
+            )}{' '}
+            <Why k="booking_fixed" />
           </p>
           <p>
-            Festgeschrieben bis <strong>{fixedUntil ? formatDate(fixedUntil) : '–'}</strong>
+            {t('Festgeschrieben bis')} <strong>{fixedUntil ? formatDate(fixedUntil) : '–'}</strong>
             {settings.data.locked_until && (
               <span className="muted small">
                 {' '}
-                (von Hand bis {formatDate(settings.data.locked_until)})
+                {t('(von Hand bis {x})', { x: formatDate(settings.data.locked_until) })}
               </span>
             )}
           </p>
           {settings.data.can_edit && (
             <div className="button-row">
               <label>
-                <span className="sr-only">Festschreiben bis</span>
+                <span className="sr-only">{t('Festschreiben bis')}</span>
                 <input
                   type="date"
-                  aria-label="Festschreiben bis"
+                  aria-label={t('Festschreiben bis')}
                   value={lockDate}
                   max={todayIso()}
                   onChange={(e) => setLockDate(e.target.value)}
@@ -174,21 +187,24 @@ export function ClosingsPage() {
                 disabled={busy || !lockDate}
                 onClick={() => void lock()}
               >
-                Früher festschreiben
+                {t('Früher festschreiben')}
               </button>
             </div>
           )}
         </section>
       )}
-      <h2>Jahresabschluss</h2>
+      <h2>{t('Jahresabschluss')}</h2>
       <p className="muted small">
-        Der <Term k="cash_report">Kassenbericht</Term> zeigt Anfangs- und Endbestand je Konto sowie
-        Einnahmen und Ausgaben nach Kategorie, mit Feldern für die Unterschriften der{' '}
-        <Term k="auditors">Kassenprüfer</Term>. Nach dem Abschluss ist das Geschäftsjahr gesperrt.
-        Korrekturen laufen dann als neue Buchung im laufenden Jahr. Der Datenexport (ZIP) dient der{' '}
-        <Term k="data_access">Datenträgerüberlassung</Term> bei einer Prüfung. Nach Ablauf der{' '}
-        <Term k="retention_period">Aufbewahrungsfrist</Term> lassen sich Belege löschen und Bücher
-        anonymisieren.
+        {t('Der')} <Term k="cash_report">{t('Kassenbericht')}</Term>{' '}
+        {t(
+          'zeigt Anfangs- und Endbestand je Konto sowie Einnahmen und Ausgaben nach Kategorie, mit Feldern für die Unterschriften der',
+        )}{' '}
+        <Term k="auditors">{t('Kassenprüfer')}</Term>. Nach dem Abschluss ist das Geschäftsjahr
+        gesperrt. Korrekturen laufen dann als neue Buchung im laufenden Jahr. Der Datenexport (ZIP)
+        dient der <Term k="data_access">{t('Datenträgerüberlassung')}</Term>{' '}
+        {t('bei einer Prüfung. Nach Ablauf der')}{' '}
+        <Term k="retention_period">{t('Aufbewahrungsfrist')}</Term>{' '}
+        {t('lassen sich Belege löschen und Bücher anonymisieren.')}
       </p>
       <Why k="closing_lock" />
       {data.can_reopen && <Why k="reopen_closing" />}
@@ -196,16 +212,19 @@ export function ClosingsPage() {
         <Why k="retention_end" />
       )}
       {next?.checks && data.can_close && (
-        <Checklist title={`Vor dem Abschluss ${next.label}`} items={closingChecks(next.checks)} />
+        <Checklist
+          title={t('Vor dem Abschluss {label}', { label: next.label })}
+          items={closingChecks(next.checks)}
+        />
       )}
       {notice && <Alert kind={notice.kind}>{notice.text}</Alert>}
       <table className="table">
         <thead>
           <tr>
             <th>
-              <Term k="fiscal_year_term">Geschäftsjahr</Term>
+              <Term k="fiscal_year_term">{t('Geschäftsjahr')}</Term>
             </th>
-            <th>Stand</th>
+            <th>{t('Stand')}</th>
             <th />
           </tr>
         </thead>
@@ -214,25 +233,30 @@ export function ClosingsPage() {
             <tr key={y.year}>
               <td>
                 <strong>{y.label}</strong>
-                <div className="muted small">bis {formatDate(y.end_date)}</div>
+                <div className="muted small">{t('bis {x}', { x: formatDate(y.end_date) })}</div>
               </td>
               <td>
                 {y.closed
-                  ? `abgeschlossen ${y.closed_at ? formatDateTime(y.closed_at) : ''}${y.closed_by ? ` von ${y.closed_by}` : ''}`
+                  ? t('abgeschlossen {x}{x2}', {
+                      x: y.closed_at ? formatDateTime(y.closed_at) : '',
+                      x2: y.closed_by ? t(' von {name}', { name: y.closed_by }) : '',
+                    })
                   : y.running
-                    ? 'läuft noch'
-                    : 'offen'}
+                    ? t('läuft noch')
+                    : t('offen')}
                 {(y.reopened ?? []).map((h) => (
                   <div key={h.reopened_at} className="muted small">
-                    Abschluss vom {formatDateTime(h.closed_at)} aufgehoben am{' '}
+                    {t('Abschluss vom {x} aufgehoben am', { x: formatDateTime(h.closed_at) })}{' '}
                     {formatDateTime(h.reopened_at)}
-                    {h.reopened_by ? ` von ${h.reopened_by}` : ''}: {h.reason}
+                    {h.reopened_by
+                      ? t(' von {reopened_by}', { reopened_by: h.reopened_by })
+                      : ''}: {h.reason}
                   </div>
                 ))}
                 {y.retention && <RetentionNote r={y.retention} />}
                 {y.closed && (y.changes ?? []).length > 0 && (
                   <details className="small">
-                    <summary>Änderungen gegenüber dem aufgehobenen Stand</summary>
+                    <summary>{t('Änderungen gegenüber dem aufgehobenen Stand')}</summary>
                     <ul>
                       {(y.changes ?? []).map((line) => (
                         <li key={line}>{line}</li>
@@ -248,21 +272,23 @@ export function ClosingsPage() {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  Kassenbericht
+                  {t('Kassenbericht')}
                 </a>{' '}
                 <a
                   className="link-button"
                   href={financeApi.exportUrl(org.id, y.year)}
-                  title="Alle Finanzdaten des Jahres mit Belegen, Rechnungen, Kontoauszügen und Protokoll als ZIP, z. B. für das Finanzamt"
+                  title={t(
+                    'Alle Finanzdaten des Jahres mit Belegen, Rechnungen, Kontoauszügen und Protokoll als ZIP, z. B. für das Finanzamt',
+                  )}
                 >
-                  Datenexport (ZIP)
+                  {t('Datenexport (ZIP)')}
                 </a>{' '}
                 {settings.data?.datev_enabled && (
                   <>
                     <a
                       className="link-button"
                       href={financeApi.datevUrl(org.id, y.year)}
-                      title="Buchungsstapel im DATEV-Format für die Steuerberatung"
+                      title={t('Buchungsstapel im DATEV-Format für die Steuerberatung')}
                     >
                       DATEV
                     </a>{' '}
@@ -275,7 +301,7 @@ export function ClosingsPage() {
                     disabled={busy}
                     onClick={() => void close(y.year, y.label)}
                   >
-                    Abschließen
+                    {t('Abschließen')}
                   </button>
                 )}
                 {data.can_reopen &&
@@ -288,7 +314,7 @@ export function ClosingsPage() {
                       disabled={busy}
                       onClick={() => void reopen(y.year, y.label)}
                     >
-                      Abschluss aufheben
+                      {t('Abschluss aufheben')}
                     </button>
                   )}
                 {data.can_reopen && (y.retention?.documents_due || y.retention?.records_due) && (
@@ -300,7 +326,7 @@ export function ClosingsPage() {
                       disabled={busy}
                       onClick={() => void purge(y.year, y.label, !!y.retention?.records_due)}
                     >
-                      {y.retention?.records_due ? 'Daten bereinigen' : 'Belege löschen'}
+                      {y.retention?.records_due ? t('Daten bereinigen') : t('Belege löschen')}
                     </button>
                   </>
                 )}
@@ -318,12 +344,22 @@ function RetentionNote({ r }: { r: Retention }) {
   return (
     <div className="muted small">
       {r.records_purged_at
-        ? `Bücher anonymisiert am ${formatDateTime(r.records_purged_at)}${r.purged_by ? ` von ${r.purged_by}` : ''}`
+        ? t('Bücher anonymisiert am {x}{x2}', {
+            x: formatDateTime(r.records_purged_at),
+            x2: r.purged_by ? t(' von {name}', { name: r.purged_by }) : '',
+          })
         : r.documents_purged_at
-          ? `Belege gelöscht am ${formatDateTime(r.documents_purged_at)}${r.purged_by ? ` von ${r.purged_by}` : ''}; Bücher ab ${formatDate(r.records_from)} zu anonymisieren`
+          ? t('Belege gelöscht am {x}{x2}; Bücher ab {x3} zu anonymisieren', {
+              x: formatDateTime(r.documents_purged_at),
+              x2: r.purged_by ? t(' von {name}', { name: r.purged_by }) : '',
+              x3: formatDate(r.records_from),
+            })
           : r.documents_due || r.records_due
-            ? 'Aufbewahrungsfrist abgelaufen: Daten können bereinigt werden.'
-            : `Aufbewahrungsfrist: Belege löschbar ab ${formatDate(r.documents_from)}, Bücher ab ${formatDate(r.records_from)}`}
+            ? t('Aufbewahrungsfrist abgelaufen: Daten können bereinigt werden.')
+            : t('Aufbewahrungsfrist: Belege löschbar ab {x}, Bücher ab {x2}', {
+                x: formatDate(r.documents_from),
+                x2: formatDate(r.records_from),
+              })}
     </div>
   )
 }

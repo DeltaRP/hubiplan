@@ -24,6 +24,7 @@ import { financeAccess, invoiceTabs, settingsTabs } from './access.ts'
 import type { FinanceAccess, NavItem } from './access.ts'
 import { FinanceDevelopment } from './DevelopmentPage.tsx'
 import { EvaluationPage, FinanceOverview } from './OverviewPages.tsx'
+import { t } from '../../i18n/index.ts'
 
 function Section({
   title,
@@ -40,10 +41,10 @@ function Section({
     <section>
       <div className="page-head">
         <div>
-          <p className="muted small eyebrow">Finanzen</p>
+          <p className="muted small eyebrow">{t('Finanzen')}</p>
           <h1>{title}</h1>
         </div>
-        {readOnly && <span className="muted small push-right">nur lesen</span>}
+        {readOnly && <span className="muted small push-right">{t('nur lesen')}</span>}
       </div>
       {tabs && tabs.length > 1 && <Tabs items={tabs} />}
       {children}
@@ -62,7 +63,7 @@ export function FinanzenPage() {
       <Route
         index
         element={
-          <Section title="Übersicht">
+          <Section title={t('Übersicht')}>
             <FinanceOverview access={a} />
           </Section>
         }
@@ -71,7 +72,7 @@ export function FinanzenPage() {
         path="entwicklung"
         element={
           a.finance ? (
-            <Section title="Entwicklung">
+            <Section title={t('Entwicklung')}>
               <FinanceDevelopment canEdit={a.financeEdit} />
             </Section>
           ) : (
@@ -88,7 +89,7 @@ export function FinanzenPage() {
         path="kassenbuch"
         element={
           a.finance ? (
-            <Section title="Kassenbuch" readOnly={!a.financeEdit}>
+            <Section title={t('Kassenbuch')} readOnly={!a.financeEdit}>
               <BookingsPage />
             </Section>
           ) : (
@@ -100,7 +101,7 @@ export function FinanzenPage() {
         path="kontoauszuege"
         element={
           a.finance ? (
-            <Section title="Kontoauszüge" readOnly={!a.financeEdit}>
+            <Section title={t('Kontoauszüge')} readOnly={!a.financeEdit}>
               <BankStatementsPage canEdit={a.financeEdit} />
             </Section>
           ) : (
@@ -112,7 +113,7 @@ export function FinanzenPage() {
         path="quittungen/*"
         element={
           a.finance ? (
-            <Section title="Quittungen" readOnly={!a.financeEdit}>
+            <Section title={t('Quittungen')} readOnly={!a.financeEdit}>
               <CashReceiptsArea canEdit={a.financeEdit} />
             </Section>
           ) : (
@@ -124,7 +125,7 @@ export function FinanzenPage() {
         path="kassenzaehlung"
         element={
           a.cashCounts ? (
-            <Section title="Kassenzählung" readOnly={!a.financeEdit}>
+            <Section title={t('Kassenzählung')} readOnly={!a.financeEdit}>
               <CashCountsPage canEdit={a.financeEdit} />
             </Section>
           ) : (
@@ -136,7 +137,7 @@ export function FinanzenPage() {
         path="ruecklagen"
         element={
           a.reserves ? (
-            <Section title="Rücklagen" readOnly={!a.financeEdit}>
+            <Section title={t('Rücklagen')} readOnly={!a.financeEdit}>
               <ReservesPage canEdit={a.financeEdit} />
             </Section>
           ) : (
@@ -149,12 +150,12 @@ export function FinanzenPage() {
         element={
           a.donations ? (
             <Section
-              title="Zuwendungsbestätigungen"
+              title={t('Zuwendungsbestätigungen')}
               readOnly={!a.financeEdit}
               tabs={[
-                { to: '/finanzen/zuwendungen', label: 'Zuwendungen' },
-                { to: '/finanzen/zuwendungen/bestaetigungen', label: 'Bestätigungen' },
-                { to: '/finanzen/zuwendungen/einstellungen', label: 'Einstellungen' },
+                { to: '/finanzen/zuwendungen', label: t('Zuwendungen') },
+                { to: '/finanzen/zuwendungen/bestaetigungen', label: t('Bestätigungen') },
+                { to: '/finanzen/zuwendungen/einstellungen', label: t('Einstellungen') },
               ]}
             >
               <DonationsArea canEdit={a.financeEdit} />
@@ -169,11 +170,11 @@ export function FinanzenPage() {
         element={
           a.finance ? (
             <Section
-              title="Veranstaltungen"
+              title={t('Veranstaltungen')}
               readOnly={!a.financeEdit}
               tabs={[
-                { to: '/finanzen/veranstaltungen', label: 'Veranstaltungen' },
-                { to: '/finanzen/veranstaltungen/reihen', label: 'Reihen' },
+                { to: '/finanzen/veranstaltungen', label: t('Veranstaltungen') },
+                { to: '/finanzen/veranstaltungen/reihen', label: t('Reihen') },
               ]}
             >
               <ProjectsArea />
@@ -193,7 +194,7 @@ export function FinanzenPage() {
 function InvoicesArea({ access: a }: { access: FinanceAccess }) {
   const tabs = invoiceTabs(a)
   return (
-    <Section title="Rechnungen" readOnly={a.billing && !a.billingEdit} tabs={tabs}>
+    <Section title={t('Rechnungen')} readOnly={a.billing && !a.billingEdit} tabs={tabs}>
       <Routes>
         <Route
           index
@@ -211,11 +212,11 @@ function InvoicesArea({ access: a }: { access: FinanceAccess }) {
 function DebitsArea({ access: a }: { access: FinanceAccess }) {
   return (
     <Section
-      title="Lastschriften"
+      title={t('Lastschriften')}
       readOnly={!a.billingEdit}
       tabs={[
-        { to: '/finanzen/lastschrift', label: 'Lastschriftläufe' },
-        { to: '/finanzen/lastschrift/mandate', label: 'SEPA-Mandate' },
+        { to: '/finanzen/lastschrift', label: t('Lastschriftläufe') },
+        { to: '/finanzen/lastschrift/mandate', label: t('SEPA-Mandate') },
       ]}
     >
       <Routes>
@@ -230,11 +231,11 @@ function DebitsArea({ access: a }: { access: FinanceAccess }) {
 function ClosingArea({ access: a }: { access: FinanceAccess }) {
   return (
     <Section
-      title="Abschluss & Berichte"
+      title={t('Abschluss & Berichte')}
       readOnly={!a.financeEdit}
       tabs={[
-        { to: '/finanzen/abschluss', label: 'Auswertung' },
-        { to: '/finanzen/abschluss/jahresabschluss', label: 'Jahresabschluss' },
+        { to: '/finanzen/abschluss', label: t('Auswertung') },
+        { to: '/finanzen/abschluss/jahresabschluss', label: t('Jahresabschluss') },
       ]}
     >
       <Routes>
@@ -251,7 +252,7 @@ function SettingsArea({ access: a }: { access: FinanceAccess }) {
   const first = <Navigate to={tabs[0].to} replace />
   const readOnly = !a.billingEdit && !a.financeEdit
   return (
-    <Section title="Einrichtung" readOnly={readOnly} tabs={tabs}>
+    <Section title={t('Einrichtung')} readOnly={readOnly} tabs={tabs}>
       <Routes>
         <Route index element={first} />
         {a.feeRuns && <Route path="beitraege" element={<FeeRulesPage />} />}

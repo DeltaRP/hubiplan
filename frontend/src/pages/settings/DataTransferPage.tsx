@@ -4,6 +4,7 @@ import { ExportSection, ImportSection } from '../../components/DataTransfer.tsx'
 import { useLoad } from '../../components/forms.ts'
 import { Alert } from '../../components/ui.tsx'
 import { useOrg } from '../../org/OrgContext.tsx'
+import { t } from '../../i18n/index.ts'
 
 export function DataTransferPage() {
   const { active, can } = useOrg()
@@ -20,7 +21,7 @@ export function DataTransferPage() {
       {can(PERM.dataExport) ? (
         <ExportSection base={base} departments={isClub ? (departments.data ?? []) : undefined} />
       ) : (
-        <Alert kind="info">Für den vollständigen Export fehlt dir die Berechtigung.</Alert>
+        <Alert kind="info">{t('Für den vollständigen Export fehlt dir die Berechtigung.')}</Alert>
       )}
       {canImport && (
         <ImportSection base={base} target="club" onImported={() => void departments.reload()} />

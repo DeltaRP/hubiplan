@@ -11,19 +11,25 @@ import { confirmDialog } from '../../components/dialog.ts'
 import { errorMessage, formatDate, useLoad } from '../../components/forms.ts'
 import { DeleteIcon, EditIcon, IconButton } from '../../components/icons.tsx'
 import { Alert, LoadError } from '../../components/ui.tsx'
+import { t } from '../../i18n/index.ts'
 
 function AwardLine({ a, children }: { a: HonoraryAward; children?: ReactNode }) {
   return (
     <li>
       <strong>{a.title_name}</strong> ·{' '}
       {a.year_only ? (
-        `verliehen ${a.valid_from.split('-')[0]}`
+        t('verliehen {x}', { x: a.valid_from.split('-')[0] })
       ) : (
         <>
           {formatDate(a.valid_from)} – {a.valid_until ? formatDate(a.valid_until) : 'heute'}
         </>
       )}
-      {a.fee_text && <span className="muted small"> · Beitrag: {a.fee_text}</span>}
+      {a.fee_text && (
+        <span className="muted small">
+          {' '}
+          {t('· Beitrag:')} {a.fee_text}
+        </span>
+      )}
       {a.note && <span className="muted small"> · {a.note}</span>}
       {children}
     </li>
@@ -50,8 +56,8 @@ function AwardDates({
     return (
       <input
         type="number"
-        aria-label="Jahr der Verleihung"
-        placeholder="Jahr"
+        aria-label={t('Jahr der Verleihung')}
+        placeholder={t('Jahr')}
         required
         min={1800}
         max={Number(todayIso().slice(0, 4))}
@@ -71,8 +77,8 @@ function AwardDates({
       />
       <input
         type="date"
-        aria-label="bis (optional)"
-        title="bis (optional)"
+        aria-label={t('bis (optional)')}
+        title={t('bis (optional)')}
         value={until}
         onChange={(e) => setUntil(e.target.value)}
       />
@@ -107,7 +113,7 @@ function AwardEdit({
     <li>
       <form
         className="inline-edit"
-        aria-label={`${a.title_name} bearbeiten`}
+        aria-label={t('{title_name} bearbeiten', { title_name: a.title_name })}
         onSubmit={(e) => {
           e.preventDefault()
           onSave({
@@ -118,7 +124,7 @@ function AwardEdit({
           })
         }}
       >
-        <select aria-label="Ehrung" value={title} onChange={(e) => setTitle(e.target.value)}>
+        <select aria-label={t('Ehrung')} value={title} onChange={(e) => setTitle(e.target.value)}>
           {list.map((tm) => (
             <option key={tm.id} value={tm.id}>
               {tm.name}
@@ -134,18 +140,18 @@ function AwardEdit({
         />
         <input
           type="text"
-          aria-label="Bemerkung"
-          placeholder="Bemerkung (optional)"
+          aria-label={t('Bemerkung')}
+          placeholder={t('Bemerkung (optional)')}
           maxLength={200}
           value={note}
           onChange={(e) => setNote(e.target.value)}
         />
         <span className="button-row">
           <button type="submit" className="button" disabled={busy}>
-            Speichern
+            {t('Speichern')}
           </button>
           <button type="button" className="button button-ghost" onClick={onCancel}>
-            Abbrechen
+            {t('Abbrechen')}
           </button>
         </span>
       </form>
@@ -223,19 +229,20 @@ export function HonoraryAwards({
 
   async function remove(a: HonoraryAward) {
     const ok = await confirmDialog({
-      title: `„${a.title_name}“ löschen?`,
-      message:
+      title: t('„{title_name}“ löschen?', { title_name: a.title_name }),
+      message: t(
         'Nur für falsche Einträge. Endet die Ehrung, besser „beenden“ wählen, dann bleibt sie im Verlauf.',
-      confirmLabel: 'Löschen',
+      ),
+      confirmLabel: t('Löschen'),
     })
     if (ok) await run(() => memberApi.deleteAward(orgId, memberId, a.id, federation))
   }
 
   return (
     <div className="card card-wide">
-      <h2>Ehrungen</h2>
+      <h2>{t('Ehrungen')}</h2>
       {awards.length === 0 ? (
-        <p className="muted">Keine.</p>
+        <p className="muted">{t('Keine.')}</p>
       ) : (
         <ul className="plain-list">
           {awards.map((a) =>
@@ -257,7 +264,7 @@ export function HonoraryAwards({
                 {canEdit && (
                   <span className="inline-actions">
                     <IconButton
-                      label={`${a.title_name} bearbeiten`}
+                      label={t('{title_name} bearbeiten', { title_name: a.title_name })}
                       icon={<EditIcon />}
                       disabled={busy}
                       onClick={() => setEditing(a.id)}
@@ -283,7 +290,7 @@ export function HonoraryAwards({
                       </button>
                     )}
                     <IconButton
-                      label={`${a.title_name} löschen`}
+                      label={t('{title_name} löschen', { title_name: a.title_name })}
                       icon={<DeleteIcon />}
                       danger
                       disabled={busy}
@@ -298,7 +305,7 @@ export function HonoraryAwards({
       )}
       {otherAwards && otherAwards.length > 0 && (
         <>
-          <h3>{otherLabel ?? 'Weitere Ehrungen'}</h3>
+          <h3>{otherLabel ?? t('Weitere Ehrungen')}</h3>
           <ul className="plain-list">
             {otherAwards.map((a) => (
               <AwardLine key={a.id} a={a} />
@@ -308,13 +315,13 @@ export function HonoraryAwards({
       )}
       {canEdit &&
         (options.length > 0 ? (
-          <form className="inline-add" onSubmit={add} aria-label="Ehrung verleihen">
+          <form className="inline-add" onSubmit={add} aria-label={t('Ehrung verleihen')}>
             <select
-              aria-label="Ehrung verleihen"
+              aria-label={t('Ehrung verleihen')}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             >
-              <option value="">Ehrung verleihen …</option>
+              <option value="">{t('Ehrung verleihen …')}</option>
               {options.map((tm) => (
                 <option key={tm.id} value={tm.id}>
                   {tm.name}
@@ -330,27 +337,29 @@ export function HonoraryAwards({
             />
             <input
               type="text"
-              aria-label="Bemerkung"
-              placeholder="Bemerkung (optional)"
+              aria-label={t('Bemerkung')}
+              placeholder={t('Bemerkung (optional)')}
               maxLength={200}
               value={note}
               onChange={(e) => setNote(e.target.value)}
             />
             <button type="submit" className="button button-ghost" disabled={busy || !title}>
-              Verleihen
+              {t('Verleihen')}
             </button>
           </form>
         ) : titles.error ? (
           <LoadError
-            message={`Die Ehrungen konnten nicht geladen werden. ${titles.error}`}
+            message={t('Die Ehrungen konnten nicht geladen werden. {error}', {
+              error: titles.error,
+            })}
             onRetry={() => void titles.reload()}
           />
         ) : titles.data ? (
           <p className="muted small">
-            Noch keine Ehrungen angelegt (Mitglieder › Einrichtung › Ehrungen).
+            {t('Noch keine Ehrungen angelegt (Mitglieder › Einrichtung › Ehrungen).')}
           </p>
         ) : (
-          <p className="muted small">Ehrungen werden geladen …</p>
+          <p className="muted small">{t('Ehrungen werden geladen …')}</p>
         ))}
       {error && <Alert kind="error">{error}</Alert>}
     </div>

@@ -6,6 +6,7 @@ import { websiteApi } from '../../api/website.ts'
 import type { ConsentCategory } from '../../api/website.ts'
 import { errorMessage, formatDate, useLoad } from '../../components/forms.ts'
 import { Alert, LoadError } from '../../components/ui.tsx'
+import { t } from '../../i18n/index.ts'
 
 export function PublicationSection({
   orgId,
@@ -44,37 +45,35 @@ export function PublicationSection({
 
   return (
     <div className="card card-wide">
-      <h2>Veröffentlichung auf der Webseite</h2>
+      <h2>{t('Veröffentlichung auf der Webseite')}</h2>
       <p className="muted small">
-        Name mit Funktion sowie Würden und Chronik erscheinen ohne Einwilligung, solange das
-        Mitglied nicht widerspricht. Foto, E-Mail, Telefon und Jubiläen erscheinen nur mit
-        Einwilligung. Für das Foto braucht es zusätzlich die Foto-Einwilligung. „Freigegeben“ heißt
-        nur, dass die Angabe erscheinen darf: Ob sie sichtbar ist, hängt außerdem davon ab, ob es
-        sie gibt (z. B. ein Foto oder eine Funktion) und wie die Webseite eingestellt ist.
+        {t(
+          'Name mit Funktion sowie Würden und Chronik erscheinen ohne Einwilligung, solange das Mitglied nicht widerspricht. Foto, E-Mail, Telefon und Jubiläen erscheinen nur mit Einwilligung. Für das Foto braucht es zusätzlich die Foto-Einwilligung. „Freigegeben“ heißt nur, dass die Angabe erscheinen darf: Ob sie sichtbar ist, hängt außerdem davon ab, ob es sie gibt (z. B. ein Foto oder eine Funktion) und wie die Webseite eingestellt ist.',
+        )}
       </p>
       {error && <LoadError message={error} onRetry={() => void reload()} />}
-      {!data && !error && <p className="muted">Lädt …</p>}
+      {!data && !error && <p className="muted">{t('Lädt …')}</p>}
       {data && (
         <>
           {canEdit && (
             <label className="field">
-              <span>Neue Einträge erfasst durch</span>
+              <span>{t('Neue Einträge erfasst durch')}</span>
               <select
                 value={source}
                 onChange={(e) => setSource(e.target.value as 'board' | 'paper')}
               >
-                <option value="paper">Papierformular (unterschrieben)</option>
-                <option value="board">Vorstand (z. B. mündlich)</option>
+                <option value="paper">{t('Papierformular (unterschrieben)')}</option>
+                <option value="board">{t('Vorstand (z. B. mündlich)')}</option>
               </select>
             </label>
           )}
           <table className="table">
             <thead>
               <tr>
-                <th>Angabe</th>
-                <th>Stand</th>
-                <th>Zur Veröffentlichung freigegeben</th>
-                {canEdit && <th aria-label="Ändern" />}
+                <th>{t('Angabe')}</th>
+                <th>{t('Stand')}</th>
+                <th>{t('Zur Veröffentlichung freigegeben')}</th>
+                {canEdit && <th aria-label={t('Ändern')} />}
               </tr>
             </thead>
             <tbody>
@@ -84,18 +83,23 @@ export function PublicationSection({
                   <td>
                     {c.kind === 'objection'
                       ? c.active
-                        ? `Widerspruch seit ${formatDate(c.since)}`
-                        : 'kein Widerspruch'
+                        ? t('Widerspruch seit {x}', { x: formatDate(c.since) })
+                        : t('kein Widerspruch')
                       : c.active
-                        ? `Einwilligung seit ${formatDate(c.since)}`
-                        : 'keine Einwilligung'}
+                        ? t('Einwilligung seit {x}', { x: formatDate(c.since) })
+                        : t('keine Einwilligung')}
                     {c.history.some((h) => h.ended_at) && (
                       <small className="muted">
                         {' '}
-                        (früher:{' '}
+                        {t('(früher:')}{' '}
                         {c.history
                           .filter((h) => h.ended_at)
-                          .map((h) => `${formatDate(h.since)} bis ${formatDate(h.ended_at)}`)
+                          .map((h) =>
+                            t('{x} bis {x2}', {
+                              x: formatDate(h.since),
+                              x2: formatDate(h.ended_at),
+                            }),
+                          )
                           .join(', ')}
                         )
                       </small>
@@ -112,11 +116,11 @@ export function PublicationSection({
                       >
                         {c.kind === 'objection'
                           ? c.active
-                            ? 'Widerspruch aufheben'
-                            : 'Widerspruch erfassen'
+                            ? t('Widerspruch aufheben')
+                            : t('Widerspruch erfassen')
                           : c.active
-                            ? 'Einwilligung widerrufen'
-                            : 'Einwilligung erfassen'}
+                            ? t('Einwilligung widerrufen')
+                            : t('Einwilligung erfassen')}
                       </button>
                     </td>
                   )}

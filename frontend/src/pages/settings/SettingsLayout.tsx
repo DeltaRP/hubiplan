@@ -3,6 +3,7 @@ import { PERM } from '../../api/orgs.ts'
 import { Tabs } from '../../components/ui.tsx'
 import { useOrg } from '../../org/OrgContext.tsx'
 import { federationAccess } from '../members/access.ts'
+import { t } from '../../i18n/index.ts'
 
 export function SettingsLayout() {
   const { active, can } = useOrg()
@@ -15,37 +16,39 @@ export function SettingsLayout() {
   // Arbeitsbereich einer Untereinheit: Stammdaten pflegt die Einheit darüber
   const unit = active.type === 'unit'
   const items = [
-    ...(unit ? [] : [{ to: '/einstellungen/organisation', label: 'Organisation' }]),
+    ...(unit ? [] : [{ to: '/einstellungen/organisation', label: t('Organisation') }]),
     ...(unit || active.type === 'platform'
       ? []
       : [
-          { to: '/einstellungen/impressum', label: 'Impressum' },
-          { to: '/einstellungen/datenschutz', label: 'Datenschutz' },
-          { to: '/einstellungen/briefbogen', label: 'Briefbogen' },
+          { to: '/einstellungen/impressum', label: t('Impressum') },
+          { to: '/einstellungen/datenschutz', label: t('Datenschutz') },
+          { to: '/einstellungen/briefbogen', label: t('Briefbogen') },
         ]),
     // Untereinheit mit eigener Webseite: nur deren Datenschutzhinweise
     ...(unit && active.modules.includes('website') && can(PERM.websiteManage)
-      ? [{ to: '/einstellungen/datenschutz', label: 'Datenschutz' }]
+      ? [{ to: '/einstellungen/datenschutz', label: t('Datenschutz') }]
       : []),
     // Untereinheiten stehen als eigener Punkt im Hauptmenü (modules.tsx)
     // Dachverband ohne Mitgliederzugriff: kein Menüpunkt Mitglieder, die
     // Einrichtung (Zusatzfelder, Jubiläen) bleibt aber erreichbar.
     ...(active.type === 'federation' && !federationAccess(active) && can(PERM.membersView)
-      ? [{ to: '/mitglieder/einrichtung', label: 'Mitglieder-Einrichtung' }]
+      ? [{ to: '/mitglieder/einrichtung', label: t('Mitglieder-Einrichtung') }]
       : []),
-    ...(can(PERM.rolesManage) ? [{ to: '/einstellungen/rollen', label: 'Rollen & Benutzer' }] : []),
-    ...(unit ? [] : [{ to: '/einstellungen/erscheinungsbild', label: 'Erscheinungsbild' }]),
+    ...(can(PERM.rolesManage)
+      ? [{ to: '/einstellungen/rollen', label: t('Rollen & Benutzer') }]
+      : []),
+    ...(unit ? [] : [{ to: '/einstellungen/erscheinungsbild', label: t('Erscheinungsbild') }]),
     ...(active.type !== 'platform' &&
     (can(PERM.dataExport) || (active.type === 'club' && can(PERM.orgEdit)))
-      ? [{ to: '/einstellungen/datenuebernahme', label: 'Datenübernahme' }]
+      ? [{ to: '/einstellungen/datenuebernahme', label: t('Datenübernahme') }]
       : []),
     ...((active.type === 'federation' || active.type === 'club') && can(PERM.peeringManage)
-      ? [{ to: '/einstellungen/verbund', label: 'Verbund' }]
+      ? [{ to: '/einstellungen/verbund', label: t('Verbund') }]
       : []),
     ...(can(PERM.auditView)
       ? [
-          { to: '/einstellungen/protokoll', label: 'Protokoll' },
-          { to: '/einstellungen/postausgang', label: 'Postausgang' },
+          { to: '/einstellungen/protokoll', label: t('Protokoll') },
+          { to: '/einstellungen/postausgang', label: t('Postausgang') },
         ]
       : []),
   ]
@@ -57,7 +60,7 @@ export function SettingsLayout() {
 
   return (
     <section>
-      <h1>Einstellungen</h1>
+      <h1>{t('Einstellungen')}</h1>
       <p className="muted">{active.name}</p>
       <Tabs items={items} />
       <Outlet />

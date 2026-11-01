@@ -11,12 +11,13 @@ import { contrastRatio, readableOn } from '../../theme/contrast.ts'
 import { linkColor, PAGE_BG } from '../../theme/theme.ts'
 import { useImageCrop } from '../../components/ImageCrop.tsx'
 import { RightsHint } from '../../components/RightsHint.tsx'
+import { t } from '../../i18n/index.ts'
 
 export function AppearancePage() {
   const org = useActiveOrg()
   const { data, error, setData, reload } = useLoad(() => orgApi.theme(org.id), [org.id])
   if (error) return <LoadError message={error} onRetry={() => void reload()} />
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
   return <ThemeForm key={org.id} orgId={org.id} theme={data} onSaved={setData} reload={reload} />
 }
 
@@ -55,10 +56,12 @@ function ThemeForm({
   return (
     <div className="stack">
       <form className="card card-wide" onSubmit={(e) => e.preventDefault()}>
-        <h2>Farben</h2>
+        <h2>{t('Farben')}</h2>
         {editable && <SaveStatus auto={auto} />}
         <p className="muted small">
-          Ohne eigene Farbe übernimmt die Organisation das Erscheinungsbild der übergeordneten Ebene
+          {t(
+            'Ohne eigene Farbe übernimmt die Organisation das Erscheinungsbild der übergeordneten Ebene',
+          )}
           {eff.inherited_from.colors && !theme.primary_color
             ? ` (derzeit von „${eff.inherited_from.colors}“)`
             : ''}
@@ -66,28 +69,28 @@ function ThemeForm({
         </p>
         <fieldset disabled={!editable}>
           <ColorInput
-            label="Hauptfarbe (Primärfarbe)"
-            hint="Kopfzeile, Schaltflächen, Links"
+            label={t('Hauptfarbe (Primärfarbe)')}
+            hint={t('Kopfzeile, Schaltflächen, Links')}
             value={form.values.primary_color}
             inherited={eff.primary}
             error={form.errors.primary_color}
             onChange={(v) => form.set('primary_color', v)}
           />
           <ColorName
-            label="Name der Hauptfarbe"
+            label={t('Name der Hauptfarbe')}
             value={form.values.primary_color_name}
             onChange={(v) => form.set('primary_color_name', v)}
           />
           <ColorInput
-            label="Zweitfarbe (Akzentfarbe)"
-            hint="Hervorhebungen"
+            label={t('Zweitfarbe (Akzentfarbe)')}
+            hint={t('Hervorhebungen')}
             value={form.values.accent_color}
             inherited={eff.accent}
             error={form.errors.accent_color}
             onChange={(v) => form.set('accent_color', v)}
           />
           <ColorName
-            label="Name der Zweitfarbe"
+            label={t('Name der Zweitfarbe')}
             value={form.values.accent_color_name}
             onChange={(v) => form.set('accent_color_name', v)}
           />
@@ -99,37 +102,37 @@ function ThemeForm({
           />
         </fieldset>
 
-        <h3>Vorschau</h3>
+        <h3>{t('Vorschau')}</h3>
         <div className="theme-preview">
           <span
             className="preview-chip"
             style={{ background: primary, color: readableOn(primary) }}
           >
-            Schaltfläche
+            {t('Schaltfläche')}
           </span>
           <span className="preview-chip" style={{ background: accent, color: readableOn(accent) }}>
-            Hinweis
+            {t('Hinweis')}
           </span>
           {/* Dieselbe abgeleitete Linkfarbe wie in der App (UI-Audit NUI-04) */}
           <span style={{ color: linkColor(primary) }} className="preview-link">
-            Link auf weißem Grund
+            {t('Link auf weißem Grund')}
           </span>
           <span
             style={{ color: linkColor(primary), background: PAGE_BG }}
             className="preview-link preview-on-page"
           >
-            Link auf dem Seitenhintergrund
+            {t('Link auf dem Seitenhintergrund')}
           </span>
         </div>
         <ContrastHints primary={primary} accent={accent} />
         <p className="muted small">
-          Welches Design die Webseite hat und wo es welche Farbe einsetzt, stellst du unter{' '}
-          <Link to="/webseite/gestaltung">Webseite › Gestaltung</Link> ein.
+          {t('Welches Design die Webseite hat und wo es welche Farbe einsetzt, stellst du unter')}{' '}
+          <Link to="/webseite/gestaltung">{t('Webseite › Gestaltung')}</Link> ein.
         </p>
       </form>
 
       <div className="card card-wide">
-        <h2>Logo / Wappen</h2>
+        <h2>{t('Logo / Wappen')}</h2>
         {editable ? (
           <LogoUpload
             uploadUrl={orgApi.logoUrl(orgId)}
@@ -140,12 +143,14 @@ function ThemeForm({
             }}
           />
         ) : theme.logo_url ? (
-          <img src={theme.logo_url} alt="Logo" className="logo-preview" />
+          <img src={theme.logo_url} alt={t('Logo')} className="logo-preview" />
         ) : (
-          <p className="muted">Kein eigenes Logo.</p>
+          <p className="muted">{t('Kein eigenes Logo.')}</p>
         )}
         {!theme.logo_url && eff.logo_url && (
-          <p className="muted small">Angezeigt wird das Logo von „{eff.inherited_from.logo}“.</p>
+          <p className="muted small">
+            {t('Angezeigt wird das Logo von „{logo}“.', { logo: eff.inherited_from.logo })}
+          </p>
         )}
       </div>
     </div>
@@ -173,19 +178,19 @@ function ColorInput({
       <div className="color-row">
         <input
           type="color"
-          aria-label={`${label} wählen`}
+          aria-label={t('{label} wählen', { label })}
           value={value || inherited}
           onChange={(e) => onChange(e.target.value)}
         />
         <input
-          aria-label={`${label} als Hex-Wert`}
+          aria-label={t('{label} als Hex-Wert', { label })}
           value={value}
-          placeholder={`${inherited} (geerbt)`}
+          placeholder={t('{inherited} (geerbt)', { inherited })}
           onChange={(e) => onChange(e.target.value.trim())}
         />
         {value && (
           <button type="button" className="button button-ghost" onClick={() => onChange('')}>
-            Erben
+            {t('Erben')}
           </button>
         )}
       </div>
@@ -208,8 +213,8 @@ function ColorName({
       label={label}
       value={value}
       maxLength={30}
-      placeholder="z. B. Grün"
-      hint="Erscheint bei der Auswahl der Farben für die Webseite."
+      placeholder={t('z. B. Grün')}
+      hint={t('Erscheint bei der Auswahl der Farben für die Webseite.')}
       onChange={(e) => onChange(e.target.value)}
     />
   )
@@ -238,11 +243,12 @@ function ExtraColors({
   }
   return (
     <div className={`field${error ? ' field-invalid' : ''}`}>
-      <span>Weitere Farben</span>
+      <span>{t('Weitere Farben')}</span>
       <small className="muted">
-        Für Einheiten mit drei oder mehr Vereinsfarben. Die Webseiten-Designs nutzen sie für
-        Zierlinien, Farbbänder und Datumsfelder.
-        {!ownPrimary && ' Weitere Farben gelten nur zusammen mit einer eigenen Hauptfarbe.'}
+        {t(
+          'Für Einheiten mit drei oder mehr Vereinsfarben. Die Webseiten-Designs nutzen sie für Zierlinien, Farbbänder und Datumsfelder.',
+        )}
+        {!ownPrimary && t(' Weitere Farben gelten nur zusammen mit einer eigenen Hauptfarbe.')}
       </small>
       {colors.map((c, i) => {
         const valid = /^#[0-9a-f]{6}$/i.test(c.color)
@@ -251,31 +257,31 @@ function ExtraColors({
           <div className="color-row" key={i}>
             <input
               type="color"
-              aria-label={`${i + 3}. Farbe wählen`}
+              aria-label={t('{x}. Farbe wählen', { x: i + 3 })}
               value={valid ? c.color : '#000000'}
               onChange={(e) => update(i, { color: e.target.value })}
             />
             <input
-              aria-label={`${i + 3}. Farbe als Hex-Wert`}
+              aria-label={t('{x}. Farbe als Hex-Wert', { x: i + 3 })}
               value={c.color}
               onChange={(e) => update(i, { color: e.target.value.trim() })}
             />
             <input
-              aria-label={`Name der ${i + 3}. Farbe`}
+              aria-label={t('Name der {x}. Farbe', { x: i + 3 })}
               value={c.name}
               maxLength={30}
-              placeholder="Name, z. B. Weinrot"
+              placeholder={t('Name, z. B. Weinrot')}
               onChange={(e) => update(i, { name: e.target.value })}
             />
             {valid && (
               <span className={`small ${ratio >= 4.5 ? 'ok' : 'bad'}`}>
-                {ratio >= 4.5 ? '✓' : '✗'} Text darauf {ratio.toFixed(1)} : 1
+                {ratio >= 4.5 ? '✓' : '✗'} {t('Text darauf {x} : 1', { x: ratio.toFixed(1) })}
               </span>
             )}
             <button
               type="button"
               className="button button-ghost"
-              aria-label={`${i + 3}. Farbe nach oben`}
+              aria-label={t('{x}. Farbe nach oben', { x: i + 3 })}
               disabled={i === 0}
               onClick={() => move(i, -1)}
             >
@@ -284,7 +290,7 @@ function ExtraColors({
             <button
               type="button"
               className="button button-ghost"
-              aria-label={`${i + 3}. Farbe nach unten`}
+              aria-label={t('{x}. Farbe nach unten', { x: i + 3 })}
               disabled={i === colors.length - 1}
               onClick={() => move(i, 1)}
             >
@@ -295,7 +301,7 @@ function ExtraColors({
               className="button button-ghost"
               onClick={() => onChange(colors.filter((_, j) => j !== i))}
             >
-              Entfernen
+              {t('Entfernen')}
             </button>
           </div>
         )
@@ -307,7 +313,7 @@ function ExtraColors({
             className="button button-ghost"
             onClick={() => onChange([...colors, { color: '#8b1e2d', name: '' }])}
           >
-            Farbe hinzufügen
+            {t('Farbe hinzufügen')}
           </button>
         </div>
       )}
@@ -319,30 +325,39 @@ function ExtraColors({
 function ContrastHints({ primary, accent }: { primary: string; accent: string }) {
   if (!/^#[0-9a-f]{6}$/i.test(primary) || !/^#[0-9a-f]{6}$/i.test(accent)) return null
   const checks = [
-    { label: 'Text auf Primärfarbe', ratio: contrastRatio(primary, readableOn(primary)), min: 4.5 },
     {
-      label: 'Primärfarbe auf Weiß (Rahmen, Symbole)',
+      label: t('Text auf Primärfarbe'),
+      ratio: contrastRatio(primary, readableOn(primary)),
+      min: 4.5,
+    },
+    {
+      label: t('Primärfarbe auf Weiß (Rahmen, Symbole)'),
       ratio: contrastRatio(primary, '#ffffff'),
       min: 3,
     },
-    { label: 'Text auf Akzentfarbe', ratio: contrastRatio(accent, readableOn(accent)), min: 4.5 },
+    {
+      label: t('Text auf Akzentfarbe'),
+      ratio: contrastRatio(accent, readableOn(accent)),
+      min: 4.5,
+    },
   ]
   const link = linkColor(primary)
   return (
     <ul className="contrast-list">
       {checks.map((c) => (
         <li key={c.label} className={c.ratio >= c.min ? 'ok' : 'bad'}>
-          {c.ratio >= c.min ? '✓' : '✗'} {c.label}: {c.ratio.toFixed(1)} : 1 (mind. {c.min} : 1)
+          {c.ratio >= c.min ? '✓' : '✗'} {c.label}
+          {t(': {x} : 1 (mind. {min} : 1)', { x: c.ratio.toFixed(1), min: c.min })}
         </li>
       ))}
       <li className="ok">
-        ✓ Links auf Weiß und auf dem Seitenhintergrund:{' '}
-        {Math.min(contrastRatio(link, '#ffffff'), contrastRatio(link, PAGE_BG)).toFixed(1)} : 1
-        (mind. 4.5 : 1)
+        {t('✓ Links auf Weiß und auf dem Seitenhintergrund:')}{' '}
+        {Math.min(contrastRatio(link, '#ffffff'), contrastRatio(link, PAGE_BG)).toFixed(1)}{' '}
+        {t(': 1 (mind. 4.5 : 1)')}
         {link.toLowerCase() !== primary.toLowerCase() && (
           <>
             {' '}
-            – dafür wird automatisch ein dunklerer Ton verwendet{' '}
+            {t('– dafür wird automatisch ein dunklerer Ton verwendet')}{' '}
             <span className="color-swatch" style={{ background: link }} aria-hidden="true" /> {link}
           </>
         )}
@@ -364,7 +379,7 @@ export function LogoUpload({
   const [busy, setBusy] = useState(false)
   // Wappen kommen oft mit weißem Hintergrund; der wird standardmäßig entfernt
   const [removeBackground, setRemoveBackground] = useState(true)
-  const crop = useImageCrop({ title: 'Ausschnitt für Logo/Wappen', maxSide: 1024 })
+  const crop = useImageCrop({ title: t('Ausschnitt für Logo/Wappen'), maxSide: 1024 })
 
   async function upload(e: ChangeEvent<HTMLInputElement>) {
     const chosen = e.target.files?.[0]
@@ -398,10 +413,12 @@ export function LogoUpload({
 
   return (
     <div className="logo-upload-box">
-      {logoUrl && <img src={logoUrl} alt="Logo" className="logo-preview logo-preview-checker" />}
+      {logoUrl && (
+        <img src={logoUrl} alt={t('Logo')} className="logo-preview logo-preview-checker" />
+      )}
       <div className="button-row">
         <label className="button button-ghost">
-          {logoUrl ? 'Anderes Bild wählen' : 'Bild hochladen'}
+          {logoUrl ? t('Anderes Bild wählen') : t('Bild hochladen')}
           <input
             type="file"
             accept="image/png,image/jpeg,image/webp"
@@ -414,18 +431,18 @@ export function LogoUpload({
         <RightsHint />
         {logoUrl && (
           <button type="button" className="button button-ghost" onClick={remove} disabled={busy}>
-            Entfernen
+            {t('Entfernen')}
           </button>
         )}
       </div>
       <Checkbox
-        label="Weißen Hintergrund entfernen"
-        hint="Weiß am Rand wird durchsichtig, Weiß im Wappen bleibt"
+        label={t('Weißen Hintergrund entfernen')}
+        hint={t('Weiß am Rand wird durchsichtig, Weiß im Wappen bleibt')}
         checked={removeBackground}
         onChange={setRemoveBackground}
         disabled={busy}
       />
-      <p className="muted small">PNG, JPG oder WebP, höchstens 2 MB.</p>
+      <p className="muted small">{t('PNG, JPG oder WebP, höchstens 2 MB.')}</p>
       {error && <Alert kind="error">{error}</Alert>}
     </div>
   )

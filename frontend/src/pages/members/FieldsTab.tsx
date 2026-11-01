@@ -3,6 +3,7 @@ import { fieldApi } from '../../api/fields.ts'
 import type { FieldType, FieldValue, MemberField, Scalar, Subfield } from '../../api/fields.ts'
 import { useAutoSave, useLoad } from '../../components/forms.ts'
 import { Alert, SaveStatus } from '../../components/ui.tsx'
+import { t } from '../../i18n/index.ts'
 
 /** Reiter „Zusatzfelder“ der Mitgliedsakte. */
 export function FieldsTab({
@@ -21,11 +22,11 @@ export function FieldsTab({
     [orgId, memberId],
   )
   if (error) return <Alert kind="error">{error}</Alert>
-  if (!data || data.memberId !== memberId) return <p className="muted">Lädt …</p>
+  if (!data || data.memberId !== memberId) return <p className="muted">{t('Lädt …')}</p>
   if (data.fields.length === 0) {
     return (
       <div className="card card-wide empty-state">
-        <p>Es sind noch keine Zusatzfelder angelegt (Einstellungen → Zusatzfelder).</p>
+        <p>{t('Es sind noch keine Zusatzfelder angelegt (Einstellungen → Zusatzfelder).')}</p>
       </div>
     )
   }
@@ -180,8 +181,8 @@ function YearRangeInput({
   return (
     <span className="year-range">
       <input
-        aria-label={`${label}: Startjahr`}
-        placeholder="Startjahr"
+        aria-label={t('{label}: Startjahr', { label })}
+        placeholder={t('Startjahr')}
         inputMode="numeric"
         maxLength={4}
         value={start}
@@ -189,8 +190,8 @@ function YearRangeInput({
       />
       <span aria-hidden="true">/</span>
       <input
-        aria-label={`${label}: Endjahr`}
-        placeholder="Endjahr (optional)"
+        aria-label={t('{label}: Endjahr', { label })}
+        placeholder={t('Endjahr (optional)')}
         inputMode="numeric"
         maxLength={4}
         value={end}
@@ -258,7 +259,7 @@ function RepeatableInput({
         className="button button-ghost"
         onClick={() => onChange([...rows, empty()])}
       >
-        Eintrag hinzufügen
+        {t('Eintrag hinzufügen')}
       </button>
     </div>
   )

@@ -9,13 +9,14 @@ import { useActiveOrg, useOrg } from '../../org/OrgContext.tsx'
 import { useTerms } from '../../org/terms.ts'
 import { ClubsPage } from './ClubsPage.tsx'
 import { DepartmentsPage } from './DepartmentsPage.tsx'
+import { t } from '../../i18n/index.ts'
 
 export function UnitsPage() {
   const org = useActiveOrg()
   const { can } = useOrg()
   if (org.type === 'club') return <DepartmentsPage />
   if (org.type === 'federation' && can(PERM.clubsManage)) return <ClubsPage />
-  return <Alert kind="info">Hier gibt es keine Untereinheiten zu pflegen.</Alert>
+  return <Alert kind="info">{t('Hier gibt es keine Untereinheiten zu pflegen.')}</Alert>
 }
 
 /** Seite im Hauptmenü: Überschrift mit der eigenen Bezeichnung, darunter die Pflege */

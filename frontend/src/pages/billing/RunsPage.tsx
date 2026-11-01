@@ -15,6 +15,7 @@ import { useTerms } from '../../org/terms.ts'
 import { HowTo, Term, Why } from '../../learning/Aids.tsx'
 import { Checklist } from '../../learning/Checklist.tsx'
 import { feeRunChecks } from '../../learning/checks.ts'
+import { t, tn } from '../../i18n/index.ts'
 
 export function RunsPage() {
   const tm = useTerms()
@@ -30,7 +31,7 @@ export function RunsPage() {
         onRetry={() => void Promise.all([settings.reload(), runs.reload()])}
       />
     )
-  if (!settings.data || !runs.data) return <p className="muted">Lädt …</p>
+  if (!settings.data || !runs.data) return <p className="muted">{t('Lädt …')}</p>
   const s = settings.data
 
   return (
@@ -52,19 +53,25 @@ export function RunsPage() {
               className="button button-primary"
               onClick={() => setCreating(true)}
             >
-              Neuer Beitragslauf
+              {t('Neuer Beitragslauf')}
             </button>
           </div>
         ))}
       {runs.data.length === 0 && !creating && (
         <div className="card empty-state">
-          <p>Noch kein Beitragslauf.</p>
+          <p>{t('Noch kein Beitragslauf.')}</p>
           <p className="muted small">
             {s.org_type === 'federation'
-              ? `Ein Beitragslauf erstellt für einen Abrechnungszeitraum die Rechnungen an alle ${tm.pl}, berechnet aus ihren gemeldeten Mitgliedern.`
-              : `Ein Beitragslauf erstellt für einen Abrechnungszeitraum die Rechnungen an alle Mitglieder und Sammelrechnungen an die ${s.department_label_plural}.`}{' '}
-            Vorher bitte die <Link to="/finanzen/einstellungen/beitraege">Beitragssätze</Link>{' '}
-            festlegen.
+              ? t(
+                  'Ein Beitragslauf erstellt für einen Abrechnungszeitraum die Rechnungen an alle {pl}, berechnet aus ihren gemeldeten Mitgliedern.',
+                  { pl: tm.pl },
+                )
+              : t(
+                  'Ein Beitragslauf erstellt für einen Abrechnungszeitraum die Rechnungen an alle Mitglieder und Sammelrechnungen an die {department_label_plural}.',
+                  { department_label_plural: s.department_label_plural },
+                )}{' '}
+            {t('Vorher bitte die')}{' '}
+            <Link to="/finanzen/einstellungen/beitraege">{t('Beitragssätze')}</Link> festlegen.
           </p>
         </div>
       )}
@@ -130,11 +137,11 @@ function NewRun({
   return (
     <form className="card card-wide" onSubmit={create}>
       <h2>
-        Neuer <Term k="fee_run">Beitragslauf</Term>
+        {t('Neuer')} <Term k="fee_run">{t('Beitragslauf')}</Term>
       </h2>
       <div className="grid-3">
         <SelectField
-          label="Geschäftsjahr"
+          label={t('Geschäftsjahr')}
           value={year}
           onChange={(e) => {
             setYear(Number(e.target.value))
@@ -149,7 +156,7 @@ function NewRun({
           ))}
         </SelectField>
         <SelectField
-          label="Zeitraum"
+          label={t('Zeitraum')}
           value={period}
           onChange={(e) => {
             setPeriod(Number(e.target.value))
@@ -163,62 +170,69 @@ function NewRun({
           ))}
         </SelectField>
         <Field
-          label="Rechnungsdatum"
+          label={t('Rechnungsdatum')}
           type="date"
           required
           value={invoiceDate}
-          hint={`fällig nach ${settings.due_days} Tagen`}
+          hint={t('fällig nach {due_days} Tagen', { due_days: settings.due_days })}
           onChange={(e) => setInvoiceDate(e.target.value)}
         />
       </div>
       <Why k="invoice_date" />
       {preview && (
         <div className="subcard">
-          <h3>Vorschau {preview.label}</h3>
+          <h3>
+            {t('Vorschau')} {preview.label}
+          </h3>
           {preview.exists && (
-            <Alert kind="error">Für diesen Zeitraum gibt es schon einen Beitragslauf.</Alert>
+            <Alert kind="error">{t('Für diesen Zeitraum gibt es schon einen Beitragslauf.')}</Alert>
           )}
           {federation ? (
             <>
               <ul>
                 {(preview.clubs ?? []).map((c) => (
                   <li key={c.id}>
-                    {c.name}: {c.members} gemeldete Mitglieder, {euro(c.total)}
+                    {c.name}
+                    {t(': {members} gemeldete Mitglieder,', { members: c.members })} {euro(c.total)}
                   </li>
                 ))}
               </ul>
               {(preview.clubs ?? []).length === 0 && (
                 <p className="muted">
-                  Keine Rechnungen. Sind unter Beitragsregeln Beträge je Mitglied hinterlegt?
+                  {t('Keine Rechnungen. Sind unter Beitragsregeln Beträge je Mitglied hinterlegt?')}
                 </p>
               )}
               <p>
-                <strong>Gesamt: {euro(preview.clubs_total ?? '0')}</strong>
+                <strong>
+                  {t('Gesamt:')} {euro(preview.clubs_total ?? '0')}
+                </strong>
               </p>
             </>
           ) : (
             <>
               <ul>
                 <li>
-                  {preview.members} Rechnungen an Mitglieder, zusammen{' '}
+                  {preview.members} {t('Rechnungen an Mitglieder, zusammen')}{' '}
                   {euro(preview.members_total ?? '0')}
                 </li>
                 {(preview.departments ?? []).map((d) => (
                   <li key={d.id}>
-                    <Term k="collective_invoice">Sammelrechnung</Term> {d.name}: {d.members}{' '}
-                    Mitglieder, {euro(d.total)}
+                    <Term k="collective_invoice">{t('Sammelrechnung')}</Term> {d.name}
+                    {t(': {members}  Mitglieder,', { members: d.members })} {euro(d.total)}
                   </li>
                 ))}
               </ul>
               <p>
-                <strong>Gesamt: {euro(Number(preview.members_total ?? 0) + deptTotal)}</strong>
+                <strong>
+                  {t('Gesamt:')} {euro(Number(preview.members_total ?? 0) + deptTotal)}
+                </strong>
               </p>
             </>
           )}
           {!federation && settings.pro_rata && <HowTo k="calc_pro_rata" />}
           {!federation && (
             <Checklist
-              title="Vor dem Beitragslauf"
+              title={t('Vor dem Beitragslauf')}
               items={feeRunChecks({
                 skipped: preview.skipped ?? [],
                 members: preview.members ?? 0,
@@ -233,7 +247,9 @@ function NewRun({
           )}
           {preview.skipped && preview.skipped.length > 0 && (
             <details>
-              <summary>{preview.skipped.length} Mitglieder ohne Beitrag</summary>
+              <summary>
+                {preview.skipped.length} {t('Mitglieder ohne Beitrag')}
+              </summary>
               <ul className="small">
                 {preview.skipped.map((s) => (
                   <li key={s.membership}>
@@ -248,17 +264,17 @@ function NewRun({
       {error && <Alert kind="error">{error}</Alert>}
       <div className="button-row">
         <button type="button" className="button button-ghost" onClick={() => void check()}>
-          Vorschau berechnen
+          {t('Vorschau berechnen')}
         </button>
         <button
           type="submit"
           className="button button-primary"
           disabled={busy || !preview || preview.exists}
         >
-          Rechnungsentwürfe erstellen
+          {t('Rechnungsentwürfe erstellen')}
         </button>
         <button type="button" className="button button-ghost" onClick={onCancel}>
-          Abbrechen
+          {t('Abbrechen')}
         </button>
       </div>
     </form>
@@ -306,46 +322,60 @@ function RunCard({
   return (
     <div className="card card-wide">
       <div className="card-head">
-        <h2>Beitragslauf {run.label}</h2>
+        <h2>
+          {t('Beitragslauf')} {run.label}
+        </h2>
         <span className="muted small push-right">
-          Rechnungsdatum {formatDate(run.invoice_date)} · fällig {formatDate(run.due_date)}
+          {t('Rechnungsdatum {x} · fällig', { x: formatDate(run.invoice_date) })}{' '}
+          {formatDate(run.due_date)}
         </span>
       </div>
       <RunSteps run={run} />
       <dl className="facts">
-        <dt>Entwürfe</dt>
+        <dt>{t('Entwürfe')}</dt>
         <dd>
           {s.counts.draft} ({euro(s.totals.draft)})
         </dd>
-        <dt>Festgeschrieben</dt>
+        <dt>{t('Festgeschrieben')}</dt>
         <dd>
-          {active} Rechnungen über {euro(total)}
-          {!federation && `, davon ${s.departments} an ${deptLabel}`} · bezahlt {euro(s.paid)}
+          {active} {t('Rechnungen über')} {euro(total)}
+          {!federation &&
+            t(', davon {departments} an {deptLabel}', {
+              departments: s.departments,
+              deptLabel,
+            })}{' '}
+          {t('· bezahlt')} {euro(s.paid)}
         </dd>
         {!federation && (
           <>
-            <dt>Mitglieder</dt>
+            <dt>{t('Mitglieder')}</dt>
             <dd>{s.members}</dd>
           </>
         )}
-        <dt>Versand</dt>
+        <dt>{t('Versand')}</dt>
         <dd>
           {s.unsent_with_email > 0
-            ? `${s.unsent_with_email} noch per E-Mail zu verschicken`
+            ? t('{unsent_with_email} noch per E-Mail zu verschicken', {
+                unsent_with_email: s.unsent_with_email,
+              })
             : active > 0
-              ? 'E-Mails versendet'
-              : 'noch nichts festgeschrieben'}
+              ? t('E-Mails versendet')
+              : t('noch nichts festgeschrieben')}
           {s.without_email > 0 &&
-            ` · ${s.without_email} ${s.without_email === 1 ? 'Rechnung' : 'Rechnungen'} für den Postversand` +
+            tn(
+              ' · {n} Rechnung für den Postversand',
+              ' · {n} Rechnungen für den Postversand',
+              s.without_email,
+            ) +
               (run.post_done_at
-                ? ` (erledigt am ${formatDate(run.post_done_at)})`
-                : ' (noch nicht als erledigt vermerkt)')}
+                ? t(' (erledigt am {x})', { x: formatDate(run.post_done_at) })
+                : t(' (noch nicht als erledigt vermerkt)'))}
         </dd>
       </dl>
       {notice && <Alert kind={notice.kind}>{notice.text}</Alert>}
       <div className="button-row">
         <Link className="button button-ghost" to={`/finanzen/rechnungen?lauf=${run.id}`}>
-          Rechnungen ansehen
+          {t('Rechnungen ansehen')}
         </Link>
         {canEdit && s.counts.draft > 0 && (
           <button
@@ -355,20 +385,21 @@ function RunCard({
             onClick={async () => {
               if (
                 await confirmDialog({
-                  title: `${s.counts.draft} Entwürfe festschreiben?`,
-                  message:
+                  title: t('{draft} Entwürfe festschreiben?', { draft: s.counts.draft }),
+                  message: t(
                     'Sie bekommen dann Rechnungsnummern und lassen sich nur noch stornieren.',
-                  confirmLabel: 'Festschreiben',
+                  ),
+                  confirmLabel: t('Festschreiben'),
                   danger: false,
                 })
               )
                 void act(
                   () => billingApi.finalizeRun(orgId, run.id),
-                  (r) => `${r.finalized} Rechnungen festgeschrieben.`,
+                  (r) => t('{finalized} Rechnungen festgeschrieben.', { finalized: r.finalized }),
                 )
             }}
           >
-            Entwürfe festschreiben
+            {t('Entwürfe festschreiben')}
           </button>
         )}
         {canEdit && s.unsent_with_email > 0 && (
@@ -380,12 +411,14 @@ function RunCard({
               void act(
                 () => billingApi.sendRun(orgId, run.id),
                 (r) =>
-                  `${r.sent} Rechnungen verschickt.` +
-                  (r.failed ? ` ${r.failed} konnten nicht verschickt werden.` : ''),
+                  t('{sent} Rechnungen verschickt.', { sent: r.sent }) +
+                  (r.failed
+                    ? t(' {failed} konnten nicht verschickt werden.', { failed: r.failed })
+                    : ''),
               )
             }
           >
-            {s.unsent_with_email} per E-Mail verschicken
+            {s.unsent_with_email} {t('per E-Mail verschicken')}
           </button>
         )}
         {s.without_email > 0 && active > 0 && (
@@ -393,7 +426,7 @@ function RunCard({
             className="button button-ghost"
             href={billingApi.runPdfUrl(orgId, run.id, 'ohne_email')}
           >
-            Rechnungen ohne E-Mail drucken (PDF)
+            {t('Rechnungen ohne E-Mail drucken (PDF)')}
           </a>
         )}
         {canEdit && s.without_email > 0 && active > 0 && (
@@ -406,12 +439,12 @@ function RunCard({
                 () => billingApi.postDone(orgId, run.id, !run.post_done_at),
                 (r) =>
                   r.post_done_at
-                    ? 'Postversand als erledigt vermerkt.'
-                    : 'Vermerk zum Postversand zurückgenommen.',
+                    ? t('Postversand als erledigt vermerkt.')
+                    : t('Vermerk zum Postversand zurückgenommen.'),
               )
             }
           >
-            {run.post_done_at ? 'Postversand doch nicht erledigt' : 'Postversand erledigt'}
+            {run.post_done_at ? t('Postversand doch nicht erledigt') : t('Postversand erledigt')}
           </button>
         )}
         {s.counts.draft > 0 && (
@@ -419,7 +452,7 @@ function RunCard({
             className="button button-ghost"
             href={billingApi.runPdfUrl(orgId, run.id, 'entwuerfe')}
           >
-            Entwürfe ansehen (PDF)
+            {t('Entwürfe ansehen (PDF)')}
           </a>
         )}
         {canEdit && (
@@ -436,9 +469,9 @@ function RunCard({
                     // Von Hand geänderte Entwürfe: erst nachfragen
                     if (!(err instanceof ApiError) || err.status !== 409) throw err
                     const ok = await confirmDialog({
-                      title: 'Handänderungen verwerfen?',
+                      title: t('Handänderungen verwerfen?'),
                       message: err.message,
-                      confirmLabel: 'Neu berechnen',
+                      confirmLabel: t('Neu berechnen'),
                     })
                     if (!ok) return null
                     return billingApi.rebuildRun(orgId, run.id, true)
@@ -446,14 +479,14 @@ function RunCard({
                 },
                 (r) =>
                   r.created
-                    ? `${r.created} Entwürfe neu berechnet.`
+                    ? t('{created} Entwürfe neu berechnet.', { created: r.created })
                     : federation
-                      ? `Alle ${tm.pl} sind abgerechnet.`
-                      : 'Alle Mitglieder sind abgerechnet.',
+                      ? t('Alle {pl} sind abgerechnet.', { pl: tm.pl })
+                      : t('Alle Mitglieder sind abgerechnet.'),
               )
             }
           >
-            {active > 0 ? 'Nachzügler abrechnen' : 'Entwürfe neu berechnen'}
+            {active > 0 ? t('Nachzügler abrechnen') : t('Entwürfe neu berechnen')}
           </button>
         )}
         {canEdit && active === 0 && (
@@ -464,17 +497,19 @@ function RunCard({
             onClick={async () => {
               if (
                 await confirmDialog({
-                  title: `Beitragslauf ${run.label} mit allen Entwürfen löschen?`,
-                  confirmLabel: 'Löschen',
+                  title: t('Beitragslauf {label} mit allen Entwürfen löschen?', {
+                    label: run.label,
+                  }),
+                  confirmLabel: t('Löschen'),
                 })
               )
                 void act(
                   () => billingApi.deleteRun(orgId, run.id),
-                  () => 'Gelöscht.',
+                  () => t('Gelöscht.'),
                 )
             }}
           >
-            Löschen
+            {t('Löschen')}
           </button>
         )}
       </div>
@@ -492,11 +527,11 @@ function runSteps(run: FeeRun): { label: string; done: boolean }[] {
   const sent =
     finalized && s.unsent_with_email === 0 && (s.without_email === 0 || !!run.post_done_at)
   return [
-    { label: 'Vorbereiten', done: true },
-    { label: 'Entwürfe prüfen', done: reviewed },
-    { label: 'Festschreiben', done: finalized },
-    { label: 'Versenden', done: sent },
-    { label: 'Zahlungen', done: sent && s.counts.open === 0 },
+    { label: t('Vorbereiten'), done: true },
+    { label: t('Entwürfe prüfen'), done: reviewed },
+    { label: t('Festschreiben'), done: finalized },
+    { label: t('Versenden'), done: sent },
+    { label: t('Zahlungen'), done: sent && s.counts.open === 0 },
   ]
 }
 
@@ -504,7 +539,7 @@ function RunSteps({ run }: { run: FeeRun }) {
   const steps = runSteps(run)
   const current = steps.findIndex((st) => !st.done)
   return (
-    <ol className="run-steps" aria-label="Stand des Beitragslaufs">
+    <ol className="run-steps" aria-label={t('Stand des Beitragslaufs')}>
       {steps.map((st, i) => (
         <li
           key={st.label}
@@ -512,7 +547,7 @@ function RunSteps({ run }: { run: FeeRun }) {
           aria-current={i === current ? 'step' : undefined}
         >
           <span className="sr-only">
-            {st.done ? 'erledigt: ' : i === current ? 'jetzt: ' : 'später: '}
+            {st.done ? 'erledigt: ' : i === current ? 'jetzt: ' : t('später: ')}
           </span>
           {st.label}
         </li>
