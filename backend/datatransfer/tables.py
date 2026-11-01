@@ -64,6 +64,11 @@ MODULE_MODELS = (
     "competitions.Score",
     "competitions.ShootOff",
     "competitions.ShootOffEntry",
+    "competitions.Shot",
+    "competitions.Prize",
+    "competitions.Team",
+    "competitions.TeamMember",
+    "competitions.Placing",
     "events.EventCategory",
     "events.Event",
     "events.EventException",
@@ -111,6 +116,11 @@ MEMBER_MODELS = {
     "competitions.score",
     "competitions.shootoff",
     "competitions.shootoffentry",
+    "competitions.shot",
+    "competitions.prize",
+    "competitions.team",
+    "competitions.teammember",
+    "competitions.placing",
 }
 # Ein Abteilungsimport legt eine neue Untereinheit im bestehenden Verein an. Er darf nur
 # die Tabellen schreiben, die auch der Export einer Abteilung enthält, nie Kasse oder
