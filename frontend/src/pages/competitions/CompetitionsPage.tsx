@@ -35,6 +35,8 @@ import { EventCard, EventPicker } from './CalendarLink.tsx'
 import { ManualPrizes, PrizesCard, StandAccessCard } from './BirdSetup.tsx'
 import { ForeignPanel } from './ForeignPanel.tsx'
 import { ResultsPanel } from './ResultsPanel.tsx'
+import { certificatesApi } from '../../api/certificates.ts'
+import { CertificatesCard, CertificateTemplatesPage, TemplateSelect } from './Certificates.tsx'
 import {
   AwardsCard,
   GrantsCard,
@@ -59,6 +61,7 @@ export function CompetitionsPage() {
       <Route path="reihen/:id" element={<SeriesPage />} />
       <Route path="pokale" element={<TrophiesPage />} />
       <Route path="titel" element={<TitlesPage />} />
+      <Route path="urkunden" element={<CertificateTemplatesPage />} />
       <Route path=":id/*" element={<CompetitionArea />} />
     </Routes>
   )
@@ -329,6 +332,7 @@ function CompetitionArea() {
             <>
               <ResultsPanel org={org.id} comp={data} onChanged={reload} />
               <GrantsCard org={org.id} comp={data} onChanged={reload} />
+              {data.own && <CertificatesCard org={org.id} comp={data} />}
             </>
           }
         />
@@ -369,6 +373,20 @@ export function PrintMenu({ org, comp }: { org: number; comp: CompetitionDetail 
               hint: 'Ohne Namen, für Nachmeldungen',
             },
           ]
+    if (comp.own) {
+      choices.push(
+        {
+          value: 'startkarten&art=karten',
+          label: t('Startkarten'),
+          hint: t('Vier Karten je Seite mit Startnummer und Kästchen für die Schüsse'),
+        },
+        {
+          value: 'startkarten&art=aufkleber',
+          label: t('Aufkleber für Startkarten'),
+          hint: t('70 × 37 mm, 24 je Seite, für vorgedruckte Karten'),
+        },
+      )
+    }
     // Nach dem Schießen zuerst die Ergebnisliste (Ralf 2026-11-01)
     if (comp.own && comp.form !== 'vogel') {
       const result = { value: 'pdf', label: 'Ergebnisliste', hint: 'Plätze und Punkte' }
@@ -381,7 +399,13 @@ export function PrintMenu({ org, comp }: { org: number; comp: CompetitionDetail 
       choices,
       cancelValue: '',
     })
-    if (choice) window.open(competitionsApi.exportUrl(org, comp.id, `als=${choice}`), '_blank')
+    if (!choice) return
+    if (choice.startsWith('startkarten')) {
+      const labels = choice.endsWith('aufkleber')
+      window.open(certificatesApi.startCardsUrl(org, comp.id, labels, 'name'), '_blank')
+      return
+    }
+    window.open(competitionsApi.exportUrl(org, comp.id, `als=${choice}`), '_blank')
   }
   return (
     <button type="button" className="button button-ghost" onClick={() => void print()}>
@@ -414,6 +438,7 @@ function Setup({
     website: comp.website,
     website_depth: comp.website_depth,
     share_ranking: comp.share_ranking,
+    certificate_template: comp.certificate_template,
     series: comp.series,
     organizer: comp.organizer,
     drop_out: comp.drop_out,
@@ -544,6 +569,14 @@ function Setup({
               disabled={!canManage}
               onChange={(id) => set('series', id)}
             />
+            {comp.own && (
+              <TemplateSelect
+                org={org}
+                value={v.certificate_template}
+                disabled={!canManage}
+                onChange={(id) => set('certificate_template', id)}
+              />
+            )}
             <SelectField
               label="Auf der Webseite"
               value={v.website}

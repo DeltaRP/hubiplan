@@ -329,6 +329,25 @@ mit Feld für Striche) und `pfaenderliste` (leer zum Ausfüllen). Schieß- und L
 die letzte Seite mit leeren Zeilen auf (mindestens `leerzeilen`); die leere Schießliste ist
 genau eine volle Seite.
 
+**Urkunden** (Schritt 6, `competitions/certificates.py`): Vorlagen unter Wettbewerbe ›
+Urkundenvorlagen (`certificate-templates/`): Überschrift, Text mit Platzhaltern (`{name}`,
+`{einheit}`, `{platz}`, `{wertung}`, `{wert}`, `{mit_wert}`, `{wettbewerb}`, `{datum}`,
+`{jahr}`, `{ort}`, `{verein}`, `{titel}`, `{preis}`; „# “ am Zeilenanfang = groß und fett;
+Zeilen mit lauter leeren Platzhaltern fallen weg), Hoch- oder Querformat, Wappen,
+Hintergrundbild (als JPEG ohne Metadaten neu geschrieben, verschlüsselt abgelegt), bis zu zwei
+Unterschriftszeilen und Ort für „Ort, Datum“. `certificates/?vorlage=&bis=3&wertung=&starter=`
+druckt eine Seite je Platzierten (Einzel- und Mannschaftswertungen, Titel aus den
+Auszeichnungen; beim Vogelschießen je errungenem Pfand). `unterschrift=1` setzt die unter
+Mein Konto hinterlegte Unterschrift **dessen ein, der druckt**, über die erste Zeile; fremde
+Unterschriften nie. Die Vorlage des Wettbewerbs (`certificate_template`) ist vorgewählt und
+wird beim Kopieren übernommen. `certificate-templates/<id>/preview/`: Probeurkunde mit
+erfundenen Werten.
+
+**Startkarten** (`start-cards/?art=karten|aufkleber&sortierung=name|einheit|startnummer`):
+vier Karten je A4-Seite (Verein, Wettbewerb, Name, Untereinheit, Startnummer, je
+Einzelwertung Kästchen für die Schüsse und die Summe, Feld für die Aufsicht) oder Aufkleber
+70 × 37 mm (3 × 8 je Seite) für vorgedruckte Karten. Zurückgezogene Starter fehlen.
+
 ## Daten
 
 App `competitions`, Tabellen mit `organization` und RLS. Export und Datenübernahme

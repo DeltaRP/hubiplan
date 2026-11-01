@@ -112,6 +112,7 @@ class CompetitionSerializer(serializers.ModelSerializer):
             "website",
             "website_depth",
             "share_ranking",
+            "certificate_template",
             "series",
             "drop_out",
             "fixed_order",
@@ -147,6 +148,12 @@ class CompetitionSerializer(serializers.ModelSerializer):
         org = self.context.get("org")
         if value is not None and (org is None or value.organization_id != org.pk):
             raise serializers.ValidationError(gettext("Bitte eine Reihe dieser Einheit wählen."))
+        return value
+
+    def validate_certificate_template(self, value):
+        org = self.context.get("org")
+        if value is not None and (org is None or value.organization_id != org.pk):
+            raise serializers.ValidationError(gettext("Bitte eine Vorlage dieser Einheit wählen."))
         return value
 
     def validate_details(self, value):
@@ -1295,6 +1302,7 @@ class CopyView(_Mixin, APIView):
             website=src.website,
             website_depth=src.website_depth,
             share_ranking=src.share_ranking,
+            certificate_template=src.certificate_template,
             series=src.series,
         )
         mapping = {}

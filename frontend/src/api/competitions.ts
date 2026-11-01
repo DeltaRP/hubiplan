@@ -52,6 +52,8 @@ export interface Competition {
   website_depth: WebsiteDepth
   /** Ausschreibung an Untereinheiten: ganze Rangliste an die meldenden Untereinheiten */
   share_ranking: boolean
+  /** Urkundenvorlage (leer: Standard) */
+  certificate_template: number | null
   /** Reihe (Archiv über die Jahre) */
   series: number | null
   drop_out: boolean
