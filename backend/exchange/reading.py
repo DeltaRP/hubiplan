@@ -81,9 +81,19 @@ def _read_xlsx(path) -> list[list]:
         ws = wb.worksheets[0]
         rows = []
         kept = 0
-        # max_col: übergroße angegebene Tabellenbreite nicht erst aufbauen (GA-H02)
-        for row in ws.iter_rows(values_only=True, max_col=MAX_COLUMNS):
-            values = [_cell(v) for v in row[:MAX_COLUMNS]]
+        # Angegebene Breite, höchstens MAX_COLUMNS: übergroße Tabellenbreite nicht erst
+        # aufbauen (GA-H02), normale Tabellen aber nicht bis MAX_COLUMNS auffüllen
+        sized = ws.max_column is not None
+        width = min(ws.max_column or MAX_COLUMNS, MAX_COLUMNS)
+        for row in ws.iter_rows(values_only=True, max_col=width):
+            row = row[:width]
+            if not sized:
+                # Ohne Größenangabe füllt openpyxl bis max_col auf: wie bisher nur echte Zellen
+                end = len(row)
+                while end and row[end - 1] is None:
+                    end -= 1
+                row = row[:end]
+            values = [_cell(v) for v in row]
             rows.append(values)
             if any(v not in (None, "") for v in values):
                 kept += 1
