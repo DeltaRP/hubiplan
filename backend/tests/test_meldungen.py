@@ -197,9 +197,7 @@ class TestAblauf:
 
         # Ersatz: Uwe schießt statt Max; derselbe Platz, derselbe Starter
         max_person = next(p for p in entry["persons"] if p["name"] == "Max Muster")
-        entry = _patch(
-            c, f"{base}persons/{max_person['id']}/", {"membership": schuetzen["Uwe"].pk}
-        )
+        entry = _patch(c, f"{base}persons/{max_person['id']}/", {"membership": schuetzen["Uwe"].pk})
         assert entry["changed"] is True
         entry = _post(c, f"{base}submit/", {"channel": "brief"})
         v2 = entry["versions"][1]
@@ -256,9 +254,7 @@ class TestAblauf:
         )
         assert entry["status"] == "zurueckgezogen"
         assert entry["versions"][-1]["kind"] == "rueckzug"
-        resp = c.post(
-            f"{base}teams/", {"block": call["blocks"][0]["id"]}, "application/json"
-        )
+        resp = c.post(f"{base}teams/", {"block": call["blocks"][0]["id"]}, "application/json")
         assert resp.status_code == 400
 
 
@@ -371,7 +367,9 @@ class TestBausteine:
         assert resp.status_code == 400
         _post(c, f"{base}blocks/", {"kind": "text", "label": "Bemerkung"})
         resp = c.put(
-            f"{base}entry/answers/", {"block": wahl["id"], "value": "vielleicht"}, "application/json"
+            f"{base}entry/answers/",
+            {"block": wahl["id"], "value": "vielleicht"},
+            "application/json",
         )
         assert resp.status_code == 400
         c.put(f"{base}entry/answers/", {"block": zahl["id"], "value": 42}, "application/json")
