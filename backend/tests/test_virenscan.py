@@ -127,3 +127,25 @@ def test_scan_bytes(clamd):
     virenscan.scan_bytes(b"harmlos", "a.txt")
     with pytest.raises(virenscan.VirusFound):
         virenscan.scan_bytes(EICAR, "b.txt")
+
+
+def test_inbound_ok_mail_anhang(clamd):
+    """GA-I01: Anhänge aus Mails werden geprüft, ein Fund wird übersprungen."""
+    from email.message import EmailMessage
+
+    from circulars.inbound import extract
+
+    assert virenscan.inbound_ok(b"harmlos", "a.pdf", "Test")
+    assert not virenscan.inbound_ok(EICAR, "b.pdf", "Test")
+
+    msg = EmailMessage()
+    msg["Subject"] = "Rundschreiben"
+    msg["From"] = "vorstand@example.org"
+    msg.set_content("Hallo zusammen")
+    msg.add_attachment(b"%PDF-1.4 sauber", maintype="application", subtype="pdf", filename="a.pdf")
+    msg.add_attachment(
+        b"%PDF-1.4 " + EICAR, maintype="application", subtype="pdf", filename="b.pdf"
+    )
+    result = extract(msg)
+    assert [name for name, _ in result.pdfs] == ["a.pdf"]
+    assert any("b.pdf" in s and "Schadsoftware" in s for s in result.skipped)

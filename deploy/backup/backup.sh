@@ -123,6 +123,19 @@ if [ -f /loeschliste/loeschliste.jsonl ]; then
         || fail "Löschliste konnte nicht kopiert werden ($STAMP)"
 fi
 
+# Kettenköpfe des Änderungsprotokolls (nur Nummer und Prüfsumme je Organisation, keine
+# Inhalte) unverschlüsselt anhängen. Die Datei wandert mit restic nach Hetzner; ältere
+# Stände bleiben dort in den Schnappschüssen. Abgleich: manage.py kettenkoepfe_pruefen
+# (FQ-17, Ralf 01.11.2026). Ein Fehler hier stoppt das Backup nicht, steht aber im Log.
+if psql -At -F ' ' -c "SELECT '$STAMP', organization_id, head_seq, head_hash
+        FROM audit_auditcheck WHERE head_seq IS NOT NULL AND head_hash <> ''
+        ORDER BY organization_id" > "$WORK/kettenkoepfe" 2>/dev/null; then
+    cat "$WORK/kettenkoepfe" >> "$DIR/kettenkoepfe.log"
+    chmod 644 "$DIR/kettenkoepfe.log"
+else
+    echo "$(date '+%F %T') WARNUNG: Kettenköpfe nicht geschrieben ($STAMP)" >> "$DIR/backup.log"
+fi
+
 if [ -n "${BACKUP_REMOTE:-}" ]; then
     [ -r "$SSH_KEY" ] || fail "Zweiter Ort: SSH-Schlüssel fehlt ($SSH_DIR/id_ed25519)"
     [ -r "$SSH_DIR/known_hosts" ] || fail "Zweiter Ort: $SSH_DIR/known_hosts fehlt"
@@ -147,7 +160,7 @@ if [ -n "${BACKUP_REMOTE:-}" ]; then
     rsync -a $DELETE \
         -e "ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$SSH_DIR/known_hosts -i $SSH_KEY" \
         --include='*.enc' --include='*.enc.hmac' --include='*.age' --include='*.age.hmac' \
-        --include='restore-test.log' --include='loeschliste.jsonl' --exclude='*' "$DIR/" "$BACKUP_REMOTE" \
+        --include='restore-test.log' --include='loeschliste.jsonl' --include='kettenkoepfe.log' --exclude='*' "$DIR/" "$BACKUP_REMOTE" \
         || fail "Kopie nach $BACKUP_REMOTE fehlgeschlagen (lokales Backup $STAMP ist ok)"
     echo "$(date '+%F %T') Kopie nach $BACKUP_REMOTE ok" >> "$DIR/backup.log"
 fi

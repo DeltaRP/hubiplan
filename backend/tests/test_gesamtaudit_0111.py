@@ -218,6 +218,37 @@ def test_protokollkette_erkennt_geloeschtes_ende(orgs, board_a):
     assert not check.ok and check.head_seq == head
 
 
+def test_kettenkoepfe_aus_backup_abgleichen(orgs, board_a, tmp_path):
+    """FQ-17: Köpfe aus dem externen Backup decken eine neu berechnete Kette auf."""
+    from io import StringIO
+
+    import pytest
+    from django.core.management import CommandError, call_command
+
+    from audit.chain import seal, verify
+    from audit.log import record
+    from audit.models import AuditCheck, AuditEntry
+    from core.tenancy import rls_bypass, tenant_context
+
+    club = orgs["a"]
+    with tenant_context(club.pk):
+        for i in range(2):
+            record(club, board_a, "update", club, {"Name": [f"A{i}", f"B{i}"]})
+    seal(club.pk)
+    verify(club.pk)
+    check = AuditCheck.objects.get(organization=club)
+    log = tmp_path / "kettenkoepfe.log"
+    log.write_text(f"2026-11-01_0315 {club.pk} {check.head_seq} {check.head_hash}\n")
+    out = StringIO()
+    call_command("kettenkoepfe_pruefen", str(log), stdout=out)
+    assert "1 Kettenköpfe geprüft, 0 Abweichungen" in out.getvalue()
+    # Wer die Datenbank beherrscht, rechnet die Kette neu; das Backup weiß es besser
+    with rls_bypass():
+        AuditEntry.objects.filter(organization=club, seq=check.head_seq).update(hash="0" * 64)
+    with pytest.raises(CommandError):
+        call_command("kettenkoepfe_pruefen", str(log), stdout=StringIO())
+
+
 # --- GA-F08/F09: Vollübernahme mit Kassenzählung, Finanzeinstellungen, CAMT-Original ---
 
 
