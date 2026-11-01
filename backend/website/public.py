@@ -29,7 +29,7 @@ from members.photo_models import MemberPhoto
 from organizations.models import Department, DepartmentRole, SocialLink
 
 from . import content, services
-from .content_models import WebsiteImage, WebsiteText
+from .content_models import GALLERY_INTERVAL, WebsiteImage, WebsiteText
 from .models import PublicationConsent, Website
 
 Category = PublicationConsent.Category
@@ -677,6 +677,7 @@ class SiteView:
             "title": text.published_title if text else u.name,
             "text": content.public_body(text.published_body, self.site) if text else "",
             "gallery": self.gallery(text) if text else [],
+            "gallery_interval": text.published_gallery_interval if text else GALLERY_INTERVAL,
             "roles": roles,
             "social": self.social(u) if self.site.block_on("social") else [],
             # Eigene Homepage der Untereinheit, nur wenn dort freigegeben
@@ -859,6 +860,7 @@ class SiteView:
             "image": self.image(t.published_image),
             # Bilderkarussell (leer: nur das einzelne Bild wie bisher)
             "gallery": self.gallery(t),
+            "gallery_interval": t.published_gallery_interval,
         }
 
     def gallery(self, t: WebsiteText) -> list[dict]:

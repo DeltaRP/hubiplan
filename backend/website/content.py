@@ -399,6 +399,7 @@ def publish(text: WebsiteText, user) -> WebsiteRevision:
     text.published_body = text.body
     text.published_image = text.image
     text.published_gallery = list(text.gallery or [])
+    text.published_gallery_interval = text.gallery_interval
     text.published_at = now
     text.updated_by = user
     text.save()
@@ -409,6 +410,7 @@ def publish(text: WebsiteText, user) -> WebsiteRevision:
         body=text.body,
         image=text.image,
         gallery=list(text.gallery or []),
+        gallery_interval=text.gallery_interval,
         published_at=now,
         published_by=user,
     )
@@ -440,6 +442,7 @@ def restore(text: WebsiteText, revision: WebsiteRevision, user) -> None:
         ).values_list("pk", flat=True)
     )
     text.gallery = [pk for pk in (revision.gallery or []) if pk in existing]
+    text.gallery_interval = revision.gallery_interval
     text.updated_by = user
     text.save()
 

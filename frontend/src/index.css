@@ -2846,6 +2846,9 @@ label:has(> .file-input:focus-visible) {
   object-fit: cover;
   border-radius: 4px;
 }
+.gallery-picker .gallery-interval {
+  max-width: 8rem;
+}
 .gallery-list li > span:nth-child(2) {
   flex: 1;
   min-width: 8rem;

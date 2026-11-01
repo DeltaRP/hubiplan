@@ -325,6 +325,7 @@ function TextForm({
     body: text.body,
     image: text.image,
     gallery: text.gallery ?? [],
+    gallery_interval: text.gallery_interval ?? 7,
   })
   const { values: v, set, errors } = form
   const [current, setCurrent] = useState(text)
@@ -432,6 +433,9 @@ function TextForm({
           value={v.gallery}
           error={errors.gallery}
           unit={unit}
+          interval={v.gallery_interval}
+          intervalError={errors.gallery_interval}
+          onIntervalChange={(seconds) => set('gallery_interval', seconds)}
           onChange={(ids) => set('gallery', ids)}
           onImagesChanged={reloadImages}
         />
@@ -485,6 +489,8 @@ function TextForm({
 }
 
 const MAX_GALLERY = 10
+const MIN_INTERVAL = 3
+const MAX_INTERVAL = 30
 
 /** Bilderkarussell: Bilder im Auswahl-Dialog ankreuzen, Reihenfolge hier ändern */
 function GalleryPicker({
@@ -492,6 +498,9 @@ function GalleryPicker({
   value,
   error,
   unit,
+  interval,
+  intervalError,
+  onIntervalChange,
   onChange,
   onImagesChanged,
 }: {
@@ -499,10 +508,14 @@ function GalleryPicker({
   value: number[]
   error?: string
   unit: Unit | null
+  interval: number
+  intervalError?: string
+  onIntervalChange: (seconds: number) => void
   onChange: (ids: number[]) => void
   onImagesChanged: () => void
 }) {
   const [picking, setPicking] = useState(false)
+  const [seconds, setSeconds] = useState(String(interval))
   const byId = new Map(images.map((i) => [i.id, i]))
   const chosen = value.filter((id) => byId.has(id))
   const move = (index: number, delta: number) => {
@@ -516,8 +529,7 @@ function GalleryPicker({
       <legend>Bilderkarussell (optional)</legend>
       <p className="muted small">
         Mit zwei oder mehr Bildern zeigt die Startseite statt des einzelnen Bildes ein Karussell zum
-        Durchblättern. Es wechselt alle 7 Sekunden von selbst und lässt sich anhalten. Bis zu{' '}
-        {MAX_GALLERY} Bilder.
+        Durchblättern. Es wechselt von selbst und lässt sich anhalten. Bis zu {MAX_GALLERY} Bilder.
       </p>
       {chosen.length > 0 && (
         <ol className="gallery-list">
@@ -556,6 +568,27 @@ function GalleryPicker({
             </li>
           ))}
         </ol>
+      )}
+      {chosen.length > 1 && (
+        <Field
+          label="Nächstes Bild nach (Sekunden)"
+          type="number"
+          inputMode="numeric"
+          className="gallery-interval"
+          min={MIN_INTERVAL}
+          max={MAX_INTERVAL}
+          step={1}
+          value={seconds}
+          hint={`${MIN_INTERVAL} bis ${MAX_INTERVAL} Sekunden, Standard 7.`}
+          error={intervalError}
+          onChange={(e) => {
+            // Erst gültige Werte übernehmen, damit Tippen nicht zwischendurch speichert
+            setSeconds(e.target.value)
+            const n = Number(e.target.value)
+            if (Number.isInteger(n) && n >= MIN_INTERVAL && n <= MAX_INTERVAL) onIntervalChange(n)
+          }}
+          onBlur={() => setSeconds(String(interval))}
+        />
       )}
       <div className="button-row">
         <button type="button" className="button button-ghost" onClick={() => setPicking(true)}>

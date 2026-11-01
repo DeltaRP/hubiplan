@@ -265,6 +265,8 @@ export interface WebsiteText extends WebsiteTextSummary {
   image_data: WebsiteImage | null
   /** Bilderkarussell der Begrüßung (IDs in Reihenfolge) */
   gallery: number[]
+  /** Sekunden bis zum nächsten Bild im Karussell */
+  gallery_interval: number
   published_title: string
   published_body: string
   revisions: { id: number; title: string; published_at: string; published_by: string }[]
@@ -280,6 +282,7 @@ export interface TextDraft {
   body?: string
   image?: number | null
   gallery?: number[]
+  gallery_interval?: number
 }
 
 export const contentApi = {
