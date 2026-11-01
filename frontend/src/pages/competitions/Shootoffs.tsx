@@ -13,6 +13,7 @@ import {
 import { confirmDialog } from '../../components/dialog.ts'
 import { errorMessage, useLoad } from '../../components/forms.ts'
 import { Alert } from '../../components/ui.tsx'
+import { Why } from '../../learning/Aids.tsx'
 
 type Rules = { shots: number | null; counted_shots: number | null }
 
@@ -153,6 +154,7 @@ function RulesForm({
           </label>
         )}
       </div>
+      <Why k="comp_shootoff_rules" />
       <div className="button-row">
         <button type="submit" className="button button-primary">
           {submitLabel}

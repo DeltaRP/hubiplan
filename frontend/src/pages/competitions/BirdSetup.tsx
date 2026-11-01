@@ -11,6 +11,7 @@ import {
 import { confirmDialog } from '../../components/dialog.ts'
 import { errorMessage, useLoad } from '../../components/forms.ts'
 import { Alert, LoadError } from '../../components/ui.tsx'
+import { HowTo, Term, Why } from '../../learning/Aids.tsx'
 
 function numOrNull(text: string): number | null {
   const n = parseInt(text, 10)
@@ -181,10 +182,14 @@ export function ManualPrizes({ org, comp }: { org: number; comp: CompetitionDeta
         <table className="table">
           <thead>
             <tr>
-              <th>Pfand</th>
+              <th>
+                <Term k="comp_prize">Pfand</Term>
+              </th>
               <th>Schütze</th>
               <th className="num">Schuss Nr. gesamt</th>
-              <th className="num">Schüsse für das Pfand</th>
+              <th className="num">
+                <Term k="comp_shots_for">Schüsse für das Pfand</Term>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -247,6 +252,7 @@ export function ManualPrizes({ org, comp }: { org: number; comp: CompetitionDeta
         Die Gesamtzahl der Schüsse steht unter „Einrichten“. Starter kommen über „Schützen und
         Losnummern“ oben dazu.
       </p>
+      <HowTo k="how_comp_shots_for" />
       {error && <Alert kind="error">{error}</Alert>}
     </details>
   )
@@ -291,11 +297,13 @@ export function StandAccessCard({ org, comp }: { org: number; comp: CompetitionD
   const active = (list.data ?? []).filter((a) => a.active)
   return (
     <div className="card card-wide">
-      <h2>Standzugang für ein geliehenes Gerät</h2>
+      <h2>
+        <Term k="comp_stand_access_term">Standzugang</Term> für ein geliehenes Gerät
+      </h2>
       <p className="muted">
-        Öffnet nur diesen Wettbewerb im Standmodus, ohne Anmeldung. Das Gerät kann nur erfassen und
-        sieht von Mitgliedern nur Name und Untereinheit. Der Zugang endet am Ende des
-        Wettbewerbstags oder wenn du ihn beendest.
+        Öffnet nur diesen Wettbewerb im <Term k="comp_stand_mode">Standmodus</Term>, ohne Anmeldung.
+        Das Gerät kann nur erfassen und sieht von Mitgliedern nur Name und Untereinheit. Der Zugang
+        endet am Ende des Wettbewerbstags oder wenn du ihn beendest.
       </p>
       {comp.status !== 'endgueltig' && (
         <div className="button-row">
@@ -353,6 +361,8 @@ export function StandAccessCard({ org, comp }: { org: number; comp: CompetitionD
         </ul>
       )}
       {error && <Alert kind="error">{error}</Alert>}
+      <Why k="comp_stand_access" />
+      <HowTo k="how_comp_tablets" />
     </div>
   )
 }

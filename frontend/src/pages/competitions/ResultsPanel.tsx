@@ -11,6 +11,7 @@ import {
 import { useLoad } from '../../components/forms.ts'
 import { Alert, LoadError } from '../../components/ui.tsx'
 import { ShootoffBlock } from './Shootoffs.tsx'
+import { HowTo, Term } from '../../learning/Aids.tsx'
 
 export function ResultsPanel({
   org,
@@ -51,8 +52,8 @@ export function ResultsPanel({
       {data.bird && <BirdResults bird={data.bird} />}
       {data.open_shootoffs > 0 && (
         <Alert kind="info">
-          Gleichstand auf Preisplätzen: Stechen nötig. Erst danach lässt sich der Wettbewerb
-          endgültig abschließen.
+          <Term k="comp_tie">Gleichstand</Term> auf <Term k="comp_prize_place">Preisplätzen</Term>:
+          Stechen nötig. Erst danach lässt sich der Wettbewerb endgültig abschließen.
         </Alert>
       )}
       {data.scorings.map((block) => {
@@ -98,7 +99,9 @@ function BirdResults({ bird }: { bird: BirdState }) {
           <table className="table">
             <thead>
               <tr>
-                <th>Pfand</th>
+                <th>
+                  <Term k="comp_prize">Pfand</Term>
+                </th>
                 <th>Schütze</th>
                 <th>Einheit / Verein</th>
                 <th className="num">Schuss Nr.</th>
@@ -132,7 +135,9 @@ function BirdResults({ bird }: { bird: BirdState }) {
           </dd>
           {st.rounds ? (
             <>
-              <dt>Runden</dt>
+              <dt>
+                <Term k="comp_round">Runden</Term>
+              </dt>
               <dd>{st.rounds}</dd>
             </>
           ) : null}
@@ -151,7 +156,11 @@ function BirdResults({ bird }: { bird: BirdState }) {
         </dl>
         {(bird.draw.missing.length > 0 || bird.draw.gaps.length > 0) && (
           <p className="muted small">
-            {bird.draw.missing.length ? `Ohne Losnummer: ${bird.draw.missing.join(', ')}. ` : ''}
+            {bird.draw.missing.length ? (
+              <>
+                Ohne <Term k="comp_lot">Losnummer</Term>: {bird.draw.missing.join(', ')}.{' '}
+              </>
+            ) : null}
             {bird.draw.gaps.length ? `Nicht vergebene Nummern: ${bird.draw.gaps.join(', ')}.` : ''}
           </p>
         )}
@@ -209,7 +218,11 @@ function StandingTable({ block }: { block: StandingBlock }) {
             <th>{unit ? 'Schützen' : 'Einheit / Verein'}</th>
             {unit && <th>Bester Schütze</th>}
             <th className="num">Wert</th>
-            {hasShootoff && <th className="num">Stechen</th>}
+            {hasShootoff && (
+              <th className="num">
+                <Term k="comp_shootoff">Stechen</Term>
+              </th>
+            )}
           </tr>
         </thead>
         <tbody>
@@ -218,8 +231,18 @@ function StandingTable({ block }: { block: StandingBlock }) {
               <td className="num">{r.place ? `${r.place}.` : '–'}</td>
               <td>
                 {r.name}
-                {r.out_of_competition ? ' (außer Konkurrenz)' : ''}
-                {r.guest ? <span className="muted"> · Gast</span> : null}
+                {r.out_of_competition ? (
+                  <>
+                    {' '}
+                    (<Term k="comp_ooc">außer Konkurrenz</Term>)
+                  </>
+                ) : null}
+                {r.guest ? (
+                  <span className="muted">
+                    {' '}
+                    · <Term k="comp_guest">Gast</Term>
+                  </span>
+                ) : null}
               </td>
               <td>{unit ? r.count : r.unit_name || r.club}</td>
               {unit && <td>{r.best}</td>}
@@ -231,6 +254,7 @@ function StandingTable({ block }: { block: StandingBlock }) {
           ))}
         </tbody>
       </table>
+      {unit ? <HowTo k="how_comp_unit" /> : <HowTo k="how_comp_ranking" />}
     </div>
   )
 }
