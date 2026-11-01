@@ -2,9 +2,9 @@
 
 import io
 
+import pypdfium2 as pdfium
 import pytest
 from PIL import Image
-from pypdf import PdfReader
 
 from accounts.models import StoredSignature
 from competitions import certificates
@@ -17,11 +17,12 @@ from .test_wettbewerbe_auszeichnungen import _final, _schiessen
 def _text(resp) -> str:
     assert resp.status_code == 200, resp.content
     assert resp["Content-Type"] == "application/pdf"
-    return "\n".join(p.extract_text() for p in PdfReader(io.BytesIO(resp.content)).pages)
+    pdf = pdfium.PdfDocument(resp.content)
+    return "\n".join(pdf[i].get_textpage().get_text_range() for i in range(len(pdf)))
 
 
 def _pages(resp) -> int:
-    return len(PdfReader(io.BytesIO(resp.content)).pages)
+    return len(pdfium.PdfDocument(resp.content))
 
 
 def test_zeilen_mit_platzhaltern():
