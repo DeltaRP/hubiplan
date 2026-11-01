@@ -14,6 +14,8 @@ export interface NextcloudClient {
   groups_roles: boolean
   groups_units: boolean
   groups_members: boolean
+  // Je Zeile „E-Mail = Benutzername“ (bisherige Nextcloud-Konten)
+  usernames: string
   is_active: boolean
   created_at: string
   last_used_at: string | null
@@ -34,6 +36,7 @@ export type NextcloudInput = Partial<
     | 'groups_roles'
     | 'groups_units'
     | 'groups_members'
+    | 'usernames'
     | 'is_active'
   >
 >

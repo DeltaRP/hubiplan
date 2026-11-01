@@ -333,3 +333,56 @@ def test_mitglieder_nur_bei_vereinen(api, orgs):
         JSON,
     )
     assert resp.status_code == 400
+
+
+# --- Bisherige Benutzernamen ---
+
+
+def test_bisheriger_benutzername_geht_mit(api, orgs, board_a):
+    client, secret = make_client(
+        orgs["a"], usernames="# Kommentar\nVorstand-A@example.org = mmuster\nandere@example.org = x"
+    )
+    data = redeem(client, secret, code_of(start(api(board_a), client))).json()
+    claims = verify_jwt(data["id_token"])
+    assert claims["preferred_username"] == "mmuster"
+    info = (
+        HttpClient()
+        .get("/api/oidc/userinfo", HTTP_AUTHORIZATION=f"Bearer {data['access_token']}")
+        .json()
+    )
+    assert info["preferred_username"] == "mmuster"
+    # Kennung bleibt die gewohnte
+    assert len(claims["sub"]) == 32
+
+
+def test_ohne_eintrag_kein_benutzername(api, orgs, board_a):
+    client, secret = make_client(orgs["a"], usernames="andere@example.org = mmuster")
+    claims = verify_jwt(
+        redeem(client, secret, code_of(start(api(board_a), client))).json()["id_token"]
+    )
+    assert "preferred_username" not in claims
+
+
+def test_benutzername_nur_mit_profile(api, orgs, board_a):
+    client, secret = make_client(orgs["a"], usernames="vorstand-a@example.org = mmuster")
+    code = code_of(start(api(board_a), client, scope="openid email"))
+    claims = verify_jwt(redeem(client, secret, code).json()["id_token"])
+    assert "preferred_username" not in claims
+
+
+def test_benutzernamen_einstellen(api, orgs, board_a):
+    c = api(board_a)
+    base = f"/api/orgs/{orgs['a'].pk}/nextcloud/"
+    created = c.post(base, {"base_url": CLOUD}, JSON).json()
+    url = f"{base}{created['id']}/"
+    resp = c.patch(
+        url, {"usernames": " A@Example.org: Mmuster \n\nb@example.org = e.mustermann"}, JSON
+    )
+    assert resp.status_code == 200, resp.content
+    assert resp.json()["usernames"] == "a@example.org = mmuster\nb@example.org = e.mustermann"
+    for bad in (
+        "keine-mail = x",
+        "a@example.org = Leer Zeichen",
+        "a@example.org = x\nb@example.org = x",
+    ):
+        assert c.patch(url, {"usernames": bad}, JSON).status_code == 400, bad

@@ -4294,6 +4294,16 @@ msgstr "Please enter only the Nextcloud address, e.g. https://cloud.example.org"
 msgid "Mitgliederzugänge gibt es nur bei Vereinen."
 msgstr "Member access only exists for clubs."
 
+msgid ""
+"Bitte je Zeile „E-Mail = Benutzername“ (Benutzername nur Kleinbuchstaben, "
+"Ziffern, Punkt, Bindestrich, Unterstrich, @). Fehlerhaft: {lines}"
+msgstr ""
+"Please use one line per entry, “email = user name” (user name only lower-case "
+"letters, digits, dot, hyphen, underscore, @). Invalid: {lines}"
+
+msgid "Doppelt eingetragen: {items}"
+msgstr "Entered twice: {items}"
+
 msgid "Diese Sprache ist auf diesem Server nicht freigeschaltet."
 msgstr "This language is not enabled on this server."
 

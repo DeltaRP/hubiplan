@@ -3811,7 +3811,7 @@
   "„Mitglieder“ für alle mit laufender Mitgliedschaft": "“Mitglieder” for everyone with a current membership",
   "Eingeschaltet": "Switched on",
   "In der Nextcloud eintragen": "Enter in Nextcloud",
-  "In der Nextcloud als Administrator die App „OpenID Connect user backend“ (user_oidc) installieren, dann unter Verwaltung › OpenID Connect einen Anbieter mit diesen Angaben anlegen. Dort „Gruppen-Provisionierung“ einschalten und als Gruppen-Zuordnung „groups“ eintragen.": "As a Nextcloud administrator, install the app “OpenID Connect user backend” (user_oidc), then add a provider with these details under Administration › OpenID Connect. There, switch on “group provisioning” and enter “groups” as the group mapping.",
+  "In der Nextcloud als Administrator die App „OpenID Connect user backend“ (user_oidc) installieren, dann unter Verwaltung › OpenID Connect einen Anbieter mit diesen Angaben anlegen. Dort „Gruppen-Provisionierung“ einschalten und als Gruppen-Zuordnung „groups“ eintragen. Für bisherige Benutzernamen: Benutzer-ID-Zuordnung „preferred_username“, „Eindeutige Benutzer-ID verwenden“ aus und in der config.php „soft_auto_provision“ an (siehe Anleitung).": "As a Nextcloud administrator, install the app “OpenID Connect user backend” (user_oidc), then add a provider with these details under Administration › OpenID Connect. There, switch on “group provisioning” and enter “groups” as the group mapping. For existing user names: set the user ID mapping to “preferred_username”, switch “Use unique user ID” off and turn on “soft_auto_provision” in config.php (see the guide).",
   "Discovery-Endpunkt": "Discovery endpoint",
   "Client-ID": "Client ID",
   "Das Geheimnis wird nur jetzt angezeigt. Bitte gleich in der Nextcloud eintragen; HUBIplan speichert nur eine Prüfsumme.": "The secret is shown only now. Please enter it in Nextcloud right away; HUBIplan only stores a checksum.",
@@ -4555,5 +4555,7 @@
   "Hilfe schließen": "Close help",
   "Zurück zur Seite": "Back to the page",
   "Zu dieser Seite gibt es noch keine eigene Hilfe.": "There is no help for this page yet.",
-  "Alle Hilfe und Glossar": "All help and glossary"
+  "Alle Hilfe und Glossar": "All help and glossary",
+  "Bisherige Benutzernamen in der Nextcloud": "Existing user names in the Nextcloud",
+  "Für Konten, die es in der Nextcloud schon gibt: je Zeile die Anmelde-E-Mail bei HUBIplan und der bisherige Benutzername. Wer hier steht, landet bei der ersten Anmeldung in seinem vorhandenen Konto mit allen Dateien. Wer fehlt, bekommt ein neues Konto. Nur eintragen, wenn es wirklich dieselbe Person ist.": "For accounts that already exist in the Nextcloud: one line each with the HUBIplan login email and the existing user name. Anyone listed here lands in their existing account with all files on first login. Anyone missing gets a new account. Only enter a line if it really is the same person."
 }
