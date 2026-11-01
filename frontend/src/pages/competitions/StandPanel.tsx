@@ -18,6 +18,8 @@ import {
 import { confirmDialog } from '../../components/dialog.ts'
 import { StandEnd } from './StandEnd.tsx'
 import { StandFinish } from './StandFinish.tsx'
+import { TargetPad, type PadHit } from './TargetPad.tsx'
+import { scoreShot, totalText } from './targetMath.ts'
 import { describe, guestOrigin, useStandStore } from './standStore.ts'
 
 type Hit =
@@ -67,6 +69,9 @@ export function StandPanel({
   const [chosen, setChosen] = useState<Hit | null>(null)
   const [points, setPoints] = useState('')
   const [guestClub, setGuestClub] = useState('')
+  // Antippen auf dem Scheibenbild (Schießscheiben Schritt 2); „nur Summe“ schaltet zurück
+  const [padHits, setPadHits] = useState<PadHit[]>([])
+  const [sumOnly, setSumOnly] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
   const pointsRef = useRef<HTMLInputElement>(null)
   const closed = (local.status ?? comp.status) === 'endgueltig'
@@ -91,10 +96,23 @@ export function StandPanel({
     return [...startersHit, ...membersHit, { kind: 'guest', name: query.trim() }]
   }, [query, local.starters, local.members])
 
+  const target = scoring?.target_info ?? null
+  const tapping = !!target && !!scoring && scoring.method !== 'frei' && !sumOnly
+
+  function storedHits(s: Starter | null): PadHit[] {
+    if (!s || !scoring) return []
+    return (s.hits?.[String(scoring.id)] ?? []).map((h) => ({
+      x: Number(h.x),
+      y: Number(h.y),
+      spot: h.spot,
+    }))
+  }
+
   function choose(hit: Hit) {
     setChosen(hit)
     setPoints('')
     setGuestClub('')
+    setPadHits(storedHits(hit.kind === 'starter' ? hit.starter : null))
     setTimeout(() => pointsRef.current?.focus(), 0)
   }
 
@@ -114,6 +132,10 @@ export function StandPanel({
   async function submit(e: FormEvent) {
     e.preventDefault()
     if (!chosen || !scoring) return
+    if (tapping && target) {
+      await submitHits(target)
+      return
+    }
     const value = points.trim().replace(',', '.')
     if (value !== '' && !Number.isFinite(Number(value))) {
       setNotice('Bitte eine Zahl eingeben.')
@@ -143,30 +165,7 @@ export function StandPanel({
         if (!ok) return
       }
     } else {
-      const key = newRequestKey()
-      ref = key
-      name = chosen.kind === 'member' ? chosen.member.name : chosen.name
-      const origin = guestOrigin(guestClub, comp.units)
-      const starter: Starter & { key: string } = {
-        id: 0,
-        key,
-        name,
-        club: chosen.kind === 'guest' ? origin.club : '',
-        guest: chosen.kind === 'guest',
-        membership: chosen.kind === 'member' ? chosen.member.membership : null,
-        unit: chosen.kind === 'member' ? chosen.member.unit : origin.unit,
-        unit_name: chosen.kind === 'member' ? chosen.member.unit_name : origin.unit_name,
-        number: '',
-        out_of_competition: false,
-        presence: '',
-        drawn_how: '',
-        values: {},
-      }
-      const op: SyncOp =
-        chosen.kind === 'member'
-          ? { op: 'starter', client_key: key, membership: chosen.member.membership }
-          : { op: 'starter', client_key: key, name, club: origin.club, unit: origin.unit }
-      setLocal((l) => ({ ...l, ops: [...l.ops, op], starters: [...l.starters, starter] }))
+      ;({ ref, name } = addStarter(chosen))
     }
     if (value !== '') {
       const at = new Date().toISOString()
@@ -187,6 +186,87 @@ export function StandPanel({
     setPoints('')
     setActive(0)
     setTimeout(() => searchRef.current?.focus(), 0)
+  }
+
+  /** Neuer Schütze: als Starter vormerken; zurück kommt der Verweis für weitere Eingaben. */
+  function addStarter(c: Exclude<Hit, { kind: 'starter' }>): { ref: string; name: string } {
+    const key = newRequestKey()
+    const name = c.kind === 'member' ? c.member.name : c.name
+    const origin = guestOrigin(guestClub, comp.units)
+    const starter: Starter & { key: string } = {
+      id: 0,
+      key,
+      name,
+      club: c.kind === 'guest' ? origin.club : '',
+      guest: c.kind === 'guest',
+      membership: c.kind === 'member' ? c.member.membership : null,
+      unit: c.kind === 'member' ? c.member.unit : origin.unit,
+      unit_name: c.kind === 'member' ? c.member.unit_name : origin.unit_name,
+      number: '',
+      out_of_competition: false,
+      presence: '',
+      drawn_how: '',
+      values: {},
+    }
+    const op: SyncOp =
+      c.kind === 'member'
+        ? { op: 'starter', client_key: key, membership: c.member.membership }
+        : { op: 'starter', client_key: key, name, club: origin.club, unit: origin.unit }
+    setLocal((l) => ({ ...l, ops: [...l.ops, op], starters: [...l.starters, starter] }))
+    return { ref: key, name }
+  }
+
+  async function submitHits(t: NonNullable<typeof target>) {
+    if (!chosen || !scoring) return
+    const max = scoring.shots
+    if (max && padHits.length > max) {
+      setNotice(`Höchstens ${max} Treffer.`)
+      return
+    }
+    const before = chosen.kind === 'starter' ? storedHits(chosen.starter) : []
+    const same =
+      before.length === padHits.length &&
+      before.every((h, i) => h.x === padHits[i].x && h.y === padHits[i].y)
+    let ref: number | string
+    let name: string
+    if (chosen.kind === 'starter') {
+      ref = chosen.starter.key ?? chosen.starter.id
+      name = chosen.starter.name
+    } else {
+      ;({ ref, name } = addStarter(chosen))
+    }
+    const value = totalText(
+      scoring.method,
+      padHits.map((h) => scoreShot(t, h.x, h.y)),
+      scoring.counted_shots,
+    )
+    if (same && chosen.kind === 'starter') {
+      push(null)
+      setNotice(`${name}: unverändert.`)
+    } else {
+      const at = new Date().toISOString()
+      const hits = padHits.map((h) => ({ x: h.x, y: h.y, spot: h.spot ?? null }))
+      push({ op: 'hits', starter: ref, scoring: scoring.id, hits, at }, (l) => ({
+        ...l,
+        starters: l.starters.map((s) =>
+          (s.key ?? s.id) === ref
+            ? {
+                ...s,
+                values: { ...s.values, [scoring.id]: value },
+                hits: { ...s.hits, [scoring.id]: hits },
+              }
+            : s,
+        ),
+        recent: value ? [{ ref, name, value, at }, ...l.recent].slice(0, 10) : l.recent,
+      }))
+      setNotice(
+        value
+          ? `${name}: ${showValue(value, scoring.decimals)} ${scoring.unit_label}`
+          : `${name} eingetragen.`,
+      )
+    }
+    setPadHits([])
+    backToSearch()
   }
 
   function backToSearch() {
@@ -336,25 +416,58 @@ export function StandPanel({
                     </datalist>
                   </>
                 )}
-                <label className="stand-label" htmlFor="stand-punkte">
-                  {scoring.unit_label}
-                  {scoring.counted_shots ? ` (${scoring.counted_shots} gewertete Schuss)` : ''}
-                </label>
-                <input
-                  id="stand-punkte"
-                  ref={pointsRef}
-                  className="stand-input stand-points"
-                  inputMode={scoring.decimals ? 'decimal' : 'numeric'}
-                  autoComplete="off"
-                  value={points}
-                  onChange={(e) => setPoints(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Escape') {
-                      setChosen(null)
-                      setTimeout(() => searchRef.current?.focus(), 0)
-                    }
-                  }}
-                />
+                {tapping && target ? (
+                  <>
+                    <p className="stand-label">
+                      Treffer antippen
+                      {scoring.counted_shots
+                        ? ` (${scoring.counted_shots} von ${scoring.shots ?? '?'} zählen)`
+                        : ''}
+                    </p>
+                    <TargetPad
+                      target={target}
+                      method={scoring.method}
+                      counted={scoring.counted_shots}
+                      maxShots={scoring.shots}
+                      hits={padHits}
+                      onChange={setPadHits}
+                    />
+                    <button type="button" className="link-button" onClick={() => setSumOnly(true)}>
+                      Nur die Summe eingeben
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <label className="stand-label" htmlFor="stand-punkte">
+                      {scoring.unit_label}
+                      {scoring.counted_shots ? ` (${scoring.counted_shots} gewertete Schuss)` : ''}
+                    </label>
+                    <input
+                      id="stand-punkte"
+                      ref={pointsRef}
+                      className="stand-input stand-points"
+                      inputMode={scoring.decimals ? 'decimal' : 'numeric'}
+                      autoComplete="off"
+                      value={points}
+                      onChange={(e) => setPoints(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                          setChosen(null)
+                          setTimeout(() => searchRef.current?.focus(), 0)
+                        }
+                      }}
+                    />
+                    {target && scoring.method !== 'frei' && (
+                      <button
+                        type="button"
+                        className="link-button"
+                        onClick={() => setSumOnly(false)}
+                      >
+                        Treffer auf der Scheibe antippen
+                      </button>
+                    )}
+                  </>
+                )}
                 <div className="button-row stand-buttons">
                   <button type="submit" className="button">
                     Speichern

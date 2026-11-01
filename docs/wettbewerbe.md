@@ -67,6 +67,13 @@ Laufende Scheibe, LP 10 m, KK 50 m und 100 m, Pistole 25 m) oder eine **eigene S
   Treffer haben; sonst bleibt der Platz geteilt (auf Preisplätzen: Stechen). Die Auswertung
   nennt die Regel, die entschieden hat.
 - `GET competitions/targets/` liefert Katalog, Wertungsarten und Regeln für die Oberfläche.
+- **Antippen am Stand** (Schritt 2): Hat die Einzelwertung eine Scheibe und Ringe, Zehntel oder
+  Teiler, zeigt der Standmodus nach der Schützenwahl das Scheibenbild (aus den Maßen gezeichnet,
+  `target_info` der Wertung). Antippen setzt einen Treffer, Ziehen verschiebt ihn mit Lupe;
+  Ansicht ganze Scheibe, Spiegel oder Mitte; Karten mit mehreren Spiegeln haben je Spiegel eine
+  Ansicht. Die Summe läuft mit (`targetMath.ts`, gleiche Formel wie der Server). Gespeichert wird
+  über den Abgleich (Eingabe `hits` mit Gerätezeit, auch ohne Empfang); eine spätere Änderung auf
+  dem Server gewinnt. „Nur die Summe eingeben“ schaltet auf das bisherige Zahlenfeld.
 
 Ergebnisse sind vereinsintern, nicht amtlich. Die mit „prüfen“ markierten Maße in der Recherche
 sind vor ernsthafter Nutzung gegen die aktuelle Sportordnung zu lesen.

@@ -90,8 +90,14 @@ def hits_data(scoring: Scoring, starter: Starter) -> dict:
 
 
 @transaction.atomic
-def set_hits(org, user, comp, scoring: Scoring, starter: Starter, raw, source=None) -> dict:
-    """Treffer eines Starters ersetzen; Wert neu rechnen (außer bei „frei“)."""
+def set_hits(
+    org, user, comp, scoring: Scoring, starter: Starter, raw, source=None, at=None
+) -> dict:
+    """Treffer eines Starters ersetzen; Wert neu rechnen (außer bei „frei“).
+
+    ``at``: Zeitpunkt der Eingabe auf dem Gerät (Standmodus offline). Wurden die Treffer
+    auf dem Server danach geändert, gilt die spätere Eingabe; zurück kommt dann der
+    gültige Stand mit ``conflict``."""
     _open_for_entries(comp)
     if scoring.kind != Scoring.Kind.INDIVIDUAL:
         raise ValidationError("Treffer gibt es nur in Einzelwertungen.")
@@ -132,6 +138,14 @@ def set_hits(org, user, comp, scoring: Scoring, starter: Starter, raw, source=No
         h.number: h
         for h in Hit.objects.select_for_update().filter(scoring=scoring, starter=starter)
     }
+    if at is not None and existing and max(h.updated_at for h in existing.values()) > at:
+        same = len(existing) == len(wanted) and all(
+            (existing[w["number"]].x, existing[w["number"]].y) == (w["x"], w["y"])
+            for w in wanted
+            if w["number"] in existing
+        )
+        if not same:
+            return {**hits_data(scoring, starter), "conflict": True}
     for w in wanted:
         h = existing.pop(w["number"], None)
         if h is None:

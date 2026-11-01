@@ -16,6 +16,8 @@ from django.db.models import Count, Max, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_datetime
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers, status, viewsets
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.response import Response
@@ -144,6 +146,9 @@ class CompetitionSerializer(serializers.ModelSerializer):
 
 
 class ScoringSerializer(serializers.ModelSerializer):
+    # Aufgelöste Scheibe (Maße, Ringe) zum Zeichnen und Rechnen am Stand, auch offline
+    target_info = serializers.SerializerMethodField()
+
     class Meta:
         model = Scoring
         fields = [
@@ -170,8 +175,14 @@ class ScoringSerializer(serializers.ModelSerializer):
             "method",
             "tie_breaks",
             "series_size",
+            "target_info",
         ]
         read_only_fields = ["competition"]
+
+    @extend_schema_field(OpenApiTypes.OBJECT)
+    def get_target_info(self, obj) -> dict | None:
+        target = services.target_of(obj)
+        return target.as_dict() if target else None
 
     def validate_target(self, value):
         from . import targets
@@ -842,6 +853,26 @@ def _apply_op(org, user, comp, op, conflicts) -> dict:
                 {"starter": s.pk, "name": s.name, "scoring": scoring.pk, "value": str(value)}
             )
         return {"ok": True}
+    if kind == "hits":
+        from . import target_views
+
+        s = _starter_ref(comp, op.get("starter"))
+        scoring = Scoring.objects.get(
+            pk=op.get("scoring"), competition=comp, kind=Scoring.Kind.INDIVIDUAL
+        )
+        at = parse_datetime(str(op.get("at") or "")) if op.get("at") else None
+        data = target_views.set_hits(
+            org, user, comp, scoring, s, op.get("hits"), op.get("source"), at=at
+        )
+        if data.get("conflict"):
+            conflicts.append(
+                {
+                    "starter": s.pk,
+                    "name": s.name,
+                    "note": "Treffer wurden auf einem anderen Gerät später geändert, diese gelten",
+                }
+            )
+        return {"ok": True}
     if kind == "shot":
         s = _starter_ref(comp, op.get("starter"))
         hits = op.get("hits") or []
@@ -965,9 +996,16 @@ def _starters_with_values(comp) -> list[dict]:
         values.setdefault(sc.starter_id, {})[str(sc.scoring_id)] = str(sc.value)
         if sc.starter_id not in latest or sc.updated_at > latest[sc.starter_id]:
             latest[sc.starter_id] = sc.updated_at
+    hits: dict[int, dict] = {}
+    for h in Hit.objects.filter(scoring__competition=comp).order_by("number"):
+        hits.setdefault(h.starter_id, {}).setdefault(str(h.scoring_id), []).append(
+            {"x": str(h.x), "y": str(h.y), "spot": h.spot}
+        )
     out = []
     for s in comp.starters.select_related("unit").order_by("name", "pk"):
         data = _starter_data(s, values.get(s.pk))
+        # Trefferpunkte je Wertung (Antippen am Stand: vorhandene Treffer weiter bearbeiten)
+        data["hits"] = hits.get(s.pk, {})
         # Zuletzt erfasst über alle Geräte (Standmodus, Standzugang, Verwaltung)
         data["scored_at"] = latest[s.pk].isoformat() if s.pk in latest else None
         out.append(data)
