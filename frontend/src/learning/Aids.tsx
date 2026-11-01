@@ -16,6 +16,7 @@ import {
   type TermKey,
 } from './content.ts'
 import { useFirstOnPage, useLearning } from './LearningContext.tsx'
+import { t } from '../i18n/index.ts'
 import './learning.css'
 
 /** Breite, ab der Hilfen als Sheet von unten erscheinen */
@@ -44,7 +45,7 @@ export function SourceList({ sources }: { sources: SourceKey[] }) {
             <>
               {' '}
               <a href={SOURCES[s].url} target="_blank" rel="noreferrer noopener">
-                Online
+                {t('Online')}
               </a>
             </>
           )}
@@ -174,7 +175,7 @@ function AidPopover({
           ref={closeRef}
           type="button"
           className="aid-close"
-          aria-label="Schließen"
+          aria-label={t('Schließen')}
           onClick={() => onClose(true)}
         >
           ×
@@ -309,7 +310,7 @@ export function Why({ k }: { k: DecisionKey }) {
     if (!undo) return null
     return (
       <div className="aid-undo" role="status" tabIndex={-1} ref={statusRef}>
-        Erklärung ausgeblendet ·{' '}
+        {t('Erklärung ausgeblendet ·')}{' '}
         <button
           type="button"
           className="link-button"
@@ -324,20 +325,20 @@ export function Why({ k }: { k: DecisionKey }) {
             })
           }}
         >
-          {failed ? 'Erneut versuchen' : 'Rückgängig'}
+          {failed ? t('Erneut versuchen') : t('Rückgängig')}
         </button>
-        {failed && ' · Die Einstellung konnte nicht gespeichert werden.'}
+        {failed && t(' · Die Einstellung konnte nicht gespeichert werden.')}
       </div>
     )
   }
   if (!first) return null
   return (
-    <Disclosure prefix="Warum?" title={tr(entry.title)} summaryRef={setTitleRef}>
+    <Disclosure prefix={t('Warum?')} title={tr(entry.title)} summaryRef={setTitleRef}>
       <p>{tr(entry.text)}</p>
       <SourceList sources={entry.sources} />
       {failed && (
         <p className="small" role="alert">
-          Die Einstellung konnte nicht gespeichert werden. Erneut versuchen.
+          {t('Die Einstellung konnte nicht gespeichert werden. Erneut versuchen.')}
         </p>
       )}
       <button
@@ -353,7 +354,7 @@ export function Why({ k }: { k: DecisionKey }) {
           })
         }}
       >
-        Nicht mehr zeigen
+        {t('Nicht mehr zeigen')}
       </button>
     </Disclosure>
   )
@@ -487,7 +488,7 @@ export function Term({ k, children, note }: { k: TermKey; children: ReactNode; n
         ref={buttonRef}
         type="button"
         className="term-q"
-        aria-label={`${name}: Was heißt das?`}
+        aria-label={t('{name}: Was heißt das?', { name })}
         aria-expanded={open}
         aria-controls={boxId}
         onClick={() => learning.setOpenId(open ? null : id)}
@@ -508,7 +509,7 @@ export function Term({ k, children, note }: { k: TermKey; children: ReactNode; n
         {extra && <span className="term-note">{extra}</span>}
         <span className="term-example">{tr(entry.example)}</span>
         <a className="term-link" href={`/glossar#${termAnchor(k)}`} target="_blank" rel="noopener">
-          im Glossar ↗
+          {t('im Glossar ↗')}
         </a>
       </span>
     </span>

@@ -3504,5 +3504,143 @@
     "other": " {n} declines."
   },
   "{Sg} bearbeiten": "Edit {sg}",
-  "{Sg} anlegen": "Create {sg}"
+  "{Sg} anlegen": "Create {sg}",
+  "Online": "Online",
+  "Erklärung ausgeblendet ·": "Explanation hidden ·",
+  " · Die Einstellung konnte nicht gespeichert werden.": " · The setting could not be saved.",
+  "Warum?": "Why?",
+  "Die Einstellung konnte nicht gespeichert werden. Erneut versuchen.": "The setting could not be saved. Try again.",
+  "Nicht mehr zeigen": "Don't show again",
+  "{name}: Was heißt das?": "{name}: what does it mean?",
+  "im Glossar ↗": "in the glossary ↗",
+  "{done} von {n} Punkt erledigt": {
+    "one": "{done} of {n} item done",
+    "other": "{done} of {n} items done"
+  },
+  "Hinweis: ": "Note: ",
+  "Erledigt: ": "Done: ",
+  "Offen: ": "Open: ",
+  "Zur Stelle": "Go there",
+  "Begriffe und Entscheidungen der Vereinsverwaltung, kurz erklärt und mit Quellen.": "Terms and decisions of club administration, briefly explained and with sources.",
+  "Glossar durchsuchen": "Search the glossary",
+  "Entscheidungen": "Decisions",
+  "Quellen": "Sources",
+  "Alle Mitglieder haben eine Mitgliedsart.": "All members have a membership type.",
+  "{n} Mitglied ohne Mitgliedsart, sie bekommen keine Rechnung.": {
+    "one": "{n} member without a membership type; they get no invoice.",
+    "other": "{n} members without a membership type; they get no invoice."
+  },
+  "Mitgliedsart in der Mitgliedsakte nachtragen; die Namen stehen in der Vorschau.": "Add the membership type in the member record; the names are in the preview.",
+  "Konto für Überweisungen mit IBAN hinterlegt.": "Account for bank transfers with IBAN is set.",
+  "Auf der Rechnung steht noch kein Konto mit IBAN.": "The invoice does not show an account with IBAN yet.",
+  "Konto unter Rechnung & Zahlung wählen.": "Choose an account under Invoice & payment.",
+  "Zahlungsziel {dueDays} Tage.": "Payment term {dueDays} days.",
+  "Zahlungsziel {dueDays} Tage (empfohlen mindestens {min}).": "Payment term {dueDays} days (at least {min} recommended).",
+  "Zahlungsziel unter Rechnung & Zahlung anpassen.": "Adjust the payment term under Invoice & payment.",
+  "Alle Empfänger haben E-Mail oder vollständige Anschrift.": "All recipients have an email or complete address.",
+  "{n} Mitglied ohne E-Mail und ohne vollständige Anschrift.": {
+    "one": "{n} member without email and without a complete address.",
+    "other": "{n} members without email and without a complete address."
+  },
+  "Kontaktdaten in der Mitgliedsakte ergänzen, sonst kommt die Rechnung nicht an.": "Complete the contact details in the member record, otherwise the invoice will not arrive.",
+  "{n} offener Änderungsantrag von Mitgliedern.": {
+    "one": "{n} open change request from members.",
+    "other": "{n} open change requests from members."
+  },
+  "Erst übernehmen oder ablehnen, damit Anschriften und Konten stimmen.": "Apply or decline them first so that addresses and accounts are correct.",
+  "{with_mandate} von {members} Rechnungen lassen sich per Lastschrift einziehen.": "{with_mandate} of {members} invoices can be collected by direct debit.",
+  "Gläubiger-ID hinterlegt.": "Creditor ID is set.",
+  "Gläubiger-ID fehlt oder ist ungültig.": "Creditor ID is missing or invalid.",
+  "Unter Rechnung & Zahlung → SEPA-Lastschrift eintragen.": "Enter it under Invoice & payment → SEPA direct debit.",
+  "Einzugsdatum ist ein Bankarbeitstag.": "The collection date is a bank working day.",
+  "Einzugsdatum fällt auf ein Wochenende oder einen Bankfeiertag.": "The collection date falls on a weekend or bank holiday.",
+  "Einen Werktag wählen; sonst bucht die Bank erst am nächsten Bankarbeitstag.": "Choose a working day; otherwise the bank only books on the next bank working day.",
+  "Keine Rechnung wird vor ihrer Fälligkeit eingezogen.": "No invoice is collected before it is due.",
+  "{n} Rechnung wird vor der Fälligkeit eingezogen.": {
+    "one": "{n} invoice is collected before it is due.",
+    "other": "{n} invoices are collected before they are due."
+  },
+  "Späteres Einzugsdatum wählen oder diese Rechnungen abwählen.": "Choose a later collection date or deselect these invoices.",
+  "Alle Zahler bekommen die Vorabankündigung per E-Mail.": "All payers receive the pre-notification by email.",
+  "{n} Vorabankündigung muss gedruckt werden (keine E-Mail).": {
+    "one": "{n} pre-notification must be printed (no email).",
+    "other": "{n} pre-notifications must be printed (no email)."
+  },
+  "Nach dem Erstellen ausdrucken und rechtzeitig verschicken.": "Print after creating and send in good time.",
+  "Vorabankündigung {prenotificationDays} Tage statt der üblichen {DEFAULT_PRENOTIFICATION_DAYS}.": "Pre-notification {prenotificationDays} days instead of the usual {DEFAULT_PRENOTIFICATION_DAYS}.",
+  "Nur zulässig, wenn die kürzere Frist im Mandat oder in den Beitragsbedingungen steht.": "Only permitted if the shorter period is stated in the mandate or the fee terms.",
+  "{n} Mandat verfällt bald, weil lange nichts eingezogen wurde.": {
+    "one": "{n} mandate expires soon because nothing has been collected for a long time.",
+    "other": "{n} mandates expire soon because nothing has been collected for a long time."
+  },
+  "Mit diesem Lauf einziehen oder rechtzeitig ein neues Mandat einholen.": "Collect with this run or obtain a new mandate in good time.",
+  "Datei rechtzeitig einreichen: Banken verlangen sie meist ein bis zwei Bankarbeitstage vor dem Einzug.": "Submit the file in good time: banks usually require it one to two bank working days before collection.",
+  "Jede Buchung hat einen Beleg.": "Every entry has a document.",
+  "{n} Buchung ohne Beleg.": {
+    "one": "{n} entry without a document.",
+    "other": "{n} entries without a document."
+  },
+  "Belege im Kassenbuch nachtragen, bevor die Kassenprüfer kommen.": "Add the documents in the cash book before the cash auditors come.",
+  "Alle benutzten Kategorien haben einen steuerlichen Bereich.": "All categories in use have a tax area.",
+  "{n} benutzte Kategorie ohne steuerlichen Bereich.": {
+    "one": "{n} category in use without a tax area.",
+    "other": "{n} categories in use without a tax area."
+  },
+  "Bereich unter Finanzen → Einrichtung → Kategorien zuordnen.": "Assign the area under Finance → Setup → Categories.",
+  "{n} Lastschriftlauf ist noch nicht gebucht.": {
+    "one": "{n} direct debit run has not been booked yet.",
+    "other": "{n} direct debit runs have not been booked yet."
+  },
+  "Nach dem Geldeingang den Lauf buchen.": "Book the run once the money has arrived.",
+  "{n} Rechnung des Jahres noch offen.": {
+    "one": "{n} invoice of the year still open.",
+    "other": "{n} invoices of the year still open."
+  },
+  "Zahlungen erfassen oder offene Beträge im Kassenbericht erläutern.": "Record payments or explain open amounts in the treasurer's report.",
+  "Nach dem Abschluss ist das Jahr gesperrt; vorher die Kassenprüfung abschließen.": "After closing, the year is locked; finish the cash audit first.",
+  "Angaben zum Bescheid vollständig und noch gültig.": "Details of the notice complete and still valid.",
+  "Unter „Einstellungen“ den aktuellen Bescheid eintragen.": "Enter the current notice under “Settings”.",
+  "Alle offenen Zuwendungen haben eine Anschrift.": "All open donations have an address.",
+  "{n} offene Zuwendung ohne Anschrift.": {
+    "one": "{n} open donation without an address.",
+    "other": "{n} open donations without an address."
+  },
+  "Die Bestätigung nennt Name und Anschrift des Zuwendenden: Anschrift nachtragen.": "The receipt states the donor's name and address: add the address.",
+  "Zu allen Sachzuwendungen liegen Unterlagen zum Wert vor.": "There are value documents for all donations in kind.",
+  "{n} Sachzuwendung ohne Unterlagen zum Wert.": {
+    "one": "{n} donation in kind without value documents.",
+    "other": "{n} donations in kind without value documents."
+  },
+  "Kaufbeleg oder Gutachten besorgen und das Häkchen setzen.": "Obtain a purchase receipt or expert opinion and tick the box.",
+  "{n} Sachzuwendung wird nicht gesammelt, sondern einzeln bestätigt.": {
+    "one": "{n} donation in kind is not collected but confirmed individually.",
+    "other": "{n} donations in kind are not collected but confirmed individually."
+  },
+  "{n} Mitgliedsbeitrag wird nach den Einstellungen nicht bestätigt.": {
+    "one": "{n} membership fee is not confirmed according to the settings.",
+    "other": "{n} membership fees are not confirmed according to the settings."
+  },
+  "Alle Pfänder sind gefallen.": "All prize pieces have fallen.",
+  "{n} Pfand hängt noch.": {
+    "one": "{n} prize piece is still hanging.",
+    "other": "{n} prize pieces are still hanging."
+  },
+  "Nachtragen unter „Einrichten“, falls auf Papier gezählt wurde.": "Add it under “Setup” if it was counted on paper.",
+  "Alle Schützen haben ein Ergebnis.": "All marksmen have a result.",
+  "{n} Schütze ohne Ergebnis.": {
+    "one": "{n} marksman without a result.",
+    "other": "{n} marksmen without a result."
+  },
+  "Nachtragen oder bewusst ohne Ergebnis lassen; die Namen stehen unter „Auswertung“.": "Add it or deliberately leave it without a result; the names are under “Evaluation”.",
+  "Keine offenen Gleichstände auf Preisplätzen.": "No open ties on prize places.",
+  "{n} Gleichstand auf Preisplätzen ohne Stechen; der Abschluss ist erst danach möglich.": {
+    "one": "{n} tie on prize places without a shoot-off; closing is only possible afterwards.",
+    "other": "{n} ties on prize places without a shoot-off; closing is only possible afterwards."
+  },
+  "Stechen unter „Auswertung“ oder im Standmodus anlegen.": "Create the shoot-off under “Evaluation” or in range mode.",
+  "Auf jedem Tablet im Standmodus sollte „Alles gespeichert“ stehen, sonst fehlen Eingaben ohne Empfang.": "Every tablet in range mode should show “Everything saved”, otherwise entries made without reception are missing.",
+  "Gäste und Schützen außer Konkurrenz richtig markiert? Sie bekommen sonst Plätze.": "Guests and marksmen hors concours marked correctly? Otherwise they get places.",
+  "Die Ergebnisse erscheinen nicht auf der Webseite.": "The results do not appear on the website.",
+  "Die Ergebnisse stehen schon während des Schießens auf der Webseite.": "The results are on the website while the shooting is still going on.",
+  "Nach dem Abschluss erscheinen die Ergebnisse auf der Webseite.": "The results appear on the website after closing."
 }

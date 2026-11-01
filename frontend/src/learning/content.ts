@@ -7,16 +7,19 @@
 // - jeder Begriff hat ein Beispiel mit Zahl und einer Lesart in Alltagssprache
 // - Schlüssel der Entscheidungen = backend/accounts/learning_keys.json
 //
-// Sprachen: die Oberfläche ist nur deutsch. Jeder Text ist trotzdem ein Objekt je
-// Sprache, damit weitere Sprachen ohne Umbau dazukommen können.
+// Sprachen: Deutsch ist die Quelle und zugleich der Schlüssel. Die englischen Fassungen
+// stehen in ./en.json (deutscher Text → englischer Text, Glossarbegriffe mit dem deutschen
+// Fachwort in Klammern) und werden mit dem übrigen Katalog geladen. Quellenangaben bleiben
+// deutsch, es sind deutsche Gesetze.
+
+import { learningText } from '../i18n/index.ts'
 
 export const LANGUAGES = ['de'] as const
 export type Lang = (typeof LANGUAGES)[number]
 export type Text = Record<Lang, string>
 
 export function tr(text: Text): string {
-  const lang = (typeof document !== 'undefined' && document.documentElement.lang) || 'de'
-  return text[lang as Lang] ?? text.de
+  return learningText(text.de)
 }
 
 // --- Quellen (wiederverwendbar, jede nur einmal) ---

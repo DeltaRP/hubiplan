@@ -12,6 +12,8 @@ import { LanguageCard, LanguageSwitch } from '../i18n/LanguageControls.tsx'
 import en from '../i18n/en.json'
 import { fakeApi, testOrg, testUser } from './fakeApi.ts'
 import { buildTermsEn, termsFor } from '../org/terms.ts'
+import { DECISIONS, HOWTOS, PHASES, SECTIONS, TERMS, tr } from '../learning/content.ts'
+import learningEn from '../learning/en.json'
 
 const BOTH = {
   languages: [
@@ -163,5 +165,31 @@ describe('Abteilungsbezeichnung auf Englisch', () => {
     expect(termsFor('Zug', 'Züge', 'm', '', 'platoon').im).toBe('in the platoon')
     setCatalogForTest('de')
     expect(termsFor('Zug', 'Züge', 'm').im).toBe('im Zug')
+  })
+})
+
+describe('Lernhilfen auf Englisch', () => {
+  // alle deutschen Texte der Lernhilfen (Objekte mit Schlüssel „de“)
+  const texts: string[] = []
+  const collect = (value: unknown): void => {
+    if (!value || typeof value !== 'object') return
+    const rec = value as Record<string, unknown>
+    if (typeof rec.de === 'string') texts.push(rec.de)
+    Object.values(rec).forEach(collect)
+  }
+  collect([PHASES, SECTIONS, DECISIONS, TERMS, HOWTOS])
+  const catalog = learningEn as Record<string, string>
+
+  it('hat für jeden Text eine englische Fassung', () => {
+    expect(texts.length).toBeGreaterThan(400)
+    expect(texts.filter((de) => !catalog[de])).toEqual([])
+  })
+
+  it('zeigt die englische Fassung nur bei Englisch', () => {
+    const entry = DECISIONS.fiscal_year
+    setCatalogForTest('en', {}, catalog)
+    expect(tr(entry.title)).toBe('Calendar year or different financial year?')
+    setCatalogForTest('de')
+    expect(tr(entry.title)).toBe('Kalenderjahr oder abweichendes Geschäftsjahr?')
   })
 })
