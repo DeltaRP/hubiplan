@@ -13,6 +13,7 @@ import { confirmDialog } from '../../components/dialog.ts'
 import { errorMessage, formatDate, useLoad } from '../../components/forms.ts'
 import { Alert, SelectField } from '../../components/ui.tsx'
 import { eventHref, eventLabel } from '../competitions/CalendarLink.tsx'
+import { t, tn } from '../../i18n/index.ts'
 
 /** Unter „Ausschreibung“: Termin wählen, anlegen oder lösen. */
 export function CallEventCard({
@@ -45,7 +46,7 @@ export function CallEventCard({
 
   return (
     <div className="card card-wide">
-      <h2>Interessenabfrage über den Kalender</h2>
+      <h2>{t('Interessenabfrage über den Kalender')}</h2>
       {event ? (
         <>
           <p>
@@ -53,20 +54,22 @@ export function CallEventCard({
           </p>
           {event.rsvp_enabled ? (
             <p className="muted">
-              {event.yes_count} {event.yes_count === 1 ? 'Zusage' : 'Zusagen'}. Wer zusagt, steht
-              unter „Meldung“ als Vorauswahl.
+              {event.yes_count} {event.yes_count === 1 ? t('Zusage') : t('Zusagen')}. Wer zusagt,
+              steht unter „Meldung“ als Vorauswahl.
             </p>
           ) : (
             <Alert kind="info">
-              Der Termin hat keine Zu- und Absagen. Schaltet sie im Kalender ein, damit Mitglieder
-              sagen können, dass sie dabei sein möchten.
+              {t(
+                'Der Termin hat keine Zu- und Absagen. Schaltet sie im Kalender ein, damit Mitglieder sagen können, dass sie dabei sein möchten.',
+              )}
             </Alert>
           )}
         </>
       ) : (
         <p className="muted">
-          Verknüpft die Ausschreibung mit einem Termin, damit Mitglieder zusagen können, ob sie
-          mitmachen möchten. Die Zusagen sind nur eine Vorauswahl.
+          {t(
+            'Verknüpft die Ausschreibung mit einem Termin, damit Mitglieder zusagen können, ob sie mitmachen möchten. Die Zusagen sind nur eine Vorauswahl.',
+          )}
         </p>
       )}
       {choosing && <EventChooser org={org} call={call} disabled={busy} onPick={run} />}
@@ -78,7 +81,7 @@ export function CallEventCard({
             disabled={busy}
             onClick={() => setChoosing(true)}
           >
-            {event ? 'Anderen Termin wählen' : 'Termin wählen'}
+            {event ? t('Anderen Termin wählen') : t('Termin wählen')}
           </button>
         )}
         {!event && call.calendar.can_create && (
@@ -86,10 +89,10 @@ export function CallEventCard({
             type="button"
             className="button button-ghost"
             disabled={busy || !call.date}
-            title={call.date ? undefined : 'Erst das Datum des Anlasses angeben'}
+            title={call.date ? undefined : t('Erst das Datum des Anlasses angeben')}
             onClick={() => void run({ create: true })}
           >
-            Termin mit Zusagen anlegen
+            {t('Termin mit Zusagen anlegen')}
           </button>
         )}
         {event && (
@@ -99,14 +102,17 @@ export function CallEventCard({
             disabled={busy}
             onClick={async () => {
               const ok = await confirmDialog({
-                title: 'Verknüpfung lösen',
-                message: `Die Ausschreibung vom Termin „${event.title}“ lösen? Der Termin und seine Zusagen bleiben im Kalender.`,
-                confirmLabel: 'Lösen',
+                title: t('Verknüpfung lösen'),
+                message: t(
+                  'Die Ausschreibung vom Termin „{title}“ lösen? Der Termin und seine Zusagen bleiben im Kalender.',
+                  { title: event.title },
+                ),
+                confirmLabel: t('Lösen'),
               })
               if (ok) await run({ event: null })
             }}
           >
-            Verknüpfung lösen
+            {t('Verknüpfung lösen')}
           </button>
         )}
       </div>
@@ -128,15 +134,15 @@ function EventChooser({
 }) {
   const data = useLoad(() => entriesApi.eventCandidates(org, call.id), [org, call.id])
   if (data.error) return <Alert kind="error">{data.error}</Alert>
-  if (!data.data) return <p className="muted">Termine werden geladen …</p>
+  if (!data.data) return <p className="muted">{t('Termine werden geladen …')}</p>
   return (
     <SelectField
-      label="Termin im Kalender"
+      label={t('Termin im Kalender')}
       value={call.event ? String(call.event.id) : ''}
       disabled={disabled}
       onChange={(e) => onPick({ event: e.target.value ? Number(e.target.value) : null })}
     >
-      <option value="">kein Termin</option>
+      <option value="">{t('kein Termin')}</option>
       {data.data.events.map((e) => (
         <option key={e.id} value={e.id}>
           {eventLabel(e)}
@@ -192,15 +198,23 @@ export function InterestCard({
   const open = yes.filter((r) => !r.taken)
   return (
     <div className="card card-wide">
-      <h2>Zusagen zum Termin</h2>
+      <h2>{t('Zusagen zum Termin')}</h2>
       <p className="muted">
         {yes.length === 0
-          ? `Zu „${event.title}“ (${formatDate(event.date)}) hat noch niemand zugesagt.`
-          : `${yes.length} ${yes.length === 1 ? 'Zusage' : 'Zusagen'}, davon ${
-              yes.length - open.length
-            } schon in der Meldung.`}
-        {data.data && data.data.no_count > 0 ? ` ${data.data.no_count} Absagen.` : ''} Melden lässt
-        sich weiter jedes Mitglied.
+          ? t('Zu „{title}“ ({x}) hat noch niemand zugesagt.', {
+              title: event.title,
+              x: formatDate(event.date),
+            })
+          : tn(
+              '{n} Zusage, davon {x2} schon in der Meldung.',
+              '{n} Zusagen, davon {x2} schon in der Meldung.',
+              yes.length,
+              { x2: yes.length - open.length },
+            )}
+        {data.data && data.data.no_count > 0
+          ? tn(' {n} Absage.', ' {n} Absagen.', data.data.no_count)
+          : ''}{' '}
+        {t('Melden lässt sich weiter jedes Mitglied.')}
       </p>
       {data.error && <Alert kind="error">{data.error}</Alert>}
       {yes.length > 0 && (
@@ -226,7 +240,7 @@ export function InterestCard({
       )}
       {!locked && list.length === 0 && yes.length > 0 && (
         <p className="muted small">
-          Legt zuerst eine Mannschaft an, dann lassen sich die Zusagen zuordnen.
+          {t('Legt zuerst eine Mannschaft an, dann lassen sich die Zusagen zuordnen.')}
         </p>
       )}
     </div>
@@ -246,7 +260,11 @@ function InterestRow({
 }) {
   const [target, setTarget] = useState('')
   const chosen = list.find((tm) => tm.key === target) ?? list[0]
-  const details = [r.unit_name, r.birth_year ? `geb. ${r.birth_year}` : '', r.note]
+  const details = [
+    r.unit_name,
+    r.birth_year ? t('geb. {birth_year}', { birth_year: r.birth_year }) : '',
+    r.note,
+  ]
     .filter(Boolean)
     .join(' · ')
   return (
@@ -256,14 +274,14 @@ function InterestRow({
         {details && <span className="muted small"> · {details}</span>}
       </span>
       {r.taken ? (
-        <span className="muted small">schon gemeldet</span>
+        <span className="muted small">{t('schon gemeldet')}</span>
       ) : (
         !disabled &&
         chosen && (
           <>
             {list.length > 1 && (
               <select
-                aria-label={`Ziel für ${r.name}`}
+                aria-label={t('Ziel für {name}', { name: r.name })}
                 value={chosen.key}
                 onChange={(e) => setTarget(e.target.value)}
               >
@@ -279,7 +297,7 @@ function InterestRow({
               className="button button-ghost"
               onClick={() => void onAdd(chosen)}
             >
-              {list.length > 1 ? 'hinzufügen' : `zu ${chosen.label}`}
+              {list.length > 1 ? t('hinzufügen') : t('zu {label}', { label: chosen.label })}
             </button>
           </>
         )

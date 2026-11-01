@@ -15,6 +15,7 @@ import { Alert, Tabs } from '../../components/ui.tsx'
 import { useOrg } from '../../org/OrgContext.tsx'
 import { useTerms } from '../../org/terms.ts'
 import { canWriteCirculars } from './access.ts'
+import { t } from '../../i18n/index.ts'
 
 const ROOT = '/rundschreiben'
 
@@ -38,19 +39,19 @@ export function CircularsPage() {
   } else if (activeDept && activeDept.permissions.includes(DEPT_PERM.circularsSend)) {
     base = circularBase.dept(activeDept.id)
     write = true
-    subtitle = `${activeDept.name} · ${activeDept.club_name}`
+    subtitle = t('{name} · {club_name}', { name: activeDept.name, club_name: activeDept.club_name })
   }
   if (!base || (!write && !receive)) return <Navigate to="/" replace />
   const orgId = active?.id ?? 0
   const tabs = [
-    ...(write ? [{ to: ROOT, label: 'Verfassen' }] : []),
-    ...(write ? [{ to: `${ROOT}/verteiler`, label: 'Verteiler' }] : []),
-    ...(receive ? [{ to: `${ROOT}/empfangen`, label: 'Empfangen' }] : []),
+    ...(write ? [{ to: ROOT, label: t('Verfassen') }] : []),
+    ...(write ? [{ to: `${ROOT}/verteiler`, label: t('Verteiler') }] : []),
+    ...(receive ? [{ to: `${ROOT}/empfangen`, label: t('Empfangen') }] : []),
   ]
   return (
     <section>
       <div className="page-head">
-        <h1>Rundschreiben</h1>
+        <h1>{t('Rundschreiben')}</h1>
         {subtitle && <p className="muted">{subtitle}</p>}
       </div>
       {tabs.length > 1 && <Tabs items={tabs} />}
@@ -97,10 +98,13 @@ function ReceivedList({ orgId }: { orgId: number }) {
     <div className="card card-wide">
       <h2>{tm.dv_Vom}</h2>
       <p className="muted small">
-        Rundschreiben {tm.dv_gen} an die Vorstände {tm.e_gen}.
+        {t('Rundschreiben {dv_gen} an die Vorstände {e_gen}.', {
+          dv_gen: tm.dv_gen,
+          e_gen: tm.e_gen,
+        })}
       </p>
       {list.data && list.data.length === 0 && (
-        <p className="muted">Noch keine Rundschreiben empfangen.</p>
+        <p className="muted">{t('Noch keine Rundschreiben empfangen.')}</p>
       )}
       {list.data && list.data.length > 0 && (
         <ul className="plain-list">
@@ -117,7 +121,7 @@ function ReceivedList({ orgId }: { orgId: number }) {
                   <MarkupPreview text={open.body} />
                   {open.attachments && open.attachments.length > 0 && (
                     <p>
-                      Anhänge:{' '}
+                      {t('Anhänge:')}{' '}
                       {open.attachments.map((a, i) => (
                         <span key={a.id}>
                           {i > 0 && ', '}

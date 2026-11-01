@@ -5,6 +5,7 @@ import type { ReceivedCircular } from '../../api/circulars.ts'
 import { errorMessage, formatDate, useLoad } from '../../components/forms.ts'
 import { Alert, Checkbox } from '../../components/ui.tsx'
 import { MarkupPreview } from '../../components/circulars/MarkupEditor.tsx'
+import { t } from '../../i18n/index.ts'
 
 export function PortalCirculars({ accessId }: { accessId: number }) {
   const list = useLoad(() => portalCircularApi.list(accessId), [accessId])
@@ -36,9 +37,9 @@ export function PortalCirculars({ accessId }: { accessId: number }) {
 
   return (
     <div className="card card-wide">
-      <h2>Rundschreiben</h2>
+      <h2>{t('Rundschreiben')}</h2>
       {list.data && list.data.length === 0 && (
-        <p className="muted">Du hast noch keine Rundschreiben bekommen.</p>
+        <p className="muted">{t('Du hast noch keine Rundschreiben bekommen.')}</p>
       )}
       {list.data && list.data.length > 0 && (
         <ul className="plain-list">
@@ -49,15 +50,15 @@ export function PortalCirculars({ accessId }: { accessId: number }) {
               </button>{' '}
               <span className="muted small">
                 {c.sender} · {formatDate(c.sent_at)}
-                {c.channel === 'letter' && ' · per Brief'}
-                {c.channel === 'app' && ' · per App'}
+                {c.channel === 'letter' && t(' · per Brief')}
+                {c.channel === 'app' && t(' · per App')}
               </span>
               {open?.id === c.id && open.body !== undefined && (
                 <div className="subcard">
                   <MarkupPreview text={open.body} />
                   {open.attachments && open.attachments.length > 0 && (
                     <p>
-                      Anhänge:{' '}
+                      {t('Anhänge:')}{' '}
                       {open.attachments.map((a, i) => (
                         <span key={a.id}>
                           {i > 0 && ', '}
@@ -76,7 +77,7 @@ export function PortalCirculars({ accessId }: { accessId: number }) {
       )}
       {settings.data && (
         <Checkbox
-          label="Informationen per E-Mail erhalten (offizielle Mitteilungen kommen immer)"
+          label={t('Informationen per E-Mail erhalten (offizielle Mitteilungen kommen immer)')}
           checked={!settings.data.info_opt_out}
           onChange={(on) => void setOptOut(!on)}
         />

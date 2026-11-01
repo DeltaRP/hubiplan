@@ -21,6 +21,7 @@ import { PortalInvoices, PortalMandate } from '../billing/MyInvoices.tsx'
 import { PortalEntries } from './PortalEntries.tsx'
 import { useTerms } from '../../org/terms.ts'
 import { NotFoundPage } from '../NoticePages.tsx'
+import { t } from '../../i18n/index.ts'
 
 const FIELDS = [
   'last_name',
@@ -67,21 +68,22 @@ function currentValues(d: PortalDetail): Record<FieldKey, string> {
 
 export function PortalPage() {
   const { activePortal } = useOrg()
-  if (!activePortal) return <Alert kind="info">Kein Mitgliederbereich ausgewählt.</Alert>
+  if (!activePortal) return <Alert kind="info">{t('Kein Mitgliederbereich ausgewählt.')}</Alert>
   return (
     <Routes>
       <Route index element={<PortalOverview key={activePortal.id} entry={activePortal} />} />
       <Route
         path="ausweis"
         element={
-          <PortalSection title="Mein Ausweis">
+          <PortalSection title={t('Mein Ausweis')}>
             <OwnCardPanel
               key={activePortal.id}
               accessId={activePortal.id}
               empty={
                 <Alert kind="info">
-                  Für dich gibt es zurzeit keinen Mitgliedsausweis, zum Beispiel weil deine
-                  Mitgliedschaft beendet ist.
+                  {t(
+                    'Für dich gibt es zurzeit keinen Mitgliedsausweis, zum Beispiel weil deine Mitgliedschaft beendet ist.',
+                  )}
                 </Alert>
               }
             />
@@ -91,11 +93,11 @@ export function PortalPage() {
       <Route
         path="rechnungen"
         element={
-          <PortalSection title="Rechnungen und Zahlung">
+          <PortalSection title={t('Rechnungen und Zahlung')}>
             <PortalInvoices
               key={activePortal.id}
               accessId={activePortal.id}
-              empty={<p className="muted">Für dich liegen keine Rechnungen vor.</p>}
+              empty={<p className="muted">{t('Für dich liegen keine Rechnungen vor.')}</p>}
             />
             <PortalMandate key={`m${activePortal.id}`} accessId={activePortal.id} />
           </PortalSection>
@@ -104,7 +106,7 @@ export function PortalPage() {
       <Route
         path="rundschreiben"
         element={
-          <PortalSection title="Rundschreiben">
+          <PortalSection title={t('Rundschreiben')}>
             <PortalCirculars key={activePortal.id} accessId={activePortal.id} />
           </PortalSection>
         }
@@ -112,7 +114,7 @@ export function PortalPage() {
       <Route
         path="gemeldet"
         element={
-          <PortalSection title="Wofür bin ich gemeldet?">
+          <PortalSection title={t('Wofür bin ich gemeldet?')}>
             <PortalEntries key={activePortal.id} accessId={activePortal.id} />
           </PortalSection>
         }
@@ -127,7 +129,7 @@ function PortalSection({ title, children }: { title: string; children: ReactNode
   return (
     <section>
       <p className="small">
-        <Link to="/mein-bereich">← Mein Bereich</Link>
+        <Link to="/mein-bereich">{t('← Mein Bereich')}</Link>
       </p>
       <h1>{title}</h1>
       <div className="stack">{children}</div>
@@ -140,35 +142,41 @@ export function PortalTasks({ entry }: { entry: PortalEntry }) {
   const tasks: { to: string; title: string; text: string }[] = [
     {
       to: '/mein-bereich/ausweis',
-      title: 'Ausweis zeigen',
-      text: 'QR-Code vorzeigen oder als PDF speichern',
+      title: t('Ausweis zeigen'),
+      text: t('QR-Code vorzeigen oder als PDF speichern'),
     },
     ...(entry.events_enabled
-      ? [{ to: '/termine', title: 'Meine Termine', text: 'Termine ansehen, zu- oder absagen' }]
+      ? [
+          {
+            to: '/termine',
+            title: t('Meine Termine'),
+            text: t('Termine ansehen, zu- oder absagen'),
+          },
+        ]
       : []),
     ...(entry.entries_enabled
       ? [
           {
             to: '/mein-bereich/gemeldet',
-            title: 'Gemeldet',
-            text: 'Wettbewerbe, für die der Verein dich gemeldet hat',
+            title: t('Gemeldet'),
+            text: t('Wettbewerbe, für die der Verein dich gemeldet hat'),
           },
         ]
       : []),
     {
       to: '/mein-bereich/rechnungen',
-      title: 'Rechnungen',
-      text: 'Beiträge, offene Beträge und Lastschrift',
+      title: t('Rechnungen'),
+      text: t('Beiträge, offene Beträge und Lastschrift'),
     },
     {
       to: '/mein-bereich/rundschreiben',
-      title: 'Rundschreiben',
-      text: 'Empfangene Schreiben lesen',
+      title: t('Rundschreiben'),
+      text: t('Empfangene Schreiben lesen'),
     },
     {
       to: '/mein-bereich/daten',
-      title: 'Meine Daten',
-      text: 'Anschrift und Kontakt ansehen, Änderungen melden',
+      title: t('Meine Daten'),
+      text: t('Anschrift und Kontakt ansehen, Änderungen melden'),
     },
   ]
   return (
@@ -190,16 +198,18 @@ function PortalOverview({ entry }: { entry: PortalEntry }) {
   const pending = data?.change_requests.find((c) => c.status === 'pending')
   return (
     <section>
-      <h1>Mein Bereich</h1>
+      <h1>{t('Mein Bereich')}</h1>
       <p className="muted">
         {entry.club_display_name ?? entry.club_name}
-        {data?.status === 'former' && ' · ehemaliges Mitglied'}
+        {data?.status === 'former' && t(' · ehemaliges Mitglied')}
       </p>
       <PortalTasks entry={entry} />
       {pending && (
         <Alert kind="info">
-          Deine Änderungsmeldung vom {formatDateTime(pending.created_at)} wird noch geprüft.{' '}
-          <Link to="/mein-bereich/daten">Ansehen</Link>
+          {t('Deine Änderungsmeldung vom {x} wird noch geprüft.', {
+            x: formatDateTime(pending.created_at),
+          })}{' '}
+          <Link to="/mein-bereich/daten">{t('Ansehen')}</Link>
         </Alert>
       )}
       {error && <Alert kind="error">{error}</Alert>}
@@ -214,13 +224,13 @@ function PortalData({ entry }: { entry: PortalEntry }) {
   const [editing, setEditing] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   if (error) return <Alert kind="error">{error}</Alert>
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
 
   const values = currentValues(data)
   const pending = data.change_requests.find((c) => c.status === 'pending')
 
   return (
-    <PortalSection title="Meine Daten">
+    <PortalSection title={t('Meine Daten')}>
       <div className="card card-wide">
         <div className="card-head">
           <h2>
@@ -232,19 +242,22 @@ function PortalData({ entry }: { entry: PortalEntry }) {
               className="button button-ghost push-right"
               onClick={() => setEditing(true)}
             >
-              Daten ändern
+              {t('Daten ändern')}
             </button>
           )}
         </div>
         <p className="muted small">
           {data.club.name}
-          {data.status === 'former' && ' · ehemaliges Mitglied'}
+          {data.status === 'former' && t(' · ehemaliges Mitglied')}
           {' · '}
-          {data.member_type ?? 'ohne Mitgliedsart'}
+          {data.member_type ?? t('ohne Mitgliedsart')}
           {data.entry_date &&
-            ` · Mitglied seit ${formatMemberDate(data.entry_date, entry.date_precision)}`}
-          {data.club_number && ` · Mitgliedsnummer ${data.club_number}`}
-          {data.departments.length > 0 && ` · ${data.departments.join(', ')}`}
+            t(' · Mitglied seit {x}', {
+              x: formatMemberDate(data.entry_date, entry.date_precision),
+            })}
+          {data.club_number &&
+            t(' · Mitgliedsnummer {club_number}', { club_number: data.club_number })}
+          {data.departments.length > 0 && t(' · {x}', { x: data.departments.join(', ') })}
         </p>
         {editing ? (
           <ChangeForm
@@ -272,14 +285,17 @@ function PortalData({ entry }: { entry: PortalEntry }) {
         {notice && !editing && <Alert kind="success">{notice}</Alert>}
         {pending && !editing && (
           <Alert kind="info">
-            Deine Änderungsmeldung vom {formatDateTime(pending.created_at)} wartet auf {tm.e_akk}.
+            {t('Deine Änderungsmeldung vom {x} wartet auf {e_akk}.', {
+              x: formatDateTime(pending.created_at),
+              e_akk: tm.e_akk,
+            })}
           </Alert>
         )}
       </div>
 
       {data.change_requests.length > 0 && (
         <div className="card card-wide">
-          <h2>Meine Änderungsmeldungen</h2>
+          <h2>{t('Meine Änderungsmeldungen')}</h2>
           <ul className="audit-list">
             {data.change_requests.map((c) => (
               <ChangeRequestItem key={c.id} request={c} />
@@ -295,7 +311,9 @@ function ClubContact({ club }: { club: PortalDetail['club'] }) {
   const tm = useTerms()
   return (
     <div className="card card-wide">
-      <h2>Kontakt {tm.e_zum}</h2>
+      <h2>
+        {t('Kontakt')} {tm.e_zum}
+      </h2>
       <p>
         {club.name}
         <br />
@@ -353,7 +371,7 @@ function ChangeForm({
     const changed: Record<string, string> = {}
     for (const key of FIELDS) if (v[key] !== initial[key]) changed[key] = v[key]
     if (Object.keys(changed).length === 0) {
-      form.setMessage({ kind: 'error', text: 'Du hast nichts geändert.' })
+      form.setMessage({ kind: 'error', text: t('Du hast nichts geändert.') })
       return
     }
     const result = (await form.submit(() =>
@@ -364,27 +382,34 @@ function ChangeForm({
     const applied = Object.keys(result.applied).length > 0
     onDone(
       applied && result.request
-        ? `Kontaktdaten gespeichert. Die übrigen Änderungen bestätigt ${tm.e_nom}.`
+        ? t('Kontaktdaten gespeichert. Die übrigen Änderungen bestätigt {e_nom}.', {
+            e_nom: tm.e_nom,
+          })
         : applied
-          ? 'Gespeichert.'
-          : `Meldung gesendet. ${tm.e_Nom} prüft und übernimmt sie.`,
+          ? t('Gespeichert.')
+          : t('Meldung gesendet. {e_Nom} prüft und übernimmt sie.', { e_Nom: tm.e_Nom }),
     )
   }
 
   return (
     <form onSubmit={send}>
       <p className="muted small">
-        Ändere die Angaben, die nicht mehr stimmen.{' '}
+        {t('Ändere die Angaben, die nicht mehr stimmen.')}{' '}
         {needsApproval
-          ? `${tm.e_Nom} prüft alle Änderungen und übernimmt sie.`
-          : `Kontaktdaten (E-Mail, Telefon, Anschrift) gelten sofort. Änderungen an Name, Geburtsdatum oder Geschlecht prüft ${tm.e_nom}.`}
+          ? t('{e_Nom} prüft alle Änderungen und übernimmt sie.', { e_Nom: tm.e_Nom })
+          : t(
+              'Kontaktdaten (E-Mail, Telefon, Anschrift) gelten sofort. Änderungen an Name, Geburtsdatum oder Geschlecht prüft {e_nom}.',
+              { e_nom: tm.e_nom },
+            )}
       </p>
       {hasPending && (
         <Alert kind="info">
-          Es wartet noch eine frühere Meldung auf {tm.e_akk}.{' '}
+          {t('Es wartet noch eine frühere Meldung auf {e_akk}.', { e_akk: tm.e_akk })}{' '}
           {needsApproval
-            ? 'Bis dahin sind die Felder gesperrt.'
-            : 'Bis dahin sind Name, Geburtsdatum und Geschlecht gesperrt; Kontaktdaten kannst du weiter ändern.'}
+            ? t('Bis dahin sind die Felder gesperrt.')
+            : t(
+                'Bis dahin sind Name, Geburtsdatum und Geschlecht gesperrt; Kontaktdaten kannst du weiter ändern.',
+              )}
         </Alert>
       )}
       <div className="grid-3">
@@ -396,7 +421,7 @@ function ChangeForm({
               value={v[key]}
               error={errors[key]}
               disabled={hasPending && (needsApproval || !DIRECT.includes(key))}
-              hint={!needsApproval && !DIRECT.includes(key) ? 'mit Bestätigung' : undefined}
+              hint={!needsApproval && !DIRECT.includes(key) ? t('mit Bestätigung') : undefined}
               autoComplete={AUTOCOMPLETE[key]}
               onChange={(e) => set(key, e.target.value)}
             >
@@ -423,14 +448,14 @@ function ChangeForm({
               value={v[key]}
               error={errors[key]}
               disabled={hasPending && (needsApproval || !DIRECT.includes(key))}
-              hint={!needsApproval && !DIRECT.includes(key) ? 'mit Bestätigung' : undefined}
+              hint={!needsApproval && !DIRECT.includes(key) ? t('mit Bestätigung') : undefined}
               onChange={(e) => set(key, e.target.value)}
             />
           ),
         )}
       </div>
       <Field
-        label={`Nachricht an ${tm.e_akk} (optional)`}
+        label={t('Nachricht an {e_akk} (optional)', { e_akk: tm.e_akk })}
         value={v.message}
         maxLength={500}
         onChange={(e) => set('message', e.target.value)}
@@ -438,14 +463,14 @@ function ChangeForm({
       {form.message?.kind === 'error' && <Alert kind="error">{form.message.text}</Alert>}
       <div className="button-row">
         <button type="submit" className="button button-primary" disabled={form.busy}>
-          {needsApproval ? 'Änderung zur Prüfung senden' : 'Speichern'}
+          {needsApproval ? t('Änderung zur Prüfung senden') : t('Speichern')}
         </button>
         <button
           type="button"
           className="button button-ghost"
           onClick={() => void confirmDiscard(dirty).then((ok) => ok && onCancel())}
         >
-          Abbrechen
+          {t('Abbrechen')}
         </button>
       </div>
     </form>
@@ -461,7 +486,7 @@ export function ChangeRequestItem({ request: c }: { request: ChangeRequest }) {
       <ChangeTable request={c} />
       {c.response && (
         <p className="small">
-          Antwort {tm.e_gen}: {c.response}
+          {t('Antwort {e_gen}:', { e_gen: tm.e_gen })} {c.response}
         </p>
       )}
     </li>

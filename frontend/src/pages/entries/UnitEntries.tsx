@@ -16,6 +16,7 @@ import { DataTable } from '../../components/DataTable.tsx'
 import { errorMessage, formatDate, formatDateTime, useLoad } from '../../components/forms.ts'
 import { Alert, LoadError } from '../../components/ui.tsx'
 import { EntryPanel } from './EntriesPage.tsx'
+import { t, tn } from '../../i18n/index.ts'
 
 /** Eingang des Veranstalters: je angeschriebene Untereinheit der Stand der Meldung. */
 export function UnitsPanel({ org, call }: { org: number; call: CallDetail }) {
@@ -23,7 +24,7 @@ export function UnitsPanel({ org, call }: { org: number; call: CallDetail }) {
   const [message, setMessage] = useState<{ kind: 'success' | 'error'; text: string } | null>(null)
   const [busy, setBusy] = useState(false)
   if (rows.error) return <LoadError message={rows.error} onRetry={rows.reload} />
-  if (!rows.data) return <p className="muted">Wird geladen …</p>
+  if (!rows.data) return <p className="muted">{t('Wird geladen …')}</p>
   const open = rows.data.filter((r) => r.status !== 'abgegeben' && r.status !== 'bestaetigt')
 
   async function remind() {
@@ -31,10 +32,10 @@ export function UnitsPanel({ org, call }: { org: number; call: CallDetail }) {
     try {
       const res = await entriesApi.remind(org, call.id)
       const parts = []
-      if (res.reminded.length) parts.push(`Erinnert: ${res.reminded.join(', ')}.`)
+      if (res.reminded.length) parts.push(t('Erinnert: {x}.', { x: res.reminded.join(', ') }))
       if (res.without_contact.length)
-        parts.push(`Ohne Ansprechperson mit Zugang: ${res.without_contact.join(', ')}.`)
-      setMessage({ kind: 'success', text: parts.join(' ') || 'Niemand zu erinnern.' })
+        parts.push(t('Ohne Ansprechperson mit Zugang: {x}.', { x: res.without_contact.join(', ') }))
+      setMessage({ kind: 'success', text: parts.join(' ') || t('Niemand zu erinnern.') })
     } catch (err) {
       setMessage({ kind: 'error', text: errorMessage(err) })
     } finally {
@@ -46,18 +47,25 @@ export function UnitsPanel({ org, call }: { org: number; call: CallDetail }) {
     <>
       <div className="card card-wide">
         <p className="muted">
-          {rows.data.length - open.length} von {rows.data.length} Untereinheiten haben gemeldet.
-          {call.deadline ? ` Meldeschluss ${formatDate(call.deadline)}.` : ''} Ihr könnt jede
-          Meldung auch selbst eintragen, etwa für Untereinheiten ohne eigenen Zugang.
+          {tn(
+            '{done} von {n} Untereinheit hat gemeldet.',
+            '{done} von {n} Untereinheiten haben gemeldet.',
+            rows.data.length,
+            { done: rows.data.length - open.length },
+          )}
+          {call.deadline ? t(' Meldeschluss {x}.', { x: formatDate(call.deadline) }) : ''}{' '}
+          {t(
+            'Ihr könnt jede Meldung auch selbst eintragen, etwa für Untereinheiten ohne eigenen Zugang.',
+          )}
         </p>
         <div className="button-row">
           {open.length > 0 && (
             <button type="button" className="button button-ghost" disabled={busy} onClick={remind}>
-              Fehlende erinnern (Mail)
+              {t('Fehlende erinnern (Mail)')}
             </button>
           )}
           <a className="button button-ghost" href={entriesApi.unitsListUrl(org, call.id, 'xlsx')}>
-            Meldeliste (Excel)
+            {t('Meldeliste (Excel)')}
           </a>
           <a className="button button-ghost" href={entriesApi.unitsListUrl(org, call.id, 'csv')}>
             CSV
@@ -66,42 +74,47 @@ export function UnitsPanel({ org, call }: { org: number; call: CallDetail }) {
         {message && <Alert kind={message.kind}>{message.text}</Alert>}
       </div>
       <DataTable<UnitRow>
-        label="Eingang"
+        label={t('Eingang')}
         rows={rows.data}
         rowKey={(r) => r.unit}
-        emptyText="Keine Untereinheit angeschrieben."
+        emptyText={t('Keine Untereinheit angeschrieben.')}
         columns={[
           {
             key: 'name',
-            label: 'Untereinheit',
+            label: t('Untereinheit'),
             value: (r) => r.name,
             render: (r) => <Link to={`einheit/${r.unit}`}>{r.name}</Link>,
           },
           {
             key: 'status',
-            label: 'Meldung',
+            label: t('Meldung'),
             value: (r) => r.status_label,
             render: (r) => (
               <>
                 {r.status_label}
-                {r.changed && r.status !== 'entwurf' ? ', geändert' : ''}
-                {r.hints > 0 && <span className="muted small"> · {r.hints} Hinweise</span>}
+                {r.changed && r.status !== 'entwurf' ? t(', geändert') : ''}
+                {r.hints > 0 && (
+                  <span className="muted small">
+                    {' '}
+                    {tn('· {n} Hinweis', '· {n} Hinweise', r.hints)}
+                  </span>
+                )}
               </>
             ),
             filter: true,
           },
-          { key: 'teams', label: 'Mannschaften', value: (r) => r.teams },
-          { key: 'persons', label: 'Personen', value: (r) => r.persons },
+          { key: 'teams', label: t('Mannschaften'), value: (r) => r.teams },
+          { key: 'persons', label: t('Personen'), value: (r) => r.persons },
           {
             key: 'submitted_at',
-            label: 'Zuletzt abgegeben',
+            label: t('Zuletzt abgegeben'),
             value: (r) => r.submitted_at ?? '',
             render: (r) => (r.submitted_at ? formatDateTime(r.submitted_at) : '—'),
             optional: true,
           },
           {
             key: 'contacts',
-            label: 'Ansprechpersonen',
+            label: t('Ansprechpersonen'),
             value: (r) => r.contacts,
             render: (r) => (r.contacts ? r.contacts : <span className="muted">keine</span>),
             optional: true,
@@ -128,13 +141,15 @@ export function UnitEntryPage({
   const rows = useLoad(() => entriesApi.units(org, call.id), [org, call.id])
   const name = rows.data?.find((r) => r.unit === unit)?.name ?? ''
   if (entry.error) return <LoadError message={entry.error} onRetry={entry.reload} />
-  if (entry.loading && entry.data === null) return <p className="muted">Wird geladen …</p>
+  if (entry.loading && entry.data === null) return <p className="muted">{t('Wird geladen …')}</p>
   return (
     <>
       <p>
-        <Link to={`/meldungen/${call.id}`}>← Eingang</Link>
+        <Link to={`/meldungen/${call.id}`}>{t('← Eingang')}</Link>
       </p>
-      <h2>Meldung {name}</h2>
+      <h2>
+        {t('Meldung')} {name}
+      </h2>
       <EntryPanel
         org={scope}
         call={call}
@@ -160,14 +175,14 @@ export function DeptEntries({ deptId }: { deptId: number }) {
 }
 
 function deptStatus(c: Call): string {
-  if (!c.entry_status) return 'noch nicht gemeldet'
-  if (c.entry_status === 'rueckfrage') return 'Rückfrage'
-  const label = { entwurf: 'Entwurf', abgegeben: 'abgegeben', bestaetigt: 'bestätigt' }[
+  if (!c.entry_status) return t('noch nicht gemeldet')
+  if (c.entry_status === 'rueckfrage') return t('Rückfrage')
+  const label = { entwurf: t('Entwurf'), abgegeben: 'abgegeben', bestaetigt: t('bestätigt') }[
     c.entry_status as string
   ]
   return (
     (label ?? c.entry_status) +
-    (c.entry_changed && c.entry_status !== 'entwurf' ? ', geändert' : '')
+    (c.entry_changed && c.entry_status !== 'entwurf' ? t(', geändert') : '')
   )
 }
 
@@ -175,40 +190,41 @@ function DeptCallList({ deptId }: { deptId: number }) {
   const scope = deptScope(deptId)
   const { data, error, reload } = useLoad(() => entriesApi.list(scope), [scope])
   if (error) return <LoadError message={error} onRetry={reload} />
-  if (!data) return <p className="muted">Wird geladen …</p>
+  if (!data) return <p className="muted">{t('Wird geladen …')}</p>
   return (
     <>
       <p className="muted">
-        Ausschreibungen von oben, zu denen ihr eure Mitglieder meldet, etwa Schützen für ein
-        Preisschießen.
+        {t(
+          'Ausschreibungen von oben, zu denen ihr eure Mitglieder meldet, etwa Schützen für ein Preisschießen.',
+        )}
       </p>
       <DataTable<Call>
-        label="Ausschreibungen"
+        label={t('Ausschreibungen')}
         rows={data}
         rowKey={(c) => c.id}
         initialSort={{ key: 'deadline', dir: 'asc' }}
-        emptyText="Zurzeit gibt es keine Ausschreibung für euch."
+        emptyText={t('Zurzeit gibt es keine Ausschreibung für euch.')}
         columns={[
           {
             key: 'deadline',
-            label: 'Meldeschluss',
+            label: t('Meldeschluss'),
             value: (c) => c.deadline ?? '',
             render: (c) => (c.deadline ? formatDate(c.deadline) : '—'),
           },
           {
             key: 'title',
-            label: 'Ausschreibung',
+            label: t('Ausschreibung'),
             value: (c) => c.title,
             render: (c) => <Link to={`/abteilung/meldungen/${c.id}`}>{c.title}</Link>,
           },
           {
             key: 'date',
-            label: 'Datum',
+            label: t('Datum'),
             value: (c) => c.date ?? '',
             render: (c) => (c.date ? formatDate(c.date) : '—'),
             optional: true,
           },
-          { key: 'status', label: 'Meldung', value: deptStatus, filter: true },
+          { key: 'status', label: t('Meldung'), value: deptStatus, filter: true },
         ]}
       />
     </>
@@ -224,19 +240,19 @@ function DeptCall({ deptId }: { deptId: number }) {
   const error = call.error || entry.error || options.error
   if (error) return <LoadError message={error} onRetry={() => void call.reload()} />
   if (!call.data || !options.data || (entry.loading && entry.data === null))
-    return <p className="muted">Wird geladen …</p>
+    return <p className="muted">{t('Wird geladen …')}</p>
   const c = call.data
   return (
     <>
       <p>
-        <Link to="/abteilung/meldungen">← Alle Ausschreibungen</Link>
+        <Link to="/abteilung/meldungen">{t('← Alle Ausschreibungen')}</Link>
       </p>
       <h2>{c.title}</h2>
       <p className="muted">
         {c.organizer}
-        {c.date ? ` · ${formatDate(c.date)}` : ''}
-        {c.location ? ` · ${c.location}` : ''}
-        {c.deadline ? ` · Meldeschluss ${formatDate(c.deadline)}` : ''}
+        {c.date ? t(' · {x}', { x: formatDate(c.date) }) : ''}
+        {c.location ? t(' · {location}', { location: c.location }) : ''}
+        {c.deadline ? t(' · Meldeschluss {x}', { x: formatDate(c.deadline) }) : ''}
       </p>
       {c.description && <p className="event-description">{c.description}</p>}
       <EntryPanel

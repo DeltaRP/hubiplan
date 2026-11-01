@@ -38,28 +38,33 @@ import { MovedCirculars } from '../circulars/CircularsPage.tsx'
 import { MemberDevelopment } from '../members/DevelopmentPage.tsx'
 import { statsApi } from '../../api/statistics.ts'
 import { alertDialog, confirmDialog, confirmRoleRemoval } from '../../components/dialog.ts'
+import { t } from '../../i18n/index.ts'
 
 export function DepartmentArea() {
   const dept = useActiveDept()
   const can = (p: string) => dept.permissions.includes(p)
   const tabs = [
     ...(can(DEPT_PERM.membersView) || !can(DEPT_PERM.invoicesView)
-      ? [{ to: '/abteilung', label: 'Mitglieder' }]
+      ? [{ to: '/abteilung', label: t('Mitglieder') }]
       : []),
-    ...(can(DEPT_PERM.membersView) ? [{ to: '/abteilung/entwicklung', label: 'Entwicklung' }] : []),
+    ...(can(DEPT_PERM.membersView)
+      ? [{ to: '/abteilung/entwicklung', label: t('Entwicklung') }]
+      : []),
     ...(can(DEPT_PERM.invoicesView)
       ? [
           {
             to: can(DEPT_PERM.membersView) ? '/abteilung/rechnungen' : '/abteilung',
-            label: 'Rechnungen',
+            label: t('Rechnungen'),
           },
         ]
       : []),
     ...(can(DEPT_PERM.rolesManage)
-      ? [{ to: '/abteilung/rollen', label: 'Rollen und Rechte' }]
+      ? [{ to: '/abteilung/rollen', label: t('Rollen und Rechte') }]
       : []),
-    ...(can(DEPT_PERM.entriesSubmit) ? [{ to: '/abteilung/meldungen', label: 'Meldungen' }] : []),
-    ...(can(DEPT_PERM.export) ? [{ to: '/abteilung/export', label: 'Export' }] : []),
+    ...(can(DEPT_PERM.entriesSubmit)
+      ? [{ to: '/abteilung/meldungen', label: t('Meldungen') }]
+      : []),
+    ...(can(DEPT_PERM.export) ? [{ to: '/abteilung/export', label: t('Export') }] : []),
   ]
   return (
     <section>
@@ -106,7 +111,10 @@ export function DepartmentArea() {
           <Route path="meldungen/*" element={<DeptEntries deptId={dept.id} />} />
         )}
         <Route path="rundschreiben/*" element={<MovedCirculars />} />
-        <Route path="*" element={<SubpageUnavailable to="/abteilung" label="Zur Übersicht" />} />
+        <Route
+          path="*"
+          element={<SubpageUnavailable to="/abteilung" label={t('Zur Übersicht')} />}
+        />
       </Routes>
     </section>
   )
@@ -174,7 +182,7 @@ function DeptMemberList({ dept }: { dept: DeptSummary }) {
   if (!dept.permissions.includes(DEPT_PERM.membersView)) {
     return (
       <div className="card empty-state">
-        <p>Deine Rolle darf die Mitgliederliste nicht sehen.</p>
+        <p>{t('Deine Rolle darf die Mitgliederliste nicht sehen.')}</p>
       </div>
     )
   }
@@ -187,17 +195,17 @@ function DeptMemberList({ dept }: { dept: DeptSummary }) {
           <a
             className="button button-ghost push-right"
             href={cardApi.deptPdfUrl(dept.id)}
-            title="Ausweise mit QR-Code für alle Mitglieder (10 je A4-Seite)"
+            title={t('Ausweise mit QR-Code für alle Mitglieder (10 je A4-Seite)')}
           >
-            Ausweise aller Mitglieder (PDF)
+            {t('Ausweise aller Mitglieder (PDF)')}
           </a>
         </div>
       )}
       <input
         type="search"
         className="search-input"
-        placeholder="Suchen: Name oder E-Mail"
-        aria-label="Mitglieder suchen"
+        placeholder={t('Suchen: Name oder E-Mail')}
+        aria-label={t('Mitglieder suchen')}
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
@@ -210,22 +218,24 @@ function DeptMemberList({ dept }: { dept: DeptSummary }) {
         />
       )}
       {!data ? (
-        !error && <p className="muted">Lädt …</p>
+        !error && <p className="muted">{t('Lädt …')}</p>
       ) : data.results.length === 0 ? (
-        <p className={`muted${stale ? ' is-stale' : ''}`}>Keine Mitglieder gefunden.</p>
+        <p className={`muted${stale ? ' is-stale' : ''}`}>{t('Keine Mitglieder gefunden.')}</p>
       ) : (
         <div className={stale ? 'is-stale' : undefined}>
-          <p className="muted small">{data.count} Mitglieder</p>
+          <p className="muted small">
+            {data.count} {t('Mitglieder')}
+          </p>
           <table className="table">
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Geburtsdatum</th>
+                <th>{t('Name')}</th>
+                <th>{t('Geburtsdatum')}</th>
                 <th>
-                  <Term k="member_type">Mitgliedsart</Term>
+                  <Term k="member_type">{t('Mitgliedsart')}</Term>
                 </th>
-                <th>E-Mail</th>
-                <th>Telefon</th>
+                <th>{t('E-Mail')}</th>
+                <th>{t('Telefon')}</th>
               </tr>
             </thead>
             <tbody>
@@ -252,10 +262,10 @@ function DeptMemberList({ dept }: { dept: DeptSummary }) {
                 disabled={page <= 1}
                 onClick={() => setPage(page - 1)}
               >
-                Zurück
+                {t('Zurück')}
               </button>
               <span className="muted small">
-                Seite {page} von {pages}
+                {t('Seite {page} von', { page })} {pages}
               </span>
               <button
                 type="button"
@@ -263,7 +273,7 @@ function DeptMemberList({ dept }: { dept: DeptSummary }) {
                 disabled={page >= pages}
                 onClick={() => setPage(page + 1)}
               >
-                Weiter
+                {t('Weiter')}
               </button>
             </div>
           )}
@@ -293,13 +303,13 @@ function DeptMemberPage({ dept }: { dept: DeptSummary }) {
   const id = Number(useParams().id)
   const { data, error, setData } = useLoad(() => portalApi.deptMember(dept.id, id), [dept.id, id])
   if (error) return <Alert kind="error">{error}</Alert>
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
   const canEdit = dept.permissions.includes(DEPT_PERM.membersEdit)
   const canAccess = dept.permissions.includes(DEPT_PERM.accessManage)
   return (
     <div className="stack">
       <p>
-        <Link to="/abteilung">← zur Liste</Link>
+        <Link to="/abteilung">{t('← zur Liste')}</Link>
       </p>
       <DeptMemberForm
         key={data.id}
@@ -372,30 +382,32 @@ function DeptMemberForm({
         {canEdit && <SaveStatus auto={auto} />}
       </div>
       <p className="muted small">
-        {member.member_type ?? 'ohne Mitgliedsart'}
+        {member.member_type ?? t('ohne Mitgliedsart')}
         {member.entry_date &&
-          ` · Mitglied seit ${formatMemberDate(member.entry_date, dept.date_precision)}`}
-        {member.club_number && ` · Nr. ${member.club_number}`}
-        {member.departments.length > 0 && ` · ${member.departments.join(', ')}`}
+          t(' · Mitglied seit {x}', {
+            x: formatMemberDate(member.entry_date, dept.date_precision),
+          })}
+        {member.club_number && t(' · Nr. {club_number}', { club_number: member.club_number })}
+        {member.departments.length > 0 && t(' · {x}', { x: member.departments.join(', ') })}
       </p>
       <fieldset disabled={!canEdit}>
         <div className="grid-3">
           <Field
-            label="Name"
+            label={t('Name')}
             required
             value={v.last_name}
             error={errors.last_name}
             onChange={(e) => set('last_name', e.target.value)}
           />
           <Field
-            label="Vorname"
+            label={t('Vorname')}
             required
             value={v.first_name}
             error={errors.first_name}
             onChange={(e) => set('first_name', e.target.value)}
           />
           <Field
-            label="Geburtsdatum"
+            label={t('Geburtsdatum')}
             type="date"
             required
             value={v.birth_date}
@@ -418,19 +430,19 @@ function DeptMemberForm({
       </fieldset>
       {form.message && <Alert kind={form.message.kind}>{form.message.text}</Alert>}
       {!canEdit && (
-        <p className="muted small">Deine Rolle darf die Daten ansehen, aber nicht ändern.</p>
+        <p className="muted small">{t('Deine Rolle darf die Daten ansehen, aber nicht ändern.')}</p>
       )}
     </form>
   )
 }
 
 const CONTACT_LABEL: Record<(typeof CONTACT_KEYS)[number], string> = {
-  email: 'E-Mail',
-  phone: 'Telefon',
-  street: 'Straße und Hausnummer',
+  email: t('E-Mail'),
+  phone: t('Telefon'),
+  street: t('Straße und Hausnummer'),
   postal_code: 'PLZ',
-  city: 'Ort',
-  country: 'Land',
+  city: t('Ort'),
+  country: t('Land'),
 }
 
 function DeptRolesPage({ dept }: { dept: DeptSummary }) {
@@ -447,7 +459,7 @@ function DeptRolesPage({ dept }: { dept: DeptSummary }) {
 
   const loadError = roles.error ?? holders.error
   if (loadError) return <Alert kind="error">{loadError}</Alert>
-  if (!roles.data || !holders.data) return <p className="muted">Lädt …</p>
+  if (!roles.data || !holders.data) return <p className="muted">{t('Lädt …')}</p>
   const perms = roles.data.catalog.flatMap((m) => m.permissions)
 
   async function run(action: () => Promise<unknown>) {
@@ -468,10 +480,12 @@ function DeptRolesPage({ dept }: { dept: DeptSummary }) {
   return (
     <div className="stack">
       <div className="card card-wide">
-        <h2>Rollen und Rechte</h2>
+        <h2>{t('Rollen und Rechte')}</h2>
         <p className="muted small">
-          Hier legt ihr fest, was jede Rolle in der {dept.label} darf. Rechte wirken für alle, die
-          die Rolle innehaben und einen Zugang haben.
+          {t(
+            'Hier legt ihr fest, was jede Rolle in der {label} darf. Rechte wirken für alle, die die Rolle innehaben und einen Zugang haben.',
+            { label: dept.label },
+          )}
         </p>
         {sort.active && <SortHint />}
         <ul className="role-list">
@@ -505,11 +519,14 @@ function DeptRolesPage({ dept }: { dept: DeptSummary }) {
                     await portalApi.deleteDeptRole(dept.id, r.id)
                     await roles.reload()
                   } catch (err) {
-                    await alertDialog({ title: 'Rolle nicht entfernt', message: errorMessage(err) })
+                    await alertDialog({
+                      title: t('Rolle nicht entfernt'),
+                      message: errorMessage(err),
+                    })
                   }
                 }}
               >
-                Entfernen
+                {t('Entfernen')}
               </button>
             </li>
           ))}
@@ -526,13 +543,13 @@ function DeptRolesPage({ dept }: { dept: DeptSummary }) {
           }}
         >
           <input
-            aria-label="Neue Rolle"
-            placeholder="z. B. Kassierer"
+            aria-label={t('Neue Rolle')}
+            placeholder={t('z. B. Kassierer')}
             value={newRole}
             onChange={(e) => setNewRole(e.target.value)}
           />
           <button type="submit" className="button button-ghost">
-            Rolle hinzufügen
+            {t('Rolle hinzufügen')}
           </button>
         </form>
         {error && <Alert kind="error">{error}</Alert>}
@@ -586,15 +603,15 @@ function HoldersCard({
 
   return (
     <div className="card card-wide">
-      <h2>Wer hat welche Rolle?</h2>
+      <h2>{t('Wer hat welche Rolle?')}</h2>
       {holders.length === 0 ? (
-        <p className="muted small">Noch niemand.</p>
+        <p className="muted small">{t('Noch niemand.')}</p>
       ) : (
         <table className="table">
           <thead>
             <tr>
-              <th>Mitglied</th>
-              <th>Rolle</th>
+              <th>{t('Mitglied')}</th>
+              <th>{t('Rolle')}</th>
               <th>seit</th>
               <th />
             </tr>
@@ -612,15 +629,17 @@ function HoldersCard({
                     onClick={async () => {
                       if (
                         await confirmDialog({
-                          title: `Rolle von ${h.member_name} beenden?`,
-                          confirmLabel: 'Beenden',
+                          title: t('Rolle von {member_name} beenden?', {
+                            member_name: h.member_name,
+                          }),
+                          confirmLabel: t('Beenden'),
                         })
                       ) {
                         void onRun(() => portalApi.endHolder(dept.id, h.id))
                       }
                     }}
                   >
-                    Beenden
+                    {t('Beenden')}
                   </button>
                 </td>
               </tr>
@@ -638,13 +657,17 @@ function HoldersCard({
           ).then(() => setMember(''))
         }}
       >
-        <SelectField label="Mitglied" value={member} onChange={(e) => setMember(e.target.value)}>
+        <SelectField
+          label={t('Mitglied')}
+          value={member}
+          onChange={(e) => setMember(e.target.value)}
+        >
           <option value="">
             {load === 'loading'
-              ? 'Mitglieder werden geladen …'
+              ? t('Mitglieder werden geladen …')
               : load === 'failed'
-                ? 'Mitglieder konnten nicht geladen werden'
-                : 'bitte wählen'}
+                ? t('Mitglieder konnten nicht geladen werden')
+                : t('bitte wählen')}
           </option>
           {options.map((m) => (
             <option key={m.id} value={m.id}>
@@ -652,8 +675,8 @@ function HoldersCard({
             </option>
           ))}
         </SelectField>
-        <SelectField label="Rolle" value={role} onChange={(e) => setRole(e.target.value)}>
-          <option value="">bitte wählen</option>
+        <SelectField label={t('Rolle')} value={role} onChange={(e) => setRole(e.target.value)}>
+          <option value="">{t('bitte wählen')}</option>
           {roles.map((r) => (
             <option key={r.id} value={r.id}>
               {r.name}
@@ -663,13 +686,13 @@ function HoldersCard({
         <div className="field">
           <span>&nbsp;</span>
           <button type="submit" className="button button-primary" disabled={!member || !role}>
-            Rolle vergeben
+            {t('Rolle vergeben')}
           </button>
         </div>
       </form>
       {load === 'failed' && (
         <p className="alert alert-error" role="alert">
-          Die Mitglieder konnten nicht geladen werden.{' '}
+          {t('Die Mitglieder konnten nicht geladen werden.')}{' '}
           <button
             type="button"
             className="link-button"
@@ -678,7 +701,7 @@ function HoldersCard({
               setAttempt((n) => n + 1)
             }}
           >
-            Erneut laden
+            {t('Erneut laden')}
           </button>
         </p>
       )}

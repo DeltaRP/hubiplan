@@ -15,6 +15,7 @@ import { useTerms } from '../../org/terms.ts'
 import { Why } from '../../learning/Aids.tsx'
 import { RightsHint } from '../../components/RightsHint.tsx'
 import { SubpageUnavailable } from '../NoticePages.tsx'
+import { t, tn } from '../../i18n/index.ts'
 
 const MAX_BYTES = 20 * 1024 * 1024
 const ACCEPT =
@@ -25,7 +26,7 @@ type Msg = { kind: 'error' | 'success'; text: string } | null
 export function DocumentsPage() {
   const { active, activeDept, activePortal } = useOrg()
   let base: DocBase | null = null
-  let title = 'Dokumente'
+  let title = t('Dokumente')
   let subtitle = ''
   let manage = false
   let orgId: number | null = null
@@ -42,14 +43,17 @@ export function DocumentsPage() {
     canEditStatute = active.permissions.includes(PERM.orgEdit)
   } else if (activeDept) {
     base = docBase.dept(activeDept.id)
-    title = `Dokumente – ${activeDept.name}`
-    subtitle = `${activeDept.label} · ${activeDept.club_name}`
+    title = t('Dokumente – {name}', { name: activeDept.name })
+    subtitle = t('{label} · {club_name}', {
+      label: activeDept.label,
+      club_name: activeDept.club_name,
+    })
     manage = activeDept.permissions.includes(DEPT_PERM.docsManage)
   } else if (activePortal) {
     return (
       <section>
         <div className="page-head">
-          <h1>Dokumente</h1>
+          <h1>{t('Dokumente')}</h1>
           <p className="muted">{activePortal.club_name}</p>
         </div>
         <MemberDocuments base={docBase.portal(activePortal.id)} />
@@ -59,14 +63,14 @@ export function DocumentsPage() {
   if (!base) {
     return (
       <section>
-        <h1>Dokumente</h1>
-        <p className="muted">Für diesen Bereich gibt es keine Dokumentenablage.</p>
+        <h1>{t('Dokumente')}</h1>
+        <p className="muted">{t('Für diesen Bereich gibt es keine Dokumentenablage.')}</p>
       </section>
     )
   }
   const tabs = [
-    { to: '/dokumente', label: 'Ablage' },
-    ...(manage ? [{ to: '/dokumente/papierkorb', label: 'Papierkorb' }] : []),
+    { to: '/dokumente', label: t('Ablage') },
+    ...(manage ? [{ to: '/dokumente/papierkorb', label: t('Papierkorb') }] : []),
   ]
   return (
     <section>
@@ -106,7 +110,7 @@ function DocumentArea({
         element={
           <>
             {error && <Alert kind="error">{error}</Alert>}
-            {!data && !error && <p className="muted">Lädt …</p>}
+            {!data && !error && <p className="muted">{t('Lädt …')}</p>}
             {data && (
               <Library
                 base={base}
@@ -122,7 +126,7 @@ function DocumentArea({
       {trash && <Route path="papierkorb" element={<TrashPanel base={base} />} />}
       <Route
         path="*"
-        element={<SubpageUnavailable to="/dokumente" label="Zur Dokumentenablage" />}
+        element={<SubpageUnavailable to="/dokumente" label={t('Zur Dokumentenablage')} />}
       />
     </Routes>
   )
@@ -181,7 +185,7 @@ function Library({
       await docApi.createFolder(base, newName.trim(), newVisibility, newShared)
       setNewName('')
       setNewShared(false)
-    }, 'Der Ordner wurde angelegt.')
+    }, t('Der Ordner wurde angelegt.'))
   }
 
   const ctx = { base, manage, busy, run, folders: data.folders, visibilities, setMessage, shareUp }
@@ -204,25 +208,28 @@ function Library({
     <div className="documents">
       <div className="documents-toolbar">
         <Field
-          label="Suchen (Titel und Bemerkung, alle Ordner)"
+          label={t('Suchen (Titel und Bemerkung, alle Ordner)')}
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
         {data.used_bytes !== undefined && (
           <p className="muted small">
-            Belegter Platz: {formatSize(data.used_bytes)}
+            {t('Belegter Platz:')} {formatSize(data.used_bytes)}
             {data.budget_bytes
               ? ` (Verein gesamt ${formatSize(data.total_bytes ?? 0)} von ${formatSize(data.budget_bytes)})`
               : ''}
-            {data.trash_count ? ` · ${data.trash_count} im Papierkorb` : ''}
+            {data.trash_count
+              ? t(' · {trash_count} im Papierkorb', { trash_count: data.trash_count })
+              : ''}
           </p>
         )}
       </div>
       {data.budget_bytes && (data.total_bytes ?? 0) >= data.budget_bytes * 0.8 ? (
         <Alert kind="info">
-          Der Speicherplatz der Ablage ist zu über 80 % belegt. Bitte alte Fassungen oder den
-          Papierkorb leeren; mehr Platz gibt die Plattform-Verwaltung frei.
+          {t(
+            'Der Speicherplatz der Ablage ist zu über 80 % belegt. Bitte alte Fassungen oder den Papierkorb leeren; mehr Platz gibt die Plattform-Verwaltung frei.',
+          )}
         </Alert>
       ) : null}
       {message && <Alert kind={message.kind}>{message.text}</Alert>}
@@ -230,21 +237,27 @@ function Library({
       {query && (
         <p className="muted small" role="status">
           {hits === 0
-            ? 'Kein Dokument passt zur Suche (gesucht in allen eigenen und freigegebenen Ordnern).'
-            : `${hits} Treffer in eigenen und freigegebenen Ordnern.`}
+            ? t(
+                'Kein Dokument passt zur Suche (gesucht in allen eigenen und freigegebenen Ordnern).',
+              )
+            : tn(
+                '{n} Treffer in eigenen und freigegebenen Ordnern.',
+                '{n} Treffer in eigenen und freigegebenen Ordnern.',
+                hits,
+              )}
         </p>
       )}
 
       {orgId && (!query || statuteHit) && (
         <details className="doc-folder">
           <summary>
-            <span className="doc-folder-name">Satzung</span>
-            <span className="badge">fester Ordner</span>
+            <span className="doc-folder-name">{t('Satzung')}</span>
+            <span className="badge">{t('fester Ordner')}</span>
           </summary>
           <StatutePanel orgId={orgId} heading="h3" />
           {!canEditStatute && (
             <p className="muted small">
-              Neue Fassungen lädt hoch, wer die Organisationsdaten bearbeiten darf.
+              {t('Neue Fassungen lädt hoch, wer die Organisationsdaten bearbeiten darf.')}
             </p>
           )}
         </details>
@@ -253,13 +266,13 @@ function Library({
       {orgId && (!query || feeRulesHit) && (
         <details className="doc-folder">
           <summary>
-            <span className="doc-folder-name">Beitragsordnung</span>
-            <span className="badge">fester Ordner</span>
+            <span className="doc-folder-name">{t('Beitragsordnung')}</span>
+            <span className="badge">{t('fester Ordner')}</span>
           </summary>
           <StatutePanel orgId={orgId} heading="h3" kind="fee_rules" />
           {!canEditStatute && (
             <p className="muted small">
-              Neue Fassungen lädt hoch, wer die Organisationsdaten bearbeiten darf.
+              {t('Neue Fassungen lädt hoch, wer die Organisationsdaten bearbeiten darf.')}
             </p>
           )}
         </details>
@@ -268,13 +281,13 @@ function Library({
       {orgId && (!query || foundingDeedHit) && (
         <details className="doc-folder">
           <summary>
-            <span className="doc-folder-name">Gründungsurkunde</span>
-            <span className="badge">fester Ordner</span>
+            <span className="doc-folder-name">{t('Gründungsurkunde')}</span>
+            <span className="badge">{t('fester Ordner')}</span>
           </summary>
           <StatutePanel orgId={orgId} heading="h3" kind="founding_deed" />
           {!canEditStatute && (
             <p className="muted small">
-              Neue Fassungen lädt hoch, wer die Organisationsdaten bearbeiten darf.
+              {t('Neue Fassungen lädt hoch, wer die Organisationsdaten bearbeiten darf.')}
             </p>
           )}
         </details>
@@ -283,8 +296,8 @@ function Library({
       {data.folders.length === 0 && (
         <p className="muted">
           {manage
-            ? 'Noch keine Ordner. Lege unten den ersten an, z. B. „Protokolle“ oder „Formulare“.'
-            : 'Noch keine Dokumente.'}
+            ? t('Noch keine Ordner. Lege unten den ersten an, z. B. „Protokolle“ oder „Formulare“.')
+            : t('Noch keine Dokumente.')}
         </p>
       )}
       {data.folders.map((f) =>
@@ -295,17 +308,17 @@ function Library({
 
       {manage && (
         <form className="inline-form doc-new-folder" onSubmit={createFolder}>
-          <h3>Neuer Ordner</h3>
+          <h3>{t('Neuer Ordner')}</h3>
           <div className="grid-3">
             <Field
-              label="Name"
+              label={t('Name')}
               value={newName}
               maxLength={100}
               required
               onChange={(e) => setNewName(e.target.value)}
             />
             <SelectField
-              label="Sichtbar für"
+              label={t('Sichtbar für')}
               value={newVisibility}
               onChange={(e) => setNewVisibility(e.target.value as Visibility)}
             >
@@ -319,15 +332,15 @@ function Library({
           {shareUp && <Checkbox label={shareUp} checked={newShared} onChange={setNewShared} />}
           <Why k="doc_visibility" />
           <button type="submit" className="button button-primary" disabled={busy}>
-            Ordner anlegen
+            {t('Ordner anlegen')}
           </button>
         </form>
       )}
 
       {data.from_below && data.from_below.some(visible) && (
-        <section className="doc-shared" aria-label="Freigaben von unten">
-          <h2>{`Von den ${tm.pl_dat}`}</h2>
-          <p className="muted small">Diese Ordner sind für euch freigegeben (nur lesen).</p>
+        <section className="doc-shared" aria-label={t('Freigaben von unten')}>
+          <h2>{t('Von den {pl_dat}', { pl_dat: tm.pl_dat })}</h2>
+          <p className="muted small">{t('Diese Ordner sind für euch freigegeben (nur lesen).')}</p>
           {data.from_below.filter(visible).map((f) => (
             <FolderView
               key={`u${f.id}`}
@@ -391,7 +404,7 @@ function FolderView({
     e.preventDefault()
     if (!file) return
     if (file.size > MAX_BYTES) {
-      setMessage({ kind: 'error', text: 'Die Datei ist größer als 20 MB.' })
+      setMessage({ kind: 'error', text: t('Die Datei ist größer als 20 MB.') })
       return
     }
     await run(async () => {
@@ -405,15 +418,15 @@ function FolderView({
       setDate('')
       setNote('')
       setInputKey((k) => k + 1)
-    }, 'Das Dokument wurde hochgeladen.')
+    }, t('Das Dokument wurde hochgeladen.'))
   }
 
   async function rename() {
     const name = await promptDialog({
-      title: 'Ordner umbenennen',
-      label: 'Name',
+      title: t('Ordner umbenennen'),
+      label: t('Name'),
       defaultValue: folder.name,
-      confirmLabel: 'Umbenennen',
+      confirmLabel: t('Umbenennen'),
       danger: false,
     })
     if (name && name.trim() && name.trim() !== folder.name) {
@@ -425,20 +438,25 @@ function FolderView({
     if (folder.documents.length > 0) {
       setMessage({
         kind: 'error',
-        text: 'Der Ordner ist nicht leer. Bitte zuerst die Dokumente verschieben oder löschen.',
+        text: t('Der Ordner ist nicht leer. Bitte zuerst die Dokumente verschieben oder löschen.'),
       })
       return
     }
-    if (await confirmDialog({ title: `Ordner „${folder.name}“ löschen?`, confirmLabel: 'Löschen' }))
-      await run(() => docApi.deleteFolder(base, folder.id), 'Der Ordner wurde gelöscht.')
+    if (
+      await confirmDialog({
+        title: t('Ordner „{name}“ löschen?', { name: folder.name }),
+        confirmLabel: t('Löschen'),
+      })
+    )
+      await run(() => docApi.deleteFolder(base, folder.id), t('Der Ordner wurde gelöscht.'))
   }
 
   async function copy(url: string) {
     try {
       await navigator.clipboard.writeText(url)
-      setMessage({ kind: 'success', text: 'Link kopiert.' })
+      setMessage({ kind: 'success', text: t('Link kopiert.') })
     } catch {
-      setMessage({ kind: 'error', text: 'Kopieren ging nicht. Bitte den Link markieren.' })
+      setMessage({ kind: 'error', text: t('Kopieren ging nicht. Bitte den Link markieren.') })
     }
   }
 
@@ -446,14 +464,17 @@ function FolderView({
     <details className="doc-folder" open={open || undefined}>
       <summary>
         <span className="doc-folder-name">{folder.name}</span>
-        <span className="badge">{from ? `von ${from}` : folder.visibility_label}</span>
-        {!from && folder.shared_up && <span className="badge">nach oben freigegeben</span>}
-        <span className="muted small"> · {folder.documents.length} Dokumente</span>
+        <span className="badge">{from ? t('von {from}', { from }) : folder.visibility_label}</span>
+        {!from && folder.shared_up && <span className="badge">{t('nach oben freigegeben')}</span>}
+        <span className="muted small">
+          {' '}
+          {tn('· {n} Dokument', '· {n} Dokumente', folder.documents.length)}
+        </span>
       </summary>
       {manage && (
         <div className="doc-folder-tools">
           <SelectField
-            label="Sichtbar für"
+            label={t('Sichtbar für')}
             value={folder.visibility}
             disabled={busy}
             onChange={(e) =>
@@ -480,29 +501,29 @@ function FolderView({
           )}
           <div className="button-row">
             <button type="button" className="button button-ghost" onClick={() => void rename()}>
-              Umbenennen
+              {t('Umbenennen')}
             </button>
             <button type="button" className="button button-danger" onClick={() => void remove()}>
-              Ordner löschen
+              {t('Ordner löschen')}
             </button>
           </div>
           {folder.public_url && (
             <p className="statute-link small">
-              Öffentlicher Link (Liste als JSON, z. B. für die Webseite):{' '}
+              {t('Öffentlicher Link (Liste als JSON, z. B. für die Webseite):')}{' '}
               <code>{folder.public_url}</code>{' '}
               <button
                 type="button"
                 className="button button-ghost"
                 onClick={() => void copy(folder.public_url!)}
               >
-                Link kopieren
+                {t('Link kopieren')}
               </button>
             </p>
           )}
         </div>
       )}
       {docs.length === 0 ? (
-        <p className="muted small">Keine Dokumente in diesem Ordner.</p>
+        <p className="muted small">{t('Keine Dokumente in diesem Ordner.')}</p>
       ) : (
         <ul className="statute-list doc-list">
           {docs.map((d) => (
@@ -514,38 +535,38 @@ function FolderView({
         <form onSubmit={upload} className="inline-form">
           <div className="grid-3">
             <label className="field">
-              <span>Datei (höchstens 20 MB)</span>
+              <span>{t('Datei (höchstens 20 MB)')}</span>
               <input
                 key={inputKey}
                 type="file"
                 accept={ACCEPT}
-                aria-label={`Datei für ${folder.name}`}
+                aria-label={t('Datei für {name}', { name: folder.name })}
                 onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               />
               <RightsHint />
             </label>
             <Field
-              label="Titel"
+              label={t('Titel')}
               value={title}
               maxLength={200}
               placeholder={file ? file.name.replace(/\.[^.]+$/, '') : ''}
               onChange={(e) => setTitle(e.target.value)}
             />
             <Field
-              label="Datum"
+              label={t('Datum')}
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
             />
           </div>
           <Field
-            label="Bemerkung (optional)"
+            label={t('Bemerkung (optional)')}
             value={note}
             maxLength={500}
             onChange={(e) => setNote(e.target.value)}
           />
           <button type="submit" className="button button-primary" disabled={busy || !file}>
-            Hochladen
+            {t('Hochladen')}
           </button>
         </form>
       )}
@@ -584,7 +605,7 @@ function DocumentMetaForm({
       <SaveStatus auto={auto} />
       <div className="grid-3">
         <Field
-          label="Titel"
+          label={t('Titel')}
           value={v.title}
           required
           maxLength={200}
@@ -592,14 +613,14 @@ function DocumentMetaForm({
           onChange={(e) => form.set('title', e.target.value)}
         />
         <Field
-          label="Datum"
+          label={t('Datum')}
           type="date"
           value={v.date}
           error={form.errors.date}
           onChange={(e) => form.set('date', e.target.value)}
         />
         <Field
-          label="Bemerkung"
+          label={t('Bemerkung')}
           value={v.note}
           maxLength={500}
           error={form.errors.note}
@@ -608,7 +629,7 @@ function DocumentMetaForm({
       </div>
       <div className="button-row">
         <button type="submit" className="button button-ghost">
-          Schließen
+          {t('Schließen')}
         </button>
       </div>
     </form>
@@ -624,13 +645,13 @@ function DocumentRow({ doc, folder, ...ctx }: FolderCtx & { doc: DocItem; folder
   async function addVersion(file: File | undefined) {
     if (!file) return
     if (file.size > MAX_BYTES) {
-      setMessage({ kind: 'error', text: 'Die Datei ist größer als 20 MB.' })
+      setMessage({ kind: 'error', text: t('Die Datei ist größer als 20 MB.') })
       return
     }
     await run(async () => {
       await docApi.addVersion(base, doc.id, file)
       setInputKey((k) => k + 1)
-    }, 'Die neue Fassung wurde hochgeladen.')
+    }, t('Die neue Fassung wurde hochgeladen.'))
   }
 
   return (
@@ -641,14 +662,16 @@ function DocumentRow({ doc, folder, ...ctx }: FolderCtx & { doc: DocItem; folder
         {doc.note && <div className="muted small">{doc.note}</div>}
         {current && (
           <div className="muted small">
-            {current.name} · {formatSize(current.size)} · hochgeladen am{' '}
+            {current.name} {t('· {x} · hochgeladen am', { x: formatSize(current.size) })}{' '}
             {formatDate(current.uploaded_at)}
-            {current.uploaded_by && ` von ${current.uploaded_by}`}
+            {current.uploaded_by && t(' von {uploaded_by}', { uploaded_by: current.uploaded_by })}
           </div>
         )}
         {doc.versions && doc.versions.length > 1 && (
           <details className="doc-versions">
-            <summary className="small">Ältere Fassungen ({doc.versions.length - 1})</summary>
+            <summary className="small">
+              {t('Ältere Fassungen ({n})', { n: doc.versions.length - 1 })}
+            </summary>
             <ul>
               {doc.versions.slice(1).map((v) => (
                 <li key={v.id} className="small">
@@ -666,17 +689,17 @@ function DocumentRow({ doc, folder, ...ctx }: FolderCtx & { doc: DocItem; folder
                       onClick={async () => {
                         if (
                           await confirmDialog({
-                            title: `Fassung „${v.name}“ löschen?`,
-                            confirmLabel: 'Löschen',
+                            title: t('Fassung „{name}“ löschen?', { name: v.name }),
+                            confirmLabel: t('Löschen'),
                           })
                         )
                           await run(
                             () => docApi.removeVersion(v.url),
-                            'Die Fassung wurde gelöscht.',
+                            t('Die Fassung wurde gelöscht.'),
                           )
                       }}
                     >
-                      Löschen
+                      {t('Löschen')}
                     </button>
                   )}
                 </li>
@@ -703,28 +726,28 @@ function DocumentRow({ doc, folder, ...ctx }: FolderCtx & { doc: DocItem; folder
             target={current.inline ? '_blank' : undefined}
             rel="noreferrer"
           >
-            {current.inline ? 'Ansehen' : 'Herunterladen'}
+            {current.inline ? t('Ansehen') : t('Herunterladen')}
           </a>
         )}
         {manage && (
           <>
             <label className="button button-ghost doc-file-button">
-              Neue Fassung
+              {t('Neue Fassung')}
               <input
                 key={inputKey}
                 type="file"
                 accept={ACCEPT}
                 className="file-input"
-                aria-label={`Neue Fassung von ${doc.title}`}
+                aria-label={t('Neue Fassung von {title}', { title: doc.title })}
                 onChange={(e) => void addVersion(e.target.files?.[0])}
               />
             </label>
             <button type="button" className="button button-ghost" onClick={() => setEditing(true)}>
-              Bearbeiten
+              {t('Bearbeiten')}
             </button>
             {folders.length > 1 && (
               <select
-                aria-label={`${doc.title} verschieben`}
+                aria-label={t('{title} verschieben', { title: doc.title })}
                 className="doc-move"
                 value=""
                 disabled={busy}
@@ -732,16 +755,16 @@ function DocumentRow({ doc, folder, ...ctx }: FolderCtx & { doc: DocItem; folder
                   e.target.value &&
                   void run(
                     () => docApi.update(base, doc.id, { folder: Number(e.target.value) }),
-                    'Das Dokument wurde verschoben.',
+                    t('Das Dokument wurde verschoben.'),
                   )
                 }
               >
-                <option value="">Verschieben …</option>
+                <option value="">{t('Verschieben …')}</option>
                 {folders
                   .filter((f) => f.id !== folder.id)
                   .map((f) => (
                     <option key={f.id} value={f.id}>
-                      nach „{f.name}“
+                      {t('nach „{name}“', { name: f.name })}
                     </option>
                   ))}
               </select>
@@ -753,18 +776,18 @@ function DocumentRow({ doc, folder, ...ctx }: FolderCtx & { doc: DocItem; folder
               onClick={async () => {
                 if (
                   await confirmDialog({
-                    title: `„${doc.title}“ löschen?`,
-                    message: 'Das Dokument kommt in den Papierkorb und bleibt dort 30 Tage.',
-                    confirmLabel: 'In den Papierkorb',
+                    title: t('„{title}“ löschen?', { title: doc.title }),
+                    message: t('Das Dokument kommt in den Papierkorb und bleibt dort 30 Tage.'),
+                    confirmLabel: t('In den Papierkorb'),
                   })
                 )
                   await run(
                     () => docApi.trashDocument(base, doc.id),
-                    'Das Dokument liegt jetzt im Papierkorb.',
+                    t('Das Dokument liegt jetzt im Papierkorb.'),
                   )
               }}
             >
-              Löschen
+              {t('Löschen')}
             </button>
           </>
         )}
@@ -793,15 +816,17 @@ function TrashPanel({ base }: { base: DocBase }) {
   }
 
   if (error) return <Alert kind="error">{error}</Alert>
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
   return (
     <div>
       <p className="muted small">
-        Gelöschte Dokumente bleiben 30 Tage im Papierkorb und werden danach endgültig entfernt.
+        {t(
+          'Gelöschte Dokumente bleiben 30 Tage im Papierkorb und werden danach endgültig entfernt.',
+        )}
       </p>
       {message && <Alert kind={message.kind}>{message.text}</Alert>}
       {data.length === 0 ? (
-        <p className="muted">Der Papierkorb ist leer.</p>
+        <p className="muted">{t('Der Papierkorb ist leer.')}</p>
       ) : (
         <ul className="statute-list">
           {data.map((d) => (
@@ -809,8 +834,8 @@ function TrashPanel({ base }: { base: DocBase }) {
               <div>
                 <strong>{d.title}</strong> <span className="muted">· {d.folder_name}</span>
                 <div className="muted small">
-                  gelöscht am {d.deleted_at && formatDate(d.deleted_at)}
-                  {d.deleted_by && ` von ${d.deleted_by}`}
+                  {t('gelöscht am')} {d.deleted_at && formatDate(d.deleted_at)}
+                  {d.deleted_by && t(' von {deleted_by}', { deleted_by: d.deleted_by })}
                 </div>
               </div>
               <div className="button-row">
@@ -819,10 +844,10 @@ function TrashPanel({ base }: { base: DocBase }) {
                   className="button button-ghost"
                   disabled={busy}
                   onClick={() =>
-                    void run(() => docApi.restore(base, d.id), 'Das Dokument ist wieder da.')
+                    void run(() => docApi.restore(base, d.id), t('Das Dokument ist wieder da.'))
                   }
                 >
-                  Wiederherstellen
+                  {t('Wiederherstellen')}
                 </button>
                 <button
                   type="button"
@@ -831,15 +856,15 @@ function TrashPanel({ base }: { base: DocBase }) {
                   onClick={async () => {
                     if (
                       await confirmDialog({
-                        title: `„${d.title}“ endgültig löschen?`,
-                        message: 'Das lässt sich nicht rückgängig machen.',
-                        confirmLabel: 'Endgültig löschen',
+                        title: t('„{title}“ endgültig löschen?', { title: d.title }),
+                        message: t('Das lässt sich nicht rückgängig machen.'),
+                        confirmLabel: t('Endgültig löschen'),
                       })
                     )
-                      await run(() => docApi.purge(base, d.id), 'Das Dokument wurde gelöscht.')
+                      await run(() => docApi.purge(base, d.id), t('Das Dokument wurde gelöscht.'))
                   }}
                 >
-                  Endgültig löschen
+                  {t('Endgültig löschen')}
                 </button>
               </div>
             </li>
@@ -855,14 +880,14 @@ function MemberDocuments({ base }: { base: DocBase }) {
   const { data, error } = useLoad(() => docApi.overview(base), [base])
   const [query, setQuery] = useState('')
   if (error) return <Alert kind="error">{error}</Alert>
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
   const folders = data.folders.filter((f) => f.documents.length > 0)
   if (folders.length === 0)
-    return <p className="muted">Für dich sind keine Dokumente freigegeben.</p>
+    return <p className="muted">{t('Für dich sind keine Dokumente freigegeben.')}</p>
   return (
     <div className="documents">
       <Field
-        label="Suchen (Titel und Bemerkung)"
+        label={t('Suchen (Titel und Bemerkung)')}
         type="search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
@@ -891,7 +916,7 @@ function MemberDocuments({ base }: { base: DocBase }) {
                       target={d.current.inline ? '_blank' : undefined}
                       rel="noreferrer"
                     >
-                      {d.current.inline ? 'Ansehen' : 'Herunterladen'}
+                      {d.current.inline ? t('Ansehen') : t('Herunterladen')}
                     </a>
                   )}
                 </li>
