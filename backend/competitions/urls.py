@@ -3,7 +3,7 @@
 from django.urls import path
 from rest_framework.routers import SimpleRouter
 
-from . import bird_views, foreign_views, stand_views, views
+from . import bird_views, event_views, foreign_views, stand_views, views
 
 router = SimpleRouter()
 router.register("competitions", views.CompetitionViewSet, basename="competition")
@@ -16,6 +16,17 @@ router.register(
 C = "competitions/<int:competition_id>/"
 
 org_patterns = [
+    path(
+        "competitions/event-candidates/",
+        event_views.EventCandidatesView.as_view(),
+        name="competition-event-candidates",
+    ),
+    path(f"{C}event/", event_views.EventLinkView.as_view(), name="competition-event"),
+    path(
+        f"{C}starters/from-event/",
+        event_views.StartersFromEventView.as_view(),
+        name="competition-starters-from-event",
+    ),
     path(f"{C}starters/", views.StartersView.as_view(), name="competition-starters"),
     path(f"{C}starters/<int:pk>/", views.StarterView.as_view(), name="competition-starter"),
     path(f"{C}scores/", views.ScoreView.as_view(), name="competition-score"),

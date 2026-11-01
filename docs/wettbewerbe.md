@@ -97,14 +97,28 @@ Starter, Mitglieder nur mit Name und Untereinheit, Abgleich), läuft am Ende des
 Wettbewerbstags (oder heute, wenn der schon war) ab und lässt sich beenden. Gespeichert wird
 nur der Hash des Schlüssels; im Änderungsprotokoll steht „Standzugang <Bezeichnung>“.
 
+## Termin im Kalender
+
+Ein Wettbewerb kann zu einem einmaligen Termin der eigenen Einheit gehören (`event`). Beim
+Anlegen wählt man einen Termin aus dem Kalender (Titel und Datum kommen mit; Ort und
+Beschreibung, wenn sie leer sind) oder lässt einen neuen ganztägigen Termin „Mitglieder“ mit
+Titel, Datum, Ort und Beschreibung anlegen (`create_event`, nur mit „Termine verwalten“).
+Unter „Einrichten“ lässt sich die Verknüpfung ändern, lösen oder ein Termin anlegen
+(`event/`); weicht das Datum ab, erscheint ein Hinweis. Zur Auswahl stehen die Termine, die man
+im Kalender sieht, ohne Serien (`event-candidates/?suche=&datum=`). Mit Zu- und Absagen
+übernimmt „Zusagen als Starter übernehmen“ (`starters/from-event/`) alle Mitglieder mit
+Zusage, die noch nicht Starter sind. Wird der Termin gelöscht, bleibt der Wettbewerb.
+
 ## Ausgaben
 
 `export/?als=`: `pdf` (Ergebnisliste mit Kennzahlen, beim Vogelschießen die Pfänderliste),
 `xlsx`, `schiessliste` (`sortierung=name|einheit|nummer`, `leerzeilen=`, `leer=1` für eine
 Liste ohne Namen), `stechliste&stechen=<id>`, beim Vogelschießen `losliste` (nach Losnummer
-mit Feld für Striche) und `pfaenderliste` (leer zum Ausfüllen).
+mit Feld für Striche) und `pfaenderliste` (leer zum Ausfüllen). Schieß- und Losliste füllen
+die letzte Seite mit leeren Zeilen auf (mindestens `leerzeilen`); die leere Schießliste ist
+genau eine volle Seite.
 
 ## Daten
 
 App `competitions`, Tabellen mit `organization` und RLS. Export und Datenübernahme
-enthalten alles (mitgliederbezogen). Keine Dateifelder.
+enthalten alles (mitgliederbezogen); die Wettbewerbe kommen nach den Terminen (Verweis). Keine Dateifelder.

@@ -332,16 +332,18 @@ def lot_list(comp: Competition, blank_rows: int = 10) -> bytes:
                 "",
             ]
         )
-    rows += [[""] * len(head) for _ in range(blank_rows)]
     prizes = ", ".join(p.name for p in comp.prizes.all())
-    story = [
-        Paragraph(f"<b>Losliste {escape(comp.title)}</b>", st["title"]),
-        Paragraph(escape(" · ".join([org.name, *_meta(comp)])), n),
-        Paragraph(escape(f"Pfänder: {prizes}"), st["small"]),
-        Spacer(1, 4 * mm),
-        _grid(rows, widths, primary),
-    ]
-    return _doc(comp, f"Losliste {comp.title}", story, wide=True)
+
+    def story(blank: int) -> list:
+        return [
+            Paragraph(f"<b>Losliste {escape(comp.title)}</b>", st["title"]),
+            Paragraph(escape(" · ".join([org.name, *_meta(comp)])), n),
+            Paragraph(escape(f"Pfänder: {prizes}"), st["small"]),
+            Spacer(1, 4 * mm),
+            _grid(rows + [[""] * len(head) for _ in range(blank)], widths, primary),
+        ]
+
+    return _filled(comp, f"Losliste {comp.title}", story, blank_rows, wide=True)
 
 
 def prize_sheet(comp: Competition) -> bytes:
@@ -367,10 +369,35 @@ def prize_sheet(comp: Competition) -> bytes:
 
 
 def _doc(comp: Competition, title: str, story: list, *, wide: bool = False) -> bytes:
+    return _build(comp, title, story, wide=wide)[0]
+
+
+def _filled(comp: Competition, title: str, make_story, least: int, *, wide: bool = False):
+    """PDF mit mindestens ``least`` leeren Zeilen, aufgefüllt bis die letzte Seite voll ist,
+    damit keine Seite mit nur einer einzelnen Zeile entsteht (Ralf 2026-11-01).
+    ``make_story(blank)`` baut den Inhalt mit ``blank`` leeren Zeilen."""
+    body, pages = _build(comp, title, make_story(least), wide=wide)
+    if least == 0:  # ausdrücklich ohne leere Zeilen
+        return body
+    low, high = least, least + 60  # 60 leere Zeilen sind mehr als eine Seite
+    while low < high:  # größte Zahl leerer Zeilen, die noch auf gleich viele Seiten passt
+        mid = (low + high + 1) // 2
+        b, p = _build(comp, title, make_story(mid), wide=wide)
+        if p == pages:
+            low, body = mid, b
+        else:
+            high = mid - 1
+    if low != least:
+        body = _build(comp, title, make_story(low), wide=wide)[0]
+    return body
+
+
+def _build(comp: Competition, title: str, story: list, *, wide: bool = False):
     from reportlab.lib.pagesizes import landscape
 
     org = comp.organization
     buf = io.BytesIO()
+    count = {"pages": 0}
 
     def footer(canvas, doc):
         canvas.saveState()
@@ -379,6 +406,7 @@ def _doc(comp: Competition, title: str, story: list, *, wide: bool = False) -> b
         canvas.drawString(20 * mm, 10 * mm, f"{org.name} · {title}")
         canvas.drawRightString((277 if wide else 190) * mm, 10 * mm, f"Seite {doc.page}")
         canvas.restoreState()
+        count["pages"] = doc.page
 
     SimpleDocTemplate(
         buf,
@@ -390,7 +418,7 @@ def _doc(comp: Competition, title: str, story: list, *, wide: bool = False) -> b
         title=title,
         author=org.name,
     ).build(story, onFirstPage=footer, onLaterPages=footer)
-    return buf.getvalue()
+    return buf.getvalue(), count["pages"]
 
 
 def _grid(rows, widths, primary, height=8 * mm):
@@ -454,20 +482,25 @@ def shooting_list(comp: Competition, order: str = "name", blank_rows: int = 10, 
             ]
             + [""] * (len(head) - 3)
         )
-    rows += [[""] * len(head) for _ in range(max(0, blank_rows if not empty else 30))]
     info = []
     if sc:
         info.append(_scoring_info(sc))
-    story = [
-        Paragraph(f"<b>Schießliste {escape(comp.title)}</b>", st["title"]),
-        Paragraph(escape(" · ".join([org.name, *_meta(comp)])), n),
-        Paragraph(
-            escape(" · ".join(info + [f"sortiert nach {ORDERS.get(order, 'Name')}"])), st["small"]
-        ),
-        Spacer(1, 4 * mm),
-        _grid(rows, fixed, primary),
-    ]
-    return _doc(comp, f"Schießliste {comp.title}", story, wide=wide)
+
+    def story(blank: int) -> list:
+        return [
+            Paragraph(f"<b>Schießliste {escape(comp.title)}</b>", st["title"]),
+            Paragraph(escape(" · ".join([org.name, *_meta(comp)])), n),
+            Paragraph(
+                escape(" · ".join(info + [f"sortiert nach {ORDERS.get(order, 'Name')}"])),
+                st["small"],
+            ),
+            Spacer(1, 4 * mm),
+            _grid(rows + [[""] * len(head) for _ in range(blank)], fixed, primary),
+        ]
+
+    # Leere Liste: genau eine volle Seite; sonst die letzte Seite mit leeren Zeilen füllen
+    least = 1 if empty else blank_rows
+    return _filled(comp, f"Schießliste {comp.title}", story, least, wide=wide)
 
 
 def shootoff_list(comp: Competition, shootoff) -> bytes:

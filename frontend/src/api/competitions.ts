@@ -43,7 +43,30 @@ export interface Competition {
   drop_out: boolean
   fixed_order: boolean
   total_shots: number | null
+  /** zugeordneter Termin im Kalender */
+  event: number | null
   starter_count: number
+}
+
+/** Termin im Kalender, wie ihn ein Wettbewerb sieht */
+export interface CompetitionEvent {
+  id: number
+  title: string
+  date: string
+  /** Beginn (HH:MM); leer bei ganztägigen Terminen */
+  time: string | null
+  location: string
+  unit_name: string
+  is_cancelled: boolean
+  rsvp_enabled: boolean
+  yes_count: number
+  /** Titel des Wettbewerbs, dem der Termin schon zugeordnet ist */
+  competition?: string | null
+}
+
+export interface CalendarAccess {
+  on: boolean
+  can_create: boolean
 }
 
 export type ScoringKind = 'einzel' | 'einheit' | 'mannschaft'
@@ -82,6 +105,8 @@ export interface CompetitionDetail extends Competition {
   units: { id: number; name: string }[]
   prizes: PrizeSetup[]
   can_manage: boolean
+  event_info?: CompetitionEvent | null
+  calendar?: CalendarAccess
   /** nur über einen Standzugang */
   stand_access?: { label: string; expires_at: string }
 }
@@ -325,8 +350,21 @@ const c = (org: number, id: number) => `${base(org)}${id}/`
 export const competitionsApi = {
   list: (org: number) => api.get<Competition[]>(base(org)),
   get: (org: number, id: number) => api.get<CompetitionDetail>(c(org, id)),
-  create: (org: number, data: Partial<Competition> & { template?: string }) =>
-    api.post<Competition>(base(org), data),
+  create: (
+    org: number,
+    data: Partial<Competition> & { template?: string; create_event?: boolean },
+  ) => api.post<Competition>(base(org), data),
+  eventCandidates: (org: number, search = '') =>
+    api.get<CalendarAccess & { events: CompetitionEvent[] }>(
+      `${base(org)}event-candidates/${search ? `?suche=${encodeURIComponent(search)}` : ''}`,
+    ),
+  setEvent: (org: number, id: number, data: { event: number | null } | { create: true }) =>
+    api.post<{ event: CompetitionEvent | null; location: string; description: string }>(
+      `${c(org, id)}event/`,
+      data,
+    ),
+  startersFromEvent: (org: number, id: number) =>
+    api.post<{ added: number; already: number }>(`${c(org, id)}starters/from-event/`, {}),
   update: (org: number, id: number, data: Partial<Competition>) =>
     api.patch<Competition>(c(org, id), data),
   remove: (org: number, id: number) => api.del(c(org, id)),

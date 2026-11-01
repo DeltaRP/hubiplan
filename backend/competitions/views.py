@@ -78,6 +78,7 @@ def _units(org) -> list[Department]:
 class CompetitionSerializer(serializers.ModelSerializer):
     starter_count = serializers.IntegerField(read_only=True, default=0)
     status_label = serializers.CharField(source="get_status_display", read_only=True)
+    event = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = Competition
@@ -99,6 +100,7 @@ class CompetitionSerializer(serializers.ModelSerializer):
             "drop_out",
             "fixed_order",
             "total_shots",
+            "event",
             "starter_count",
         ]
         read_only_fields = ["status"]
@@ -237,6 +239,7 @@ class CompetitionViewSet(_Mixin, AuditMixin, viewsets.ModelViewSet):
     def perform_create(self, serializer):
         super().perform_create(serializer)
         comp = serializer.instance
+        self._calendar(comp)
         template = self.request.data.get("template")
         if template == "schiessen":
             # Vorlage „Schießen mit Einzel- und Zugwertung“ (Leitszenario des Pilotvereins)
@@ -295,7 +298,21 @@ class CompetitionViewSet(_Mixin, AuditMixin, viewsets.ModelViewSet):
             )
             Team.objects.create(organization=self.org, competition=comp, name="Mannschaft 1")
 
+    def _calendar(self, comp: Competition) -> None:
+        """Beim Anlegen: Termin zuordnen (``event``) oder neu anlegen (``create_event``)."""
+        from . import event_views
+
+        if self.request.data.get("event"):
+            event = event_views.find_event(self, self.request.data["event"])
+            event_views.link(self, comp, event, fill=True)
+        elif self.request.data.get("create_event") is True:
+            event_views.create_event(self, comp)
+
     def retrieve(self, request, *args, **kwargs):
+        from access.catalog import EVENTS_MANAGE
+
+        from . import event_views
+
         comp = self.get_object()
         data = CompetitionSerializer(comp).data
         data["scorings"] = ScoringSerializer(
@@ -307,6 +324,9 @@ class CompetitionViewSet(_Mixin, AuditMixin, viewsets.ModelViewSet):
             for p in comp.prizes.all()
         ]
         data["can_manage"] = self.can_manage
+        data["event_info"] = event_views.event_info(comp.event)
+        on = event_views.calendar_on(self.org)
+        data["calendar"] = {"on": on, "can_create": on and EVENTS_MANAGE in self.org_permissions}
         return Response(data)
 
 
