@@ -45,6 +45,9 @@ export function SettingsLayout() {
     ...((active.type === 'federation' || active.type === 'club') && can(PERM.peeringManage)
       ? [{ to: '/einstellungen/verbund', label: t('Verbund') }]
       : []),
+    ...((active.type === 'federation' || active.type === 'club') && can(PERM.rolesManage)
+      ? [{ to: '/einstellungen/nextcloud', label: t('Nextcloud') }]
+      : []),
     ...(can(PERM.auditView)
       ? [
           { to: '/einstellungen/protokoll', label: t('Protokoll') },

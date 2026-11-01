@@ -4270,6 +4270,30 @@ msgstr "Please choose a PDF file."
 msgid "Unbekannte Dokumentart."
 msgstr "Unknown document type."
 
+msgid "Die Anmeldung bei diesem Dienst ist nicht möglich."
+msgstr "Signing in to this service is not possible."
+
+msgid "Dein Konto hat bei {org} keinen Zugang zu „{name}“."
+msgstr "Your account has no access to “{name}” at {org}."
+
+msgid "Diese Anmeldung kennt HUBIplan nicht."
+msgstr "HUBIplan does not know this sign-in."
+
+msgid "Für „{name}“ ist die Zwei-Faktor-Anmeldung nötig. Bitte melde dich bei HUBIplan ab und mit Passwort und Code wieder an."
+msgstr "“{name}” requires two-factor authentication. Please sign out of HUBIplan and sign in again with password and code."
+
+msgid "Für „{name}“ ist die Zwei-Faktor-Anmeldung nötig. Richte sie unter „Mein Konto“ ein und versuche es dann erneut."
+msgstr "“{name}” requires two-factor authentication. Set it up under “My account” and then try again."
+
+msgid "Bitte die Adresse mit https:// angeben."
+msgstr "Please enter the address with https://."
+
+msgid "Bitte nur die Adresse der Nextcloud angeben, z. B. https://cloud.example.org"
+msgstr "Please enter only the Nextcloud address, e.g. https://cloud.example.org"
+
+msgid "Mitgliederzugänge gibt es nur bei Vereinen."
+msgstr "Member access only exists for clubs."
+
 msgid "Diese Sprache ist auf diesem Server nicht freigeschaltet."
 msgstr "This language is not enabled on this server."
 
