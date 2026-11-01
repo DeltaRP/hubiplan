@@ -181,9 +181,12 @@ class TestErgebnisse:
             "Erika B.",
             "ohne Namen",
         ]
-        # Startseitenblock in der Reihenfolge, nur mit Baustein und Modul
-        assert "results" in get("").json()["home"]
+        # Startseitenblock: erst an, wenn gewählt; nur mit Baustein und Modul
         site = setup["site"]
+        assert "results" not in get("").json()["home"]
+        site.home_sections = [{"key": "results", "on": True}]
+        site.save()
+        assert "results" in get("").json()["home"]
         site.blocks = {**site.blocks, "results": False}
         site.save()
         assert "results" not in get("").json()["home"]

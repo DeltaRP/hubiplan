@@ -294,7 +294,8 @@ Zusage, die noch nicht Starter sind. Wird der Termin gelöscht, bleibt der Wettb
   Vermerk live bzw. vorläufig) oder nach Abschluss (erst „endgültig“), dazu der **Umfang**: nur
   Wertung der Untereinheiten und Mannschaften, Plätze 1 bis 3 mit Namen, ganze Rangliste.
 - Baustein **„Ergebnisse“** (Webseite › Menü und Bereiche, nur mit Modul Wettbewerbe) und Block
-  **„Aktuelle Ergebnisse“** auf der Startseite (die drei neuesten mit Plätzen 1 bis 3).
+  **„Aktuelle Ergebnisse“** auf der Startseite (die drei neuesten mit Plätzen 1 bis 3; aus,
+  bis die Einheit ihn unter Menü und Bereiche › Startseite einschaltet).
 - Öffentliche Schnittstelle (`website/results.py`): `results/` (Wettbewerbe, Reihen mit
   „Archiv auf der Webseite“, Wanderpokale mit „Inhaber auf der Webseite“), `results/?start=1`
   (Startseite), `results/<Kennung>/` (Rangliste), `results/<Kennung>/version/` (kleiner Stand),

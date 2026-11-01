@@ -82,7 +82,8 @@ HOME_HINTS = {
 }
 # Welcher Bereich der Webseite eingeschaltet sein muss, damit der Baustein erscheint
 HOME_NEEDS_BLOCK = {"events": "events", "honors": "honors", "units": "units", "results": "results"}
-DEFAULT_HOME_OFF = {"instagram", "facebook"}
+# „Aktuelle Ergebnisse“ ist ein möglicher Block (Ralf 01.11.): erst an, wenn gewählt
+DEFAULT_HOME_OFF = {"instagram", "facebook", "results"}
 
 
 def default_home_sections() -> list:
