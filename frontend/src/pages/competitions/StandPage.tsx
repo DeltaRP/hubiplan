@@ -27,7 +27,11 @@ export function StandPage() {
     <StandShell
       api={api}
       org={org}
-      exit={<Link to={`/wettbewerbe/${id}`}>Standmodus verlassen</Link>}
+      exit={
+        <Link className="button button-ghost" to={`/wettbewerbe/${id}`}>
+          Standmodus verlassen
+        </Link>
+      }
     />
   )
 }
@@ -73,19 +77,19 @@ function StandShell({ api, exit, org }: { api: StandApi; exit: ReactNode; org?: 
           </span>
         )}
         {exit && (
-          <span className="push-right">
+          <div className="button-row push-right stand-head-actions">
             {org && data?.own && data.can_manage && data.status !== 'endgueltig' && (
               <button
                 type="button"
-                className="link-button"
+                className="button button-ghost"
                 aria-expanded={showAccess}
                 onClick={() => setShowAccess((v) => !v)}
               >
                 Anderes Gerät per QR-Code
               </button>
-            )}{' '}
+            )}
             {exit}
-          </span>
+          </div>
         )}
       </header>
       {showAccess && org && data && <StandAccessCard org={org} comp={data} />}

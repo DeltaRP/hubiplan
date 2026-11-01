@@ -322,11 +322,28 @@ export function PrintMenu({ org, comp }: { org: number; comp: CompetitionDetail 
             { value: 'pdf', label: 'Pfänderliste mit Ergebnissen' },
           ]
         : [
-            { value: 'schiessliste&sortierung=name', label: 'Schießliste nach Name' },
-            { value: 'schiessliste&sortierung=einheit', label: 'Schießliste nach Zug' },
-            { value: 'schiessliste&leer=1', label: 'Leere Schießliste' },
-            { value: 'pdf', label: 'Ergebnisliste' },
+            {
+              value: 'schiessliste&sortierung=name',
+              label: 'Schießliste nach Name',
+              hint: 'Zum Eintragen am Stand, erfasste Werte sind eingedruckt',
+            },
+            {
+              value: 'schiessliste&sortierung=einheit',
+              label: 'Schießliste nach Zug',
+              hint: 'Je Zug eine Tabelle mit Feldern für die Zugwertung',
+            },
+            {
+              value: 'schiessliste&leer=1',
+              label: 'Leere Schießliste',
+              hint: 'Ohne Namen, für Nachmeldungen',
+            },
           ]
+    // Nach dem Schießen zuerst die Ergebnisliste (Ralf 2026-11-01)
+    if (comp.own && comp.form !== 'vogel') {
+      const result = { value: 'pdf', label: 'Ergebnisliste', hint: 'Plätze und Punkte' }
+      if (comp.status === 'vorlaeufig' || comp.status === 'endgueltig') choices.unshift(result)
+      else choices.push(result)
+    }
     const choice = await choiceDialog({
       title: 'Drucken',
       message: 'Welche Vorlage? (PDF zum Ausdrucken)',

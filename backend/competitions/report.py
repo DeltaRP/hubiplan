@@ -444,7 +444,8 @@ ORDERS = {"name": "Name", "einheit": "Einheit", "nummer": "Startnummer"}
 
 def shooting_list(comp: Competition, order: str = "name", blank_rows: int = 10, empty=False):
     """Schießliste zum Eintragen auf Papier: Starter mit leeren Feldern je Schuss (oder
-    für die Summe) und Unterschrift, dazu leere Zeilen für Nachmeldungen."""
+    für die Summe) und Unterschrift, dazu leere Zeilen für Nachmeldungen. Nach Einheit
+    bekommt jede Einheit eine eigene Tabelle mit Feldern für die Zugwertung (Ralf 2026-11-01)."""
     org = comp.organization
     st = _styles()
     n = st["normal"]
@@ -465,28 +466,36 @@ def shooting_list(comp: Competition, order: str = "name", blank_rows: int = 10, 
     else:
         starters.sort(key=lambda s: s.name)
     shots = sc.shots if sc and sc.shots and sc.shots <= 10 else 0
-    head = ["Nr.", "Name", "Einheit / Verein"]
-    head += [str(i) for i in range(1, shots + 1)] if shots else []
-    head += ["gewertet" if shots else (sc.unit_label if sc else "Punkte"), "Aufsicht"]
     wide = shots > 5
-    total = 257 if wide else 172
-    fixed = [12 * mm, 0, 40 * mm] + [10 * mm] * shots + [20 * mm, 22 * mm]
-    fixed[1] = total * mm - sum(fixed)
-    rows = [[Paragraph(f"<b>{escape(h)}</b>", n) for h in head]]
-    for s in starters:
-        rows.append(
-            [
-                Paragraph(escape(s.number), n),
-                Paragraph(escape(s.name), n),
-                Paragraph(escape(s.unit.name if s.unit_id else s.club), n),
-            ]
-            + [""] * (len(head) - 3)
-        )
+    total = (257 if wide else 172) * mm
+    tail = ["gewertet" if shots else (sc.unit_label if sc else "Punkte"), "Aufsicht"]
+    tail_widths = [10 * mm] * shots + [20 * mm, 22 * mm]
+    shot_heads = [str(i) for i in range(1, shots + 1)]
+    # Schon erfasste Werte eindrucken (Ralf 2026-11-01); Einzelschüsse werden nicht erfasst
+    values = {}
+    if sc and not empty:
+        values = {v.starter_id: services.fmt(v.value, sc.decimals) for v in sc.scores.all()}
+
+    def table(people, blank: int, with_unit: bool):
+        head = ["Nr.", "Name"] + (["Einheit / Verein"] if with_unit else []) + shot_heads + tail
+        widths = [12 * mm, 0] + ([40 * mm] if with_unit else []) + tail_widths
+        widths[1] = total - sum(widths)
+        rows = [[Paragraph(f"<b>{escape(h)}</b>", n) for h in head]]
+        for s in people:
+            cells = [Paragraph(escape(s.number), n), Paragraph(escape(s.name), n)]
+            if with_unit:
+                cells.append(Paragraph(escape(s.unit.name if s.unit_id else s.club), n))
+            rest = [""] * (len(head) - len(cells))
+            rest[-2] = values.get(s.pk, "")
+            rows.append(cells + rest)
+        rows += [[""] * len(head) for _ in range(blank)]
+        return _grid(rows, widths, primary)
+
     info = []
     if sc:
         info.append(_scoring_info(sc))
 
-    def story(blank: int) -> list:
+    def heading() -> list:
         return [
             Paragraph(f"<b>Schießliste {escape(comp.title)}</b>", st["title"]),
             Paragraph(escape(" · ".join([org.name, *_meta(comp)])), n),
@@ -495,12 +504,113 @@ def shooting_list(comp: Competition, order: str = "name", blank_rows: int = 10, 
                 st["small"],
             ),
             Spacer(1, 4 * mm),
-            _grid(rows + [[""] * len(head) for _ in range(blank)], fixed, primary),
         ]
 
-    # Leere Liste: genau eine volle Seite; sonst die letzte Seite mit leeren Zeilen füllen
+    from organizations.models import Department
+
+    units = list(Department.objects.filter(organization=org).order_by("sort_order", "name"))
+    if order != "einheit" or not units:
+
+        def story(blank: int) -> list:
+            return heading() + [table(starters, blank, True)]
+
+        # Leere Liste: genau eine volle Seite; sonst die letzte Seite mit leeren Zeilen füllen
+        least = 1 if empty else blank_rows
+        return _filled(comp, f"Schießliste {comp.title}", story, least, wide=wide)
+
+    from reportlab.platypus import KeepTogether
+
+    team_scorings = list(comp.scorings.filter(kind=Scoring.Kind.UNIT).order_by("sort_order", "pk"))
+    per_unit = 6 if empty else 2  # leere Zeilen je Einheit für Nachmeldungen
+    team_rows: dict[tuple[int, int], dict] = {}
+    if not empty and team_scorings:
+        for block in services.standings(comp)["scorings"]:
+            for row in block["rows"] if block["kind"] == Scoring.Kind.UNIT else []:
+                team_rows[(block["scoring"], row["unit"])] = row
+    raw = {v.starter_id: v.value for v in sc.scores.all()} if sc and not empty else {}
+    guests = [s for s in starters if not s.unit_id]
+
+    def story(blank: int) -> list:
+        out = heading()
+        for unit in units:
+            people = [s for s in starters if s.unit_id == unit.pk]
+            block = [
+                Paragraph(f"<b>{escape(unit.name)}</b>", st["normal"]),
+                Spacer(1, 1.5 * mm),
+                table(people, per_unit, False),
+            ]
+            for tsc in team_scorings:
+                filled = _team_cells(tsc, team_rows.get((tsc.pk, unit.pk)), raw)
+                block += [Spacer(1, 2 * mm), _team_box(tsc, total, primary, n, filled)]
+            out.append(KeepTogether(block + [Spacer(1, 6 * mm)]))
+        out += [
+            Paragraph("<b>Gäste und ohne Einheit</b>", st["normal"]),
+            Spacer(1, 1.5 * mm),
+            table(guests, blank, True),
+        ]
+        return out
+
     least = 1 if empty else blank_rows
     return _filled(comp, f"Schießliste {comp.title}", story, least, wide=wide)
+
+
+def _team_cells(sc: Scoring, row: dict | None, raw: dict) -> dict[str, str]:
+    """Schon feststehende Werte der Zugwertung einer Einheit für die Felder im Kasten."""
+    if not row or row.get("value") is None:
+        return {}
+    src = sc.source
+    decimals = src.decimals if src else 0
+    counted = [raw[pk] for pk in row.get("counted", []) if raw.get(pk) is not None]
+    counted.sort(reverse=src.higher_better if src else True)
+    out = {f"{i}.": services.fmt(v, decimals) for i, v in enumerate(counted, 1)}
+    if sc.team_mode == "durchschnitt":
+        out |= {
+            "Summe": services.fmt(sum(counted), decimals),
+            "Anzahl": str(len(counted)),
+            "Durchschnitt": row["value_text"],
+        }
+    else:
+        out["Summe"] = row["value_text"]
+    if row.get("place"):
+        out["Platz"] = str(row["place"])
+    return out
+
+
+def _team_box(sc: Scoring, total, primary, n, filled: dict[str, str] | None = None):
+    """Felder für die Wertung einer Einheit: je gewertetem Ergebnis eine Zelle, Summe
+    (beim Durchschnitt auch Anzahl), Platz."""
+    from reportlab.platypus import Table
+
+    if sc.team_mode == "beste" and sc.team_size and sc.team_size <= 10:
+        heads = [f"{i}." for i in range(1, sc.team_size + 1)] + ["Summe"]
+        mode = f"Summe der besten {sc.team_size}"
+    elif sc.team_mode == "durchschnitt":
+        heads = ["Summe", "Anzahl", "Durchschnitt"]
+        mode = "Durchschnitt aller"
+    else:
+        heads = ["Summe"]
+        mode = f"Summe der besten {sc.team_size}" if sc.team_mode == "beste" else "Summe aller"
+    heads.append("Platz")
+    label_w = 48 * mm
+    cell = min(22 * mm, (total - label_w) / len(heads))
+    label = Paragraph(f"<b>{escape(sc.name)}</b><br/>{escape(mode)}", n)
+    return Table(
+        [
+            [label] + [Paragraph(f"<b>{escape(h)}</b>", n) for h in heads],
+            [""] + [(filled or {}).get(h, "") for h in heads],
+        ],
+        colWidths=[label_w] + [cell] * len(heads),
+        rowHeights=[None, 9 * mm],
+        hAlign="LEFT",
+        style=[
+            ("SPAN", (0, 0), (0, 1)),
+            ("BOX", (0, 0), (-1, -1), 0.8, primary),
+            ("GRID", (1, 1), (-1, 1), 0.3, colors.grey),
+            ("LINEBELOW", (1, 0), (-1, 0), 0.8, primary),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("FONTSIZE", (0, 0), (-1, -1), 9),
+        ],
+    )
 
 
 def shootoff_list(comp: Competition, shootoff) -> bytes:
