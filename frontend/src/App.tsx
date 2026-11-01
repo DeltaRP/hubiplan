@@ -53,6 +53,11 @@ const FinanzenPage = lazyPage(() => import('./pages/finanzen/FinanzenPage.tsx'),
 const DocumentsPage = lazyPage(() => import('./pages/documents/DocumentsPage.tsx'), 'DocumentsPage')
 const WebsitePage = lazyPage(() => import('./pages/website/WebsitePage.tsx'), 'WebsitePage')
 const EventsPage = lazyPage(() => import('./pages/events/EventsPage.tsx'), 'EventsPage')
+const CompetitionsPage = lazyPage(
+  () => import('./pages/competitions/CompetitionsPage.tsx'),
+  'CompetitionsPage',
+)
+const StandPage = lazyPage(() => import('./pages/competitions/StandPage.tsx'), 'StandPage')
 const PlatformLayout = lazyPage(
   () => import('./pages/platform/PlatformPages.tsx'),
   'PlatformLayout',
@@ -183,6 +188,15 @@ export default function App() {
           <Route path="/lizenz" element={<LicensePage />} />
           <Route path="/barrierefreiheit" element={<AccessibilityPage />} />
         </Route>
+        {/* Standmodus: Vollbild ohne Menü (Tablet, Handy am Schießstand) */}
+        <Route
+          path="/stand/:org/:id"
+          element={
+            <RequireAuth>
+              <StandPage />
+            </RequireAuth>
+          }
+        />
         <Route
           element={
             <RequireAuth>
@@ -220,6 +234,14 @@ export default function App() {
           />
           <Route path="rundschreiben/*" element={<CircularsPage />} />
           <Route path="termine/*" element={<EventsPage />} />
+          <Route
+            path="wettbewerbe/*"
+            element={
+              <RequireOrg>
+                <CompetitionsPage />
+              </RequireOrg>
+            }
+          />
           <Route path="dokumente/*" element={<DocumentsPage />} />
           {/* Rückkehr von Meta: außerhalb von /webseite/, das Caddy an die Vereinswebseite gibt */}
           <Route path="social-rueckkehr" element={<SocialReturn />} />

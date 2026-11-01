@@ -38,6 +38,7 @@ const MODULES = [
   { id: 'billing', label: 'Beiträge/Rechnungen' },
   { id: 'events', label: 'Termine' },
   { id: 'website', label: 'Webseite' },
+  { id: 'competitions', label: 'Wettbewerbe' },
 ]
 
 export function PlatformLayout() {

@@ -83,6 +83,20 @@ export const modules: AppModule[] = [
         : !!(ws.dept?.events_enabled || ws.portal?.events_enabled),
   },
   {
+    id: 'wettbewerbe',
+    label: 'Wettbewerbe',
+    path: '/wettbewerbe',
+    icon: icon(
+      'M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8.5 20h7M10 17h4v3h-4z',
+    ),
+    visible: (org) =>
+      !!org &&
+      (org.type === 'club' || org.type === 'federation') &&
+      org.modules.includes('competitions') &&
+      (org.permissions.includes(PERM.competitionsManage) ||
+        org.permissions.includes(PERM.competitionsResults)),
+  },
+  {
     id: 'dokumente',
     label: 'Dokumente',
     path: '/dokumente',
