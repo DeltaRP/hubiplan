@@ -184,6 +184,9 @@ ORG_FIELDS = (
     "datev_client",
     "datev_account_length",
     "datev_chart",
+    # Hilfe: Ansprechpartner und Hinweise des Vereins
+    "help_contacts",
+    "help_notes",
 )
 DEPT_FIELDS = (
     "name",

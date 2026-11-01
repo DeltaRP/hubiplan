@@ -392,6 +392,12 @@ class Organization(ShortNameMixin, FiscalYearFields, ThemeFields):
     )
 
     enabled_modules = models.JSONField("freigeschaltete Module", default=list, blank=True)
+    # Hilfe (konzepte/hilfe-funktion.md 3.6, 3.7): Ansprechpartner für Fragen zu HUBIplan
+    # [{"name", "hint", "email"}] und Hinweise des Vereins zu Anleitungen {Schlüssel: Text}
+    help_contacts = models.JSONField(
+        "Ansprechpartner für Fragen zu HUBIplan", default=list, blank=True
+    )
+    help_notes = models.JSONField("Hinweise des Vereins zur Hilfe", default=dict, blank=True)
     # Vereinssprache (konzepte/englisch.md, Fachfrage F10): Sprache der Belege, Briefe,
     # Rechnungen und der Vereinswebseite. Vorerst immer Deutsch, noch nicht einstellbar.
     language = models.CharField(

@@ -4327,3 +4327,12 @@ msgstr "This building block cannot be renamed: {key}"
 
 msgid "Ein Name darf höchstens {n} Zeichen lang sein."
 msgstr "A name may be at most {n} characters long."
+
+msgid "Höchstens {n} Ansprechpartner."
+msgstr "At most {n} contacts."
+
+msgid "Unbekannte Anleitung."
+msgstr "Unknown guide."
+
+msgid "Unbekannter Schritt."
+msgstr "Unknown step."

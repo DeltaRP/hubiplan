@@ -64,6 +64,39 @@ until docker exec "$ID-backend" python -c "import urllib.request; urllib.request
     sleep 2
 done
 docker exec "$ID-backend" python manage.py seed_testdata --password "$PASSWORD" > /dev/null
+# Für die Bilder auch die Module, die neue Vereine erst einschalten (nur in diesem Wegwerf-Stand)
+docker exec -e DATABASE_APP_ROLE= "$ID-backend" python manage.py shell -c "
+from organizations.models import Organization
+for o in Organization.objects.filter(type='club'):
+    o.enabled_modules = sorted(set(o.enabled_modules or []) | {'competitions', 'entries', 'website'})
+    o.cash_counts_enabled = True
+    o.save(update_fields=['enabled_modules', 'cash_counts_enabled'])
+# Lastschrift (Beispiel-Gläubiger-ID der Bundesbank) und eine Mahnstufe
+from billing.models import BillingSettings, DunningLevel
+from finance.models import Account
+for o in Organization.objects.filter(type='club'):
+    # Bankkonto mit einer bekannten Test-IBAN, sonst fehlt der Lastschrift das Konto
+    bank = Account.objects.filter(organization=o, kind='bank').order_by('pk').first()
+    if bank and not bank.iban:
+        bank.iban = 'DE02120300000000202051'
+        bank.save(update_fields=['iban'])
+    BillingSettings.objects.update_or_create(organization=o, defaults={'sepa_enabled': True, 'creditor_id': 'DE98ZZZ09999999999', 'account': bank})
+    DunningLevel.objects.get_or_create(organization=o, level=1, defaults={'name': 'Zahlungserinnerung', 'days': 14})
+# Erfundener Mitgliedszugang mit Mitgliederbereich (Meine Daten, App verbinden)
+from django.contrib.auth import get_user_model
+from access.models import RoleAssignment
+from members.models import Membership
+from portal.models import PortalAccess
+club = RoleAssignment.objects.get(user__email='vorstand@hubertus-grimlinghausen.test').organization
+club.member_portal_enabled = True
+club.save(update_fields=['member_portal_enabled'])
+membership = next(m for m in Membership.objects.filter(organization=club).select_related('person').order_by('pk') if m.current_period())
+user, _ = get_user_model().objects.get_or_create(email='mitglied@hubertus-grimlinghausen.test',
+    defaults={'first_name': membership.person.first_name, 'last_name': membership.person.last_name})
+user.set_password('$PASSWORD')
+user.save()
+PortalAccess.objects.get_or_create(membership=membership, defaults={'organization': club, 'user': user})
+" > /dev/null
 echo "Backend mit Demodaten bereit"
 
 docker run -d --name "$ID-web" --network "$ID" --network-alias web "$CPUS" \

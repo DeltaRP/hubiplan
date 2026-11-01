@@ -1,11 +1,12 @@
 // Seitenhilfe: Leiste rechts (schmal: Blatt von unten) mit der Hilfe zur aktuellen Seite.
 // Bleibt beim Seitenwechsel offen und zeigt dann die Hilfe der neuen Seite.
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { t } from '../i18n/index.ts'
-import { guidesFor, pageHelpFor } from './content.ts'
+import { guidesFor, pageHelpFor, routeMatches } from './content.ts'
 import { useHelp } from './HelpContext.tsx'
 import type { HelpState } from './HelpContext.tsx'
+import { BlockedGuide, GuideNotes, HelpContacts, ShowMe } from './HelpExtras.tsx'
 import { HelpMarkdown } from './HelpMarkdown.tsx'
 import './help.css'
 
@@ -38,7 +39,8 @@ export function HelpPanel() {
 function OpenHelpPanel({ help }: { help: HelpState }) {
   const { pathname } = useLocation()
   // Gewählte Anleitung gilt nur auf der Seite, auf der sie gewählt wurde
-  const [chosen, setChosen] = useState<{ key: string; path: string } | null>(null)
+  const chosen = help.panelGuide
+  const setChosen = help.openGuide
   const headingRef = useRef<HTMLHeadingElement>(null)
   const { setPanelOpen } = help
 
@@ -67,6 +69,13 @@ function OpenHelpPanel({ help }: { help: HelpState }) {
   const all = help.entries?.filter(help.visible) ?? []
   const page = pageHelpFor(all, pathname)
   const guides = guidesFor(all, pathname)
+  // Anleitungen zu dieser Seite, für die ein Recht fehlt (ausgegraut, F1)
+  const blocked = (help.entries ?? []).filter(
+    (e) =>
+      e.kind === 'guide' &&
+      help.missing(e).length > 0 &&
+      e.routes.some((r) => routeMatches(r, pathname)),
+  )
   const guideKey = chosen?.path === pathname ? chosen.key : null
   const guide = guideKey ? all.find((e) => e.key === guideKey) : undefined
 
@@ -99,6 +108,8 @@ function OpenHelpPanel({ help }: { help: HelpState }) {
             ← {t('Zurück zur Seite')}
           </button>
           <HelpMarkdown body={guide.body} />
+          <ShowMe entry={guide} />
+          <GuideNotes entry={guide} />
         </>
       )}
       {help.entries && !guide && (
@@ -111,7 +122,7 @@ function OpenHelpPanel({ help }: { help: HelpState }) {
           ) : (
             <p className="muted">{t('Zu dieser Seite gibt es noch keine eigene Hilfe.')}</p>
           )}
-          {guides.length > 0 && (
+          {guides.length + blocked.length > 0 && (
             <section>
               <h3>{t('Häufige Aufgaben')}</h3>
               <ul className="help-list">
@@ -126,11 +137,15 @@ function OpenHelpPanel({ help }: { help: HelpState }) {
                     </button>
                   </li>
                 ))}
+                {blocked.map((g) => (
+                  <BlockedGuide key={g.key} entry={g} />
+                ))}
               </ul>
             </section>
           )}
         </>
       )}
+      {help.entries && !guide && <HelpContacts compact />}
       <p className="help-panel-foot">
         <Link to="/hilfe" onClick={close}>
           {t('Alle Hilfe und Glossar')}

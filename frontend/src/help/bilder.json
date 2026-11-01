@@ -1,5 +1,5 @@
 {
-  "_hinweis": "Bildschirmfotos der Hilfe, erzeugt mit scripts/hilfe-bilder.sh aus den Demodaten (seed_testdata). zugang: Demozugang ohne Domain; ausschnitt: CSS-Auswahl des Bereichs (leer: Inhalt der Seite).",
+  "_hinweis": "Bildschirmfotos der Hilfe, erzeugt mit scripts/hilfe-bilder.sh aus den Demodaten (seed_testdata). zugang: Demozugang ohne Domain; ausschnitt: CSS-Auswahl des Bereichs (leer: Inhalt der Seite); wurzel (wahlweise): Bereich, in dem ausschnitt gesucht wird, etwa header.topbar für die Kopfleiste (Standard: main).",
   "bilder": [
     {
       "name": "konto-passwort",
@@ -29,6 +29,181 @@
       "name": "mitglieder-aufnehmen",
       "zugang": "vorstand@hubertus-grimlinghausen.test",
       "seite": "/mitglieder/neu",
+      "ausschnitt": ""
+    },
+    {
+      "name": "austritt-erfassen",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/mitglieder",
+      "ausschnitt": ""
+    },
+    {
+      "name": "mitgliedsart-wechseln",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/mitglieder",
+      "ausschnitt": ""
+    },
+    {
+      "name": "mitglieder-importieren",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/mitglieder/import",
+      "ausschnitt": ""
+    },
+    {
+      "name": "ausweise-drucken",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/mitglieder",
+      "ausschnitt": ""
+    },
+    {
+      "name": "liste-exportieren",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/mitglieder",
+      "ausschnitt": ""
+    },
+    {
+      "name": "aenderungsmeldung-pruefen",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/mitglieder/anfragen/aenderungen",
+      "ausschnitt": ""
+    },
+    {
+      "name": "ehrung-vergeben",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/mitglieder/jubilaeen",
+      "ausschnitt": ""
+    },
+    {
+      "name": "beitragssaetze-anlegen",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/finanzen/einstellungen/beitraege",
+      "ausschnitt": ""
+    },
+    {
+      "name": "beitragslauf",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/finanzen/rechnungen/beitragslaeufe",
+      "ausschnitt": ""
+    },
+    {
+      "name": "lastschrift",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/finanzen/lastschrift",
+      "ausschnitt": ""
+    },
+    {
+      "name": "mandat-erfassen",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/finanzen/lastschrift/mandate",
+      "ausschnitt": ""
+    },
+    {
+      "name": "rechnung-schreiben",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/finanzen/rechnungen",
+      "ausschnitt": ""
+    },
+    {
+      "name": "mahnen",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/finanzen/rechnungen/mahnungen",
+      "ausschnitt": ""
+    },
+    {
+      "name": "kontoauszug-einlesen",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/finanzen/kontoauszuege",
+      "ausschnitt": ""
+    },
+    {
+      "name": "buchung-erfassen",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/finanzen/kassenbuch",
+      "ausschnitt": ""
+    },
+    {
+      "name": "quittung-ausstellen",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/finanzen/quittungen",
+      "ausschnitt": ""
+    },
+    {
+      "name": "kasse-zaehlen",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/finanzen/kassenzaehlung",
+      "ausschnitt": ""
+    },
+    {
+      "name": "zuwendungsbestaetigungen",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/finanzen/zuwendungen",
+      "ausschnitt": ""
+    },
+    {
+      "name": "jahresabschluss",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/finanzen/abschluss",
+      "ausschnitt": ""
+    },
+    {
+      "name": "termin-anlegen",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/termine",
+      "ausschnitt": ""
+    },
+    {
+      "name": "kalender-abonnieren",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/termine",
+      "ausschnitt": ""
+    },
+    {
+      "name": "rundschreiben-verschicken",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/rundschreiben",
+      "ausschnitt": ""
+    },
+    {
+      "name": "dokument-hochladen",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/dokumente",
+      "ausschnitt": ""
+    },
+    {
+      "name": "wettbewerb-anlegen",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/wettbewerbe",
+      "ausschnitt": ""
+    },
+    {
+      "name": "rolle-anlegen",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/einstellungen/rollen",
+      "ausschnitt": ""
+    },
+    {
+      "name": "ansicht-als-rolle",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/einstellungen/rollen",
+      "wurzel": "header.topbar",
+      "ausschnitt": ".topbar-user"
+    },
+    {
+      "name": "modul-einschalten",
+      "zugang": "plattform@hubiplan.test",
+      "seite": "/plattform",
+      "ausschnitt": ""
+    },
+    {
+      "name": "app-verbinden",
+      "zugang": "mitglied@hubertus-grimlinghausen.test",
+      "seite": "/mein-konto/app",
+      "ausschnitt": ""
+    },
+    {
+      "name": "daten-aendern-lassen",
+      "zugang": "mitglied@hubertus-grimlinghausen.test",
+      "seite": "/mein-bereich/daten",
       "ausschnitt": ""
     }
   ]

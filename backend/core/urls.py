@@ -3,7 +3,7 @@ from rest_framework.routers import SimpleRouter
 
 from access import office_views
 from access import views as access_views
-from accounts import language, learning, self_service
+from accounts import help_done, language, learning, self_service
 from billing import portal_views as billing_portal_views
 from billing import views as billing_views
 from cards import views as card_views
@@ -32,7 +32,7 @@ from members import honorary as honorary_views
 from members import views as member_views
 from oidc import urls as oidc_urls
 from oidc import views as oidc_views
-from organizations import imprint_views, social_views
+from organizations import help_views, imprint_views, social_views
 from organizations import views as org_views
 from outbox import views as outbox_views
 from peering import urls as peering_urls
@@ -123,6 +123,8 @@ platform_router.register("orgs", org_views.PlatformOrganizationViewSet, basename
 org_patterns = [
     path("", org_views.OrganizationDetailView.as_view(), name="org-detail"),
     path("theme/", org_views.ThemeView.as_view(), name="org-theme"),
+    path("help/", help_views.OrgHelpView.as_view(), name="org-help"),
+    path("help/notes/<str:key>/", help_views.OrgHelpNoteView.as_view(), name="org-help-note"),
     path("imprint/", imprint_views.OrgImprintView.as_view(), name="org-imprint"),
     path(
         "imprint/units/<int:unit_id>/",
@@ -708,6 +710,8 @@ urlpatterns = [
     path("me/language/", language.MyLanguageView.as_view(), name="my-language"),
     path("public/languages/", language.PublicLanguagesView.as_view(), name="public-languages"),
     path("me/learning/", learning.LearningView.as_view(), name="my-learning"),
+    path("me/help/", help_done.HelpDoneView.as_view(), name="my-help"),
+    path("me/help/<str:key>/", help_done.HelpDoneKeyView.as_view(), name="my-help-step"),
     path("me/learning/<slug:key>/hide/", learning.LearningHideView.as_view(), name="learning-hide"),
     path("me/learning/<slug:key>/show/", learning.LearningShowView.as_view(), name="learning-show"),
     path(

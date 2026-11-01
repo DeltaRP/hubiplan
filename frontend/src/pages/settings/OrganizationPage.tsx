@@ -9,6 +9,7 @@ import { useActiveOrg, useOrg } from '../../org/OrgContext.tsx'
 import { LabelFields } from '../../components/LabelFields.tsx'
 import { buildFederationTerms, buildTerms } from '../../org/terms.ts'
 import { Why } from '../../learning/Aids.tsx'
+import { HelpContactsCard } from '../../help/HelpExtras.tsx'
 import { t } from '../../i18n/index.ts'
 
 export function OrganizationPage() {
@@ -39,6 +40,7 @@ export function OrganizationPage() {
           <div className="card card-wide">
             <StatutePanel orgId={org.id} kind="founding_deed" />
           </div>
+          <HelpContactsCard orgId={org.id} editable={org.permissions.includes(PERM.orgEdit)} />
         </>
       )}
     </>

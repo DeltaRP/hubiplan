@@ -54,7 +54,9 @@ for (const language of ['de', 'en']) {
           .locator('main [role="status"]', { hasText: /Lädt|Loading/ })
           .waitFor({ state: 'detached' })
           .catch(() => {})
-        const target = page.locator(b.ausschnitt ? `main ${b.ausschnitt}` : 'main').first()
+        // wurzel: Bereich außerhalb des Inhalts, etwa die Kopfleiste (Standard: main)
+        const root = b.wurzel ?? 'main'
+        const target = page.locator(b.ausschnitt ? `${root} ${b.ausschnitt}` : root).first()
         await target.waitFor({ state: 'visible', timeout: 15000 })
         // Hinweise mit Datum (z. B. Frist für die Zwei-Faktor-Anmeldung) veralten im Bild
         await page.addStyleTag({ content: 'main.content > .alert[role="status"] { display: none !important; }' })
