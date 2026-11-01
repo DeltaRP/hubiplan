@@ -11,6 +11,8 @@ export interface WebsiteSettings {
   blocks: Record<string, boolean>
   /** Anordnung des Menüs (Reihenfolge, Unterpunkte) */
   menu?: MenuNode[]
+  /** Eigene Namen der Bausteine für Menü und Überschrift; fehlt = Standardname */
+  block_names?: Record<string, string>
   /** Bausteine der Startseite in ihrer Reihenfolge */
   home_sections: HomeSection[]
   /** Standarddesign der Webseite (classic, festive, sidebar, stage, newspaper) */
@@ -52,7 +54,12 @@ export interface MenuNode {
 /** Möglicher Menüpunkt: Baustein, eigene Textseite, Würde oder Überschrift */
 export interface MenuItem {
   key: string
+  /** Name im Menü (eigener Name oder Standard) */
   label: string
+  /** Standardname (fehlt bei älteren Ständen) */
+  default_label?: string
+  /** Lässt sich unter „Bausteine“ umbenennen */
+  renamable?: boolean
   hint: string
   /** Baustein, der den Punkt ein- und ausschaltet */
   toggle: string | null

@@ -118,6 +118,7 @@ const SETTINGS: (keyof WebsiteSettings)[] = [
   'maintenance_text',
   'blocks',
   'menu',
+  'block_names',
   'home_sections',
   'design',
   'color_roles',
@@ -264,18 +265,28 @@ function WebsiteAdmin({
         t('Bausteine'),
         <>
           <p className="muted small">
-            {t('Welche Bereiche die Webseite zeigt, in der Reihenfolge des Menüs.')}
+            {t(
+              'Welche Bereiche die Webseite zeigt, in der Reihenfolge des Menüs. Mit dem Stift gibst du einem Baustein einen eigenen Namen für Menü und Überschrift.',
+            )}
           </p>
           {website.menu_items && (
             <MenuTree
               items={website.menu_items}
               value={v.menu ?? []}
               blocks={v.blocks}
+              names={v.block_names ?? {}}
               disabled={!data.can_manage}
               onChange={(next) => set('menu', next)}
+              onRename={(key, name) => {
+                const next = { ...(v.block_names ?? {}) }
+                if (name.trim()) next[key] = name
+                else delete next[key]
+                set('block_names', next)
+              }}
               onToggle={(key, on) => set('blocks', { ...v.blocks, [key]: on })}
             />
           )}
+          {errors.block_names && <Alert kind="error">{errors.block_names}</Alert>}
           {Object.entries(data.block_labels)
             .filter(([key]) => !website.menu_items?.some((it) => it.toggle === key))
             .map(([key, label]) => (

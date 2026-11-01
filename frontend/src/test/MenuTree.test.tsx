@@ -162,3 +162,42 @@ describe('Menübaum', () => {
     expect(onChange).toHaveBeenCalledTimes(2)
   })
 })
+
+describe('Bausteine umbenennen (Ralf 01.11.)', () => {
+  function Renaming({ onRename }: { onRename: (key: string, name: string) => void }) {
+    const [names, setNames] = useState<Record<string, string>>({ board: 'Unser Vorstand' })
+    return (
+      <MenuTree
+        items={items.map((it) =>
+          it.key === 'page:7' ? it : { ...it, default_label: it.label, renamable: true },
+        )}
+        value={[]}
+        blocks={{}}
+        names={names}
+        onChange={() => undefined}
+        onToggle={() => undefined}
+        onRename={(key, name) => {
+          setNames({ ...names, [key]: name })
+          onRename(key, name)
+        }}
+      />
+    )
+  }
+
+  it('zeigt den eigenen Namen und ändert ihn über den Stift', () => {
+    const onRename = vi.fn()
+    render(<Renaming onRename={onRename} />)
+    expect(screen.getByText('Unser Vorstand')).toBeTruthy()
+    expect(screen.getByText(/Standard: Vorstand/)).toBeTruthy()
+    // Textseiten tragen ihren Namen selbst: kein Stift
+    expect(screen.queryByRole('button', { name: 'Festschrift umbenennen' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Termine umbenennen' }))
+    const input = screen.getByRole('textbox', { name: /Eigener Name für Termine/ })
+    expect((input as HTMLInputElement).placeholder).toBe('Termine')
+    fireEvent.change(input, { target: { value: 'Feste' } })
+    expect(onRename).toHaveBeenCalledWith('events', 'Feste')
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(screen.queryByRole('textbox')).toBeNull()
+    expect(screen.getByText('Feste')).toBeTruthy()
+  })
+})

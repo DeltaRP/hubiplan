@@ -58,6 +58,14 @@ def is_extra_block(key) -> bool:
     return isinstance(key, str) and bool(EXTRA_BLOCK.match(key))
 
 
+# Eigene Namen der Bausteine (Ralf 2026-11-01): erscheinen im Menü und als Überschrift
+# auf der Webseite; leer = Standardname. Umbenennbar sind die Bausteine (ohne „social“),
+# die Überschrift „Geschichte“ und die Ehrungen. Würden und Textseiten tragen ihren
+# Namen schon selbst.
+RENAMABLE_BLOCKS = tuple(k for k in BLOCKS if k != "social") + ("group:history", "honorary")
+BLOCK_NAME_MAX = 60
+
+
 # Bausteine der Startseite: ein- und ausschaltbar, Reihenfolge frei. Die
 # Standardliste entspricht der Startseite vor der freien Zusammenstellung.
 HOME_SECTIONS = {
@@ -147,6 +155,8 @@ class Website(models.Model):
     blocks = models.JSONField("Bausteine", default=default_blocks, blank=True)
     # Anordnung des Menüs (Reihenfolge, Unterpunkte); leer = Standard (website/menu.py)
     menu = models.JSONField("Menü", default=list, blank=True)
+    # Eigene Namen der Bausteine: Schlüssel → Name (nur gesetzte; RENAMABLE_BLOCKS)
+    block_names = models.JSONField("Eigene Namen der Bausteine", default=dict, blank=True)
     home_sections = models.JSONField(
         "Bausteine der Startseite", default=default_home_sections, blank=True
     )
@@ -228,6 +238,15 @@ class Website(models.Model):
     def block_on(self, key: str) -> bool:
         default = True if is_extra_block(key) else DEFAULT_BLOCKS.get(key, False)
         return bool((self.blocks or {}).get(key, default))
+
+    def block_name(self, key: str) -> str:
+        """Eigener Name eines Bausteins oder leer (dann gilt der Standardname)."""
+        name = (self.block_names or {}).get(key) if key in RENAMABLE_BLOCKS else None
+        return name.strip() if isinstance(name, str) else ""
+
+    def names(self) -> dict[str, str]:
+        """Alle gesetzten eigenen Namen (für die öffentliche Schnittstelle)."""
+        return {k: n for k in RENAMABLE_BLOCKS if (n := self.block_name(k))}
 
     def home(self) -> list[str]:
         """Eingeschaltete Bausteine der Startseite in ihrer Reihenfolge."""

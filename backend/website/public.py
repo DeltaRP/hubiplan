@@ -534,7 +534,10 @@ class SiteView:
 
     def honors_label(self) -> str:
         """Menü und Überschrift der Majestäten: bei nur einer Würde ihr Name
-        (Mehrzahl, sobald es mehr als eine Regentschaft gibt), sonst „Majestäten“."""
+        (Mehrzahl, sobald es mehr als eine Regentschaft gibt), sonst „Majestäten“;
+        ein eigener Name für „Würdenträger“ geht vor."""
+        if self.site.block_name("honors"):
+            return self.site.block_name("honors")
         dignities = []
         for qs, _view, _owner, origins in self.dignity_sources():
             dignities += [
@@ -558,10 +561,13 @@ class SiteView:
                     dignities.append({"id": self.token("dignity", d.pk), "label": label})
         honorary = self.honorary() if self.site.block_on("honorary") else []
         return {
-            "label": "Würdenträger",
+            "label": self.site.block_name("honors") or "Würdenträger",
             "dignities": dignities,
             "honorary": bool(honorary),
-            "honorary_label": (honorary[0]["heading"] if len(honorary) == 1 else "Ehrungen")
+            "honorary_label": (
+                self.site.block_name("honorary")
+                or (honorary[0]["heading"] if len(honorary) == 1 else "Ehrungen")
+            )
             if honorary
             else None,
         }

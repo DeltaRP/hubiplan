@@ -176,6 +176,8 @@ class SiteInfoView(_Public):
             "menu": site.menu(),
             # Ganzes Menü in Reihenfolge mit Unterpunkten (Ralf 2026-10-31: per Ziehen)
             "nav": menu.public_nav(site),
+            # Eigene Namen der Bausteine für die Überschriften (Ralf 2026-11-01); nur gesetzte
+            "names": site.site.names(),
             "greeting": site.greeting(),
             "social": site.social(org) if site.site.block_on("social") else [],
             # Beiträge aus Instagram/Facebook vorhanden? (Abruf über posts/)

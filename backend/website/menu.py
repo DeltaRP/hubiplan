@@ -16,7 +16,7 @@ direkt im Menü.
 
 from __future__ import annotations
 
-from .models import BLOCK_HINTS, BLOCKS, Website
+from .models import BLOCK_HINTS, BLOCKS, RENAMABLE_BLOCKS, Website
 
 # Bausteine, die kein Menüpunkt sind
 NOT_IN_MENU = {"social"}
@@ -33,7 +33,8 @@ def _block_keys() -> list[str]:
 def items(website: Website, *, public_site=None) -> dict[str, dict]:
     """Alle möglichen Menüpunkte in Standardreihenfolge.
 
-    Je Punkt: ``label``, ``hint``, ``toggle`` (Baustein-Schlüssel für ein/aus oder
+    Je Punkt: ``label`` (eigener Name oder Standard), ``default_label``,
+    ``renamable``, ``hint``, ``toggle`` (Baustein-Schlüssel für ein/aus oder
     None), ``heading`` (Überschrift ohne eigene Seite), ``parent`` (Standard-
     Oberpunkt oder None). Mit ``public_site`` (SiteView) kommen öffentliche Angaben
     dazu (``visible``, ``slug``, ``id``)."""
@@ -47,8 +48,11 @@ def items(website: Website, *, public_site=None) -> dict[str, dict]:
     heading_of = {child: key for key, (_l, children) in HEADINGS.items() for child in children}
 
     def add(key, label, *, hint="", toggle=None, heading=False, parent=None, **extra):
+        renamable = key in RENAMABLE_BLOCKS
         result[key] = {
-            "label": label,
+            "label": (website.block_name(key) if renamable else "") or label,
+            "default_label": label,
+            "renamable": renamable,
             "hint": hint,
             "toggle": toggle,
             "heading": heading,

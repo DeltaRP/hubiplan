@@ -3240,6 +3240,11 @@ label:has(> .file-input:focus-visible) {
 .menu-tree-heading {
   font-weight: 600;
 }
+.menu-tree-name {
+  display: block;
+  width: min(22rem, 100%);
+  margin-top: 0.35rem;
+}
 /* Stornierte Buchung im Kassenbuch: blass, Betrag durchgestrichen */
 .booking-cancelled td {
   opacity: 0.6;
