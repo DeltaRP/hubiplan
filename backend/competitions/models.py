@@ -272,6 +272,10 @@ class ShootOff(models.Model):
     shots = models.PositiveSmallIntegerField("Schüsse", null=True, blank=True)
     counted_shots = models.PositiveSmallIntegerField("davon gewertet", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    # Ohne Empfang angelegt (Ralf 2026-11-01): Kennung des Geräts; legen zwei Geräte dasselbe
+    # Stechen an, wird das zweite zur weiteren Kennung (aliases) des ersten
+    client_key = models.UUIDField(null=True, blank=True, editable=False)
+    aliases = models.JSONField(default=list, blank=True, editable=False)
 
     class Meta:
         verbose_name = "Stechen"

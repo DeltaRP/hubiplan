@@ -307,6 +307,8 @@ export interface ShootOff {
   shots: number | null
   counted_shots: number | null
   entries: ShootOffEntry[]
+  /** nur auf dem Gerät: noch nicht abgeglichen */
+  pending?: boolean
 }
 
 /** Eine Eingabe aus dem Standmodus, die (auch ohne Netz) gesammelt und nachgereicht wird. */
@@ -332,6 +334,38 @@ export type SyncOp =
   | { op: 'shot'; starter: number | string; hits: number[]; client_key: string; at: string }
   | { op: 'undo'; client_key: string | null }
   | { op: 'draw'; starter: number | string; number: number | null; how: 'hut' | 'digital' }
+  // Stechen, auch ohne Empfang (Ralf 2026-11-01); ``shootoff`` ist die Nummer vom Server
+  // oder die Gerätekennung eines noch nicht abgeglichenen Stechens
+  | {
+      op: 'shootoff'
+      client_key: string
+      scoring: number
+      keys: string[]
+      shots?: number | null
+      counted_shots?: number | null
+      /** nur fürs Gerät: Teilnehmer zum Anzeigen, bis der Server antwortet */
+      entries?: { key: string; name: string; unit: number | null; starter: number | null }[]
+    }
+  | {
+      op: 'shootoff_rules'
+      shootoff: number | string
+      shots?: number | null
+      counted_shots?: number | null
+    }
+  | {
+      op: 'shootoff_value'
+      shootoff: number | string
+      key: string
+      value: string | null
+      at: string
+    }
+  | {
+      op: 'shootoff_member'
+      shootoff: number | string
+      key: string
+      membership: number | null
+      name?: string
+    }
 
 export interface SyncResult {
   results: ({ ok: true; starter?: number } | { ok: false; error: string })[]
@@ -349,6 +383,9 @@ export interface SyncResult {
   /** Zähler fürs Zurücksetzen: ändert er sich, sind alte Eingaben des Geräts verworfen */
   generation?: number
   bird?: BirdState
+  /** Stechen (nicht beim Vogelschießen) und Gerätekennungen → Nummer beim Server */
+  shootoffs?: ShootOff[]
+  shootoff_keys?: Record<string, number>
 }
 
 const base = (org: number) => `/api/orgs/${org}/competitions/`

@@ -6,6 +6,8 @@ import type {
   BirdState,
   CompetitionStatus,
   MemberChoice,
+  ShootOff,
+  Standings,
   Starter,
   StandApi,
   SyncOp,
@@ -26,6 +28,10 @@ export interface Local {
   status?: CompetitionStatus
   /** Zähler fürs Zurücksetzen, wie ihn der Server zuletzt gemeldet hat */
   generation?: number
+  /** Stechen und Ranglisten vom letzten Abgleich, für die Arbeit ohne Netz */
+  shootoffs?: ShootOff[]
+  shootoffKeys?: Record<string, number>
+  standings?: Pick<Standings, 'scorings' | 'open_shootoffs'>
 }
 
 const storageKey = (key: string) => `hubiplan.stand.${key}`
@@ -126,6 +132,8 @@ export function useStandStore(
         recent: reset ? [] : l.recent,
         starters: mergePending(res.starters, { ...l, ops: rest }),
         bird: res.bird ?? l.bird,
+        shootoffs: reset ? res.shootoffs : (res.shootoffs ?? l.shootoffs),
+        shootoffKeys: res.shootoff_keys ?? l.shootoffKeys,
         status: res.status ?? l.status,
         generation: res.generation ?? l.generation,
         savedAt: new Date().toISOString(),
@@ -264,6 +272,8 @@ export function describe(op: SyncOp, l: Local): string {
   if (op.op === 'starter')
     return op.name ?? l.members.find((m) => m.membership === op.membership)?.name ?? 'Schütze'
   if (op.op === 'undo') return 'Rückgängig'
+  if (op.op.startsWith('shootoff')) return 'Stechen'
+  if (!('starter' in op)) return 'Eingabe'
   const s = l.starters.find((x) => x.id === op.starter || (!!x.key && x.key === op.starter))
   return s?.name ?? 'Eingabe'
 }
