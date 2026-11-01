@@ -1,5 +1,6 @@
 // Ende des Schießens im Standmodus (Ralf 2026-11-01): wer noch fehlt, „Schießen beenden“
-// (vorläufig), Stechen anlegen und erfassen, dann endgültig abschließen. Nur angemeldet.
+// (vorläufig), Stechen anlegen und erfassen, dann endgültig abschließen. Stechen auch per
+// Standzugang; Beenden und Abschluss nur angemeldet mit „Wettbewerbe verwalten“.
 import { useEffect, useState } from 'react'
 import {
   competitionsApi,
@@ -24,7 +25,8 @@ export function StandEnd({
   online,
   onStatus,
 }: {
-  org: number
+  /** angemeldet; ohne (Standzugang) kein „Schießen beenden“ */
+  org?: number
   api: StandApi
   comp: CompetitionDetail
   status: CompetitionStatus
@@ -32,14 +34,17 @@ export function StandEnd({
   online: boolean
   onStatus: (status: CompetitionStatus) => void
 }) {
-  const [data, setData] = useState<{ standings: Standings; shootoffs: ShootOff[] } | null>(null)
+  const [data, setData] = useState<{
+    standings: Pick<Standings, 'scorings' | 'open_shootoffs'>
+    shootoffs: ShootOff[]
+  } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [tick, setTick] = useState(0)
   useVersion(api, () => setTick((t) => t + 1))
 
   useEffect(() => {
     let stop = false
-    Promise.all([competitionsApi.standings(org, comp.id), competitionsApi.shootoffs(org, comp.id)])
+    Promise.all([api.standings(), api.shootoffs.list()])
       .then(([standings, shootoffs]) => {
         if (!stop) setData({ standings, shootoffs })
       })
@@ -47,7 +52,7 @@ export function StandEnd({
     return () => {
       stop = true
     }
-  }, [org, comp.id, tick])
+  }, [api, tick])
 
   if (status === 'endgueltig' || !data) return null
   const reload = () => setTick((t) => t + 1)
@@ -71,7 +76,7 @@ export function StandEnd({
       confirmLabel: 'Schießen beenden',
       danger: false,
     })
-    if (!ok) return
+    if (!ok || org === undefined) return
     try {
       await competitionsApi.setStatus(org, comp.id, 'vorlaeufig')
       setError(null)
@@ -92,7 +97,7 @@ export function StandEnd({
         {ended ? ' · Schießen beendet, Ergebnisse vorläufig.' : ''}
       </p>
       {error && <p className="alert alert-error">{error}</p>}
-      {comp.can_manage && !ended && (
+      {org !== undefined && comp.can_manage && !ended && (
         <div className="button-row">
           <button type="button" className="button" onClick={() => void endShooting()}>
             Schießen beenden
@@ -103,7 +108,7 @@ export function StandEnd({
         <div key={block.scoring} className="stand-shootoffs">
           <h3>{block.name}</h3>
           <ShootoffBlock
-            org={org}
+            api={api.shootoffs}
             comp={comp}
             block={block}
             shootoffs={data.shootoffs.filter((so) => so.scoring === block.scoring)}

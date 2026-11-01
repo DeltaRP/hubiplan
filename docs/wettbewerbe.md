@@ -86,6 +86,13 @@ eingetragen ist (`PATCH shootoffs/<id>/`). Ein Gast kann statt eines Vereins ein
 bekommen (Vorschläge beim Tippen) und zählt dann für deren Wertung. Der Standmodus ist dunkel
 in der Vereinsfarbe.
 
+Über den Standzugang (ohne Anmeldung) gehen Stechen anlegen, Regeln ändern, Werte und beim
+Zugstechen der Schütze (`/api/public/stand/<schlüssel>/shootoffs/`, `shootoffs/<id>/`,
+`shootoff-entries/<id>/`, `unit-members/`; im Protokoll „Standzugang <Bezeichnung>“), wie mit
+„Ergebnisse erfassen“. „Schießen beenden“, Abschluss, Zurücksetzen und Stechen entfernen bleiben
+angemeldet. Stechen brauchen Empfang (keine Warteschlange), damit nicht zwei Tablets zwei Stechen
+anlegen.
+
 **Zurücksetzen** (`reset/`, „Einrichten“, nur verwalten, nicht bei endgültig): löscht Werte,
 Stechen, Plätze, Schüsse und gefallene Pfänder, wahlweise auch alle Starter; Regeln, Pfänder,
 Mannschaften, Standzugang und Termin bleiben, der Zustand geht auf „Vorbereitung“. Der Zähler

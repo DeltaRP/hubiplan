@@ -82,4 +82,14 @@ public_patterns = [
     path(f"{S}standings/", stand_views.StandStandingsView.as_view(), name="stand-standings"),
     path(f"{S}version/", stand_views.StandVersionView.as_view(), name="stand-version"),
     path(f"{S}sync/", stand_views.StandSyncView.as_view(), name="stand-sync"),
+    path(f"{S}shootoffs/", stand_views.StandShootoffsView.as_view(), name="stand-shootoffs"),
+    path(f"{S}shootoffs/<int:pk>/", stand_views.StandShootoffView.as_view(), name="stand-shootoff"),
+    path(
+        f"{S}shootoff-entries/<int:pk>/",
+        stand_views.StandShootoffEntryView.as_view(),
+        name="stand-shootoff-entry",
+    ),
+    path(
+        f"{S}unit-members/", stand_views.StandUnitMembersView.as_view(), name="stand-unit-members"
+    ),
 ]

@@ -34,7 +34,7 @@ export function StandPanel({
   api: StandApi
   comp: CompetitionDetail
   fullscreen?: boolean
-  /** angemeldet im Standmodus: Schießen beenden, Stechen und Abschluss hier */
+  /** angemeldet im Standmodus: dazu „Schießen beenden“ und der Abschluss */
   org?: number
 }) {
   const scoring: Scoring | undefined = comp.scorings.find((s) => s.kind === 'einzel')
@@ -435,7 +435,7 @@ export function StandPanel({
           ))}
         </ul>
       </details>
-      {!closed && org !== undefined && fullscreen ? (
+      {!closed && fullscreen ? (
         <StandEnd
           org={org}
           api={api}

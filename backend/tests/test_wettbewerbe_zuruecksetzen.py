@@ -153,3 +153,56 @@ def test_gast_fuer_einen_zug(club, zuege, board_a, api):  # noqa: F811
     assert res["results"][0]["ok"], res
     gina = next(s for s in res["starters"] if s["name"] == "Gina Gast")
     assert gina["guest"] and gina["unit"] == zuege[1].pk and gina["club"] == ""
+
+
+@pytest.mark.django_db
+def test_stechen_ueber_den_standzugang(club, schuetzen, zuege, board_a, api):  # noqa: F811
+    """Ralf 2026-11-01: Stechen auch am geliehenen Tablet; Abschluss bleibt angemeldet."""
+    from rest_framework.test import APIClient
+
+    c = api(board_a)
+    resp = c.post(
+        url(club),
+        {"title": "Preisschießen 2027", "date": "2027-06-14", "template": "einfach"},
+        "application/json",
+    )
+    comp_id = resp.json()["id"]
+    scoring = c.get(url(club, f"{comp_id}/")).json()["scorings"][0]["id"]
+    for first in ("Max", "Erika"):
+        s = _starter(c, club, comp_id, membership=schuetzen[first].pk)
+        c.put(
+            url(club, f"{comp_id}/scores/"),
+            {"scoring": scoring, "starter": s["id"], "value": "27"},
+            "application/json",
+        )
+    token = c.post(
+        url(club, f"{comp_id}/stand-access/"), {"label": "Tablet 2"}, "application/json"
+    ).json()["token"]
+    anon = APIClient()
+    base = f"/api/public/stand/{token}/"
+    block = next(
+        b for b in anon.get(f"{base}standings/").json()["scorings"] if b["scoring"] == scoring
+    )
+    keys = block["open"][0]["keys"]
+    resp = anon.post(
+        f"{base}shootoffs/", {"scoring": scoring, "keys": keys, "shots": 1}, format="json"
+    )
+    assert resp.status_code == 201, resp.content
+    so = resp.json()
+    assert so["shots"] == 1 and len(so["entries"]) == 2
+    resp = anon.patch(f"{base}shootoffs/{so['id']}/", {"shots": 2}, format="json")
+    assert resp.json()["shots"] == 2
+    entry = so["entries"][0]["id"]
+    resp = anon.patch(f"{base}shootoff-entries/{entry}/", {"value": "9"}, format="json")
+    assert resp.status_code == 200, resp.content
+    assert anon.get(f"{base}shootoffs/").json()[0]["entries"][0]["value"].startswith("9")
+    # Zustand ändern geht über den Standzugang nicht
+    assert anon.post(f"{base}status/", {"status": "endgueltig"}, format="json").status_code in (
+        404,
+        405,
+    )
+    # fremdes Stechen: nicht erreichbar
+    assert (
+        anon.patch(f"{base}shootoff-entries/999999/", {"value": "1"}, format="json").status_code
+        == 404
+    )

@@ -1075,6 +1075,159 @@ def _shootoff_rules(data, defaults: tuple) -> tuple:
     return shots, counted
 
 
+def _not_final(comp: Competition) -> None:
+    if comp.status == Competition.Status.FINAL:
+        raise ValidationError("Der Wettbewerb ist endgültig abgeschlossen.")
+
+
+# Stechen: angemeldet (Org-API) und über den Standzugang (stand_views) gleich
+
+
+def list_shootoffs(comp: Competition) -> list:
+    qs = ShootOff.objects.filter(scoring__competition=comp).prefetch_related("entries")
+    return [_shootoff_data(so) for so in qs.order_by("scoring_id", "number")]
+
+
+@transaction.atomic
+def create_shootoff(org, user, comp: Competition, data) -> dict:
+    if comp.status == Competition.Status.FINAL:
+        raise ValidationError("Der Wettbewerb ist endgültig abgeschlossen.")
+    scoring = get_object_or_404(Scoring, pk=data.get("scoring"), competition=comp)
+    keys = data.get("keys") or []
+    standings = services.standings(comp)
+    block = next(s for s in standings["scorings"] if s["scoring"] == scoring.pk)
+    group = next(
+        (t for t in block["open"] if sorted(t["keys"]) == sorted(keys) and t["shootoff"] is None),
+        None,
+    )
+    if group is None:
+        raise ValidationError("Für diese Gruppe ist kein Stechen nötig.")
+    number = (scoring.shootoffs.aggregate(m=Max("number"))["m"] or 0) + 1
+    previous = scoring.shootoffs.order_by("-number").first()
+    defaults = (
+        (previous.shots, previous.counted_shots)
+        if previous
+        else (scoring.shootoff_shots, scoring.shootoff_counted)
+    )
+    shots, counted = _shootoff_rules(data, defaults)
+    so = ShootOff.objects.create(
+        organization=org,
+        scoring=scoring,
+        number=number,
+        shots=shots,
+        counted_shots=counted,
+    )
+    rows = {r["key"]: r for r in block["rows"]}
+    for key in group["keys"]:
+        if key.startswith("u"):
+            row = rows[key]
+            best = Starter.objects.filter(pk=row.get("best_starter")).first()
+            ShootOffEntry.objects.create(
+                organization=org,
+                shootoff=so,
+                unit_id=int(key[1:]),
+                membership=best.membership if best else None,
+                name=best.name if best else "",
+            )
+        else:
+            starter = Starter.objects.get(pk=int(key[1:]), competition=comp)
+            ShootOffEntry.objects.create(
+                organization=org, shootoff=so, starter=starter, name=starter.name
+            )
+    record(org, user, "create", so, diff({}, snapshot(so)))
+    so = ShootOff.objects.prefetch_related("entries").get(pk=so.pk)
+    return _shootoff_data(so)
+
+
+@transaction.atomic
+def update_shootoff(org, user, comp: Competition, pk: int, data) -> dict:
+    if comp.status == Competition.Status.FINAL:
+        raise ValidationError("Der Wettbewerb ist endgültig abgeschlossen.")
+    so = get_object_or_404(ShootOff, pk=pk, scoring__competition=comp)
+    if so.entries.filter(value__isnull=False).exists():
+        raise ValidationError("Es sind schon Werte eingetragen; erst die Werte löschen.")
+    before = snapshot(so)
+    so.shots, so.counted_shots = _shootoff_rules(data, (so.shots, so.counted_shots))
+    so.save(update_fields=["shots", "counted_shots"])
+    record(org, user, "update", so, diff(before, snapshot(so)))
+    so = ShootOff.objects.prefetch_related("entries").get(pk=so.pk)
+    return _shootoff_data(so)
+
+
+@transaction.atomic
+def delete_shootoff(org, user, comp: Competition, pk: int) -> None:
+    if comp.status == Competition.Status.FINAL:
+        raise ValidationError("Der Wettbewerb ist endgültig abgeschlossen.")
+    so = get_object_or_404(ShootOff, pk=pk, scoring__competition=comp)
+    if so.scoring.shootoffs.filter(number__gt=so.number).exists():
+        raise ValidationError("Erst das spätere Stechen entfernen.")
+    record(org, user, "delete", so, diff(snapshot(so), {}))
+    so.delete()
+
+
+@transaction.atomic
+def update_shootoff_entry(org, user, comp: Competition, pk: int, data) -> dict:
+    _not_final(comp)
+    entry = get_object_or_404(
+        ShootOffEntry.objects.select_related("shootoff__scoring__source"),
+        pk=pk,
+        shootoff__scoring__competition=comp,
+    )
+    before = snapshot(entry)
+    scoring = entry.shootoff.scoring
+    if "value" in data:
+        value = _decimal(data["value"], "value")
+        if value is not None:
+            metric = scoring.source if scoring.kind == Scoring.Kind.UNIT else scoring
+            _check_decimals(value, metric.decimals, "value")
+            per_shot = scoring.max_per_shot or metric.max_per_shot
+            count = entry.shootoff.counted_shots or entry.shootoff.shots
+            if per_shot is not None and count and value > per_shot * count:
+                raise ValidationError({"value": f"Höchstens {services.fmt(per_shot * count, 0)}."})
+        entry.value = value
+    if entry.unit_id and "membership" in data:
+        if data["membership"]:
+            m = (
+                Membership.objects.filter(
+                    organization=org, pk=data["membership"], purged_at__isnull=True
+                )
+                .select_related("person")
+                .first()
+            )
+            if m is None:
+                raise ValidationError({"membership": "Unbekanntes Mitglied."})
+            entry.membership = m
+            entry.name = _person_name(m)
+        else:
+            entry.membership = None
+            entry.name = str(data.get("name") or "").strip()[:200]
+    entry.save()
+    changes = diff(before, snapshot(entry))
+    if changes:
+        record(org, user, "update", entry, changes)
+    return _shootoff_data(ShootOff.objects.prefetch_related("entries").get(pk=entry.shootoff_id))
+
+
+def unit_members(org, comp: Competition, raw_unit) -> list:
+    """Mitglieder einer Untereinheit am Wettbewerbstag (Schütze im Stechen)."""
+    from members.models import DepartmentMembership
+
+    unit = _unit_or_none(org, raw_unit)
+    if unit is None:
+        return []
+    on = comp.date
+    ids = (
+        DepartmentMembership.objects.filter(organization=org, department=unit, valid_from__lte=on)
+        .exclude(valid_until__lt=on)
+        .values_list("membership_id", flat=True)
+    )
+    rows = Membership.objects.filter(pk__in=ids, purged_at__isnull=True).select_related("person")
+    return sorted(
+        ({"membership": m.pk, "name": _person_name(m)} for m in rows),
+        key=lambda r: r["name"],
+    )
+
+
 class ShootOffsView(_Mixin, APIView):
     """GET: alle Stechen · POST {scoring, keys, shots?, counted_shots?}: Stechen für eine
     Gleichstandsgruppe anlegen."""
@@ -1082,64 +1235,12 @@ class ShootOffsView(_Mixin, APIView):
     manage_only = False
 
     def get(self, request, org_id: int, competition_id: int):
-        comp = self.competition(competition_id)
-        qs = ShootOff.objects.filter(scoring__competition=comp).prefetch_related("entries")
-        return Response([_shootoff_data(so) for so in qs.order_by("scoring_id", "number")])
+        return Response(list_shootoffs(self.competition(competition_id)))
 
-    @transaction.atomic
     def post(self, request, org_id: int, competition_id: int):
         comp = self.competition(competition_id)
-        if comp.status == Competition.Status.FINAL:
-            raise ValidationError("Der Wettbewerb ist endgültig abgeschlossen.")
-        scoring = get_object_or_404(Scoring, pk=request.data.get("scoring"), competition=comp)
-        keys = request.data.get("keys") or []
-        data = services.standings(comp)
-        block = next(s for s in data["scorings"] if s["scoring"] == scoring.pk)
-        group = next(
-            (
-                t
-                for t in block["open"]
-                if sorted(t["keys"]) == sorted(keys) and t["shootoff"] is None
-            ),
-            None,
-        )
-        if group is None:
-            raise ValidationError("Für diese Gruppe ist kein Stechen nötig.")
-        number = (scoring.shootoffs.aggregate(m=Max("number"))["m"] or 0) + 1
-        previous = scoring.shootoffs.order_by("-number").first()
-        defaults = (
-            (previous.shots, previous.counted_shots)
-            if previous
-            else (scoring.shootoff_shots, scoring.shootoff_counted)
-        )
-        shots, counted = _shootoff_rules(request.data, defaults)
-        so = ShootOff.objects.create(
-            organization=self.org,
-            scoring=scoring,
-            number=number,
-            shots=shots,
-            counted_shots=counted,
-        )
-        rows = {r["key"]: r for r in block["rows"]}
-        for key in group["keys"]:
-            if key.startswith("u"):
-                row = rows[key]
-                best = Starter.objects.filter(pk=row.get("best_starter")).first()
-                ShootOffEntry.objects.create(
-                    organization=self.org,
-                    shootoff=so,
-                    unit_id=int(key[1:]),
-                    membership=best.membership if best else None,
-                    name=best.name if best else "",
-                )
-            else:
-                starter = Starter.objects.get(pk=int(key[1:]), competition=comp)
-                ShootOffEntry.objects.create(
-                    organization=self.org, shootoff=so, starter=starter, name=starter.name
-                )
-        record(self.org, request.user, "create", so, diff({}, snapshot(so)))
-        so = ShootOff.objects.prefetch_related("entries").get(pk=so.pk)
-        return Response(_shootoff_data(so), status=status.HTTP_201_CREATED)
+        data = create_shootoff(self.org, request.user, comp, request.data)
+        return Response(data, status=status.HTTP_201_CREATED)
 
 
 class ShootOffView(_Mixin, APIView):
@@ -1148,31 +1249,12 @@ class ShootOffView(_Mixin, APIView):
 
     manage_only = False
 
-    @transaction.atomic
     def patch(self, request, org_id: int, competition_id: int, pk: int):
         comp = self.competition(competition_id)
-        if comp.status == Competition.Status.FINAL:
-            raise ValidationError("Der Wettbewerb ist endgültig abgeschlossen.")
-        so = get_object_or_404(ShootOff, pk=pk, scoring__competition=comp)
-        if so.entries.filter(value__isnull=False).exists():
-            raise ValidationError("Es sind schon Werte eingetragen; erst die Werte löschen.")
-        before = snapshot(so)
-        so.shots, so.counted_shots = _shootoff_rules(request.data, (so.shots, so.counted_shots))
-        so.save(update_fields=["shots", "counted_shots"])
-        record(self.org, request.user, "update", so, diff(before, snapshot(so)))
-        so = ShootOff.objects.prefetch_related("entries").get(pk=so.pk)
-        return Response(_shootoff_data(so))
+        return Response(update_shootoff(self.org, request.user, comp, pk, request.data))
 
-    @transaction.atomic
     def delete(self, request, org_id: int, competition_id: int, pk: int):
-        comp = self.competition(competition_id)
-        if comp.status == Competition.Status.FINAL:
-            raise ValidationError("Der Wettbewerb ist endgültig abgeschlossen.")
-        so = get_object_or_404(ShootOff, pk=pk, scoring__competition=comp)
-        if so.scoring.shootoffs.filter(number__gt=so.number).exists():
-            raise ValidationError("Erst das spätere Stechen entfernen.")
-        record(self.org, request.user, "delete", so, diff(snapshot(so), {}))
-        so.delete()
+        delete_shootoff(self.org, request.user, self.competition(competition_id), pk)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -1181,54 +1263,9 @@ class ShootOffEntryView(_Mixin, APIView):
 
     manage_only = False
 
-    @transaction.atomic
     def patch(self, request, org_id: int, competition_id: int, pk: int):
         comp = self.competition(competition_id)
-        if comp.status == Competition.Status.FINAL:
-            raise ValidationError("Der Wettbewerb ist endgültig abgeschlossen.")
-        entry = get_object_or_404(
-            ShootOffEntry.objects.select_related("shootoff__scoring__source"),
-            pk=pk,
-            shootoff__scoring__competition=comp,
-        )
-        before = snapshot(entry)
-        data = request.data
-        scoring = entry.shootoff.scoring
-        if "value" in data:
-            value = _decimal(data["value"], "value")
-            if value is not None:
-                metric = scoring.source if scoring.kind == Scoring.Kind.UNIT else scoring
-                _check_decimals(value, metric.decimals, "value")
-                per_shot = scoring.max_per_shot or metric.max_per_shot
-                count = entry.shootoff.counted_shots or entry.shootoff.shots
-                if per_shot is not None and count and value > per_shot * count:
-                    raise ValidationError(
-                        {"value": f"Höchstens {services.fmt(per_shot * count, 0)}."}
-                    )
-            entry.value = value
-        if entry.unit_id and "membership" in data:
-            if data["membership"]:
-                m = (
-                    Membership.objects.filter(
-                        organization=self.org, pk=data["membership"], purged_at__isnull=True
-                    )
-                    .select_related("person")
-                    .first()
-                )
-                if m is None:
-                    raise ValidationError({"membership": "Unbekanntes Mitglied."})
-                entry.membership = m
-                entry.name = _person_name(m)
-            else:
-                entry.membership = None
-                entry.name = str(data.get("name") or "").strip()[:200]
-        entry.save()
-        changes = diff(before, snapshot(entry))
-        if changes:
-            record(self.org, request.user, "update", entry, changes)
-        return Response(
-            _shootoff_data(ShootOff.objects.prefetch_related("entries").get(pk=entry.shootoff_id))
-        )
+        return Response(update_shootoff_entry(self.org, request.user, comp, pk, request.data))
 
 
 class UnitMembersView(_Mixin, APIView):
@@ -1237,29 +1274,8 @@ class UnitMembersView(_Mixin, APIView):
     manage_only = False
 
     def get(self, request, org_id: int, competition_id: int):
-        from members.models import DepartmentMembership
-
         comp = self.competition(competition_id)
-        unit = _unit_or_none(self.org, request.query_params.get("unit"))
-        if unit is None:
-            return Response([])
-        on = comp.date
-        ids = (
-            DepartmentMembership.objects.filter(
-                organization=self.org, department=unit, valid_from__lte=on
-            )
-            .exclude(valid_until__lt=on)
-            .values_list("membership_id", flat=True)
-        )
-        rows = Membership.objects.filter(pk__in=ids, purged_at__isnull=True).select_related(
-            "person"
-        )
-        return Response(
-            sorted(
-                ({"membership": m.pk, "name": _person_name(m)} for m in rows),
-                key=lambda r: r["name"],
-            )
-        )
+        return Response(unit_members(self.org, comp, request.query_params.get("unit")))
 
 
 class ExportView(_Mixin, APIView):

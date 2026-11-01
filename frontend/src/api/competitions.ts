@@ -416,12 +416,6 @@ export const competitionsApi = {
     keys: string[],
     rules: { shots?: number | null; counted_shots?: number | null } = {},
   ) => api.post<ShootOff>(`${c(org, id)}shootoffs/`, { scoring, keys, ...rules }),
-  updateShootoff: (
-    org: number,
-    id: number,
-    so: number,
-    rules: { shots: number | null; counted_shots: number | null },
-  ) => api.patch<ShootOff>(`${c(org, id)}shootoffs/${so}/`, rules),
   removeShootoff: (org: number, id: number, so: number) => api.del(`${c(org, id)}shootoffs/${so}/`),
   updateShootoffEntry: (
     org: number,
@@ -498,6 +492,38 @@ export interface StandApi {
   standings: () => Promise<Pick<Standings, 'scorings' | 'open_shootoffs'>>
   /** endgültig abschließen (nur angemeldet mit „Wettbewerbe verwalten“, nicht per Standzugang) */
   finish?: () => Promise<unknown>
+  /** Stechen anlegen und erfassen (angemeldet und per Standzugang) */
+  shootoffs: ShootoffApi
+}
+
+type Rules = { shots?: number | null; counted_shots?: number | null }
+
+/** Stechen: gleiche Bedienung in der Auswertung und im Standmodus, auch per Standzugang. */
+export interface ShootoffApi {
+  list: () => Promise<ShootOff[]>
+  create: (scoring: number, keys: string[], rules: Rules) => Promise<ShootOff>
+  update: (so: number, rules: Rules) => Promise<ShootOff>
+  updateEntry: (
+    entry: number,
+    data: { value?: string | null; membership?: number | null; name?: string },
+  ) => Promise<ShootOff>
+  unitMembers: (unit: number) => Promise<{ membership: number; name: string }[]>
+  /** nur angemeldet */
+  remove?: (so: number) => Promise<unknown>
+  /** Stechliste als PDF, nur angemeldet */
+  printUrl?: (so: number) => string
+}
+
+export function orgShootoffApi(org: number, id: number): ShootoffApi {
+  return {
+    list: () => competitionsApi.shootoffs(org, id),
+    create: (scoring, keys, rules) => competitionsApi.createShootoff(org, id, scoring, keys, rules),
+    update: (so, rules) => api.patch<ShootOff>(`${c(org, id)}shootoffs/${so}/`, rules),
+    updateEntry: (entry, data) => competitionsApi.updateShootoffEntry(org, id, entry, data),
+    unitMembers: (unit) => competitionsApi.unitMembers(org, id, unit),
+    remove: (so) => competitionsApi.removeShootoff(org, id, so),
+    printUrl: (so) => competitionsApi.exportUrl(org, id, `als=stechliste&stechen=${so}`),
+  }
 }
 
 export function orgStandApi(org: number, id: number): StandApi {
@@ -510,6 +536,7 @@ export function orgStandApi(org: number, id: number): StandApi {
     standings: () => competitionsApi.standings(org, id),
     version: () => api.get<{ version: string }>(`${c(org, id)}version/`),
     finish: () => competitionsApi.setStatus(org, id, 'endgueltig'),
+    shootoffs: orgShootoffApi(org, id),
   }
 }
 
@@ -523,6 +550,15 @@ export function tokenStandApi(token: string): StandApi {
     sync: (ops, generation) => api.post<SyncResult>(`${b}sync/`, { ops, generation }),
     standings: () => api.get<Pick<Standings, 'scorings' | 'open_shootoffs'>>(`${b}standings/`),
     version: () => api.get<{ version: string }>(`${b}version/`),
+    shootoffs: {
+      list: () => api.get<ShootOff[]>(`${b}shootoffs/`),
+      create: (scoring, keys, rules) =>
+        api.post<ShootOff>(`${b}shootoffs/`, { scoring, keys, ...rules }),
+      update: (so, rules) => api.patch<ShootOff>(`${b}shootoffs/${so}/`, rules),
+      updateEntry: (entry, data) => api.patch<ShootOff>(`${b}shootoff-entries/${entry}/`, data),
+      unitMembers: (unit) =>
+        api.get<{ membership: number; name: string }[]>(`${b}unit-members/?unit=${unit}`),
+    },
   }
 }
 
