@@ -209,6 +209,8 @@ services:
       BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-30}
       BACKUP_REMOTE: ${BACKUP_REMOTE:-}
       TZ: Europe/Berlin
+    # Gruppe der App (UID/GID 1000): liest auch Schlüsseldateien mit Rechten 0640
+    group_add: ["1000"]
     # Hauptschlüssel: mit dem öffentlichen Backup-Schlüssel verschlüsselt neben die Backups
     # (datenschluessel.age), damit die Backups auch nach Verlust des Servers lesbar bleiben
     secrets: [datenschluessel]

@@ -31,6 +31,11 @@ from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from django.conf import settings
 
+# Nur für die App (Eigentümer) und die Gruppe lesbar: Der Backup-Container gehört zur
+# Gruppe der App (group_add in docker-compose.server.yml) und muss die Datei mitsichern.
+# Mit 0600 brach die Dateiliste des Backups ab (Testserver 31.10.2026).
+KEY_FILE_MODE = 0o640
+
 FORMAT = "hubiplan-vapid"
 RECORD_SIZE = 4096
 # Größte Nutzlast (Klartext); darüber geht nur „Neues von HUBIplan“ hinaus
@@ -106,7 +111,7 @@ def _create(path: Path) -> None:
     raw = key.private_numbers().private_value.to_bytes(32, "big")
     data = {"format": FORMAT, "private_key": b64(raw)}
     tmp = path.with_name(f".{path.name}.{os.getpid()}.{uuid.uuid4().hex}")
-    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, KEY_FILE_MODE)
     with os.fdopen(fd, "w") as fh:
         json.dump(data, fh)
     try:
