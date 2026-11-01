@@ -339,6 +339,7 @@ describe('Inhalte der Webseite', () => {
     image_data: null,
     gallery: [],
     gallery_interval: 7,
+    gallery_random: false,
     published_title: '',
     published_body: '',
     revisions: [],
@@ -668,7 +669,7 @@ describe('Inhalte der Webseite', () => {
     )
   })
 
-  it('stellt die Wechselzeit je Karussell ein', async () => {
+  it('stellt Wechselzeit und Startbild je Karussell ein', async () => {
     const greeting = text({
       id: 6,
       kind: 'greeting',
@@ -699,6 +700,14 @@ describe('Inhalte der Webseite', () => {
       () => {
         const put = calls.filter((c) => c.key === `PUT ${base}texts/6/`).at(-1)
         expect(put && JSON.parse(String(put.init?.body))).toEqual({ gallery_interval: 12 })
+      },
+      { timeout: 3000 },
+    )
+    await user.selectOptions(screen.getByLabelText('Beginnt mit'), 'einem zufälligen Bild')
+    await waitFor(
+      () => {
+        const put = calls.filter((c) => c.key === `PUT ${base}texts/6/`).at(-1)
+        expect(put && JSON.parse(String(put.init?.body))).toEqual({ gallery_random: true })
       },
       { timeout: 3000 },
     )

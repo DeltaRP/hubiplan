@@ -248,7 +248,7 @@ class TestBilderkarussell:
         assert put([a["id"], *many]).status_code == 400  # höchstens 10
         assert put(many).status_code == 200
 
-    def test_wechselzeit_je_karussell(self, orgs, editor, api, site):
+    def test_wechselzeit_und_start_je_karussell(self, orgs, editor, api, site):
         from django.test import Client
 
         site.state = "public"
@@ -271,6 +271,10 @@ class TestBilderkarussell:
         c.post(url(orgs["a"], f"texts/{pk}/publish/"))
         public = f"/api/public/site/v1/{site.public_key}/"
         assert Client().get(public).json()["greeting"]["gallery_interval"] == 12
+        assert Client().get(public).json()["greeting"]["gallery_random"] is False
+        c.put(url(orgs["a"], f"texts/{pk}/"), {"gallery_random": True}, "application/json")
+        c.post(url(orgs["a"], f"texts/{pk}/publish/"))
+        assert Client().get(public).json()["greeting"]["gallery_random"] is True
         # Ältere Fassung zurückholen bringt auch ihre Wechselzeit zurück
         revision = WebsiteText.objects.get(pk=pk).revisions.first()
         put(5)

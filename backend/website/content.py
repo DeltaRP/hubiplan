@@ -400,6 +400,7 @@ def publish(text: WebsiteText, user) -> WebsiteRevision:
     text.published_image = text.image
     text.published_gallery = list(text.gallery or [])
     text.published_gallery_interval = text.gallery_interval
+    text.published_gallery_random = text.gallery_random
     text.published_at = now
     text.updated_by = user
     text.save()
@@ -411,6 +412,7 @@ def publish(text: WebsiteText, user) -> WebsiteRevision:
         image=text.image,
         gallery=list(text.gallery or []),
         gallery_interval=text.gallery_interval,
+        gallery_random=text.gallery_random,
         published_at=now,
         published_by=user,
     )
@@ -443,6 +445,7 @@ def restore(text: WebsiteText, revision: WebsiteRevision, user) -> None:
     )
     text.gallery = [pk for pk in (revision.gallery or []) if pk in existing]
     text.gallery_interval = revision.gallery_interval
+    text.gallery_random = revision.gallery_random
     text.updated_by = user
     text.save()
 

@@ -1,4 +1,4 @@
-"""Bilderkarussell: Zeit bis zum nächsten Bild je Karussell (Ralf 01.11.)."""
+"""Bilderkarussell: Wechselzeit und zufälliges Startbild je Karussell (Ralf 01.11.)."""
 
 import django.core.validators
 from django.db import migrations, models
@@ -17,6 +17,11 @@ class Migration(migrations.Migration):
             field=models.PositiveSmallIntegerField(default=7),
         ),
         migrations.AddField(
+            model_name="websiterevision",
+            name="gallery_random",
+            field=models.BooleanField(default=False),
+        ),
+        migrations.AddField(
             model_name="websitetext",
             name="gallery_interval",
             field=models.PositiveSmallIntegerField(
@@ -30,7 +35,19 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name="websitetext",
+            name="gallery_random",
+            field=models.BooleanField(
+                default=False, verbose_name="zufälliges Startbild"
+            ),
+        ),
+        migrations.AddField(
+            model_name="websitetext",
             name="published_gallery_interval",
             field=models.PositiveSmallIntegerField(default=7),
+        ),
+        migrations.AddField(
+            model_name="websitetext",
+            name="published_gallery_random",
+            field=models.BooleanField(default=False),
         ),
     ]

@@ -91,6 +91,8 @@ class WebsiteText(models.Model):
         default=GALLERY_INTERVAL,
         validators=[MinValueValidator(MIN_INTERVAL), MaxValueValidator(MAX_INTERVAL)],
     )
+    # Beginnt mit einem zufälligen Bild statt mit dem ersten der Liste
+    gallery_random = models.BooleanField("zufälliges Startbild", default=False)
     # Veröffentlicht
     published_title = models.CharField(max_length=MAX_TITLE, blank=True)
     published_body = models.TextField(blank=True)
@@ -99,6 +101,7 @@ class WebsiteText(models.Model):
     )
     published_gallery = models.JSONField(default=list, blank=True)
     published_gallery_interval = models.PositiveSmallIntegerField(default=GALLERY_INTERVAL)
+    published_gallery_random = models.BooleanField(default=False)
     published_at = models.DateTimeField("veröffentlicht am", null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(
@@ -155,6 +158,7 @@ class WebsiteText(models.Model):
             or self.image_id != self.published_image_id
             or (self.gallery or []) != (self.published_gallery or [])
             or self.gallery_interval != self.published_gallery_interval
+            or self.gallery_random != self.published_gallery_random
         )
 
     def clean(self):
@@ -185,6 +189,7 @@ class WebsiteRevision(models.Model):
     )
     gallery = models.JSONField(default=list, blank=True)
     gallery_interval = models.PositiveSmallIntegerField(default=GALLERY_INTERVAL)
+    gallery_random = models.BooleanField(default=False)
     published_at = models.DateTimeField(default=timezone.now)
     published_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"

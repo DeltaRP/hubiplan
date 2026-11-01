@@ -326,6 +326,7 @@ function TextForm({
     image: text.image,
     gallery: text.gallery ?? [],
     gallery_interval: text.gallery_interval ?? 7,
+    gallery_random: text.gallery_random ?? false,
   })
   const { values: v, set, errors } = form
   const [current, setCurrent] = useState(text)
@@ -436,6 +437,8 @@ function TextForm({
           interval={v.gallery_interval}
           intervalError={errors.gallery_interval}
           onIntervalChange={(seconds) => set('gallery_interval', seconds)}
+          random={v.gallery_random}
+          onRandomChange={(on) => set('gallery_random', on)}
           onChange={(ids) => set('gallery', ids)}
           onImagesChanged={reloadImages}
         />
@@ -501,6 +504,8 @@ function GalleryPicker({
   interval,
   intervalError,
   onIntervalChange,
+  random,
+  onRandomChange,
   onChange,
   onImagesChanged,
 }: {
@@ -511,6 +516,8 @@ function GalleryPicker({
   interval: number
   intervalError?: string
   onIntervalChange: (seconds: number) => void
+  random: boolean
+  onRandomChange: (on: boolean) => void
   onChange: (ids: number[]) => void
   onImagesChanged: () => void
 }) {
@@ -570,25 +577,36 @@ function GalleryPicker({
         </ol>
       )}
       {chosen.length > 1 && (
-        <Field
-          label="Nächstes Bild nach (Sekunden)"
-          type="number"
-          inputMode="numeric"
-          className="gallery-interval"
-          min={MIN_INTERVAL}
-          max={MAX_INTERVAL}
-          step={1}
-          value={seconds}
-          hint={`${MIN_INTERVAL} bis ${MAX_INTERVAL} Sekunden, Standard 7.`}
-          error={intervalError}
-          onChange={(e) => {
-            // Erst gültige Werte übernehmen, damit Tippen nicht zwischendurch speichert
-            setSeconds(e.target.value)
-            const n = Number(e.target.value)
-            if (Number.isInteger(n) && n >= MIN_INTERVAL && n <= MAX_INTERVAL) onIntervalChange(n)
-          }}
-          onBlur={() => setSeconds(String(interval))}
-        />
+        <div className="grid-2">
+          <SelectField
+            label="Beginnt mit"
+            value={random ? 'random' : 'first'}
+            hint={random ? undefined : 'Das erste Bild legen Sie mit ↑ ↓ fest.'}
+            onChange={(e) => onRandomChange(e.target.value === 'random')}
+          >
+            <option value="first">dem ersten Bild der Liste</option>
+            <option value="random">einem zufälligen Bild</option>
+          </SelectField>
+          <Field
+            label="Nächstes Bild nach (Sekunden)"
+            type="number"
+            inputMode="numeric"
+            className="gallery-interval"
+            min={MIN_INTERVAL}
+            max={MAX_INTERVAL}
+            step={1}
+            value={seconds}
+            hint={`${MIN_INTERVAL} bis ${MAX_INTERVAL} Sekunden, Standard 7.`}
+            error={intervalError}
+            onChange={(e) => {
+              // Erst gültige Werte übernehmen, damit Tippen nicht zwischendurch speichert
+              setSeconds(e.target.value)
+              const n = Number(e.target.value)
+              if (Number.isInteger(n) && n >= MIN_INTERVAL && n <= MAX_INTERVAL) onIntervalChange(n)
+            }}
+            onBlur={() => setSeconds(String(interval))}
+          />
+        </div>
       )}
       <div className="button-row">
         <button type="button" className="button button-ghost" onClick={() => setPicking(true)}>
