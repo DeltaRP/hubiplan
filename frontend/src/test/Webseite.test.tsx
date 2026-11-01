@@ -529,6 +529,8 @@ describe('Inhalte der Webseite', () => {
       '/webseite/inhalte?text=6',
     )
     expect(within(dialog).getByText(/Bilderkarussell/)).toBeVisible()
+    // Nur ein „Schließen“ (oben im Fenster)
+    expect(within(dialog).getAllByRole('button', { name: 'Schließen' })).toHaveLength(1)
     const alt = within(dialog).getByLabelText('Alternativtext (was zu sehen ist)')
     await user.clear(alt)
     await user.type(alt, 'Gruppenbild am Zelt')
@@ -543,6 +545,14 @@ describe('Inhalte der Webseite', () => {
       },
       { timeout: 3000 },
     )
+    // Schließen speichert vorher und schließt das Fenster
+    await user.type(alt, '!')
+    await user.click(within(dialog).getByRole('button', { name: 'Schließen' }))
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: 'Bild bearbeiten' })).toBeNull(),
+    )
+    const last = calls.filter((c) => c.key === `PUT ${base}images/3/`).at(-1)
+    expect(JSON.parse(String(last?.init?.body))).toEqual({ alt_text: 'Gruppenbild am Zelt!' })
   })
 
   it('lädt mehrere Bilder hoch und wählt den Ausschnitt später neu', async () => {
