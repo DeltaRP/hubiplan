@@ -754,7 +754,7 @@ const DECISIONS_DATA = {
       'Echte, bestätigte Scheiben sind der einzige Weg zu prüfen, wie gut die Fotoerkennung wirklich ist; ohne sie wird nur an künstlichen Fotos gemessen. Gespeichert wird nur der Ausschnitt des Spiegels mit der Trefferlage, ohne Namen, Wettbewerb oder Uhrzeit, also ohne Bezug zu einer Person (Art. 4 Nr. 1 DSGVO). Schalte es ein, wenn ihr die Erkennung oft nutzt; ausschalten und alles löschen geht jederzeit.',
     ),
     sources: ['dsgvo'],
-    place: d('Wettbewerbe → Fotoerkennung verbessern'),
+    place: d('Einstellungen → Datenschutz → Fotoerkennung verbessern'),
     phase: 'competitions',
     feature: 'competitions',
   },

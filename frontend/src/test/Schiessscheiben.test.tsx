@@ -473,8 +473,10 @@ describe('Treffer am Stand antippen', () => {
 
   it('sammelt Spiegelausschnitte nur nach Einschalten durch den Verein', async () => {
     let state = { enabled: false, changed_at: null, count: 2, can_manage: true }
-    const calls = renderAt('/wettbewerbe', {
-      [`GET ${base}`]: () => ({ status: 200, body: [] }),
+    const calls = renderAt('/einstellungen/datenschutz', {
+      // die Mitglieder-Hinweise auf derselben Seite sind hier nicht Gegenstand
+      'GET /api/orgs/7/imprint/': () => ({ status: 500, body: { detail: 'nicht im Test' } }),
+      'GET /api/orgs/7/departments/': () => ({ status: 200, body: [] }),
       [`GET ${base}photo-samples/`]: () => ({ status: 200, body: state }),
       [`PATCH ${base}photo-samples/`]: (init) => {
         state = { ...state, ...JSON.parse(String(init?.body)) }
@@ -482,8 +484,9 @@ describe('Treffer am Stand antippen', () => {
       },
     })
     const user = userEvent.setup()
-    await user.click(await screen.findByText('Fotoerkennung verbessern'))
-    const box = screen.getByRole('checkbox', { name: 'Bestätigte Spiegelausschnitte sammeln' })
+    const box = await screen.findByRole('checkbox', {
+      name: 'Bestätigte Spiegelausschnitte sammeln',
+    })
     expect(box).not.toBeChecked()
     expect(screen.getByText(/Gesammelt: 2 Ausschnitte/)).toBeVisible()
     await user.click(box)
