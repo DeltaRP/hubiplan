@@ -580,22 +580,35 @@ def after_login(request, response, user, peer: Peer, stepped_up: bool) -> None:
 def _notify_new_browser(user, peer: Peer) -> None:
     from django.conf import settings
     from django.utils import timezone as tz
+    from django.utils.translation import gettext
 
+    from core.i18n import date_text, language_of, user_language
     from outbox.mail import send
 
     if not user.email:
         return
     when = tz.localtime()
+    with language_of(user):
+        subject = gettext("Anmeldung über eine andere Instanz")
+        body = gettext(
+            "Hallo {name},\n\n"
+            "am {date} um {time} Uhr hat sich jemand mit deinem Zugang von {peer} bei {site} "
+            "angemeldet, aus einem Browser, der hier noch nicht bekannt war.\n\n"
+            "Warst du das, ist nichts zu tun. Sonst bitte sofort unter Mein Konto › Anmeldung "
+            "über andere Instanzen die Verknüpfung lösen und dein Passwort auf beiden Instanzen "
+            "ändern.\n"
+        ).format(
+            name=user.get_full_name() or user.email,
+            date=date_text(when),
+            time=f"{when:%H:%M}",
+            peer=peer.base_url,
+            site=settings.FRONTEND_URL,
+        )
     send(
         [user.email],
-        "Anmeldung über eine andere Instanz",
-        f"Hallo {user.get_full_name() or user.email},\n\n"
-        f"am {when:%d.%m.%Y um %H:%M} Uhr hat sich jemand mit deinem Zugang von "
-        f"{peer.base_url} bei {settings.FRONTEND_URL} angemeldet, aus einem Browser, der "
-        "hier noch nicht bekannt war.\n\n"
-        "Warst du das, ist nichts zu tun. Sonst bitte sofort unter Mein Konto › Anmeldung "
-        "über andere Instanzen die Verknüpfung lösen und dein Passwort auf beiden Instanzen "
-        "ändern.\n",
+        subject,
+        body,
         kind="sicherheit",
         fail_silently=True,
+        language=user_language(user),
     )

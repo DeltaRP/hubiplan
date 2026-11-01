@@ -158,3 +158,95 @@ def test_rechtekatalog_auf_englisch():
     assert modules["members"]["permissions"][0]["label"] == "Read members"
     with translation.override("de"):
         assert catalog_for("club")[0]["label"] == "Mitglieder"
+
+
+# --- Schritt Ü4: Mails und Push in der Sprache des Empfängers ---
+
+
+def _english_user(email: str) -> User:
+    user = make_user(email)
+    user.language = "en"
+    user.save(update_fields=["language"])
+    return user
+
+
+@BOTH
+def test_geraete_hinweis_in_der_sprache_des_kontos(mailoutbox, django_capture_on_commit_callbacks):
+    from types import SimpleNamespace
+
+    from devices import notify
+
+    english = _english_user("en@example.org")
+    german = make_user("de@example.org")
+    device = SimpleNamespace(name="Pixel", pk=1)
+    # Die Anfrage selbst läuft auf Deutsch: die Mail richtet sich nach dem Empfänger
+    with translation.override("de"), django_capture_on_commit_callbacks(execute=True):
+        notify.device_added(english, device)
+        notify.device_added(german, device)
+    en, de = mailoutbox
+    assert en.subject == "New device connected to your account"
+    assert "The device “Pixel” has been connected" in en.body
+    assert "Time: " in en.body and " Uhr" not in en.body
+    assert "This message was sent via HUBIplan." in en.body
+    assert de.subject == "Neues Gerät mit deinem Zugang verbunden"
+    assert "Diese Nachricht wurde über HUBIplan versandt." in de.body
+
+
+@BOTH
+def test_passwort_link_auf_englisch(mailoutbox):
+    from accounts.invitations import send_password_link
+
+    user = _english_user("pw@example.org")
+    with translation.override("de"):
+        assert send_password_link(user)
+    (msg,) = mailoutbox
+    assert msg.subject == "HUBIplan: set your password"
+    assert msg.body.startswith("Hello,\n\nHUBIplan no longer sends initial passwords.")
+
+
+@BOTH
+def test_mailrahmen_sprache_und_fusszeile(mailoutbox):
+    from outbox import mail
+
+    with translation.override("de"):
+        mail.send("x@example.org", "Test", "Text", html="<p>Text</p>", language="en")
+        mail.send("y@example.org", "Test", "Text", html="<p>Text</p>")
+    en, de = mailoutbox
+    assert '<html lang="en">' in en.alternatives[0][0]
+    assert ">Legal notice</a>" in en.alternatives[0][0]
+    assert '<html lang="de">' in de.alternatives[0][0]
+    assert ">Impressum</a>" in de.alternatives[0][0]
+
+
+def test_mailrahmen_ohne_freischaltung_deutsch(mailoutbox):
+    from outbox import mail
+
+    mail.send("x@example.org", "Test", "Text", html="<p>Text</p>", language="en")
+    assert '<html lang="de">' in mailoutbox[0].alternatives[0][0]
+
+
+@BOTH
+def test_push_titel_in_der_sprache_des_kontos(monkeypatch, member):  # noqa: F811
+    from devices import push, tasks
+
+    sent = []
+    monkeypatch.setattr(push, "send_to_user", lambda user_id, data, **kw: sent.append(data) or 1)
+    user, access = member
+    user.language = "en"
+    user.save(update_fields=["language"])
+    tasks.notify_membership(access.membership_id, "Dein Foto wurde freigegeben", "Testverein")
+    assert sent[0]["title"] == "Your photo has been approved"
+    assert sent[0]["text"] == "Testverein"
+
+
+@BOTH
+def test_finanzbelege_bleiben_deutsch():
+    import datetime
+
+    from django.utils.translation import gettext_lazy
+
+    with translation.override("en"):
+        assert str(gettext_lazy("Zusage")) == "Yes"
+        assert i18n.german(gettext_lazy("Zusage")) == "Zusage"
+        assert i18n.date_text(datetime.date(2026, 11, 1)) == "01/11/2026"
+    assert i18n.date_text(datetime.date(2026, 11, 1)) == "01.11.2026"

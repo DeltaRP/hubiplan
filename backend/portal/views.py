@@ -17,7 +17,7 @@ from django.db import transaction
 from django.db.models import Exists, OuterRef, Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.utils.translation import gettext
+from django.utils.translation import gettext, gettext_noop
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status
 from rest_framework.authentication import SessionAuthentication
@@ -241,8 +241,7 @@ def _sync_login_email(cr: ChangeRequest) -> None:
     request_email_change(
         access.user,
         User.objects.normalize_email(new).lower(),
-        f"{cr.membership.organization.name} hat Ihre neue E-Mail-Adresse {{new}} übernommen. "
-        "Möchten Sie sich bei HUBIplan künftig auch damit anmelden",
+        org_name=cr.membership.organization.name,
     )
 
 
@@ -291,7 +290,9 @@ class ChangeRequestDecisionView(_ClubMixin, APIView):
         accepted = cr.status == ChangeRequest.Status.ACCEPTED
         notify_membership(
             cr.membership_id,
-            "Deine Änderung wurde übernommen" if accepted else "Deine Änderung wurde abgelehnt",
+            gettext_noop("Deine Änderung wurde übernommen")
+            if accepted
+            else gettext_noop("Deine Änderung wurde abgelehnt"),
             cr.response or self.org.name,
         )
         return Response(change_request_data(cr))
@@ -876,19 +877,32 @@ class LoginLinkRequestView(APIView):
             set_rls(None, user.pk)
             if services.portal_accesses(user) and services.link_login_allowed(user):
                 url = services.create_login_link(user)
+                from core.i18n import language_of, user_language
                 from outbox import mail
 
+                with language_of(user):
+                    subject = gettext("Ihr Anmeldelink für HUBIplan")
+                    body = (
+                        gettext("Guten Tag,")
+                        + "\n\n"
+                        + gettext(
+                            "mit diesem Link melden Sie sich im Mitgliederbereich an "
+                            "(gültig {days} Tage, einmal nutzbar):"
+                        ).format(days=services.LINK_DAYS)
+                        + f"\n\n{url}\n\n"
+                        + gettext(
+                            "Falls Sie den Link nicht angefordert haben, können Sie diese Mail "
+                            "ignorieren."
+                        )
+                        + "\n"
+                    )
                 mail.send(
                     user.email,
-                    "Ihr Anmeldelink für HUBIplan",
-                    (
-                        f"Guten Tag,\n\nmit diesem Link melden Sie sich im Mitgliederbereich an "
-                        f"(gültig {services.LINK_DAYS} Tage, einmal nutzbar):\n\n{url}\n\n"
-                        f"Falls Sie den Link nicht angefordert haben, können Sie diese Mail "
-                        f"ignorieren.\n"
-                    ),
+                    subject,
+                    body,
                     kind="anmeldelink",
                     fail_silently=True,
+                    language=user_language(user),
                 )
             set_rls(None, None)
         return Response(

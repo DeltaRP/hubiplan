@@ -2,6 +2,7 @@
 // den harten Fehlerprüfungen des Servers. Die Punkte blockieren nie.
 // Eine Zeile erscheint nur, wenn sie für diesen Lauf überhaupt eine Rolle spielt.
 import type { DecisionKey } from './content.ts'
+import { t, tn } from '../i18n/index.ts'
 
 export interface CheckItem {
   key: string
@@ -33,8 +34,6 @@ export const MANDATE_WARN_MONTHS = 3
 /** Prüfliste ab dieser Zahl Buchungen zeigen: ein Jahr ohne Buchungen braucht keine. */
 export const MIN_BOOKINGS_FOR_RECEIPTS = 1
 
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
-
 // --- vor dem Beitragslauf ---
 
 export interface FeeRunInput {
@@ -55,24 +54,34 @@ export function feeRunChecks(input: FeeRunInput): CheckItem[] {
     ok: noType === 0,
     text:
       noType === 0
-        ? 'Alle Mitglieder haben eine Mitgliedsart.'
-        : `${plural(noType, 'Mitglied', 'Mitglieder')} ohne Mitgliedsart, sie bekommen keine Rechnung.`,
-    fix: 'Mitgliedsart in der Mitgliedsakte nachtragen; die Namen stehen in der Vorschau.',
+        ? t('Alle Mitglieder haben eine Mitgliedsart.')
+        : tn(
+            '{n} Mitglied ohne Mitgliedsart, sie bekommen keine Rechnung.',
+            '{n} Mitglieder ohne Mitgliedsart, sie bekommen keine Rechnung.',
+            noType,
+          ),
+    fix: t('Mitgliedsart in der Mitgliedsakte nachtragen; die Namen stehen in der Vorschau.'),
   })
   items.push({
     key: 'account',
     ok: input.accountWithIban,
     text: input.accountWithIban
-      ? 'Konto für Überweisungen mit IBAN hinterlegt.'
-      : 'Auf der Rechnung steht noch kein Konto mit IBAN.',
-    fix: 'Konto unter Rechnung & Zahlung wählen.',
+      ? t('Konto für Überweisungen mit IBAN hinterlegt.')
+      : t('Auf der Rechnung steht noch kein Konto mit IBAN.'),
+    fix: t('Konto unter Rechnung & Zahlung wählen.'),
     to: '/finanzen/einstellungen/rechnung',
   })
   items.push({
     key: 'due_days',
     ok: input.dueDays >= MIN_DUE_DAYS,
-    text: `Zahlungsziel ${input.dueDays} Tage${input.dueDays >= MIN_DUE_DAYS ? '' : ` (empfohlen mindestens ${MIN_DUE_DAYS})`}.`,
-    fix: 'Zahlungsziel unter Rechnung & Zahlung anpassen.',
+    text:
+      input.dueDays >= MIN_DUE_DAYS
+        ? t('Zahlungsziel {dueDays} Tage.', { dueDays: input.dueDays })
+        : t('Zahlungsziel {dueDays} Tage (empfohlen mindestens {min}).', {
+            dueDays: input.dueDays,
+            min: MIN_DUE_DAYS,
+          }),
+    fix: t('Zahlungsziel unter Rechnung & Zahlung anpassen.'),
     to: '/finanzen/einstellungen/rechnung',
     why: 'due_days',
   })
@@ -83,24 +92,35 @@ export function feeRunChecks(input: FeeRunInput): CheckItem[] {
       ok: c.unreachable === 0,
       text:
         c.unreachable === 0
-          ? 'Alle Empfänger haben E-Mail oder vollständige Anschrift.'
-          : `${plural(c.unreachable, 'Mitglied', 'Mitglieder')} ohne E-Mail und ohne vollständige Anschrift.`,
-      fix: 'Kontaktdaten in der Mitgliedsakte ergänzen, sonst kommt die Rechnung nicht an.',
+          ? t('Alle Empfänger haben E-Mail oder vollständige Anschrift.')
+          : tn(
+              '{n} Mitglied ohne E-Mail und ohne vollständige Anschrift.',
+              '{n} Mitglieder ohne E-Mail und ohne vollständige Anschrift.',
+              c.unreachable,
+            ),
+      fix: t('Kontaktdaten in der Mitgliedsakte ergänzen, sonst kommt die Rechnung nicht an.'),
       to: '/mitglieder',
     })
     if (c.open_change_requests > 0)
       items.push({
         key: 'change_requests',
         ok: false,
-        text: `${plural(c.open_change_requests, 'offener Änderungsantrag', 'offene Änderungsanträge')} von Mitgliedern.`,
-        fix: 'Erst übernehmen oder ablehnen, damit Anschriften und Konten stimmen.',
+        text: tn(
+          '{n} offener Änderungsantrag von Mitgliedern.',
+          '{n} offene Änderungsanträge von Mitgliedern.',
+          c.open_change_requests,
+        ),
+        fix: t('Erst übernehmen oder ablehnen, damit Anschriften und Konten stimmen.'),
         to: '/mitglieder/anfragen/aenderungen',
       })
     if (input.sepaEnabled)
       items.push({
         key: 'mandates',
         ok: true,
-        text: `${c.with_mandate} von ${input.members} Rechnungen lassen sich per Lastschrift einziehen.`,
+        text: t('{with_mandate} von {members} Rechnungen lassen sich per Lastschrift einziehen.', {
+          with_mandate: c.with_mandate,
+          members: input.members,
+        }),
         why: 'sepa_use',
         info: true,
       })
@@ -159,9 +179,9 @@ export function debitChecks(input: DebitInput): CheckItem[] {
     key: 'creditor',
     ok: input.creditorValid,
     text: input.creditorValid
-      ? 'Gläubiger-ID hinterlegt.'
-      : 'Gläubiger-ID fehlt oder ist ungültig.',
-    fix: 'Unter Rechnung & Zahlung → SEPA-Lastschrift eintragen.',
+      ? t('Gläubiger-ID hinterlegt.')
+      : t('Gläubiger-ID fehlt oder ist ungültig.'),
+    fix: t('Unter Rechnung & Zahlung → SEPA-Lastschrift eintragen.'),
     to: '/finanzen/einstellungen/rechnung',
   })
   if (input.date) {
@@ -170,9 +190,9 @@ export function debitChecks(input: DebitInput): CheckItem[] {
       key: 'business_day',
       ok: business,
       text: business
-        ? 'Einzugsdatum ist ein Bankarbeitstag.'
-        : 'Einzugsdatum fällt auf ein Wochenende oder einen Bankfeiertag.',
-      fix: 'Einen Werktag wählen; sonst bucht die Bank erst am nächsten Bankarbeitstag.',
+        ? t('Einzugsdatum ist ein Bankarbeitstag.')
+        : t('Einzugsdatum fällt auf ein Wochenende oder einen Bankfeiertag.'),
+      fix: t('Einen Werktag wählen; sonst bucht die Bank erst am nächsten Bankarbeitstag.'),
       why: 'collection_date',
     })
     const early = input.invoices.filter((i) => i.due_date && i.due_date > input.date).length
@@ -182,9 +202,13 @@ export function debitChecks(input: DebitInput): CheckItem[] {
         ok: early === 0,
         text:
           early === 0
-            ? 'Keine Rechnung wird vor ihrer Fälligkeit eingezogen.'
-            : `${plural(early, 'Rechnung wird', 'Rechnungen werden')} vor der Fälligkeit eingezogen.`,
-        fix: 'Späteres Einzugsdatum wählen oder diese Rechnungen abwählen.',
+            ? t('Keine Rechnung wird vor ihrer Fälligkeit eingezogen.')
+            : tn(
+                '{n} Rechnung wird vor der Fälligkeit eingezogen.',
+                '{n} Rechnungen werden vor der Fälligkeit eingezogen.',
+                early,
+              ),
+        fix: t('Späteres Einzugsdatum wählen oder diese Rechnungen abwählen.'),
         why: 'collection_date',
       })
   }
@@ -195,17 +219,26 @@ export function debitChecks(input: DebitInput): CheckItem[] {
       ok: noMail === 0,
       text:
         noMail === 0
-          ? 'Alle Zahler bekommen die Vorabankündigung per E-Mail.'
-          : `${plural(noMail, 'Vorabankündigung muss', 'Vorabankündigungen müssen')} gedruckt werden (keine E-Mail).`,
-      fix: 'Nach dem Erstellen ausdrucken und rechtzeitig verschicken.',
+          ? t('Alle Zahler bekommen die Vorabankündigung per E-Mail.')
+          : tn(
+              '{n} Vorabankündigung muss gedruckt werden (keine E-Mail).',
+              '{n} Vorabankündigungen müssen gedruckt werden (keine E-Mail).',
+              noMail,
+            ),
+      fix: t('Nach dem Erstellen ausdrucken und rechtzeitig verschicken.'),
       why: 'prenotification',
     })
   if (input.prenotificationDays < DEFAULT_PRENOTIFICATION_DAYS)
     items.push({
       key: 'prenotification_days',
       ok: false,
-      text: `Vorabankündigung ${input.prenotificationDays} Tage statt der üblichen ${DEFAULT_PRENOTIFICATION_DAYS}.`,
-      fix: 'Nur zulässig, wenn die kürzere Frist im Mandat oder in den Beitragsbedingungen steht.',
+      text: t(
+        'Vorabankündigung {prenotificationDays} Tage statt der üblichen {DEFAULT_PRENOTIFICATION_DAYS}.',
+        { prenotificationDays: input.prenotificationDays, DEFAULT_PRENOTIFICATION_DAYS },
+      ),
+      fix: t(
+        'Nur zulässig, wenn die kürzere Frist im Mandat oder in den Beitragsbedingungen steht.',
+      ),
       to: '/finanzen/einstellungen/rechnung',
       why: 'prenotification',
     })
@@ -213,14 +246,20 @@ export function debitChecks(input: DebitInput): CheckItem[] {
     items.push({
       key: 'expiring',
       ok: false,
-      text: `${plural(input.expiringSoon, 'Mandat verfällt', 'Mandate verfallen')} bald, weil lange nichts eingezogen wurde.`,
-      fix: 'Mit diesem Lauf einziehen oder rechtzeitig ein neues Mandat einholen.',
+      text: tn(
+        '{n} Mandat verfällt bald, weil lange nichts eingezogen wurde.',
+        '{n} Mandate verfallen bald, weil lange nichts eingezogen wurde.',
+        input.expiringSoon,
+      ),
+      fix: t('Mit diesem Lauf einziehen oder rechtzeitig ein neues Mandat einholen.'),
       to: '/finanzen/lastschrift/mandate',
     })
   items.push({
     key: 'submit',
     ok: true,
-    text: 'Datei rechtzeitig einreichen: Banken verlangen sie meist ein bis zwei Bankarbeitstage vor dem Einzug.',
+    text: t(
+      'Datei rechtzeitig einreichen: Banken verlangen sie meist ein bis zwei Bankarbeitstage vor dem Einzug.',
+    ),
     info: true,
   })
   return items
@@ -245,9 +284,9 @@ export function closingChecks(c: ClosingInput): CheckItem[] {
       ok: c.without_receipt === 0,
       text:
         c.without_receipt === 0
-          ? 'Jede Buchung hat einen Beleg.'
-          : `${plural(c.without_receipt, 'Buchung', 'Buchungen')} ohne Beleg.`,
-      fix: 'Belege im Kassenbuch nachtragen, bevor die Kassenprüfer kommen.',
+          ? t('Jede Buchung hat einen Beleg.')
+          : tn('{n} Buchung ohne Beleg.', '{n} Buchungen ohne Beleg.', c.without_receipt),
+      fix: t('Belege im Kassenbuch nachtragen, bevor die Kassenprüfer kommen.'),
       to: '/finanzen/kassenbuch',
       why: 'receipts',
     })
@@ -257,9 +296,13 @@ export function closingChecks(c: ClosingInput): CheckItem[] {
       ok: c.categories_without_area === 0,
       text:
         c.categories_without_area === 0
-          ? 'Alle benutzten Kategorien haben einen steuerlichen Bereich.'
-          : `${plural(c.categories_without_area, 'benutzte Kategorie', 'benutzte Kategorien')} ohne steuerlichen Bereich.`,
-      fix: 'Bereich unter Finanzen → Einrichtung → Kategorien zuordnen.',
+          ? t('Alle benutzten Kategorien haben einen steuerlichen Bereich.')
+          : tn(
+              '{n} benutzte Kategorie ohne steuerlichen Bereich.',
+              '{n} benutzte Kategorien ohne steuerlichen Bereich.',
+              c.categories_without_area,
+            ),
+      fix: t('Bereich unter Finanzen → Einrichtung → Kategorien zuordnen.'),
       to: '/finanzen/einstellungen/kategorien',
       why: 'tax_areas',
     })
@@ -267,22 +310,30 @@ export function closingChecks(c: ClosingInput): CheckItem[] {
     items.push({
       key: 'debit_runs',
       ok: false,
-      text: `${plural(c.unbooked_debit_runs, 'Lastschriftlauf ist', 'Lastschriftläufe sind')} noch nicht gebucht.`,
-      fix: 'Nach dem Geldeingang den Lauf buchen.',
+      text: tn(
+        '{n} Lastschriftlauf ist noch nicht gebucht.',
+        '{n} Lastschriftläufe sind noch nicht gebucht.',
+        c.unbooked_debit_runs,
+      ),
+      fix: t('Nach dem Geldeingang den Lauf buchen.'),
       to: '/finanzen/lastschrift',
     })
   if (c.open_invoices !== undefined && c.open_invoices > 0)
     items.push({
       key: 'open_invoices',
       ok: false,
-      text: `${plural(c.open_invoices, 'Rechnung', 'Rechnungen')} des Jahres noch offen.`,
-      fix: 'Zahlungen erfassen oder offene Beträge im Kassenbericht erläutern.',
+      text: tn(
+        '{n} Rechnung des Jahres noch offen.',
+        '{n} Rechnungen des Jahres noch offen.',
+        c.open_invoices,
+      ),
+      fix: t('Zahlungen erfassen oder offene Beträge im Kassenbericht erläutern.'),
       to: '/finanzen/rechnungen',
     })
   items.push({
     key: 'audit',
     ok: true,
-    text: 'Nach dem Abschluss ist das Jahr gesperrt; vorher die Kassenprüfung abschließen.',
+    text: t('Nach dem Abschluss ist das Jahr gesperrt; vorher die Kassenprüfung abschließen.'),
     why: 'cash_audit',
     info: true,
   })
@@ -308,9 +359,9 @@ export function donationChecks(c: DonationInput): CheckItem[] {
       ok: c.problems.length === 0,
       text:
         c.problems.length === 0
-          ? 'Angaben zum Bescheid vollständig und noch gültig.'
+          ? t('Angaben zum Bescheid vollständig und noch gültig.')
           : c.problems.join(' '),
-      fix: 'Unter „Einstellungen“ den aktuellen Bescheid eintragen.',
+      fix: t('Unter „Einstellungen“ den aktuellen Bescheid eintragen.'),
       to: '/finanzen/zuwendungen/einstellungen',
       why: 'donation_notice',
     },
@@ -321,9 +372,13 @@ export function donationChecks(c: DonationInput): CheckItem[] {
       ok: c.without_address === 0,
       text:
         c.without_address === 0
-          ? 'Alle offenen Zuwendungen haben eine Anschrift.'
-          : `${plural(c.without_address, 'offene Zuwendung', 'offene Zuwendungen')} ohne Anschrift.`,
-      fix: 'Die Bestätigung nennt Name und Anschrift des Zuwendenden: Anschrift nachtragen.',
+          ? t('Alle offenen Zuwendungen haben eine Anschrift.')
+          : tn(
+              '{n} offene Zuwendung ohne Anschrift.',
+              '{n} offene Zuwendungen ohne Anschrift.',
+              c.without_address,
+            ),
+      fix: t('Die Bestätigung nennt Name und Anschrift des Zuwendenden: Anschrift nachtragen.'),
       why: 'donation_liability',
     })
   if (c.goods_open > 0)
@@ -332,23 +387,35 @@ export function donationChecks(c: DonationInput): CheckItem[] {
       ok: c.goods_without_documents === 0,
       text:
         c.goods_without_documents === 0
-          ? 'Zu allen Sachzuwendungen liegen Unterlagen zum Wert vor.'
-          : `${plural(c.goods_without_documents, 'Sachzuwendung', 'Sachzuwendungen')} ohne Unterlagen zum Wert.`,
-      fix: 'Kaufbeleg oder Gutachten besorgen und das Häkchen setzen.',
+          ? t('Zu allen Sachzuwendungen liegen Unterlagen zum Wert vor.')
+          : tn(
+              '{n} Sachzuwendung ohne Unterlagen zum Wert.',
+              '{n} Sachzuwendungen ohne Unterlagen zum Wert.',
+              c.goods_without_documents,
+            ),
+      fix: t('Kaufbeleg oder Gutachten besorgen und das Häkchen setzen.'),
       why: 'donation_goods',
     })
   if (c.goods_open > 0)
     items.push({
       key: 'goods_single',
       ok: true,
-      text: `${plural(c.goods_open, 'Sachzuwendung wird', 'Sachzuwendungen werden')} nicht gesammelt, sondern einzeln bestätigt.`,
+      text: tn(
+        '{n} Sachzuwendung wird nicht gesammelt, sondern einzeln bestätigt.',
+        '{n} Sachzuwendungen werden nicht gesammelt, sondern einzeln bestätigt.',
+        c.goods_open,
+      ),
       info: true,
     })
   if (c.fees_skipped > 0)
     items.push({
       key: 'fees',
       ok: true,
-      text: `${plural(c.fees_skipped, 'Mitgliedsbeitrag wird', 'Mitgliedsbeiträge werden')} nach den Einstellungen nicht bestätigt.`,
+      text: tn(
+        '{n} Mitgliedsbeitrag wird nach den Einstellungen nicht bestätigt.',
+        '{n} Mitgliedsbeiträge werden nach den Einstellungen nicht bestätigt.',
+        c.fees_skipped,
+      ),
       why: 'donation_fees',
       info: true,
     })
@@ -375,9 +442,9 @@ export function competitionFinishChecks(input: CompetitionFinishInput): CheckIte
       ok: input.hangingPrizes === 0,
       text:
         input.hangingPrizes === 0
-          ? 'Alle Pfänder sind gefallen.'
-          : `${plural(input.hangingPrizes, 'Pfand hängt', 'Pfänder hängen')} noch.`,
-      fix: 'Nachtragen unter „Einrichten“, falls auf Papier gezählt wurde.',
+          ? t('Alle Pfänder sind gefallen.')
+          : tn('{n} Pfand hängt noch.', '{n} Pfänder hängen noch.', input.hangingPrizes),
+      fix: t('Nachtragen unter „Einrichten“, falls auf Papier gezählt wurde.'),
     })
   } else {
     items.push({
@@ -385,9 +452,9 @@ export function competitionFinishChecks(input: CompetitionFinishInput): CheckIte
       ok: input.missing === 0,
       text:
         input.missing === 0
-          ? 'Alle Schützen haben ein Ergebnis.'
-          : `${plural(input.missing, 'Schütze', 'Schützen')} ohne Ergebnis.`,
-      fix: 'Nachtragen oder bewusst ohne Ergebnis lassen; die Namen stehen unter „Auswertung“.',
+          ? t('Alle Schützen haben ein Ergebnis.')
+          : tn('{n} Schütze ohne Ergebnis.', '{n} Schützen ohne Ergebnis.', input.missing),
+      fix: t('Nachtragen oder bewusst ohne Ergebnis lassen; die Namen stehen unter „Auswertung“.'),
       why: 'comp_provisional',
     })
   }
@@ -397,9 +464,13 @@ export function competitionFinishChecks(input: CompetitionFinishInput): CheckIte
       ok: input.openShootoffs === 0,
       text:
         input.openShootoffs === 0
-          ? 'Keine offenen Gleichstände auf Preisplätzen.'
-          : `${plural(input.openShootoffs, 'Gleichstand', 'Gleichstände')} auf Preisplätzen ohne Stechen; der Abschluss ist erst danach möglich.`,
-      fix: 'Stechen unter „Auswertung“ oder im Standmodus anlegen.',
+          ? t('Keine offenen Gleichstände auf Preisplätzen.')
+          : tn(
+              '{n} Gleichstand auf Preisplätzen ohne Stechen; der Abschluss ist erst danach möglich.',
+              '{n} Gleichstände auf Preisplätzen ohne Stechen; der Abschluss ist erst danach möglich.',
+              input.openShootoffs,
+            ),
+      fix: t('Stechen unter „Auswertung“ oder im Standmodus anlegen.'),
       why: 'comp_final',
     })
   }
@@ -407,13 +478,15 @@ export function competitionFinishChecks(input: CompetitionFinishInput): CheckIte
     key: 'tablets',
     ok: true,
     info: true,
-    text: 'Auf jedem Tablet im Standmodus sollte „Alles gespeichert“ stehen, sonst fehlen Eingaben ohne Empfang.',
+    text: t(
+      'Auf jedem Tablet im Standmodus sollte „Alles gespeichert“ stehen, sonst fehlen Eingaben ohne Empfang.',
+    ),
   })
   items.push({
     key: 'guests',
     ok: true,
     info: true,
-    text: 'Gäste und Schützen außer Konkurrenz richtig markiert? Sie bekommen sonst Plätze.',
+    text: t('Gäste und Schützen außer Konkurrenz richtig markiert? Sie bekommen sonst Plätze.'),
   })
   items.push({
     key: 'website',
@@ -421,10 +494,10 @@ export function competitionFinishChecks(input: CompetitionFinishInput): CheckIte
     info: true,
     text:
       input.website === 'aus'
-        ? 'Die Ergebnisse erscheinen nicht auf der Webseite.'
+        ? t('Die Ergebnisse erscheinen nicht auf der Webseite.')
         : input.website === 'live'
-          ? 'Die Ergebnisse stehen schon während des Schießens auf der Webseite.'
-          : 'Nach dem Abschluss erscheinen die Ergebnisse auf der Webseite.',
+          ? t('Die Ergebnisse stehen schon während des Schießens auf der Webseite.')
+          : t('Nach dem Abschluss erscheinen die Ergebnisse auf der Webseite.'),
     why: 'comp_website',
   })
   return items

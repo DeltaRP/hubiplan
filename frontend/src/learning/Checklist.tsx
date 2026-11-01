@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { Why } from './Aids.tsx'
 import type { CheckItem } from './checks.ts'
 import { useLearning } from './LearningContext.tsx'
+import { t, tn } from '../i18n/index.ts'
 
 export function Checklist({ title, items }: { title: string; items: CheckItem[] }) {
   const learning = useLearning()
@@ -15,7 +16,9 @@ export function Checklist({ title, items }: { title: string; items: CheckItem[] 
       <h3 className="checklist-title">{title}</h3>
       {counted.length > 0 && (
         <p className="checklist-count muted small">
-          {done} von {counted.length} Punkten erledigt
+          {tn('{done} von {n} Punkt erledigt', '{done} von {n} Punkten erledigt', counted.length, {
+            done,
+          })}
         </p>
       )}
       <ul className="checklist-items">
@@ -29,13 +32,13 @@ export function Checklist({ title, items }: { title: string; items: CheckItem[] 
             </span>
             <span className="checklist-text">
               <span className="sr-only">
-                {item.info ? 'Hinweis: ' : item.ok ? 'Erledigt: ' : 'Offen: '}
+                {item.info ? t('Hinweis: ') : item.ok ? t('Erledigt: ') : t('Offen: ')}
               </span>
               {item.text}
               {!item.ok && item.fix && <span className="checklist-fix">{item.fix}</span>}
               {!item.ok && item.to && (
                 <Link className="checklist-link" to={item.to}>
-                  Zur Stelle
+                  {t('Zur Stelle')}
                 </Link>
               )}
               {(!item.ok || item.info) && item.why && <Why k={item.why} />}

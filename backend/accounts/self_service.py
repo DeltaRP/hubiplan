@@ -22,6 +22,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from core.i18n import language_of, user_language
 from core.ratelimit import too_many
 from outbox import mail
 
@@ -111,16 +112,35 @@ class PasswordView(APIView):
         # bestehenden Passworts werden auch alle App-Geräte abgemeldet (wie beim Reset);
         # beim erstmaligen Festlegen bleiben sie, denn es gab kein altes Passwort.
         secure_account(user, devices=had_password)
+        with language_of(user):
+            if had_password:
+                subject = gettext("Ihr Passwort wurde geändert")
+                intro = gettext(
+                    "für Ihr HUBIplan-Konto {email} wurde soeben das Passwort geändert."
+                )
+            else:
+                subject = gettext("Ihr Passwort wurde festgelegt")
+                intro = gettext(
+                    "für Ihr HUBIplan-Konto {email} wurde soeben das Passwort festgelegt."
+                )
+            body = (
+                gettext("Guten Tag,")
+                + "\n\n"
+                + intro.format(email=user.email)
+                + "\n\n"
+                + gettext(
+                    "Waren Sie das nicht? Dann setzen Sie es bitte sofort über „Passwort "
+                    "vergessen“ auf der Anmeldeseite zurück und informieren Sie den Vorstand."
+                )
+                + "\n"
+            )
         mail.send(
             user.email,
-            "Ihr Passwort wurde geändert" if had_password else "Ihr Passwort wurde festgelegt",
-            "Guten Tag,\n\n"
-            f"für Ihr HUBIplan-Konto {user.email} wurde soeben das Passwort "
-            f"{'geändert' if had_password else 'festgelegt'}.\n\n"
-            "Waren Sie das nicht? Dann setzen Sie es bitte sofort über „Passwort vergessen“ "
-            "auf der Anmeldeseite zurück und informieren Sie den Vorstand.\n",
+            subject,
+            body,
             kind="konto",
             fail_silently=True,
+            language=user_language(user),
         )
         return Response(account_data(user))
 
@@ -171,9 +191,10 @@ def apply_email(user: User, new: str) -> None:
     EmailAddress.objects.filter(user=user).delete()
 
 
-def request_email_change(user: User, new: str, reason: str = "") -> None:
+def request_email_change(user: User, new: str, org_name: str = "") -> None:
     """Neue Anmelde-E-Mail anfordern: Sie gilt erst, wenn der Link an die neue
-    Adresse bestätigt ist; die alte Adresse erfährt davon."""
+    Adresse bestätigt ist; die alte Adresse erfährt davon. ``org_name``: Die Einheit hat
+    die Adresse aus einer Änderungsmeldung übernommen (Mitgliederbereich)."""
     user.email_changes.filter(used_at__isnull=True).delete()
     token = secrets.token_urlsafe(32)
     EmailChange.objects.create(
@@ -183,26 +204,50 @@ def request_email_change(user: User, new: str, reason: str = "") -> None:
         expires_at=timezone.now() + datetime.timedelta(days=EMAIL_CHANGE_DAYS),
     )
     url = f"{settings.FRONTEND_URL}/konto/email/{token}"
-    mail.send(
-        new,
-        "Bitte bestätigen Sie Ihre neue E-Mail-Adresse",
-        "Guten Tag,\n\n"
-        + (reason or "Sie möchten sich bei HUBIplan künftig mit {new} anmelden").format(new=new)
-        + f" (bisher {user.email}).\n\n"
-        f"Bitte bestätigen Sie die Adresse mit diesem Link (gültig {EMAIL_CHANGE_DAYS} "
-        f"Tage):\n\n{url}\n\n"
-        "Haben Sie das nicht veranlasst, ignorieren Sie diese Mail einfach.\n",
-        kind="konto",
-    )
+    language = user_language(user)
+    with language_of(user):
+        if org_name:
+            reason = gettext(
+                "{org} hat Ihre neue E-Mail-Adresse {new} übernommen. Möchten Sie sich bei "
+                "HUBIplan künftig auch damit anmelden (bisher {old})?"
+            ).format(org=org_name, new=new, old=user.email)
+        else:
+            reason = gettext(
+                "Sie möchten sich bei HUBIplan künftig mit {new} anmelden (bisher {old})."
+            ).format(new=new, old=user.email)
+        confirm_subject = gettext("Bitte bestätigen Sie Ihre neue E-Mail-Adresse")
+        confirm_body = (
+            gettext("Guten Tag,")
+            + "\n\n"
+            + reason
+            + "\n\n"
+            + gettext(
+                "Bitte bestätigen Sie die Adresse mit diesem Link (gültig {days} Tage):"
+            ).format(days=EMAIL_CHANGE_DAYS)
+            + f"\n\n{url}\n\n"
+            + gettext("Haben Sie das nicht veranlasst, ignorieren Sie diese Mail einfach.")
+            + "\n"
+        )
+        notice_subject = gettext("Änderung Ihrer Anmelde-E-Mail angefordert")
+        notice_body = (
+            gettext("Guten Tag,")
+            + "\n\n"
+            + gettext(
+                "für Ihr HUBIplan-Konto wurde die neue Anmelde-E-Mail {new} angefordert. Sie "
+                "wird erst wirksam, wenn sie über den Link an die neue Adresse bestätigt ist."
+            ).format(new=new)
+            + "\n\n"
+            + gettext("Waren Sie das nicht? Dann ändern Sie bitte Ihr Passwort.")
+            + "\n"
+        )
+    mail.send(new, confirm_subject, confirm_body, kind="konto", language=language)
     mail.send(
         user.email,
-        "Änderung Ihrer Anmelde-E-Mail angefordert",
-        "Guten Tag,\n\n"
-        f"für Ihr HUBIplan-Konto wurde die neue Anmelde-E-Mail {new} angefordert. Sie "
-        "wird erst wirksam, wenn sie über den Link an die neue Adresse bestätigt ist.\n\n"
-        "Waren Sie das nicht? Dann ändern Sie bitte Ihr Passwort.\n",
+        notice_subject,
+        notice_body,
         kind="konto",
         fail_silently=True,
+        language=language,
     )
 
 

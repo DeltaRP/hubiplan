@@ -36,6 +36,8 @@ function readCookie(): Lang {
 
 let current: Lang = readCookie()
 let catalog: Catalog = {}
+// Lernhilfen haben einen eigenen Katalog (src/learning/en.json), weil die Texte lang sind
+let learning: Record<string, string> = {}
 
 /** Aktive Sprache der Oberfläche */
 export function lang(): Lang {
@@ -52,17 +54,31 @@ export async function loadCatalog(): Promise<void> {
   if (typeof document !== 'undefined') document.documentElement.lang = current
   if (current === 'de') return
   try {
-    catalog = (await import('./en.json')).default as Catalog
+    const [main, learn] = await Promise.all([import('./en.json'), import('../learning/en.json')])
+    catalog = main.default as Catalog
+    learning = learn.default as Record<string, string>
   } catch {
     // Ohne Katalog bleibt die Oberfläche deutsch statt leer
     catalog = {}
+    learning = {}
   }
 }
 
 /** Für Tests: Sprache und Katalog direkt setzen */
-export function setCatalogForTest(language: Lang, entries: Catalog = {}): void {
+export function setCatalogForTest(
+  language: Lang,
+  entries: Catalog = {},
+  learningEntries: Record<string, string> = {},
+): void {
   current = language
   catalog = language === 'de' ? {} : entries
+  learning = language === 'de' ? {} : learningEntries
+}
+
+/** Lernhilfe-Text in der aktiven Sprache; der deutsche Text ist der Schlüssel. */
+export function learningText(de: string): string {
+  if (current === 'de') return de
+  return learning[de] || de
 }
 
 /** Sprache merken und die Seite neu laden (nur wenn sie sich ändert). */

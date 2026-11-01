@@ -207,6 +207,7 @@ class AssignmentViewSet(_OrgContextMixin, OrgScopedMixin, AuditMixin, viewsets.M
         from accounts.mfa_policy import has_mfa
         from accounts.security import secure_account
         from core.alarm import send_alert
+        from core.i18n import language_of, user_language
         from outbox import mail
 
         assignment = self.get_object()
@@ -261,19 +262,35 @@ class AssignmentViewSet(_OrgContextMixin, OrgScopedMixin, AuditMixin, viewsets.M
             {"Zwei-Faktor-Anmeldung": ["eingerichtet", f"zurückgesetzt von {request.user.email}"]},
         )
         org = self.org
+        actor_email = request.user.email
+        with language_of(target):
+            subject = gettext(
+                "Ihre Zwei-Faktor-Anmeldung bei HUBIplan – {org} wurde zurückgesetzt"
+            ).format(org=org.name)
+            body = (
+                gettext("Guten Tag,")
+                + "\n\n"
+                + gettext(
+                    "{actor} hat Ihre Zwei-Faktor-Anmeldung zurückgesetzt ({org}). Bitte "
+                    "richten Sie sie nach der nächsten Anmeldung unter „Mein Konto › Anmeldung "
+                    "& Sicherheit“ neu ein; bis dahin ruhen Rollenverwaltung, Exporte und "
+                    "Kasse. App-Geräte wurden abgemeldet."
+                ).format(actor=actor_email, org=org.name)
+                + "\n\n"
+                + gettext(
+                    "Wenn Sie das nicht veranlasst haben, wenden Sie sich bitte an {org}."
+                ).format(org=org.name)
+                + "\n"
+            )
+        language = user_language(target)
         transaction.on_commit(
             lambda: mail.send(
                 target.email,
-                f"Ihre Zwei-Faktor-Anmeldung bei HUBIplan – {org.name} wurde zurückgesetzt",
-                (
-                    f"Guten Tag,\n\n{request.user.email} hat Ihre Zwei-Faktor-Anmeldung "
-                    f"zurückgesetzt ({org.name}). Bitte richten Sie sie nach der nächsten "
-                    "Anmeldung unter „Mein Konto › Anmeldung & Sicherheit“ neu ein; bis dahin "
-                    "ruhen Rollenverwaltung, Exporte und Kasse. App-Geräte wurden abgemeldet.\n\n"
-                    f"Wenn Sie das nicht veranlasst haben, wenden Sie sich bitte an {org.name}.\n"
-                ),
+                subject,
+                body,
                 organization=org,
                 kind="zugang",
+                language=language,
             )
         )
         transaction.on_commit(

@@ -298,6 +298,29 @@ msgstr ""
 msgid "Für dieses Konto ist keine Zwei-Faktor-Anmeldung eingerichtet."
 msgstr "This account has no two-factor authentication set up."
 
+#, python-brace-format
+msgid "Ihre Zwei-Faktor-Anmeldung bei HUBIplan – {org} wurde zurückgesetzt"
+msgstr "Your two-factor authentication at HUBIplan – {org} has been reset"
+
+msgid "Guten Tag,"
+msgstr "Hello,"
+
+#, python-brace-format
+msgid ""
+"{actor} hat Ihre Zwei-Faktor-Anmeldung zurückgesetzt ({org}). Bitte richten "
+"Sie sie nach der nächsten Anmeldung unter „Mein Konto › Anmeldung & "
+"Sicherheit“ neu ein; bis dahin ruhen Rollenverwaltung, Exporte und Kasse. "
+"App-Geräte wurden abgemeldet."
+msgstr ""
+"{actor} has reset your two-factor authentication ({org}). Please set it up "
+"again after your next sign-in under “My account › Sign-in & security”; until "
+"then role management, exports and treasury are suspended. App devices have "
+"been signed out."
+
+#, python-brace-format
+msgid "Wenn Sie das nicht veranlasst haben, wenden Sie sich bitte an {org}."
+msgstr "If you did not request this, please contact {org}."
+
 msgid "Dafür fehlt dir die Berechtigung."
 msgstr "You do not have permission to do this."
 
@@ -306,6 +329,66 @@ msgstr "Please choose a role."
 
 msgid "Diese Rolle gibt es hier nicht."
 msgstr "This role does not exist here."
+
+#, python-brace-format
+msgid ""
+"Guten Tag,\n"
+"\n"
+"für Sie wurde bei HUBIplan ein Konto angelegt: Rolle „{role}“ in „{org}“.\n"
+"\n"
+"Bitte legen Sie über diesen Link Ihr Passwort fest (gültig {days} Tage):\n"
+"{link}\n"
+"\n"
+"Ihre Anmeldung: {email}\n"
+"\n"
+"Wir empfehlen, danach unter „Einstellungen → Mein Konto“ die Zwei-Faktor-"
+"Anmeldung einzurichten.\n"
+msgstr ""
+"Hello,\n"
+"\n"
+"an account has been created for you at HUBIplan: role “{role}” in “{org}”.\n"
+"\n"
+"Please set your password using this link (valid for {days} days):\n"
+"{link}\n"
+"\n"
+"Your sign-in: {email}\n"
+"\n"
+"We recommend setting up two-factor authentication afterwards under “Settings "
+"→ My account”.\n"
+
+#, python-brace-format
+msgid "Einladung zu HUBIplan – {org}"
+msgstr "Invitation to HUBIplan – {org}"
+
+#, python-brace-format
+msgid ""
+"Guten Tag,\n"
+"\n"
+"HUBIplan verschickt keine Startpasswörter mehr. Ihr bisheriges Startpasswort "
+"gilt nicht mehr.\n"
+"\n"
+"Bitte legen Sie über diesen Link Ihr eigenes Passwort fest (gültig {days} "
+"Tage):\n"
+"{link}\n"
+"\n"
+"Ihre Anmeldung: {email}\n"
+"\n"
+"Ist der Link abgelaufen, hilft „Passwort vergessen“ auf der Anmeldeseite.\n"
+msgstr ""
+"Hello,\n"
+"\n"
+"HUBIplan no longer sends initial passwords. Your previous initial password "
+"is no longer valid.\n"
+"\n"
+"Please set your own password using this link (valid for {days} days):\n"
+"{link}\n"
+"\n"
+"Your sign-in: {email}\n"
+"\n"
+"If the link has expired, use “Forgot password” on the sign-in page.\n"
+
+msgid "HUBIplan: Passwort festlegen"
+msgstr "HUBIplan: set your password"
 
 msgid "Diese Sprache gibt es nicht."
 msgstr "This language is not available."
@@ -328,6 +411,27 @@ msgstr "Too many attempts. Please try again later."
 msgid "Das bisherige Passwort stimmt nicht."
 msgstr "The current password is incorrect."
 
+msgid "Ihr Passwort wurde geändert"
+msgstr "Your password has been changed"
+
+#, python-brace-format
+msgid "für Ihr HUBIplan-Konto {email} wurde soeben das Passwort geändert."
+msgstr "the password for your HUBIplan account {email} has just been changed."
+
+msgid "Ihr Passwort wurde festgelegt"
+msgstr "Your password has been set"
+
+#, python-brace-format
+msgid "für Ihr HUBIplan-Konto {email} wurde soeben das Passwort festgelegt."
+msgstr "the password for your HUBIplan account {email} has just been set."
+
+msgid ""
+"Waren Sie das nicht? Dann setzen Sie es bitte sofort über „Passwort "
+"vergessen“ auf der Anmeldeseite zurück und informieren Sie den Vorstand."
+msgstr ""
+"Was this not you? Then please reset it immediately with “Forgot password” on "
+"the sign-in page and inform the board."
+
 msgid "Das Passwort stimmt nicht."
 msgstr "The password is incorrect."
 
@@ -336,6 +440,46 @@ msgstr "That is already your sign-in email."
 
 msgid "Diese E-Mail-Adresse gehört schon zu einem anderen Konto."
 msgstr "This email address already belongs to another account."
+
+#, python-brace-format
+msgid ""
+"{org} hat Ihre neue E-Mail-Adresse {new} übernommen. Möchten Sie sich bei "
+"HUBIplan künftig auch damit anmelden (bisher {old})?"
+msgstr ""
+"{org} has taken over your new email address {new}. Would you like to sign in "
+"to HUBIplan with it from now on (previously {old})?"
+
+#, python-brace-format
+msgid ""
+"Sie möchten sich bei HUBIplan künftig mit {new} anmelden (bisher {old})."
+msgstr ""
+"You would like to sign in to HUBIplan with {new} from now on (previously "
+"{old})."
+
+msgid "Bitte bestätigen Sie Ihre neue E-Mail-Adresse"
+msgstr "Please confirm your new email address"
+
+#, python-brace-format
+msgid "Bitte bestätigen Sie die Adresse mit diesem Link (gültig {days} Tage):"
+msgstr "Please confirm the address with this link (valid for {days} days):"
+
+msgid "Haben Sie das nicht veranlasst, ignorieren Sie diese Mail einfach."
+msgstr "If you did not request this, simply ignore this email."
+
+msgid "Änderung Ihrer Anmelde-E-Mail angefordert"
+msgstr "Change of your sign-in email requested"
+
+#, python-brace-format
+msgid ""
+"für Ihr HUBIplan-Konto wurde die neue Anmelde-E-Mail {new} angefordert. Sie "
+"wird erst wirksam, wenn sie über den Link an die neue Adresse bestätigt ist."
+msgstr ""
+"the new sign-in email {new} has been requested for your HUBIplan account. It "
+"only takes effect once it has been confirmed via the link sent to the new "
+"address."
+
+msgid "Waren Sie das nicht? Dann ändern Sie bitte Ihr Passwort."
+msgstr "Was this not you? Then please change your password."
 
 msgid "Der Link ist ungültig, abgelaufen oder schon benutzt."
 msgstr "The link is invalid, expired or already used."
@@ -1488,6 +1632,72 @@ msgstr "UnifiedPush"
 
 msgid "Google (FCM)"
 msgstr "Google (FCM)"
+
+#, python-brace-format
+msgid ""
+"Hallo {name},\n"
+"\n"
+"{text}\n"
+"\n"
+"Zeit: {when} Uhr\n"
+"\n"
+"Warst du das, ist nichts zu tun. Sonst bitte sofort im Browser unter Mein "
+"Konto › App & andere Instanzen das Gerät abmelden und dein Passwort ändern: "
+"{link}\n"
+msgstr ""
+"Hello {name},\n"
+"\n"
+"{text}\n"
+"\n"
+"Time: {when}\n"
+"\n"
+"If this was you, there is nothing to do. Otherwise please sign out the "
+"device immediately in the browser under My account › App & other instances "
+"and change your password: {link}\n"
+
+msgid "Neues Gerät mit deinem Zugang verbunden"
+msgstr "New device connected to your account"
+
+#, python-brace-format
+msgid ""
+"Das Gerät „{name}“ wurde mit deinem HUBIplan-Zugang verbunden (HUBIplan-App)."
+msgstr ""
+"The device “{name}” has been connected to your HUBIplan account (HUBIplan "
+"app)."
+
+msgid "Verwaltung in der App freigeschaltet"
+msgstr "Administration unlocked in the app"
+
+#, python-brace-format
+msgid ""
+"Auf dem Gerät „{name}“ wurde die Verwaltung in der HUBIplan-App "
+"freigeschaltet (Passwort und Zwei-Faktor-Code)."
+msgstr ""
+"Administration was unlocked in the HUBIplan app on the device "
+"“{name}” (password and two-factor code)."
+
+msgid "Fehlgeschlagene Freischaltung der Verwaltung"
+msgstr "Failed unlocking of administration"
+
+#, python-brace-format
+msgid ""
+"Auf dem Gerät „{name}“ wurde mehrmals erfolglos versucht, die Verwaltung in "
+"der HUBIplan-App freizuschalten."
+msgstr ""
+"There were several unsuccessful attempts to unlock administration in the "
+"HUBIplan app on the device “{name}”."
+
+msgid "Gerät wegen kopiertem Schlüssel abgemeldet"
+msgstr "Device signed out because of a copied key"
+
+#, python-brace-format
+msgid ""
+"Der Schlüssel des Geräts „{name}“ wurde an zwei Stellen benutzt. Das deutet "
+"auf eine Kopie hin. HUBIplan hat das Gerät deshalb abgemeldet; bitte die App "
+"neu verbinden."
+msgstr ""
+"The key of the device “{name}” was used in two places. This suggests a copy. "
+"HUBIplan has therefore signed out the device; please connect the app again."
 
 msgid ""
 "Die App gibt es für den Mitgliederbereich. Für dieses Konto ist kein "
@@ -2929,6 +3139,12 @@ msgstr "Please confirm that the member's consent has been given."
 msgid "Kein Foto vorhanden."
 msgstr "No photo available."
 
+msgid "Dein Foto wurde nicht übernommen"
+msgstr "Your photo was not accepted"
+
+msgid "Dein Foto wurde freigegeben"
+msgstr "Your photo has been approved"
+
 msgid "Für dieses Mitglied ist keine E-Mail-Adresse hinterlegt."
 msgstr "There is no email address on file for this member."
 
@@ -3264,6 +3480,38 @@ msgstr "This unit is on another instance and is maintained there."
 msgid "Diese Einheit liegt auf einer anderen Instanz (Verbund)."
 msgstr "This unit is on another instance (federation)."
 
+#, python-brace-format
+msgid ""
+"die Plattformverwaltung ({actor}) hat bei {org} die Rolle „{role}“ an "
+"{email} vergeben."
+msgstr ""
+"the platform administration ({actor}) has assigned the role “{role}” at "
+"{org} to {email}."
+
+msgid ""
+"Wenn das nicht abgesprochen war, entzieht die Rolle bitte unter „Rollen“ und "
+"meldet euch beim Betreiber. Der Eintrag steht im Protokoll."
+msgstr ""
+"If this was not agreed, please withdraw the role under “Roles” and contact "
+"the operator. The entry is in the log."
+
+#, python-brace-format
+msgid "Rolle bei {org} durch die Plattform vergeben"
+msgstr "Role at {org} assigned by the platform"
+
+msgid "Diese Nachricht wurde über HUBIplan versandt."
+msgstr "This message was sent via HUBIplan."
+
+#, python-brace-format
+msgid "Diese Nachricht wurde im Auftrag von {name} über HUBIplan versandt."
+msgstr "This message was sent via HUBIplan on behalf of {name}."
+
+msgid "Impressum"
+msgstr "Legal notice"
+
+msgid "Datenschutz"
+msgstr "Privacy"
+
 msgid "nur gespeichert (kein Mailserver)"
 msgstr "only saved (no mail server)"
 
@@ -3494,8 +3742,116 @@ msgstr "This unit is already linked here."
 msgid "Diese Kopplung wartet nicht auf eine Bestätigung."
 msgstr "This link is not awaiting confirmation."
 
+#, python-brace-format
+msgid "Verbund: Pakete an {remote} verworfen"
+msgstr "Federation: packets to {remote} discarded"
+
+#, python-brace-format
+msgid ""
+"{remote} ({base}) war 14 Tage lang nicht erreichbar. Die wartenden Pakete "
+"wurden gelöscht, damit keine Daten unbegrenzt auf dem Server liegen. Sobald "
+"die andere Seite wieder erreichbar ist, geht der aktuelle Stand neu hinaus. "
+"Einzelne Mitteilungen (z. B. Korrekturvorschläge, Rundschreiben zur "
+"Weitergabe) bitte bei Bedarf erneut senden."
+msgstr ""
+"{remote} ({base}) was unreachable for 14 days. The waiting packets were "
+"deleted so that no data stays on the server indefinitely. As soon as the "
+"other side is reachable again, the current state is sent anew. Please resend "
+"individual messages (e.g. correction suggestions, circulars for forwarding) "
+"if needed."
+
 msgid "Dazu liegt keine Anfrage vor."
 msgstr "There is no request for this."
+
+#, python-brace-format
+msgid "{label}: {level} (bisher {accepted})"
+msgstr "{label}: {level} (previously {accepted})"
+
+#, python-brace-format
+msgid "Verbund: {remote} möchte mehr Daten senden"
+msgstr "Federation: {remote} wants to send more data"
+
+#, python-brace-format
+msgid ""
+"{remote} ({base}) möchte mehr senden, als ihr beim Koppeln angenommen habt:\n"
+"\n"
+"{lines}\n"
+"\n"
+"Bis ihr in HUBIplan unter Verbund zustimmt, nimmt diese Instanz nur die "
+"bisherige Stufe an."
+msgstr ""
+"{remote} ({base}) wants to send more than you accepted when linking:\n"
+"\n"
+"{lines}\n"
+"\n"
+"Until you agree in HUBIplan under Federation, this instance only accepts the "
+"previous level."
+
+#, python-brace-format
+msgid "Kopplungsanfrage: {remote}"
+msgstr "Link request: {remote}"
+
+#, python-brace-format
+msgid ""
+"{remote} ({base}) möchte sich unter {local} koppeln.\n"
+"\n"
+"Bitte in HUBIplan unter Einstellungen › Verbund prüfen und bestätigen oder "
+"ablehnen."
+msgstr ""
+"{remote} ({base}) wants to link below {local}.\n"
+"\n"
+"Please check in HUBIplan under Settings › Federation and confirm or decline."
+
+#, python-brace-format
+msgid "Umzug angekündigt: {remote}"
+msgstr "Move announced: {remote}"
+
+#, python-brace-format
+msgid ""
+"{remote} meldet einen Umzug von {old} nach {new}.\n"
+"\n"
+"Bis zur Bestätigung ruht die Kopplung, es gehen keine Daten hinaus. Bitte in "
+"HUBIplan unter Verbund den Fingerabdruck der neuen Instanz mit dem "
+"vergleichen, den euch die andere Seite auf anderem Weg (Telefon, Mail) "
+"mitteilt, und erst dann bestätigen. Wenn ihr nichts von einem Umzug wisst: "
+"ablehnen."
+msgstr ""
+"{remote} reports a move from {old} to {new}.\n"
+"\n"
+"Until confirmation the link is paused and no data goes out. Please compare "
+"the fingerprint of the new instance in HUBIplan under Federation with the "
+"one the other side tells you by another channel (phone, email), and only "
+"then confirm. If you know nothing about a move: decline."
+
+#, python-brace-format
+msgid "Rundschreiben von {remote} zur Weitergabe"
+msgstr "Circular from {remote} for forwarding"
+
+#, python-brace-format
+msgid ""
+"{remote} bittet, das Rundschreiben „{subject}“ an die Mitglieder von {local} "
+"weiterzugeben. Es liegt als Entwurf unter Rundschreiben bereit: bitte "
+"prüfen, Empfänger wählen und versenden."
+msgstr ""
+"{remote} asks you to forward the circular “{subject}” to the members of "
+"{local}. It is ready as a draft under Circulars: please check it, choose "
+"recipients and send it."
+
+#, python-brace-format
+msgid "Verbund: {remote} seit einem Tag nicht erreichbar"
+msgstr "Federation: {remote} unreachable for a day"
+
+#, python-brace-format
+msgid ""
+"Pakete an {remote} ({base}) warten seit {since}. Letzter Fehler: {error}\n"
+"\n"
+"Die Arbeit hier geht normal weiter; die Pakete werden automatisch "
+"nachgeschickt."
+msgstr ""
+"Packets to {remote} ({base}) have been waiting since {since}. Last error: "
+"{error}\n"
+"\n"
+"Work here continues as normal; the packets are sent automatically later."
 
 msgid "Diese Einheit liegt schon auf einer anderen Instanz."
 msgstr "This unit is already on another instance."
@@ -3643,6 +3999,29 @@ msgstr "Sign-in is no longer possible."
 msgid "Der Code stimmt nicht. Bitte die Anmeldung erneut beginnen."
 msgstr "The code is incorrect. Please start the sign-in again."
 
+msgid "Anmeldung über eine andere Instanz"
+msgstr "Sign-in via another instance"
+
+#, python-brace-format
+msgid ""
+"Hallo {name},\n"
+"\n"
+"am {date} um {time} Uhr hat sich jemand mit deinem Zugang von {peer} bei "
+"{site} angemeldet, aus einem Browser, der hier noch nicht bekannt war.\n"
+"\n"
+"Warst du das, ist nichts zu tun. Sonst bitte sofort unter Mein Konto › "
+"Anmeldung über andere Instanzen die Verknüpfung lösen und dein Passwort auf "
+"beiden Instanzen ändern.\n"
+msgstr ""
+"Hello {name},\n"
+"\n"
+"on {date} at {time} someone signed in to {site} with your account from "
+"{peer}, using a browser not known here before.\n"
+"\n"
+"If this was you, there is nothing to do. Otherwise please immediately remove "
+"the link under My account › Sign-in via other instances and change your "
+"password on both instances.\n"
+
 #, python-brace-format
 msgid "{name} ist derzeit nicht erreichbar gekoppelt."
 msgstr "{name} is currently not reachably linked."
@@ -3701,6 +4080,64 @@ msgstr "Response cannot be decrypted."
 msgid "übernommen"
 msgstr "taken over"
 
+#, python-brace-format
+msgid "Ihr Zugang zu HUBIplan – {org} wurde übertragen"
+msgstr "Your HUBIplan access – {org} has been transferred"
+
+#, python-brace-format
+msgid "Hallo {name},"
+msgstr "Hello {name},"
+
+#, python-brace-format
+msgid ""
+"{org} hat Ihren Zugang zum Mitgliederbereich auf eine neue E-Mail-Adresse "
+"({hint}) übertragen. Mit dieser Adresse ({old}) ist der Zugang zu Ihrer "
+"Mitgliedschaft nicht mehr möglich."
+msgstr ""
+"{org} has transferred your access to the member area to a new email address "
+"({hint}). Access to your membership is no longer possible with this address "
+"({old})."
+
+#, python-brace-format
+msgid ""
+"{org} lädt Sie in den Mitgliederbereich von HUBIplan ein. Dort sehen Sie "
+"Ihre Daten und können Änderungen melden."
+msgstr ""
+"{org} invites you to the HUBIplan member area. There you can see your "
+"details and report changes."
+
+#, python-brace-format
+msgid ""
+"Mit diesem persönlichen Link melden Sie sich ohne Passwort an (gültig {days} "
+"Tage, einmal nutzbar):"
+msgstr ""
+"With this personal link you sign in without a password (valid for {days} "
+"days, single use):"
+
+msgid ""
+"Einen neuen Link können Sie jederzeit auf der Anmeldeseite anfordern. Wenn "
+"Sie lieber ein Passwort nutzen, wählen Sie dort „Passwort vergessen“."
+msgstr ""
+"You can request a new link at any time on the sign-in page. If you prefer to "
+"use a password, choose “Forgot password” there."
+
+#, python-brace-format
+msgid "{org} hat Ihnen den Mitgliederbereich von HUBIplan freigeschaltet."
+msgstr "{org} has activated the HUBIplan member area for you."
+
+#, python-brace-format
+msgid ""
+"Melden Sie sich wie gewohnt mit Ihrem bestehenden Konto ({email}) an: {url}"
+msgstr "Sign in as usual with your existing account ({email}): {url}"
+
+msgid ""
+"Falls Sie Ihr Passwort nicht kennen, wählen Sie dort „Passwort vergessen“."
+msgstr "If you do not know your password, choose “Forgot password” there."
+
+#, python-brace-format
+msgid "Ihr Zugang zu HUBIplan – {org}"
+msgstr "Your HUBIplan access – {org}"
+
 msgid "Bitte ein aktuelles Mitglied auswählen."
 msgstr "Please choose a current member."
 
@@ -3718,11 +4155,32 @@ msgstr ""
 "Since the report, the club has changed: {names}. Accepting overwrites these "
 "details with the report."
 
+msgid "Deine Änderung wurde übernommen"
+msgstr "Your change has been applied"
+
+msgid "Deine Änderung wurde abgelehnt"
+msgstr "Your change has been declined"
+
 msgid "Du kannst dir die Rollenverwaltung nicht selbst entziehen."
 msgstr "You cannot remove role administration from yourself."
 
 msgid "Es wurde nichts geändert."
 msgstr "Nothing was changed."
+
+msgid "Ihr Anmeldelink für HUBIplan"
+msgstr "Your sign-in link for HUBIplan"
+
+#, python-brace-format
+msgid ""
+"mit diesem Link melden Sie sich im Mitgliederbereich an (gültig {days} Tage, "
+"einmal nutzbar):"
+msgstr ""
+"with this link you sign in to the member area (valid for {days} days, single "
+"use):"
+
+msgid ""
+"Falls Sie den Link nicht angefordert haben, können Sie diese Mail ignorieren."
+msgstr "If you did not request the link, you can ignore this email."
 
 msgid ""
 "Wenn zu dieser Adresse ein Mitgliederzugang besteht, ist ein Anmeldelink "

@@ -18,6 +18,7 @@ import {
 } from './content.ts'
 import { Field } from '../components/ui.tsx'
 import { useLearning } from './LearningContext.tsx'
+import { t } from '../i18n/index.ts'
 
 const byName = (a: string, b: string) => a.localeCompare(b, 'de', { sensitivity: 'base' })
 
@@ -95,19 +96,19 @@ export function GlossaryPage() {
 
   return (
     <section className="glossary">
-      <h1>Glossar</h1>
+      <h1>{t('Glossar')}</h1>
       <p className="muted">
-        Begriffe und Entscheidungen der Vereinsverwaltung, kurz erklärt und mit Quellen.
+        {t('Begriffe und Entscheidungen der Vereinsverwaltung, kurz erklärt und mit Quellen.')}
       </p>
       <div className="glossary-search">
         <Field
-          label="Glossar durchsuchen"
+          label={t('Glossar durchsuchen')}
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
       </div>
-      {nothing && <p role="status">Nichts gefunden.</p>}
+      {nothing && <p role="status">{t('Nichts gefunden.')}</p>}
       {sections.map((s) => (
         <section key={s.key} className="glossary-section">
           <h2>{tr(SECTIONS[s.key])}</h2>
@@ -137,7 +138,7 @@ export function GlossaryPage() {
       ))}
       {phases.length > 0 && (
         <section className="glossary-section">
-          <h2>Entscheidungen</h2>
+          <h2>{t('Entscheidungen')}</h2>
           {phases.map((p) => (
             <section key={p.key} className="glossary-phase">
               <h3>{tr(PHASES[p.key])}</h3>
@@ -160,7 +161,7 @@ export function GlossaryPage() {
         </section>
       )}
       <section className="glossary-section">
-        <h2>Quellen</h2>
+        <h2>{t('Quellen')}</h2>
         <ul className="glossary-sources">
           {(Object.keys(SOURCES) as SourceKey[])
             .filter((s) => usedSources.has(s))

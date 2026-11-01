@@ -21,6 +21,7 @@ from reportlab.platypus import (
     TableStyle,
 )
 
+from core.i18n import german
 from letterhead.data import letter_data
 from letterhead.pdf import LetterDocument, text_styles
 
@@ -383,7 +384,7 @@ def receipt_story(payment: Payment) -> tuple[list, object]:
         ("Betrag", f"<b>{euro(payment.amount)}</b>"),
         ("erhalten von", escape(payer)),
         ("für", escape(f"{invoice.subject} ({invoice.display_number})")),
-        ("Zahlungsweg", escape(payment.get_method_display())),
+        ("Zahlungsweg", escape(german(payment.get_method_display))),
         ("am", f"{payment.date:%d.%m.%Y}"),
     ]
     if invoice.status != Invoice.Status.CANCELLED:
