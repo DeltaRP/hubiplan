@@ -16,7 +16,7 @@ Jede Seite hat in der Fußzeile den Link **„Lizenzen“** (`/lizenz`). Dort st
 | `/lizenzen/drittanbieter.txt` | Lizenztexte aller Bibliotheken im Browser-Code | beim Bauen erzeugt, `frontend/lizenzen/` |
 
 **Quellcode für Nutzer (AGPL § 13):** Das Repository ist öffentlich auf GitHub
-(`https://github.com/DeltaRP/hubiplan`). Die Seite `/lizenz` verlinkt den Quellcode der
+(`https://github.com/hubiplan/hubiplan`). Die Seite `/lizenz` verlinkt den Quellcode der
 laufenden Fassung: `deploy/server-setup.sh` legt beim Ausrollen den Commit aus `.fassung`
 als `/lizenzen/fassung.txt` ins Web-Image, die Seite verlinkt dann
 `…/tree/<commit>`. Ohne diese Datei (Entwicklung) verlinkt sie das Repository. Wer eine

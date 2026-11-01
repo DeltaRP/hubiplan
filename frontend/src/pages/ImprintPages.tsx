@@ -302,7 +302,7 @@ const LICENSE_FILES = {
 }
 
 /** Öffentliches Repository mit dem Quellcode (AGPL § 13). Wer HUBIplan verändert betreibt, trägt hier sein eigenes ein. */
-const SOURCE_REPO = 'https://github.com/DeltaRP/hubiplan'
+const SOURCE_REPO = 'https://github.com/hubiplan/hubiplan'
 
 /** Commit der laufenden Fassung; deploy/server-setup.sh legt ihn beim Ausrollen ab. */
 const VERSION_FILE = '/lizenzen/fassung.txt'

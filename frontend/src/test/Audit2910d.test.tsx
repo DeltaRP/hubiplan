@@ -36,7 +36,7 @@ describe('Lizenzaudit 29.10. Teil d', () => {
     // AGPL § 13: Link zum Quellcode (ohne Fassungsdatei auf das Repository)
     expect(screen.getByRole('link', { name: 'Quellcode von HUBIplan' })).toHaveAttribute(
       'href',
-      'https://github.com/DeltaRP/hubiplan',
+      'https://github.com/hubiplan/hubiplan',
     )
     expect(
       screen.getByRole('link', { name: 'Lizenzen der enthaltenen Bibliotheken' }),
@@ -55,7 +55,7 @@ describe('Lizenzaudit 29.10. Teil d', () => {
     renderAt('/lizenz')
     expect(
       await screen.findByRole('link', { name: 'Quellcode dieser Fassung (0123456)' }),
-    ).toHaveAttribute('href', `https://github.com/DeltaRP/hubiplan/tree/${sha}`)
+    ).toHaveAttribute('href', `https://github.com/hubiplan/hubiplan/tree/${sha}`)
   })
 
   it('F02: Fußzeile verlinkt „Lizenzen“', async () => {

@@ -9,4 +9,4 @@
 
 ## Beitragsbedingungen
 
-- [ ] Ich stimme den [Beitragsbedingungen](https://github.com/DeltaRP/hubiplan/blob/main/CONTRIBUTING.md#beitragsbedingungen) zu.
+- [ ] Ich stimme den [Beitragsbedingungen](https://github.com/hubiplan/hubiplan/blob/main/CONTRIBUTING.md#beitragsbedingungen) zu.

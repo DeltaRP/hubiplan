@@ -9,7 +9,7 @@ Meldung dankbar.
 ## Lücke melden
 
 Bitte **kein öffentliches Issue**, sondern vertraulich über GitHub:
-[Report a vulnerability](https://github.com/DeltaRP/hubiplan/security/advisories/new)
+[Report a vulnerability](https://github.com/hubiplan/hubiplan/security/advisories/new)
 (im Repository unter **Security › Report a vulnerability**).
 
 Hilfreich sind:
