@@ -12,6 +12,7 @@ import type {
   RemoteTransfer,
   PacketChoice,
   PeeringPreview,
+  ReceivedCompetition,
   SpinOff,
   SpinOffExitCandidate,
 } from '../../api/peering.ts'
@@ -1204,8 +1205,47 @@ function ReceivedInfo({ coupling }: { coupling: Coupling }) {
           ))}
         </ul>
       )}
+      {r.results && <ReceivedResults competitions={r.results.competitions} />}
     </div>
   )
+}
+
+function ReceivedResults({ competitions }: { competitions: ReceivedCompetition[] }) {
+  if (competitions.length === 0) {
+    return <p>{t('Noch keine endgültigen Wettbewerbsergebnisse übermittelt.')}</p>
+  }
+  return (
+    <details>
+      <summary>{t('Wettbewerbsergebnisse von oben: {n}', { n: competitions.length })}</summary>
+      {competitions.map((c) => (
+        <div key={c.uid}>
+          <p>
+            <strong>{c.title}</strong> · {formatDate(c.date)}
+            {c.location && ` · ${c.location}`}
+          </p>
+          <ul className="plain-list">
+            {c.scorings.map((s) => (
+              <li key={s.name}>
+                {s.name}:{' '}
+                {s.rows.map((row, i) => (
+                  <span key={i}>
+                    {i > 0 && ', '}
+                    {row.own ? <strong>{resultRow(row)}</strong> : resultRow(row)}
+                  </span>
+                ))}
+                {s.field ? ` ${t('(von {n})', { n: s.field })}` : ''}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </details>
+  )
+}
+
+function resultRow(row: { place: number | null; name: string; value: string }): string {
+  const place = row.place ? `${row.place}. ` : ''
+  return `${place}${row.name}${row.value ? ` (${row.value})` : ''}`
 }
 
 function InvoiceList({ coupling, onChange }: { coupling: Coupling; onChange: () => void }) {

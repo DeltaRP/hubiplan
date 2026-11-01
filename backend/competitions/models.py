@@ -18,6 +18,9 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy
 
+from core.privatefiles import PrivateFileField
+from exchange.models import private_storage
+
 
 class Series(models.Model):
     """Reihe: verbindet denselben Wettbewerb über die Jahre („Vergleichsschießen“), für
@@ -91,6 +94,18 @@ class Competition(models.Model):
         max_length=10,
         choices=WebsiteDepth.choices,
         default=WebsiteDepth.TOP3,
+    )
+    # Ausschreibung an Untereinheiten: Die meldenden Untereinheiten sehen nach Abschluss
+    # immer ihre eigenen Starter, Mannschaften und die Wertung der Untereinheiten; die ganze
+    # Rangliste mit fremden Namen nur, wenn der Ausrichter sie freigibt (Konzept Abschnitt 9)
+    share_ranking = models.BooleanField("ganze Rangliste an meldende Untereinheiten", default=False)
+    certificate_template = models.ForeignKey(
+        "competitions.CertificateTemplate",
+        verbose_name="Urkundenvorlage",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
     )
     series = models.ForeignKey(
         Series,
@@ -829,3 +844,56 @@ class AwardGrant(models.Model):
     def full_title(self) -> str:
         base = self.title or self.item
         return f"{base} {self.year}".strip() if self.title else base
+
+
+def certificate_path(instance, filename: str) -> str:
+    return f"urkunden/{instance.organization_id}/{secrets.token_hex(8)}-{filename}"
+
+
+DEFAULT_CERTIFICATE_TEXT = (
+    "{verein}\n"
+    "verleiht\n"
+    "# {name}\n"
+    "{einheit}\n"
+    "beim {wettbewerb} am {datum}\n"
+    "in der {wertung}{mit_wert}\n"
+    "den\n"
+    "# {platz}. Platz\n"
+    "{titel}"
+)
+
+
+class CertificateTemplate(models.Model):
+    """Urkundenvorlage (Wettbewerbe Schritt 6): Text mit Platzhaltern, optional
+    Hintergrundbild und Wappen, bis zu zwei Unterschriftszeilen. Eine Zeile mit „# “ am
+    Anfang wird groß und fett gesetzt; eine Zeile, deren Platzhalter alle leer sind, fällt
+    weg."""
+
+    organization = models.ForeignKey(
+        "organizations.Organization", on_delete=models.CASCADE, related_name="+"
+    )
+    name = models.CharField("Name", max_length=100)
+    heading = models.CharField("Überschrift", max_length=100, default="Urkunde", blank=True)
+    text = models.TextField("Text", max_length=2000, default=DEFAULT_CERTIFICATE_TEXT)
+    landscape = models.BooleanField("Querformat", default=False)
+    show_logo = models.BooleanField("Wappen zeigen", default=True)
+    # Ort und Datum unten links, z. B. „Neuss, 14.06.2027“ (leer: Ort des Wettbewerbs)
+    place_line = models.CharField("Ort für „Ort, Datum“", max_length=100, blank=True)
+    # [{"name": "Max Muster", "function": "1. Vorsitzender"}, …], höchstens zwei
+    signers = models.JSONField("Unterschriften", default=list, blank=True)
+    background = PrivateFileField(
+        "Hintergrundbild",
+        storage=private_storage,
+        upload_to=certificate_path,
+        blank=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Urkundenvorlage"
+        verbose_name_plural = "Urkundenvorlagen"
+        ordering = ["name", "pk"]
+
+    def __str__(self) -> str:
+        return self.name

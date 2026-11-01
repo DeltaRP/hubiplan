@@ -81,6 +81,13 @@ def _units(org) -> list[Department]:
 # --- Wettbewerbe ---
 
 
+def _from_internal_call(comp: Competition) -> bool:
+    """Gehört der Wettbewerb zu einer Ausschreibung an Untereinheiten?"""
+    from entries.models import Call
+
+    return Call.objects.filter(competition=comp, internal=True).exists()
+
+
 class CompetitionSerializer(serializers.ModelSerializer):
     starter_count = serializers.IntegerField(read_only=True, default=0)
     status_label = serializers.CharField(source="get_status_display", read_only=True)
@@ -104,6 +111,8 @@ class CompetitionSerializer(serializers.ModelSerializer):
             "status_label",
             "website",
             "website_depth",
+            "share_ranking",
+            "certificate_template",
             "series",
             "drop_out",
             "fixed_order",
@@ -139,6 +148,12 @@ class CompetitionSerializer(serializers.ModelSerializer):
         org = self.context.get("org")
         if value is not None and (org is None or value.organization_id != org.pk):
             raise serializers.ValidationError(gettext("Bitte eine Reihe dieser Einheit wählen."))
+        return value
+
+    def validate_certificate_template(self, value):
+        org = self.context.get("org")
+        if value is not None and (org is None or value.organization_id != org.pk):
+            raise serializers.ValidationError(gettext("Bitte eine Vorlage dieser Einheit wählen."))
         return value
 
     def validate_details(self, value):
@@ -445,6 +460,7 @@ class CompetitionViewSet(_Mixin, AuditMixin, viewsets.ModelViewSet):
             for g in comp.grants.select_related("competition", "trophy", "dignity")
         ]
         data["series_name"] = comp.series.name if comp.series_id else ""
+        data["from_call"] = _from_internal_call(comp)
         data["event_info"] = event_views.event_info(comp.event)
         on = event_views.calendar_on(self.org)
         data["calendar"] = {"on": on, "can_create": on and EVENTS_MANAGE in self.org_permissions}
@@ -1285,6 +1301,8 @@ class CopyView(_Mixin, APIView):
             details=src.details,
             website=src.website,
             website_depth=src.website_depth,
+            share_ranking=src.share_ranking,
+            certificate_template=src.certificate_template,
             series=src.series,
         )
         mapping = {}

@@ -253,6 +253,27 @@ describe('Verbund', () => {
             { kind: 'passive', birth: '1990-01', n: 1 },
           ],
         },
+        results: {
+          competitions: [
+            {
+              uid: '12',
+              title: 'Bundesmeisterschaft',
+              date: '2026-09-20',
+              location: 'Musterstadt',
+              scorings: [
+                {
+                  name: 'Vereine',
+                  kind: 'einheit',
+                  field: 2,
+                  rows: [
+                    { place: 1, name: 'Anderer Verein', value: '290', own: false },
+                    { place: 2, name: 'Schützenverein Beispiel', value: '280', own: true },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
       },
       invoices: [
         {
@@ -290,6 +311,9 @@ describe('Verbund', () => {
     expect(await screen.findByText(/Gemeldete Mitglieder/)).toHaveTextContent(
       '3 (2 aktiv, 1 passiv)',
     )
+    expect(screen.getByText('Wettbewerbsergebnisse von oben: 1')).toBeInTheDocument()
+    expect(screen.getByText('2. Schützenverein Beispiel (280)').tagName).toBe('STRONG')
+    expect(screen.getByText('Bundesmeisterschaft')).toBeInTheDocument()
     expect(screen.getByText('Eingangsrechnungen')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'bezahlt melden' }))
     expect(screen.getByText(/IBAN DE89370400440532013000/)).toBeInTheDocument()

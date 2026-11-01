@@ -68,6 +68,7 @@ MODULE_MODELS = (
     # Wettbewerbe nach den Terminen (Verweis auf den Termin)
     "competitions.Series",
     "competitions.Trophy",
+    "competitions.CertificateTemplate",
     "competitions.Competition",
     "competitions.Scoring",
     "competitions.Starter",
@@ -139,6 +140,7 @@ MEMBER_MODELS = {
     "competitions.placing",
     "competitions.series",
     "competitions.trophy",
+    "competitions.certificatetemplate",
     "competitions.award",
     "competitions.awardgrant",
     # Meldungen nennen Mitglieder (gemeldete Personen, Fassungen mit Angaben je Person)

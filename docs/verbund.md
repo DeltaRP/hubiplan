@@ -119,6 +119,7 @@ und die Kopie wird gelöscht. Beim Lösen räumen beide Seiten ihre Kopien auf.
 | `members` | nach oben | Stufe A: nur Anzahlen gemeldeter Mitgliedschaften nach aktiv/passiv und Geburtsmonat, keine Namen. Stufe B: namentlich minimal (siehe unten); Standard aus |
 | `circulars` | nach unten | Rundschreiben des Dachverbands an „Mitglieder“ zur Weitergabe (siehe unten); Standard an |
 | `invoices` | nach unten | Rechnungen der Einheit darüber an die ferne Einheit (Vorgänge statt Stand, siehe unten); Standard an |
+| `results` | nach unten | endgültige eigene Wettbewerbe der letzten zwei Jahre (höchstens 50, ohne Vogelschießen). Stufe „units“: nur Wertungen der Einheiten und Mannschaften, eigene Zeile markiert, keine Personen. Stufe „own“: dazu die eigenen Starter mit Platz und Wert; fremde Personen nie. Standard aus |
 
 Übermittelte Termine liegen als Termine des Platzhalters im Kalender (Feld
 `Event.remote_uid`); RLS erlaubt das Lesen nur bei aktiver Kopplung nach oben
@@ -300,8 +301,8 @@ Kopplungscode erzeugen (Einstellungen › Verbund › „Ferne Einheit aufnehmen
 - Beim Verein entsteht als Platzhalter eine **Untereinheit** in seinem Datenbereich
   (`is_remote`). Sie steht in der Liste der Untereinheiten mit „andere Instanz“, lässt sich
   aber weder bearbeiten noch löschen, und Mitglieder lassen sich ihr nicht zuordnen.
-- Zwischen Verein und ferner Untereinheit fließen nur Stammdaten, Termine, Vorstand und
-  Satzung (`Packet.under_club`). Mitgliedermeldung, Rechnungen und Rundschreiben gibt es
+- Zwischen Verein und ferner Untereinheit fließen nur Stammdaten, Termine, Vorstand,
+  Satzung und Wettbewerbsergebnisse (`Packet.under_club`). Mitgliedermeldung, Rechnungen und Rundschreiben gibt es
   hier nicht; den Abgleich der Mitglieder bringt Schritt 8d.
 - Termine der fernen Untereinheit erscheinen im Verein als Termine dieser Untereinheit und
   sind dort nicht bearbeitbar (das gilt für alle Termine aus dem Verbund).

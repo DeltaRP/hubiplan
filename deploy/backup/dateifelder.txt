@@ -4,6 +4,7 @@
 # vergleicht die Liste mit den Modellen; ein neues Dateifeld gehört hier hinein.
 billing_invoice issued_pdf private
 circulars_circularattachment file private
+competitions_certificatetemplate background private
 datatransfer_transferjob file private
 documents_documentversion file private
 events_eventattachment file private

@@ -101,6 +101,7 @@ export const modules: AppModule[] = [
       { to: '/wettbewerbe/reihen', label: t('Reihen') },
       { to: '/wettbewerbe/pokale', label: t('Wanderpokale') },
       { to: '/wettbewerbe/titel', label: t('Titel und Würden') },
+      { to: '/wettbewerbe/urkunden', label: t('Urkundenvorlagen') },
     ],
   },
   {

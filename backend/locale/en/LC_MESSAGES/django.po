@@ -4296,3 +4296,15 @@ msgstr "Member access only exists for clubs."
 
 msgid "Diese Sprache ist auf diesem Server nicht freigeschaltet."
 msgstr "This language is not enabled on this server."
+
+msgid "Bitte ein Bild auswählen."
+msgstr "Please choose an image."
+
+msgid "Bitte eine Vorlage dieser Einheit wählen."
+msgstr "Please choose a template of this unit."
+
+msgid "Höchstens zwei Unterschriften."
+msgstr "At most two signatures."
+
+msgid "Unter Mein Konto › Unterschrift ist keine Unterschrift hinterlegt."
+msgstr "No signature is stored under My account › Signature."

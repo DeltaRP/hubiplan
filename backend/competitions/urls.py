@@ -3,12 +3,26 @@
 from django.urls import path
 from rest_framework.routers import SimpleRouter
 
-from . import award_views, bird_views, event_views, foreign_views, stand_views, target_views, views
+from . import (
+    award_views,
+    bird_views,
+    certificate_views,
+    event_views,
+    foreign_views,
+    stand_views,
+    target_views,
+    views,
+)
 
 router = SimpleRouter()
 # Reihen und Wanderpokale vor den Wettbewerben (sonst fängt „competitions/<pk>/“ sie ab)
 router.register("competitions/series", award_views.SeriesViewSet, basename="competition-series")
 router.register("competitions/trophies", award_views.TrophyViewSet, basename="competition-trophy")
+router.register(
+    "competitions/certificate-templates",
+    certificate_views.CertificateTemplateViewSet,
+    basename="competition-certificate-template",
+)
 router.register("competitions", views.CompetitionViewSet, basename="competition")
 router.register(
     r"competitions/(?P<competition_id>\d+)/scorings",
@@ -33,6 +47,26 @@ org_patterns = [
         "competitions/photo-samples/",
         target_views.PhotoSamplesView.as_view(),
         name="competition-photo-samples",
+    ),
+    path(
+        "competitions/certificate-templates/<int:pk>/background/",
+        certificate_views.CertificateBackgroundView.as_view(),
+        name="competition-certificate-background",
+    ),
+    path(
+        "competitions/certificate-templates/<int:pk>/preview/",
+        certificate_views.CertificatePreviewView.as_view(),
+        name="competition-certificate-preview",
+    ),
+    path(
+        f"{C}certificates/",
+        certificate_views.CertificatesView.as_view(),
+        name="competition-certificates",
+    ),
+    path(
+        f"{C}start-cards/",
+        certificate_views.StartCardsView.as_view(),
+        name="competition-start-cards",
     ),
     path(f"{C}hits/", target_views.HitsView.as_view(), name="competition-hits"),
     path(f"{C}photo/", target_views.PhotoView.as_view(), name="competition-photo"),

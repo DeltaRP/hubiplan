@@ -50,6 +50,10 @@ export interface Competition {
   status_label: string
   website: WebsiteMode
   website_depth: WebsiteDepth
+  /** Ausschreibung an Untereinheiten: ganze Rangliste an die meldenden Untereinheiten */
+  share_ranking: boolean
+  /** Urkundenvorlage (leer: Standard) */
+  certificate_template: number | null
   /** Reihe (Archiv über die Jahre) */
   series: number | null
   drop_out: boolean
@@ -224,6 +228,8 @@ export interface CompetitionDetail extends Competition {
   awards?: Award[]
   grants?: Grant[]
   series_name?: string
+  /** gehört zu einer Ausschreibung an Untereinheiten */
+  from_call?: boolean
   event_info?: CompetitionEvent | null
   calendar?: CalendarAccess
   /** nur über einen Standzugang */

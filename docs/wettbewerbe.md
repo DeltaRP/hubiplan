@@ -238,8 +238,24 @@ werden verworfen und das Gerät sagt es.
 Ein anderer richtet aus (Feld „Ausrichter“). Die Einheit trägt ihre Schützen ein (nur
 Mitglieder), stellt Mannschaften zusammen (`Team`, nur bei fremden Wettbewerben) und trägt
 Platz, Wert und Bemerkung ein (`Placing`, `placings/`), optional mit „Teilnehmer insgesamt“
-für „Platz 2 von 14“. Die Verbindung zu den Meldungen (Starter aus der Meldung, Ergebnisse
-vom Ausrichter in HUBIplan) folgt, sobald es die Meldungen gibt.
+für „Platz 2 von 14“. Mit „fremden Wettbewerb anlegen“ in einer Ausschreibung entsteht er
+beim Abgeben der Meldung mit ihren Mannschaften und Personen (`entries.services.sync_competition`).
+
+**Ergebnisse zurück an die meldenden Untereinheiten** (Schritt 3, gleiche Instanz,
+`competitions/returns.py`): Eine Ausschreibung an Untereinheiten legt beim Verein einen eigenen
+Wettbewerb an, bestätigte Meldungen werden Starter. Ist er endgültig, zeigt die Meldung der
+Untereinheit (`…/entry/results/`, auch im Bereich der Untereinheit) Platz und Wert ihrer
+Starter und Mannschaften in der Gesamtwertung und die Wertung der Untereinheiten (nur Namen
+der Untereinheiten; Mitglieder nur bei eigenen Mannschaften). Die ganze Einzelrangliste mit
+fremden Namen nur mit „Ganze Rangliste an die meldenden Untereinheiten“
+(`Competition.share_ranking`, Einstellung nur bei Wettbewerben aus einer solchen
+Ausschreibung).
+
+Ergebnisse an Einheiten einer anderen Instanz (Schritt 7) bringt das Verbund-Paket `results`
+(`peering/packet_results.py`, Standard aus, siehe [verbund.md](verbund.md)). „Eigene“ Starter
+erkennt es an der Untereinheit (Platzhalter der fernen Einheit) oder am Vereinsnamen des
+Starters; Starter ohne Verein gehen nicht hinaus. Die empfangende Einheit sieht die Ergebnisse
+unter Einstellungen › Verbund bei der Kopplung.
 
 ## Standzugang
 
@@ -318,6 +334,25 @@ Liste ohne Namen), `stechliste&stechen=<id>`, beim Vogelschießen `losliste` (na
 mit Feld für Striche) und `pfaenderliste` (leer zum Ausfüllen). Schieß- und Losliste füllen
 die letzte Seite mit leeren Zeilen auf (mindestens `leerzeilen`); die leere Schießliste ist
 genau eine volle Seite.
+
+**Urkunden** (Schritt 6, `competitions/certificates.py`): Vorlagen unter Wettbewerbe ›
+Urkundenvorlagen (`certificate-templates/`): Überschrift, Text mit Platzhaltern (`{name}`,
+`{einheit}`, `{platz}`, `{wertung}`, `{wert}`, `{mit_wert}`, `{wettbewerb}`, `{datum}`,
+`{jahr}`, `{ort}`, `{verein}`, `{titel}`, `{preis}`; „# “ am Zeilenanfang = groß und fett;
+Zeilen mit lauter leeren Platzhaltern fallen weg), Hoch- oder Querformat, Wappen,
+Hintergrundbild (als JPEG ohne Metadaten neu geschrieben, verschlüsselt abgelegt), bis zu zwei
+Unterschriftszeilen und Ort für „Ort, Datum“. `certificates/?vorlage=&bis=3&wertung=&starter=`
+druckt eine Seite je Platzierten (Einzel- und Mannschaftswertungen, Titel aus den
+Auszeichnungen; beim Vogelschießen je errungenem Pfand). `unterschrift=1` setzt die unter
+Mein Konto hinterlegte Unterschrift **dessen ein, der druckt**, über die erste Zeile; fremde
+Unterschriften nie. Die Vorlage des Wettbewerbs (`certificate_template`) ist vorgewählt und
+wird beim Kopieren übernommen. `certificate-templates/<id>/preview/`: Probeurkunde mit
+erfundenen Werten.
+
+**Startkarten** (`start-cards/?art=karten|aufkleber&sortierung=name|einheit|startnummer`):
+vier Karten je A4-Seite (Verein, Wettbewerb, Name, Untereinheit, Startnummer, je
+Einzelwertung Kästchen für die Schüsse und die Summe, Feld für die Aufsicht) oder Aufkleber
+70 × 37 mm (3 × 8 je Seite) für vorgedruckte Karten. Zurückgezogene Starter fehlen.
 
 ## Daten
 
