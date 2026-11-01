@@ -67,6 +67,12 @@ Exporte, Bilder der Webseite) liegen verschlüsselt im Volume `private-data`
 (`core/crypto.py`, `core/privatefiles.py`). Logos und Wappen (`media-data`) sind
 öffentlich und bleiben unverschlüsselt.
 
+Dazu kommen einzelne Felder in der Datenbank (`core/encfields.py`): E-Mail-Adresse,
+Telefon und Straße der Mitglieder, SEPA-Mandate (Kontoinhaber, IBAN, BIC), die IBAN der
+Gegenseite in Kontoauszügen und die Werte der Zusatzfelder. In der Spalte steht
+`enc1:…`. Die Datenbank kann darin nicht suchen; die Suche nach E-Mail-Adressen und
+Kontoinhabern läuft deshalb in HUBIplan selbst.
+
 - **Schlüssel je Verein:** Jeder Verein (bzw. Dachverband, Plattform) hat einen eigenen
   Datenschlüssel (AES-256-GCM). Untereinheiten nutzen den ihres Vereins. Die
   Datenschlüssel liegen in der Tabelle `core_datakey`, verpackt mit dem Hauptschlüssel.
@@ -94,9 +100,12 @@ Exporte, Bilder der Webseite) liegen verschlüsselt im Volume `private-data`
 - **Bestand verschlüsseln:** Nach dem ersten Ausrollen mit Verschlüsselung (vorher ein
   frisches Backup) `exec backend python manage.py dateien_verschluesseln`. Wiederholbar;
   `--probe` zählt nur. Bis dahin liest HUBIplan alte Klartextdateien weiter.
-- **Rückweg:** `dateien_verschluesseln --entschluesseln` legt alle Dateien wieder im
-  Klartext ab. `deploy/zurueck.sh` macht das selbst, wenn die vorige Fassung die
-  Verschlüsselung noch nicht kennt.
+  Für die Felder entsprechend `daten_verschluesseln` (auch `--probe`).
+- **Rückweg:** `dateien_verschluesseln --entschluesseln` und
+  `daten_verschluesseln --entschluesseln` legen alles wieder im Klartext ab.
+  `deploy/zurueck.sh` macht das selbst, wenn die vorige Fassung die Verschlüsselung
+  (bzw. dieselben Felder) noch nicht kennt. Nach dem nächsten Ausrollen wieder
+  verschlüsseln.
 
 ## Backups
 

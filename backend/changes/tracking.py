@@ -50,7 +50,14 @@ IGNORED_APPS = {
     "usersessions",
     "headless",
 }
-IGNORED_MODELS = {"exchange.exportjob", "exchange.exporttemplate", "organizations.platformsettings"}
+# core.datakey: Der Schlüssel eines Vereins bleibt, auch wenn die erste verschlüsselte
+# Angabe rückgängig gemacht wird
+IGNORED_MODELS = {
+    "exchange.exportjob",
+    "exchange.exporttemplate",
+    "organizations.platformsettings",
+    "core.datakey",
+}
 
 # Schreiben hier sperrt das Paket – mit diesem Grund
 BLOCKING_MODELS = {

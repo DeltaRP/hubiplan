@@ -17,6 +17,8 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.text import slugify
 
+from core.encfields import EncryptedJSONField
+
 TYPES = (
     ("text", "Text"),
     ("number", "Zahl"),
@@ -111,7 +113,8 @@ class FieldValue(models.Model):
     person = models.ForeignKey(
         "members.Person", on_delete=models.CASCADE, related_name="field_values"
     )
-    value = models.JSONField(null=True, blank=True)
+    # Verschlüsselt (core/encfields.py)
+    value = EncryptedJSONField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

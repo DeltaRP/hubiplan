@@ -1336,9 +1336,14 @@ class MandateViewSet(SepaMixin, viewsets.ReadOnlyModelViewSet):
         if (m := p.get("mitglied")) and m.isdigit():
             qs = qs.filter(membership_id=m)
         if term := p.get("suche", "").strip():
+            # Kontoinhaber ist verschlüsselt (core/encfields.py): im Speicher suchen
+            low = term.lower()
+            by_holder = [
+                pk for pk, holder in qs.values_list("pk", "holder") if low in holder.lower()
+            ]
             qs = qs.filter(
                 Q(reference__icontains=term)
-                | Q(holder__icontains=term)
+                | Q(pk__in=by_holder)
                 | Q(membership__person__last_name__icontains=term)
                 | Q(club__name__icontains=term)
             )
