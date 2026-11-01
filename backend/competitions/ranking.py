@@ -5,6 +5,9 @@
   Wertung werden der Reihe nach angewandt: ein Stechen gilt für eine Gruppe, wenn alle
   aus der Gruppe darin stehen. Fehlt ein Stechen oder ein Wert darin, bleibt der Platz
   geteilt und die Gruppe steht unter ``open`` (Stechen nötig bzw. läuft).
+- Vor dem Stechen trennt eine Kette von Gleichstandsregeln (``Entry.tiebreak``, je Regel
+  ein Vergleichswert, größer ist besser, ``None``: nicht bekannt). Fehlt einem der Gleichen
+  ein Wert, endet die Kette (siehe ``tiebreak.py``).
 - Außerhalb der Preisplätze bleibt Gleichstand ohne Stechen (gleicher Platz).
 - Wertung der Untereinheiten: Wert aus den Einzelwerten ihrer Starter (Summe der besten
   k, Summe aller, Durchschnitt). Bei „beste k“ wird eine Untereinheit mit weniger als k
@@ -22,6 +25,7 @@ class Entry:
     key: str
     value: Decimal | None
     out_of_competition: bool = False
+    tiebreak: tuple = ()
 
 
 @dataclass
@@ -32,6 +36,8 @@ class Placed:
     # Werte aus den Stechen, die für diesen Eintrag entschieden haben (Nr. → Wert)
     shootoff_values: dict[int, Decimal] = field(default_factory=dict)
     tie: bool = False
+    # Nummer der Gleichstandsregel (Index in der Kette), die den Platz entschieden hat
+    decided_by: int | None = None
 
 
 @dataclass
@@ -68,10 +74,33 @@ def rank(
     placed: list[Placed] = []
     open_ties: list[OpenTie] = []
 
+    decided: dict[str, int] = {}
+
+    def split(group: list[Entry], level: int) -> list[list[Entry]]:
+        """Gleiche nach den Gleichstandsregeln ab ``level`` trennen (beste zuerst)."""
+        if len(group) == 1:
+            return [group]
+        vals = [e.tiebreak[level] if level < len(e.tiebreak) else None for e in group]
+        if level >= max(len(e.tiebreak) for e in group) or any(v is None for v in vals):
+            return [group]
+        ordered_group = sorted(group, key=lambda e: e.tiebreak[level], reverse=True)
+        out: list[list[Entry]] = []
+        pos = 0
+        while pos < len(ordered_group):
+            v = ordered_group[pos].tiebreak[level]
+            same = [e for e in ordered_group[pos:] if e.tiebreak[level] == v]
+            if len(same) < len(group):
+                for e in same:
+                    decided[e.key] = level
+            out.extend(split(same, level + 1))
+            pos += len(same)
+        return out
+
     def resolve(group: list[Entry], start: int, level: int, so_values: dict[str, dict]) -> None:
         if len(group) == 1:
             e = group[0]
-            placed.append(Placed(e.key, e.value, start, so_values.get(e.key, {})))
+            by = decided.get(e.key) if level == 0 else None
+            placed.append(Placed(e.key, e.value, start, so_values.get(e.key, {}), decided_by=by))
             return
         if start > prize_places:
             for e in group:
@@ -106,7 +135,10 @@ def rank(
     while pos < len(ordered):
         val = ordered[pos].value
         group = [e for e in ordered[pos:] if e.value == val]
-        resolve(group, pos + 1, 0, so_values)
+        sub_pos = pos
+        for sub in split(group, 0):
+            resolve(sub, sub_pos + 1, 0, so_values)
+            sub_pos += len(sub)
         pos += len(group)
     placed.sort(key=lambda p: (p.place, p.key))
     return Result(placed, open_ties, unranked)

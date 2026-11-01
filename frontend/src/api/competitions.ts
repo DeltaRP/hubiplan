@@ -93,6 +93,85 @@ export interface Scoring {
   shootoff_shots: number | null
   shootoff_counted: number | null
   field_size: number | null
+  /** Scheibe aus dem Katalog, „eigen“ oder leer */
+  target: string
+  custom_target: CustomTarget | Record<string, never>
+  method: ScoringMethod
+  tie_breaks: string[]
+  series_size: number
+}
+
+export type ScoringMethod = 'frei' | 'ringe' | 'zehntel' | 'teiler'
+
+/** Maße einer Scheibe in mm (Katalog bzw. eigene Scheibe) */
+export interface CustomTarget {
+  name?: string
+  top_diameter: number | string
+  ring_width: number | string
+  caliber: number | string
+  top?: number
+  lowest?: number
+  inner_diameter?: number | string | null
+  inner_mode?: 'beruehren' | 'wegschiessen'
+  black_diameter?: number | string | null
+  spots?: number
+  teiler_factor?: number | string
+}
+
+export interface TargetInfo {
+  key: string
+  name: string
+  group: string
+  top_diameter: number
+  ring_width: number
+  caliber: number
+  top: number
+  lowest: number
+  inner_diameter: number | null
+  inner_mode: 'beruehren' | 'wegschiessen'
+  black_diameter: number | null
+  spots: number
+  teiler_factor: number
+  note: string
+  rings: { ring: number; diameter: number }[]
+  max_decimal: string
+}
+
+export interface TargetCatalog {
+  targets: TargetInfo[]
+  custom: string
+  methods: { value: ScoringMethod; label: string }[]
+  tie_breaks: { value: string; label: string }[]
+  presets: Record<string, string[]>
+}
+
+export interface HitInput {
+  x: number | string
+  y: number | string
+  spot?: number | null
+}
+
+export interface HitValue {
+  number: number
+  x: string
+  y: string
+  spot: number | null
+  source: 'tippen' | 'foto' | 'hand'
+  ring?: number
+  decimal?: string
+  inner?: boolean
+  distance?: string
+  teiler?: string
+  counted: boolean
+}
+
+export interface StarterHits {
+  scoring: number
+  starter: number
+  target: string
+  method: ScoringMethod
+  hits: HitValue[]
+  total: string | null
 }
 
 export interface PrizeSetup {
@@ -158,6 +237,8 @@ export interface StandingRow {
   shootoff?: Record<string, string>
   tie?: boolean
   prize?: boolean
+  /** Gleichstandsregel, die den Platz entschieden hat */
+  decided_by?: string
   // Einzel
   starter?: number
   club?: string
@@ -391,6 +472,8 @@ export interface SyncResult {
 const base = (org: number) => `/api/orgs/${org}/competitions/`
 const c = (org: number, id: number) => `${base(org)}${id}/`
 
+const targetCache = new Map<number, Promise<TargetCatalog>>()
+
 export const competitionsApi = {
   list: (org: number) => api.get<Competition[]>(base(org)),
   get: (org: number, id: number) => api.get<CompetitionDetail>(c(org, id)),
@@ -429,6 +512,23 @@ export const competitionsApi = {
     api.patch<Scoring>(`${c(org, id)}scorings/${scoring}/`, data),
   removeScoring: (org: number, id: number, scoring: number) =>
     api.del(`${c(org, id)}scorings/${scoring}/`),
+  /** Scheibenkatalog (einmal je Organisation geladen) */
+  targets: (org: number) => {
+    let p = targetCache.get(org)
+    if (!p) {
+      p = api.get<TargetCatalog>(`${base(org)}targets/`)
+      p.catch(() => targetCache.delete(org))
+      targetCache.set(org, p)
+    }
+    return p
+  },
+  hits: (org: number, id: number, scoring: number, starter: number) =>
+    api.get<StarterHits>(`${c(org, id)}hits/?scoring=${scoring}&starter=${starter}`),
+  setHits: (
+    org: number,
+    id: number,
+    data: { scoring: number; starter: number; hits: HitInput[]; source?: HitValue['source'] },
+  ) => api.put<StarterHits>(`${c(org, id)}hits/`, data),
   starters: (org: number, id: number) => api.get<Starter[]>(`${c(org, id)}starters/`),
   addStarter: (
     org: number,

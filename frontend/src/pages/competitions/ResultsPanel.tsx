@@ -246,7 +246,15 @@ function StandingTable({ block }: { block: StandingBlock }) {
               </td>
               <td>{unit ? r.count : r.unit_name || r.club}</td>
               {unit && <td>{r.best}</td>}
-              <td className="num">{r.value_text || <span className="muted">{r.reason}</span>}</td>
+              <td className="num">
+                {r.value_text || <span className="muted">{r.reason}</span>}
+                {r.decided_by ? (
+                  <span className="muted small" title="entschieden durch">
+                    {' '}
+                    · {r.decided_by}
+                  </span>
+                ) : null}
+              </td>
               {hasShootoff && (
                 <td className="num">{Object.values(r.shootoff ?? {}).join(' / ')}</td>
               )}
