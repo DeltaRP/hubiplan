@@ -3,10 +3,10 @@
 // im Standmodus.
 import { useState } from 'react'
 import {
-  competitionsApi,
   showValue,
   type CompetitionDetail,
   type ShootOff,
+  type ShootoffApi,
   type ShootOffEntry,
   type StandingBlock,
 } from '../../api/competitions.ts'
@@ -20,14 +20,14 @@ const num = (v: string): number | null => (v.trim() ? Number(v) : null)
 
 /** Offene Gleichstände einer Wertung mit „Stechen anlegen“ und die angelegten Stechen. */
 export function ShootoffBlock({
-  org,
+  api,
   comp,
   block,
   shootoffs,
   closed,
   onChanged,
 }: {
-  org: number
+  api: ShootoffApi
   comp: CompetitionDetail
   block: StandingBlock
   shootoffs: ShootOff[]
@@ -51,7 +51,7 @@ export function ShootoffBlock({
 
   async function create(keys: string[], rules: Rules) {
     try {
-      await competitionsApi.createShootoff(org, comp.id, block.scoring, keys, rules)
+      await api.create(block.scoring, keys, rules)
       setCreating(null)
       setError(null)
       onChanged()
@@ -91,7 +91,7 @@ export function ShootoffBlock({
       {shootoffs.map((so) => (
         <ShootOffCard
           key={so.id}
-          org={org}
+          api={api}
           comp={comp}
           so={so}
           unit={unit}
@@ -166,7 +166,7 @@ function RulesForm({
 }
 
 function ShootOffCard({
-  org,
+  api,
   comp,
   so,
   unit,
@@ -174,7 +174,7 @@ function ShootOffCard({
   closed,
   onChanged,
 }: {
-  org: number
+  api: ShootoffApi
   comp: CompetitionDetail
   so: ShootOff
   unit: boolean
@@ -189,7 +189,7 @@ function ShootOffCard({
 
   async function setRules(rules: Rules) {
     try {
-      await competitionsApi.updateShootoff(org, comp.id, so.id, rules)
+      await api.update(so.id, rules)
       setEditing(false)
       setError(null)
       onChanged()
@@ -200,7 +200,7 @@ function ShootOffCard({
 
   async function save(entry: ShootOffEntry, data: { value?: string | null; membership?: number }) {
     try {
-      await competitionsApi.updateShootoffEntry(org, comp.id, entry.id, data)
+      await api.updateEntry(entry.id, data)
       setError(null)
       onChanged()
     } catch (err) {
@@ -216,7 +216,7 @@ function ShootOffCard({
     })
     if (!ok) return
     try {
-      await competitionsApi.removeShootoff(org, comp.id, so.id)
+      await api.remove?.(so.id)
       onChanged()
     } catch (err) {
       setError(errorMessage(err))
@@ -233,14 +233,16 @@ function ShootOffCard({
             ? `, davon ${so.counted_shots} gewertet`
             : ''}
         </h3>
-        <a
-          className="button button-ghost push-right"
-          href={competitionsApi.exportUrl(org, comp.id, `als=stechliste&stechen=${so.id}`)}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Stechliste (PDF)
-        </a>
+        {api.printUrl && (
+          <a
+            className="button button-ghost push-right"
+            href={api.printUrl(so.id)}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Stechliste (PDF)
+          </a>
+        )}
       </div>
       {error && <Alert kind="error">{error}</Alert>}
       {editing && (
@@ -267,8 +269,7 @@ function ShootOffCard({
               <td>
                 {unitShootoff && !closed ? (
                   <UnitShooter
-                    org={org}
-                    comp={comp}
+                    api={api}
                     entry={e}
                     onPick={(m) => void save(e, { membership: m })}
                   />
@@ -304,9 +305,11 @@ function ShootOffCard({
               Regeln ändern
             </button>
           )}
-          <button type="button" className="button button-ghost" onClick={() => void remove()}>
-            Stechen entfernen
-          </button>
+          {api.remove && (
+            <button type="button" className="button button-ghost" onClick={() => void remove()}>
+              Stechen entfernen
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -314,20 +317,17 @@ function ShootOffCard({
 }
 
 function UnitShooter({
-  org,
-  comp,
+  api,
   entry,
   onPick,
 }: {
-  org: number
-  comp: CompetitionDetail
+  api: ShootoffApi
   entry: ShootOffEntry
   onPick: (membership: number) => void
 }) {
   const { data } = useLoad(
-    () =>
-      entry.unit ? competitionsApi.unitMembers(org, comp.id, entry.unit) : Promise.resolve([]),
-    [org, comp.id, entry.unit],
+    () => (entry.unit ? api.unitMembers(entry.unit) : Promise.resolve([])),
+    [api, entry.unit],
   )
   return (
     <select

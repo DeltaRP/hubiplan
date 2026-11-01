@@ -31,7 +31,12 @@ from .views import (
     _Mixin,
     _starters_with_values,
     _units,
+    create_shootoff,
+    list_shootoffs,
     sync,
+    unit_members,
+    update_shootoff,
+    update_shootoff_entry,
 )
 
 
@@ -247,3 +252,61 @@ class StandSyncView(_StandPublic):
         finally:
             current_via.reset(via)
         return self.finish(data)
+
+
+class _StandWrite(_StandPublic):
+    """Schreiben über den Standzugang: wie „Ergebnisse erfassen“, im Protokoll mit Zugang."""
+
+    def run(self, token: str, action):
+        access = self.resolve(token)
+        via = current_via.set(f"Standzugang {access.label}".strip()[:100])
+        try:
+            with unit_context(access.organization_id):
+                comp = Competition.objects.select_related("organization").get(
+                    pk=access.competition_id
+                )
+                return action(comp.organization, comp)
+        finally:
+            current_via.reset(via)
+
+
+class StandShootoffsView(_StandWrite):
+    """GET: Stechen · POST {scoring, keys, shots?, counted_shots?}: Stechen anlegen
+    (Ralf 2026-11-01: auch am geliehenen Tablet; Abschluss bleibt angemeldet)."""
+
+    def get(self, request, token: str):
+        return self.finish(self.run(token, lambda org, comp: list_shootoffs(comp)))
+
+    def post(self, request, token: str):
+        data = self.run(token, lambda org, comp: create_shootoff(org, None, comp, request.data))
+        resp = self.finish(data)
+        resp.status_code = status.HTTP_201_CREATED
+        return resp
+
+
+class StandShootoffView(_StandWrite):
+    """PATCH {shots?, counted_shots?}: Regeln des Stechens, solange kein Wert da ist."""
+
+    def patch(self, request, token: str, pk: int):
+        return self.finish(
+            self.run(token, lambda org, comp: update_shootoff(org, None, comp, pk, request.data))
+        )
+
+
+class StandShootoffEntryView(_StandWrite):
+    """PATCH {value?, membership?}: Wert im Stechen, beim Zugstechen den Schützen."""
+
+    def patch(self, request, token: str, pk: int):
+        return self.finish(
+            self.run(
+                token, lambda org, comp: update_shootoff_entry(org, None, comp, pk, request.data)
+            )
+        )
+
+
+class StandUnitMembersView(_StandWrite):
+    """GET ?unit=: Mitglieder einer Untereinheit (nur Name) für den Schützen im Zugstechen."""
+
+    def get(self, request, token: str):
+        unit = request.query_params.get("unit")
+        return self.finish(self.run(token, lambda org, comp: unit_members(org, comp, unit)))

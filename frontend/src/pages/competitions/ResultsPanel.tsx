@@ -2,6 +2,7 @@
 import { Fragment } from 'react'
 import {
   competitionsApi,
+  orgShootoffApi,
   type BirdState,
   type CompetitionDetail,
   type StandingBlock,
@@ -61,7 +62,7 @@ export function ResultsPanel({
             <h2>{block.name}</h2>
             {comp.own ? <StandingTable block={block} /> : <ForeignTable block={block} />}
             <ShootoffBlock
-              org={org}
+              api={orgShootoffApi(org, comp.id)}
               comp={comp}
               block={block}
               shootoffs={own}
