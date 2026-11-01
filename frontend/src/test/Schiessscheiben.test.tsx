@@ -138,7 +138,10 @@ describe('Scheibe und Wertung', () => {
     const method = await screen.findByLabelText('Wertungsart')
     // ohne Scheibe nur „frei“
     expect(screen.getByRole('option', { name: 'Ringe' })).toBeDisabled()
-    await user.selectOptions(screen.getByLabelText('Scheibe'), 'lg10_kyf')
+    // Auswahl mit Vorschaubild und Kurzbeschreibung
+    const kyfTile = screen.getByRole('radio', { name: /Luftgewehr 10 m Kyffhäuser/ })
+    expect(kyfTile.closest('label')?.querySelector('svg.target-preview')).not.toBeNull()
+    await user.click(kyfTile)
     expect(screen.getByText(/Alte Kyffhäuser-Scheibe/)).toBeVisible()
     await user.selectOptions(method, 'ringe')
     // Wert kommt aus den Treffern: keine freie Einheit mehr

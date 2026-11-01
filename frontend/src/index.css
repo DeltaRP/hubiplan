@@ -4077,3 +4077,83 @@ label:has(> .file-input:focus-visible) {
   left: auto;
   right: 0.5rem;
 }
+/* Scheibe auswählen mit Vorschaubild */
+.target-picker {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.target-picker legend {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+.target-group {
+  margin: 0.75rem 0 0.25rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+.target-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 0.5rem;
+}
+.target-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  border: 2px solid var(--color-border);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  text-align: center;
+}
+.target-tile input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.target-tile:has(input:focus-visible) {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.target-tile-on {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+}
+.target-preview {
+  width: 5.5rem;
+  height: 5.5rem;
+  background: #e9e5da;
+  border-radius: 0.25rem;
+}
+.target-preview-card {
+  stroke: #c9c2b0;
+  stroke-width: 0.3;
+}
+.target-tile-none {
+  width: 5.5rem;
+  height: 5.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  background: #e9e5da;
+  border-radius: 0.25rem;
+  color: #555;
+}
+.target-tile-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+.target-tile-note {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  line-height: 1.25;
+}
+.target-preview .pad-number {
+  display: none;
+}
