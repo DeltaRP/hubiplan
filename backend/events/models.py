@@ -25,6 +25,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator, RegexVa
 from django.db import models
 from django.utils import timezone
 
+from core.privatefiles import PrivateFileField
 from exchange.models import private_storage
 from organizations.terms import fill
 
@@ -249,7 +250,7 @@ class EventAttachment(models.Model):
         "organizations.Organization", on_delete=models.CASCADE, related_name="+"
     )
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="attachments")
-    file = models.FileField("Datei", storage=private_storage, upload_to=attachment_path)
+    file = PrivateFileField("Datei", storage=private_storage, upload_to=attachment_path)
     name = models.CharField("Dateiname", max_length=200)
     content_type = models.CharField(max_length=100)
     size = models.PositiveIntegerField("Größe", default=0)

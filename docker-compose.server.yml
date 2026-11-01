@@ -28,6 +28,8 @@ x-backend-env: &backend-env
   MFA_TOTP_ISSUER: ${MFA_TOTP_ISSUER:-HUBIplan (Test)}
   # Laufzeit in der eingeschränkten Rolle, damit Row-Level Security greift
   DATABASE_APP_ROLE: hubiplan_app
+  # Hauptschlüssel der Datenverschlüsselung (Docker-Secret, nicht in der .env)
+  DATA_ENCRYPTION_KEY_FILE: /run/secrets/datenschluessel
   MEDIA_ROOT: /app/media
   # Dateisystem schreibgeschützt: Zwischendateien und Caches nur in /tmp
   HOME: /tmp
@@ -78,6 +80,7 @@ x-backend: &backend
   <<: *haertung
   image: hubiplan-backend
   restart: unless-stopped
+  secrets: [datenschluessel]
   read_only: true
   mem_limit: ${BACKEND_MEM_LIMIT:-1536m}
   pids_limit: 256
@@ -206,6 +209,9 @@ services:
       BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-30}
       BACKUP_REMOTE: ${BACKUP_REMOTE:-}
       TZ: Europe/Berlin
+    # Hauptschlüssel: mit dem öffentlichen Backup-Schlüssel verschlüsselt neben die Backups
+    # (datenschluessel.age), damit die Backups auch nach Verlust des Servers lesbar bleiben
+    secrets: [datenschluessel]
     # Klartext des Dumps nur im Arbeitsspeicher (Rücksicherungstest vor dem Verschlüsseln)
     tmpfs:
       - /tmp
@@ -253,6 +259,11 @@ networks:
     internal: true
   web:
   ausgang:
+
+# Hauptschlüssel als Datei auf dem Server (legt deploy/server-setup.sh an)
+secrets:
+  datenschluessel:
+    file: ${DATA_KEY_FILE:?DATA_KEY_FILE fehlt in .env}
 
 volumes:
   postgres-data:

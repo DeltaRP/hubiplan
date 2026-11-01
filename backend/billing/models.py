@@ -17,6 +17,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 
+from core.privatefiles import PrivateFileField
 from exchange.models import private_storage
 
 ZERO = Decimal("0.00")
@@ -296,7 +297,7 @@ class Invoice(models.Model):
     sent_at = models.DateTimeField("per E-Mail verschickt", null=True, blank=True)
     # Die Rechnung, wie sie ausgegeben wurde (Fachfrage 4, Audit 31.10.): spätere Änderungen
     # an Briefkopf oder Bankverbindung ändern sie nicht mehr
-    issued_pdf = models.FileField(
+    issued_pdf = PrivateFileField(
         "ausgegebene Rechnung", storage=private_storage, upload_to=invoice_pdf_path, blank=True
     )
     issued_pdf_sha256 = models.CharField(max_length=64, blank=True)

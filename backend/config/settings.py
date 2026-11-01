@@ -159,6 +159,23 @@ if not MFA_ENCRYPTION_KEYS:
     # Nur mit DJANGO_DEBUG=true: aus dem SECRET_KEY abgeleitet
     _digest = hashlib.sha256(b"hubiplan-mfa:" + SECRET_KEY.encode()).digest()
     MFA_ENCRYPTION_KEYS = [base64.urlsafe_b64encode(_digest).decode()]
+# Verschlüsselung gespeicherter Daten mit einem Schlüssel je Verein (core/crypto.py).
+# Hauptschlüssel auf dem Server als eigene Datei (Docker-Secret), nicht in der .env;
+# DATA_ENCRYPTION_KEY(S) nur für Entwicklung und Tests. Quelle austauschbar
+# (DATA_KEY_PROVIDERS, Konzept „Externer Schlüsselspeicher“).
+DATA_KEY_PROVIDERS = env_list("DATA_KEY_PROVIDERS") or ["file"]
+DATA_ENCRYPTION_KEY_FILE = os.environ.get("DATA_ENCRYPTION_KEY_FILE", "")
+DATA_ENCRYPTION_KEYS = env_list("DATA_ENCRYPTION_KEYS") or env_list("DATA_ENCRYPTION_KEY")
+if not DATA_ENCRYPTION_KEYS and not DATA_ENCRYPTION_KEY_FILE:
+    if not DEBUG:
+        raise ImproperlyConfigured("DATA_ENCRYPTION_KEY_FILE muss gesetzt sein.")
+    # Nur mit DJANGO_DEBUG=true: aus dem SECRET_KEY abgeleitet
+    _digest = hashlib.sha256(b"hubiplan-daten:" + SECRET_KEY.encode()).digest()
+    DATA_ENCRYPTION_KEYS = [base64.urlsafe_b64encode(_digest).decode()]
+# Entpackte Datenschlüssel im Arbeitsspeicher halten (Sekunden, 0 = bis zum Neustart)
+DATA_KEY_CACHE_SECONDS = int(os.environ.get("DATA_KEY_CACHE_SECONDS", "0"))
+# Datei ohne zugeordneten Verein: Fehler statt Plattformschlüssel (Tests)
+DATA_ENCRYPTION_STRICT = env_bool("DATA_ENCRYPTION_STRICT", False)
 HEADLESS_ONLY = True
 # „app“: Anmeldung der Android-App mit Passwort (X-Session-Token), danach Geräteschlüssel
 HEADLESS_CLIENTS = ("browser", "app")

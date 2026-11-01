@@ -16,6 +16,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 
 from core.plural import guess_plural  # noqa: F401  (hier weiter importierbar)
+from core.privatefiles import PrivateFileField
 from exchange.models import private_storage
 
 
@@ -213,8 +214,8 @@ class ReignPhoto(models.Model):
     )
     reign = models.OneToOneField(Reign, on_delete=models.CASCADE, related_name="photo")
     key = models.CharField(max_length=24, unique=True)
-    file = models.FileField("Foto", storage=private_storage, upload_to=photo_path)
-    small = models.FileField("Foto klein", storage=private_storage, upload_to=photo_path)
+    file = PrivateFileField("Foto", storage=private_storage, upload_to=photo_path)
+    small = PrivateFileField("Foto klein", storage=private_storage, upload_to=photo_path)
     width = models.PositiveIntegerField(default=0)
     height = models.PositiveIntegerField(default=0)
     uploaded_by = models.ForeignKey(

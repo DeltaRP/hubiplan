@@ -151,7 +151,6 @@ def stored_attachments(circular: Circular) -> list[dict]:
             "path": att.file.name,
             "size": att.size,
             "content_type": "application/pdf",
-            "abs": att.file.path,
         }
         for att in circular.attachments.all()
     ]

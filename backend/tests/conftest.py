@@ -78,6 +78,11 @@ def _media_root(tmp_path, settings):
     settings.PUSH_VAPID_KEY_FILE = str(tmp_path / "vapid.json")
     # Alarm-Mails nur in den Tests, die sie prüfen (sonst zählen sie im Postausgang mit)
     settings.SECURITY_ALERTS = False
+    # Jede private Datei muss einem Verein zugeordnet sein (core/crypto.py)
+    settings.DATA_ENCRYPTION_STRICT = True
+    from core import crypto
+
+    crypto.reset()
 
 
 @pytest.fixture

@@ -10,7 +10,12 @@ from rest_framework.response import Response
 
 @extend_schema(
     responses=inline_serializer(
-        "Health", {"status": serializers.CharField(), "database": serializers.CharField()}
+        "Health",
+        {
+            "status": serializers.CharField(),
+            "database": serializers.CharField(),
+            "keys": serializers.CharField(),
+        },
     )
 )
 @api_view(["GET"])
@@ -23,8 +28,15 @@ def health(request: Request) -> Response:
         db = "ok"
     except Exception:  # noqa: BLE001
         db = "fehler"
-    status = 200 if db == "ok" else 503
-    return Response({"status": "ok" if db == "ok" else "fehler", "database": db}, status)
+    # Hauptschlüssel lesbar bzw. Schlüsseldienst erreichbar (core/crypto.py)? Sonst sind
+    # verschlüsselte Daten nicht lesbar; beim Ausrollen geht es dann zurück.
+    from . import crypto
+
+    keys = "ok" if crypto.ready() else "fehler"
+    ok = db == "ok" and keys == "ok"
+    return Response(
+        {"status": "ok" if ok else "fehler", "database": db, "keys": keys}, 200 if ok else 503
+    )
 
 
 @extend_schema(responses=inline_serializer("Csrf", {"csrfToken": serializers.CharField()}))

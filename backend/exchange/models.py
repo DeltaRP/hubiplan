@@ -7,16 +7,20 @@ Hochgeladene und erzeugte Dateien liegen im privaten Speicher (nicht unter
 from __future__ import annotations
 
 from django.conf import settings
-from django.core.files.storage import FileSystemStorage
 from django.core.signals import setting_changed
 from django.db import models
 from django.dispatch import receiver
 from django.utils.functional import LazyObject, empty
 
+from core.privatefiles import PrivateFileField
+
 
 class PrivateStorage(LazyObject):
     def _setup(self):
-        self._wrapped = FileSystemStorage(location=settings.PRIVATE_ROOT, base_url=None)
+        from core.privatefiles import EncryptedStorage
+
+        # Verschlüsselt mit dem Schlüssel des Vereins (core/crypto.py)
+        self._wrapped = EncryptedStorage(location=settings.PRIVATE_ROOT, base_url=None)
 
 
 _private = PrivateStorage()
@@ -96,7 +100,7 @@ class ExportJob(models.Model):
     orientation = models.CharField(max_length=10, default="portrait")
     title = models.CharField(max_length=200, blank=True)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
-    file = models.FileField(storage=private_storage, upload_to=export_path, blank=True)
+    file = PrivateFileField(storage=private_storage, upload_to=export_path, blank=True)
     file_name = models.CharField(max_length=200, blank=True)
     row_count = models.PositiveIntegerField(default=0)
     error = models.TextField(blank=True)
@@ -153,7 +157,7 @@ class ImportJob(models.Model):
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+"
     )
-    file = models.FileField(storage=private_storage, upload_to=import_path)
+    file = PrivateFileField(storage=private_storage, upload_to=import_path)
     file_name = models.CharField(max_length=200)
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.UPLOADED)
     headers = models.JSONField(default=list)
@@ -165,7 +169,7 @@ class ImportJob(models.Model):
     preview = models.JSONField(default=list, blank=True)  # Ergebnis der Prüfung je Person
     counts = models.JSONField(default=dict, blank=True)
     created = models.JSONField(default=dict, blank=True)  # angelegte Objekte (für „Rückgängig“)
-    error_file = models.FileField(storage=private_storage, upload_to=import_path, blank=True)
+    error_file = PrivateFileField(storage=private_storage, upload_to=import_path, blank=True)
     error = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     imported_at = models.DateTimeField(null=True, blank=True)

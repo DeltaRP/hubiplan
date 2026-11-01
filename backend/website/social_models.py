@@ -14,6 +14,7 @@ import secrets
 from django.conf import settings
 from django.db import models
 
+from core.privatefiles import PrivateFileField
 from exchange.models import private_storage
 
 MAX_POSTS_DEFAULT = 24
@@ -158,8 +159,8 @@ class SocialPostImage(models.Model):
     position = models.PositiveSmallIntegerField(default=0)
     key = models.CharField(max_length=24, unique=True)
     external_id = models.CharField(max_length=80, blank=True)
-    file = models.FileField(storage=private_storage, upload_to=post_image_path)
-    small = models.FileField(storage=private_storage, upload_to=post_image_path)
+    file = PrivateFileField(storage=private_storage, upload_to=post_image_path)
+    small = PrivateFileField(storage=private_storage, upload_to=post_image_path)
     width = models.PositiveIntegerField(default=0)
     height = models.PositiveIntegerField(default=0)
     is_video = models.BooleanField(default=False)

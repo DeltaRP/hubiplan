@@ -16,6 +16,7 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
+from core.privatefiles import PrivateFileField
 from exchange.models import private_storage
 
 MAX_STATUTE_BYTES = 20 * 1024 * 1024
@@ -50,7 +51,7 @@ class StatuteVersion(models.Model):
         verbose_name="Abteilung",
     )
     kind = models.CharField("Art", max_length=20, choices=Kind.choices, default=Kind.STATUTE)
-    file = models.FileField("Datei", storage=private_storage, upload_to=statute_path)
+    file = PrivateFileField("Datei", storage=private_storage, upload_to=statute_path)
     name = models.CharField("Dateiname", max_length=200)
     size = models.PositiveIntegerField("Größe", default=0)
     valid_from = models.DateField("gültig ab / beschlossen am")

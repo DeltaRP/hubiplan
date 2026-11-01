@@ -14,6 +14,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
+from core.privatefiles import PrivateFileField
 from exchange.models import private_storage
 
 
@@ -298,7 +299,7 @@ class Receipt(models.Model):
     booking = models.ForeignKey(
         Booking, on_delete=models.CASCADE, related_name="receipts", verbose_name="Buchung"
     )
-    file = models.FileField("Datei", storage=private_storage, upload_to=receipt_path)
+    file = PrivateFileField("Datei", storage=private_storage, upload_to=receipt_path)
     name = models.CharField("Dateiname", max_length=200)
     content_type = models.CharField("Dateityp", max_length=100)
     size = models.PositiveIntegerField("Größe", default=0)
@@ -702,7 +703,7 @@ class DonationStatement(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+"
     )
     signer_name = models.CharField("unterschrieben von", max_length=200, blank=True)
-    file = models.FileField(
+    file = PrivateFileField(
         "Doppel", storage=private_storage, upload_to=donation_statement_path, blank=True
     )
     pdf_sha256 = models.CharField(max_length=64, blank=True)
@@ -828,7 +829,7 @@ class BankStatement(models.Model):
     line_count = models.PositiveIntegerField("Umsätze", default=0)
     duplicate_count = models.PositiveIntegerField("schon eingelesen", default=0)
     # Die eingelesene Datei unverändert (GoBD: elektronische Kontoauszüge im Original)
-    source = models.FileField(
+    source = PrivateFileField(
         "Originaldatei", storage=private_storage, upload_to=bank_statement_path, blank=True
     )
     source_sha256 = models.CharField(max_length=64, blank=True)
@@ -970,7 +971,7 @@ class CashCount(models.Model):
     counted_by = models.CharField("gezählt von", max_length=200)
     witness = models.CharField("zweite Person", max_length=200, blank=True)
     booking_ids = models.JSONField("Buchungen", default=list, blank=True)
-    pdf = models.FileField("PDF", storage=private_storage, upload_to=cash_count_path, blank=True)
+    pdf = PrivateFileField("PDF", storage=private_storage, upload_to=cash_count_path, blank=True)
     pdf_sha256 = models.CharField("Prüfsumme", max_length=64, blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"

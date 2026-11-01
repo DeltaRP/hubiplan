@@ -24,6 +24,7 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
+from core.privatefiles import PrivateFileField
 from exchange.models import private_storage
 
 MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024
@@ -125,7 +126,7 @@ class CircularAttachment(models.Model):
         "organizations.Organization", on_delete=models.CASCADE, related_name="+"
     )
     circular = models.ForeignKey(Circular, on_delete=models.CASCADE, related_name="attachments")
-    file = models.FileField("Datei", storage=private_storage, upload_to=attachment_path)
+    file = PrivateFileField("Datei", storage=private_storage, upload_to=attachment_path)
     name = models.CharField("Dateiname", max_length=200)
     size = models.PositiveIntegerField("Größe", default=0)
     uploaded_at = models.DateTimeField(auto_now_add=True)

@@ -60,6 +60,44 @@ der Datenbank). Fehlende Einträge ergänzt es bei jedem Ausrollen, vorhandene b
 > `MFA_ENCRYPTION_KEYS` leeren und erneut `up -d`. Den alten Schlüssel erst löschen,
 > wenn kein Backup mit Datenbankstand vor dem Wechsel mehr gebraucht wird.
 
+## Verschlüsselung der Daten
+
+Private Dateien (Mitgliederfotos, Dokumente, Belege, Rundschreiben-Anhänge, Importe,
+Exporte, Bilder der Webseite) liegen verschlüsselt im Volume `private-data`
+(`core/crypto.py`, `core/privatefiles.py`). Logos und Wappen (`media-data`) sind
+öffentlich und bleiben unverschlüsselt.
+
+- **Schlüssel je Verein:** Jeder Verein (bzw. Dachverband, Plattform) hat einen eigenen
+  Datenschlüssel (AES-256-GCM). Untereinheiten nutzen den ihres Vereins. Die
+  Datenschlüssel liegen in der Tabelle `core_datakey`, verpackt mit dem Hauptschlüssel.
+  Wird ein Verein gelöscht, fällt sein Datenschlüssel weg und seine Dateien sind nicht
+  mehr lesbar (in Backups erst, wenn die Backups mit dem Schlüssel abgelaufen sind).
+- **Hauptschlüssel:** Datei `DATA_KEY_FILE` (Standard `/opt/hubiplan-geheim/datenschluessel`,
+  UID 1000, Gruppe 70, Rechte 0440), als Docker-Secret nur in Backend, Worker, Beat und
+  Backup. Er steht nicht in der `.env`. `deploy/server-setup.sh` legt ihn beim ersten
+  Ausrollen an und überschreibt ihn nie.
+- **Kopie des Hauptschlüssels:** Das Backup legt bei jedem Lauf `datenschluessel.age`
+  neben die Backups, verschlüsselt mit dem öffentlichen Backup-Schlüssel. Sie geht mit
+  restic an den zweiten Ort. Lesen kann sie nur, wer den privaten Backup-Schlüssel hat:
+  `age -d -i hubiplan-backup.key datenschluessel.age`. Zusätzlich den Hauptschlüssel im
+  Passwortmanager ablegen.
+  > **Wichtig:** Ohne Hauptschlüssel sind die verschlüsselten Dateien auf dem Server und
+  > in allen Backups verloren.
+- **Austauschbare Quelle:** `DATA_KEY_PROVIDERS` (Standard `file`). Ein externer
+  Schlüsseldienst kommt als weitere Quelle dazu; danach verpackt
+  `manage.py datenschluessel_umverpacken` alle Datenschlüssel neu, die Daten bleiben
+  unverändert (Konzept „Externer Schlüsselspeicher“). Ist die Quelle nicht erreichbar,
+  antwortet die API mit 503.
+- **Hauptschlüssel wechseln:** neue Zeile oben in die Schlüsseldatei (alte darunter
+  lassen), `up -d`, `exec backend python manage.py datenschluessel_umverpacken`, danach die
+  alte Zeile löschen und erneut `up -d`.
+- **Bestand verschlüsseln:** Nach dem ersten Ausrollen mit Verschlüsselung (vorher ein
+  frisches Backup) `exec backend python manage.py dateien_verschluesseln`. Wiederholbar;
+  `--probe` zählt nur. Bis dahin liest HUBIplan alte Klartextdateien weiter.
+- **Rückweg:** `dateien_verschluesseln --entschluesseln` legt alle Dateien wieder im
+  Klartext ab. `deploy/zurueck.sh` macht das selbst, wenn die vorige Fassung die
+  Verschlüsselung noch nicht kennt.
+
 ## Backups
 
 - **Wann:** täglich um `BACKUP_TIME` (Standard 03:15); beim allerersten Start sofort.

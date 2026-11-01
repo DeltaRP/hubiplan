@@ -49,10 +49,19 @@ class Column:
 class PhotoRef:
     """Platzhalter für ein Foto in einer Exportzeile (nur PDF zeigt das Bild)."""
 
-    path: str | None
+    file: object | None  # FieldFile des Vorschaubilds (verschlüsselt gespeichert)
 
     def __str__(self) -> str:
-        return "ja" if self.path else ""
+        return "ja" if self.file else ""
+
+    def image_data(self) -> io.BytesIO | None:
+        if not self.file:
+            return None
+        try:
+            with self.file.open("rb") as handle:
+                return io.BytesIO(handle.read())
+        except (OSError, ValueError):
+            return None
 
 
 def member_columns(org: Organization) -> list[Column]:
@@ -220,14 +229,12 @@ def member_data(org: Organization, filters: dict) -> list[dict]:
         row["reigns"] = reigns.get(person_ids[row["id"]], {})
     from members.photo_models import MemberPhoto
 
-    paths = {}
+    photos = {}
     for p in MemberPhoto.objects.filter(membership_id__in=person_ids.keys(), status="approved"):
-        try:
-            paths[p.membership_id] = p.thumbnail.path
-        except (ValueError, NotImplementedError):
-            continue
+        if p.thumbnail:
+            photos[p.membership_id] = p.thumbnail
     for row in rows:
-        row["photo_path"] = paths.get(row["id"])
+        row["photo_path"] = photos.get(row["id"])
     return rows
 
 
@@ -383,7 +390,8 @@ def render_pdf(org: Organization, title: str, table: list[list], orientation: st
 
 def _pdf_cell(value, style):
     if isinstance(value, PhotoRef):
-        if value.path:
-            return Image(value.path, width=12 * mm, height=16 * mm, kind="proportional")
+        data = value.image_data()
+        if data is not None:
+            return Image(data, width=12 * mm, height=16 * mm, kind="proportional")
         return ""
     return Paragraph(escape(str(value)) if value is not None else "", style)

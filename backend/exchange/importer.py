@@ -181,7 +181,7 @@ def parse_date(value) -> datetime.date | None:
 
 def distinct_values(job, target: str) -> list[str]:
     """Verschiedene Dateiwerte einer zugeordneten Spalte (für die Wertzuordnung)."""
-    from .reading import read_table
+    from .reading import read_stored_table
 
     columns = [
         int(c)
@@ -190,7 +190,7 @@ def distinct_values(job, target: str) -> list[str]:
     ]
     if not columns:
         return []
-    _, rows = read_table(job.file.path, job.file_name)
+    _, rows = read_stored_table(job.file, job.file_name)
     values = set()
     for row in rows:
         for c in columns:
@@ -562,9 +562,9 @@ def check_group(g: PersonGroup, org: Organization, link_duplicates: bool) -> Non
 
 
 def validate(job) -> list[PersonGroup]:
-    from .reading import read_table
+    from .reading import read_stored_table
 
-    _, rows = read_table(job.file.path, job.file_name)
+    _, rows = read_stored_table(job.file, job.file_name)
     lookups = Lookups(job.organization, job.value_mapping)
     groups = group_rows(job, rows, lookups)
     link = job.options.get("link_duplicates", True)
@@ -745,9 +745,9 @@ def run(job, user) -> dict:
 def _error_file(job, groups: list[PersonGroup]):
     from django.core.files.base import ContentFile
 
-    from .reading import read_table
+    from .reading import read_stored_table
 
-    headers, rows = read_table(job.file.path, job.file_name)
+    headers, rows = read_stored_table(job.file, job.file_name)
     wb = Workbook()
     ws = wb.active
     ws.title = "Fehler"

@@ -8,7 +8,18 @@ from core.tasks import ping
 def test_health(client):
     response = client.get("/api/health/")
     assert response.status_code == 200
-    assert response.json() == {"status": "ok", "database": "ok"}
+    assert response.json() == {"status": "ok", "database": "ok", "keys": "ok"}
+
+
+@pytest.mark.django_db
+def test_health_ohne_hauptschluessel(client, settings, tmp_path):
+    from core import crypto
+
+    settings.DATA_ENCRYPTION_KEY_FILE = str(tmp_path / "fehlt")
+    crypto.reset()
+    response = client.get("/api/health/")
+    assert response.status_code == 503
+    assert response.json()["keys"] == "fehler"
 
 
 def test_me_ohne_anmeldung(client, db):

@@ -26,7 +26,7 @@ from .models import (
     ImportJob,
     ImportTemplate,
 )
-from .reading import ReadError, read_table
+from .reading import ReadError, read_stored_table
 
 CLUB = ("club",)
 MAX_UPLOAD = 10 * 1024 * 1024
@@ -339,7 +339,7 @@ class ImportJobViewSet(_OrgCtx, OrgScopedMixin, viewsets.ModelViewSet):
         job = ImportJob(organization=self.org, created_by=request.user, file_name=name)
         job.file.save(f"{job.organization_id}-{name}", upload, save=False)
         try:
-            headers, rows = read_table(job.file.path, name)
+            headers, rows = read_stored_table(job.file, name)
         except ReadError as exc:
             job.file.delete(save=False)
             raise serializers.ValidationError({"file": str(exc)}) from exc

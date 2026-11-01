@@ -10,8 +10,16 @@ KEY = "A" * 43 + "="
 
 
 def _load(**env):
-    base = {k: v for k, v in os.environ.items() if not k.startswith(("MFA_", "DJANGO_"))}
-    base.update({"DJANGO_SECRET_KEY": "x" * 50, "DJANGO_DEBUG": "false"}, **env)
+    base = {k: v for k, v in os.environ.items() if not k.startswith(("MFA_", "DJANGO_", "DATA_"))}
+    # Wie docker-compose.server.yml: Hauptschlüssel als Docker-Secret
+    base.update(
+        {
+            "DJANGO_SECRET_KEY": "x" * 50,
+            "DJANGO_DEBUG": "false",
+            "DATA_ENCRYPTION_KEY_FILE": "/run/secrets/datenschluessel",
+        },
+        **env,
+    )
     code = "import config.settings as s; print(','.join(s.MFA_ENCRYPTION_KEYS))"
     return subprocess.run(  # noqa: S603 (fester Aufruf im Test)
         [sys.executable, "-c", code], cwd=BACKEND, env=base, capture_output=True, text=True
@@ -36,3 +44,9 @@ def test_ohne_schluessel_startet_nicht():
     res = _load(MFA_ENCRYPTION_KEYS="")
     assert res.returncode != 0
     assert "MFA_ENCRYPTION_KEY muss gesetzt sein" in res.stderr
+
+
+def test_ohne_hauptschluessel_startet_nicht():
+    res = _load(MFA_ENCRYPTION_KEY=KEY, DATA_ENCRYPTION_KEY_FILE="")
+    assert res.returncode != 0
+    assert "DATA_ENCRYPTION_KEY_FILE muss gesetzt sein" in res.stderr
