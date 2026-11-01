@@ -33,6 +33,9 @@ CARDS_MANAGE = "cards.manage"
 ORG_EDIT = "org.edit"
 AUDIT_VIEW = "audit.view"
 ROLES_MANAGE = "roles.manage"
+# HUBIplan so ansehen, wie eine Rolle der Einheit es sieht (nur lesen, nie mehr als die
+# eigenen Rechte; siehe access/preview.py)
+ROLES_PREVIEW = "roles.preview"
 THEME_EDIT = "theme.edit"
 EXPORT_RUN = "export.run"
 PLATFORM_MANAGE = "platform.manage"
@@ -94,7 +97,14 @@ MODULES: tuple[Module, ...] = (
     Module(
         "roles",
         "Rollen und Benutzer",
-        (Permission(ROLES_MANAGE, "Rollen und Benutzer verwalten"),),
+        (
+            Permission(ROLES_MANAGE, "Rollen und Benutzer verwalten"),
+            Permission(
+                ROLES_PREVIEW,
+                "Ansicht als Rolle: HUBIplan so ansehen, wie eine Rolle es sieht (nur lesen, "
+                "nie mehr als die eigenen Rechte)",
+            ),
+        ),
         org_types=("platform", "federation", "club", "unit"),
     ),
     Module(
