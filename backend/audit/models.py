@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.db import models
 
+from core.encfields import EncryptedJSONField
+
 
 class AuditEntry(models.Model):
     """Wer hat wann was geändert."""
@@ -23,7 +25,8 @@ class AuditEntry(models.Model):
     object_type = models.CharField(max_length=50)
     object_id = models.CharField(max_length=50)
     object_repr = models.CharField(max_length=200)
-    changes = models.JSONField(default=dict, blank=True)
+    # Verschlüsselt mit dem Schlüssel des Vereins; die Prüfsumme gilt für den Klartext
+    changes = EncryptedJSONField(default=dict, blank=True)
     # Betroffene Person (für den Reiter „Verlauf“ in der Mitgliedsakte)
     person_id = models.BigIntegerField(null=True, blank=True, db_index=True)
     # Änderungspaket der Anfrage (für „Rückgängig“ aus dem Protokoll)

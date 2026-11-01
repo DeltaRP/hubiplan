@@ -7,7 +7,6 @@ from django.db import connection
 from django.test import Client
 
 from access.models import Role
-from audit.models import AuditEntry
 from cards.models import MemberCard
 from core.rls import APP_ROLE
 from core.tenancy import set_rls, tenant_context
@@ -15,7 +14,7 @@ from members.models import MemberPhoto, Membership, MembershipPeriod
 from organizations.models import Department, DepartmentRole
 from portal.models import PortalAccess
 
-from .factories import give_role, make_member, make_user
+from .factories import audit_with, give_role, make_member, make_user
 
 pytestmark = pytest.mark.django_db
 JSON = "application/json"
@@ -125,12 +124,7 @@ class TestVerwaltung:
         assert scan(neu).status_code == 404
         c.post(card_url(club, erika), {"action": "restore"}, content_type=JSON)
         assert scan(neu).status_code == 200
-        assert (
-            AuditEntry.objects.filter(
-                organization=club, changes__has_key="Mitgliedsausweis"
-            ).count()
-            == 4
-        )
+        assert len(audit_with("Mitgliedsausweis", organization=club)) == 4
 
     def test_unbekannter_schluessel(self, db):
         assert scan("gibt-es-nicht").status_code == 404

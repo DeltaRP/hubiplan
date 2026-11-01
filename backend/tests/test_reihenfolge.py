@@ -3,9 +3,10 @@
 import pytest
 
 from access.models import Role
-from audit.models import AuditEntry
 from members.models import HonoraryTitle, MemberType
 from organizations.models import Department, DepartmentRole
+
+from .factories import audit_with
 
 JSON = "application/json"
 
@@ -35,7 +36,7 @@ class TestRollen:
         assert (b.position, b.website_position) == (1, 1)
         assert a.website_position == a.position == len(wanted)
         # Protokoll: je verschobene Rolle ein Eintrag
-        assert AuditEntry.objects.filter(organization=org, changes__has_key="Reihenfolge").exists()
+        assert audit_with("Reihenfolge", organization=org)
 
     def test_liste_muss_vollstaendig_sein(self, client_a, orgs):
         org = orgs["a"]

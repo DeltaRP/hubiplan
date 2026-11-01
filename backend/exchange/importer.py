@@ -779,10 +779,15 @@ def undo_blockers(job) -> list[str]:
         organization=job.organization,
         person_id__in=memberships.values("person_id"),
         timestamp__gt=since,
-    ).exclude(changes__has_key="Import")
-    if later.exists():
+    ).only("pk", "changes")
+    # Inhalt verschlüsselt: Einträge des Imports selbst hier aussortieren
+    if any(not _from_import(entry) for entry in later.iterator()):
         blockers.append("Importierte Mitglieder wurden seither bearbeitet.")
     return blockers
+
+
+def _from_import(entry) -> bool:
+    return isinstance(entry.changes, dict) and "Import" in entry.changes
 
 
 @transaction.atomic
@@ -797,8 +802,11 @@ def undo(job, user) -> None:
     memberships = Membership.objects.filter(pk__in=c.get("memberships", []))
     person_ids = list(memberships.values_list("person_id", flat=True))
     # Protokolleinträge bleiben (verkettet), nur ohne Inhalt
+    entries = AuditEntry.objects.filter(
+        organization=job.organization, person_id__in=person_ids
+    ).only("pk", "changes")
     AuditEntry.objects.filter(
-        organization=job.organization, person_id__in=person_ids, changes__has_key="Import"
+        pk__in=[entry.pk for entry in entries.iterator() if _from_import(entry)]
     ).update(changes={}, cleared=True)
     memberships.delete()
     FederationMember.objects.filter(pk__in=c.get("federation_members", [])).delete()

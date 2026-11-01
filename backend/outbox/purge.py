@@ -18,9 +18,8 @@ from django.utils import timezone
 from core.tenancy import rls_bypass
 
 from .backend import attachment_dir
-from .models import OutgoingMail
+from .models import EMPTIED, OutgoingMail
 
-EMPTIED = "(Inhalt nach Ablauf der Aufbewahrungsfrist entfernt)"
 # Nachrichten aus dem Kontaktformular der Webseite: nur 7 Tage
 SHORT_RETENTION_DAYS = 7
 SHORT_RETENTION_KINDS = ("website-contact",)

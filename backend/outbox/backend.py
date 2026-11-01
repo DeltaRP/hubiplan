@@ -33,8 +33,19 @@ def attachment_dir() -> Path:
     return Path(settings.PRIVATE_ROOT) / "outbox"
 
 
-def _store_attachments(message) -> list[dict]:
+def _store_attachments(message, org_id: int | None) -> list[dict]:
+    """Anhänge verschlüsselt im privaten Speicher ablegen (Schlüssel des Vereins,
+    ohne Verein der Plattform)."""
+    from django.core.files.base import ContentFile
+
+    from core import crypto
+    from exchange.models import private_storage
+    from organizations.models import Organization
+
     stored = []
+    if not message.attachments:
+        return stored
+    owner = org_id if org_id is not None else Organization.platform().pk
     for item in message.attachments:
         if isinstance(item, tuple):
             name, content, mimetype = item
@@ -44,14 +55,13 @@ def _store_attachments(message) -> list[dict]:
             mimetype = item.get_content_type()
         if isinstance(content, str):
             content = content.encode()
-        folder = attachment_dir()
-        folder.mkdir(parents=True, exist_ok=True)
-        path = folder / f"{uuid.uuid4().hex}-{Path(name).name}"
-        path.write_bytes(content or b"")
+        relative = f"outbox/{uuid.uuid4().hex}-{Path(name).name}"
+        with crypto.owner(owner):
+            relative = private_storage().save(relative, ContentFile(content or b""))
         stored.append(
             {
                 "name": name,
-                "path": str(path.relative_to(settings.PRIVATE_ROOT)),
+                "path": relative,
                 "size": len(content or b""),
                 "content_type": mimetype or "application/octet-stream",
             }
@@ -87,15 +97,16 @@ class OutboxBackend(BaseEmailBackend):
             for alt in getattr(message, "alternatives", []) or []:
                 if not body and alt[1] == "text/plain":
                     body = alt[0]
+            org_pk = int(org_id) if org_id else None
             with rls_bypass():
                 mail = OutgoingMail.objects.create(
-                    organization_id=int(org_id) if org_id else None,
+                    organization_id=org_pk,
                     to=", ".join([*message.to, *message.cc, *message.bcc]),
                     reply_to=", ".join(message.reply_to or []),
                     subject=message.subject[:300],
                     body=redact(body),
                     attachments=getattr(message, "outbox_attachments", None)
-                    or _store_attachments(message),
+                    or _store_attachments(message, org_pk),
                     kind=kind[:50],
                 )
             if smtp is not None:
