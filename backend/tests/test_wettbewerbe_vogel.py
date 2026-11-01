@@ -388,3 +388,42 @@ class TestFremderWettbewerb:
         new = c.post(url(club, f"{comp_id}/copy/"), {}, "application/json").json()
         assert c.get(url(club, f"{new['id']}/teams/")).json()[0]["name"] == "Mannschaft 1"
         assert Prize.objects.filter(competition_id=new["id"]).count() == 0
+
+
+@pytest.mark.django_db(transaction=False)
+def test_standzugang_unter_rls(club, schuetzen, board_a, api):  # noqa: F811
+    """Wie im Betrieb in der eingeschränkten Rolle: der Standzugang sieht seine Einheit."""
+    from django.db import connection
+
+    from .test_rls import as_app_role
+
+    if connection.vendor != "postgresql":
+        pytest.skip("Row-Level Security gibt es nur in PostgreSQL")
+    c = api(board_a)
+    comp_id, detail = _vogel(c, club)
+    _, token = StandAccess.create(
+        Competition.objects.get(pk=comp_id),
+        "Tablet",
+        None,
+        timezone.now() + datetime.timedelta(hours=2),
+    )
+    anon = APIClient()
+    base = f"/api/public/stand/{token}/"
+    with as_app_role():
+        assert anon.get(base).status_code == 200
+        assert len(anon.get(f"{base}members/").json()) == len(schuetzen)
+        key = str(uuid.uuid4())
+        resp = anon.post(
+            f"{base}sync/",
+            {
+                "ops": [
+                    {"op": "starter", "client_key": key, "membership": schuetzen["Max"].pk},
+                    {"op": "draw", "starter": key, "number": 1},
+                    {"op": "shot", "starter": key, "hits": [detail["prizes"][0]["id"]]},
+                ]
+            },
+            format="json",
+        )
+        assert resp.status_code == 200, resp.content
+        assert all(r["ok"] for r in resp.json()["results"]), resp.json()
+        assert resp.json()["bird"]["prizes"][0]["winner_name"] == "Max Muster"
