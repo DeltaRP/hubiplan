@@ -29,7 +29,7 @@ from core.api_base import AuditMixin, OrgScopedMixin
 from core.ratelimit import client_ip, too_many
 
 from . import provider
-from .models import Client
+from .models import Client, parse_usernames
 
 TOKEN_RATE = (60, 60)
 
@@ -163,6 +163,7 @@ class ClientSerializer(serializers.ModelSerializer):
             "groups_roles",
             "groups_units",
             "groups_members",
+            "usernames",
             "is_active",
             "created_at",
             "last_used_at",
@@ -179,6 +180,27 @@ class ClientSerializer(serializers.ModelSerializer):
 
     def validate_base_url(self, value):
         return clean_base_url(value)
+
+    def validate_usernames(self, value):
+        lines = parse_usernames(value)
+        bad = [f"{email} = {name}" for email, name, error in lines if error]
+        if bad:
+            raise serializers.ValidationError(
+                gettext(
+                    "Bitte je Zeile „E-Mail = Benutzername“ (Benutzername nur Kleinbuchstaben, "
+                    "Ziffern, Punkt, Bindestrich, Unterstrich, @). Fehlerhaft: {lines}"
+                ).format(lines="; ".join(bad[:3]))
+            )
+        names = [name for _e, name, _x in lines]
+        emails = [email for email, _n, _x in lines]
+        double = sorted(
+            {n for n in names if names.count(n) > 1} | {e for e in emails if emails.count(e) > 1}
+        )
+        if double:
+            raise serializers.ValidationError(
+                gettext("Doppelt eingetragen: {items}").format(items=", ".join(double[:3]))
+            )
+        return "\n".join(f"{email} = {name}" for email, name, _x in lines)
 
     def validate(self, attrs):
         org = self.context["org"]

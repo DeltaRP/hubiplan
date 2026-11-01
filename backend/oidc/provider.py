@@ -98,6 +98,7 @@ def discovery() -> dict:
             "name",
             "given_name",
             "family_name",
+            "preferred_username",
             "email",
             "groups",
         ],
@@ -309,6 +310,8 @@ def _scoped(prof: claims.Profile, scope: list[str]) -> dict:
     out: dict = {}
     if "profile" in scope:
         out.update(name=prof.name, given_name=prof.given_name, family_name=prof.family_name)
+        if prof.username:
+            out["preferred_username"] = prof.username
     if "email" in scope:
         out["email"] = prof.email
     if "groups" in scope:

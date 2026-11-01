@@ -35,12 +35,37 @@ Im ID-Token und unter `userinfo` (je nach angefragtem `scope`):
 |---|---|
 | `sub` | Kennung je Dienst (HMAC aus Benutzernummer und Salz des Eintrags), 32 Zeichen; zwei Dienste können Nutzer darüber nicht zusammenführen |
 | `name`, `given_name`, `family_name` | aus der Mitgliedsakte, sonst aus dem Konto |
+| `preferred_username` | nur bei Eintrag unter „Bisherige Benutzernamen“ (Scope `profile`): der vorhandene Benutzername in der Nextcloud |
 | `email` | Anmelde-E-Mail |
 | `groups` | je nach Einstellung „Vorstand“, Rollennamen, „Amt (Untereinheit)“, Namen der Untereinheiten, „Mitglieder“ (höchstens 64 Zeichen je Name) |
 | `amr`, `auth_time` | wie und wann die HUBIplan-Sitzung angemeldet wurde |
 
 Gruppennamen sind fest (nicht übersetzt). Wird eine Rolle oder Untereinheit umbenannt,
 entsteht in der Nextcloud eine neue Gruppe; Freigaben dort ggf. anpassen.
+
+## Vorhandene Nextcloud-Konten übernehmen
+
+Gibt es die Nextcloud schon, legt `user_oidc` sonst bei der ersten Anmeldung ein neues,
+leeres Konto an. Damit jemand in seinem bisherigen Konto landet, trägt die Einheit unter
+„Bisherige Benutzernamen“ je Zeile `Anmelde-E-Mail = Benutzername` ein (z. B.
+`maria.muster@example.org = mmuster`). HUBIplan schickt dann `preferred_username`.
+
+In der Nextcloud dazu beim Anbieter:
+
+- Benutzer-ID-Zuordnung (`mapping-uid`): `preferred_username`,
+- „Eindeutige Benutzer-ID verwenden“ aus (`--unique-uid=0`), sonst bildet `user_oidc`
+  eine Prüfsumme statt des Namens,
+- „Soft auto provisioning“ an (`occ config:app:set user_oidc soft_auto_provision --value=1`),
+  damit ein vorhandenes Konto mit diesem Namen übernommen statt abgelehnt wird.
+
+Die Liste wird bewusst von Hand gepflegt und nicht aus Vor- und Nachnamen abgeleitet:
+Sonst könnte jemand mit einer Namensänderung in HUBIplan ein fremdes Konto bekommen. Wer
+die Liste ändern darf („Rollen und Benutzer verwalten“), kann damit jede Person mit jedem
+Nextcloud-Konto verbinden, also nur eintragen, was sicher dieselbe Person ist. Nicht
+aufgeführte Personen bekommen wie bisher ein neues Konto mit der Kennung `sub`.
+
+Die Gruppen-Provisionierung von `user_oidc` setzt die Gruppen bei jeder Anmeldung neu.
+Gruppen, die nur in der Nextcloud gepflegt werden (z. B. `admin`), vorher prüfen.
 
 ## Ablauf und Schutz
 
