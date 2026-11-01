@@ -16,6 +16,8 @@ from django.db.models import Count, Max, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_datetime
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers, status, viewsets
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.response import Response
@@ -177,7 +179,8 @@ class ScoringSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["competition"]
 
-    def get_target_info(self, obj):
+    @extend_schema_field(OpenApiTypes.OBJECT)
+    def get_target_info(self, obj) -> dict | None:
         target = services.target_of(obj)
         return target.as_dict() if target else None
 
