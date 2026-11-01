@@ -59,6 +59,12 @@ Mitglied (vorgeschlagen: der beste Schütze der Einheit, jedes Mitglied wählbar
   Dateien (nur Seiten unter `/stand/` und Dateien unter `/assets/`, nie `/api/`). Ist der
   Server beim Start nicht erreichbar, öffnet sich der Standmodus mit dem Speicher des Geräts.
 
+Beim gewählten Schützen gibt es „Wert löschen“ (Abgleich `score` mit `value: null`) und „Aus
+dem Wettbewerb entfernen“ (`starter_delete`, auch für offline angelegte Starter; ein zweites
+Senden ist harmlos). Wer Wettbewerbe verwaltet und angemeldet ist, kann im Standmodus
+„Endgültig abschließen“, sobald alle Eingaben des Geräts abgeglichen sind (nicht über einen
+Standzugang); offene Stechen verhindern den Abschluss wie unter „Einrichten“.
+
 ## Vogelschießen
 
 - **Pfänder** (`Prize`) in fester Reihenfolge, Vorlage Kopf, linker Flügel, rechter Flügel,

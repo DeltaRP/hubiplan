@@ -482,12 +482,18 @@ class StarterView(_Mixin, APIView):
         s = Starter.objects.select_related("unit").get(pk=s.pk)
         return Response(_starter_data(s))
 
-    @transaction.atomic
     def delete(self, request, org_id: int, competition_id: int, pk: int):
-        s = self._get(competition_id, pk)
-        record(self.org, request.user, "delete", s, diff(snapshot(s), {}))
-        s.delete()
+        delete_starter(self.org, request.user, self._get(competition_id, pk))
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@transaction.atomic
+def delete_starter(org, user, s: Starter) -> None:
+    """Starter mit seinen Werten entfernen. Schüsse und Pfänder beim Vogelschießen behalten
+    den Namen."""
+    _open_for_entries(s.competition)
+    record(org, user, "delete", s, diff(snapshot(s), {}))
+    s.delete()
 
 
 @transaction.atomic
@@ -667,7 +673,10 @@ def sync(org, user, comp: Competition, ops) -> dict:
 def _starter_ref(comp, ref) -> Starter:
     if isinstance(ref, int) or (isinstance(ref, str) and ref.isdigit()):
         return Starter.objects.get(pk=int(ref), competition=comp)
-    return Starter.objects.get(client_key=_uuid(ref), competition=comp)
+    key = _uuid(ref)
+    if key is None:  # sonst träfe client_key=None jeden Starter ohne Gerätekennung
+        raise Starter.DoesNotExist
+    return Starter.objects.get(client_key=key, competition=comp)
 
 
 def _apply_op(org, user, comp, op, conflicts) -> dict:
@@ -678,6 +687,13 @@ def _apply_op(org, user, comp, op, conflicts) -> dict:
     if kind == "starter_update":
         s = _starter_ref(comp, op.get("starter"))
         update_starter(org, user, s, op)
+        return {"ok": True}
+    if kind == "starter_delete":
+        try:
+            s = _starter_ref(comp, op.get("starter"))
+        except Starter.DoesNotExist:
+            return {"ok": True}  # schon entfernt (zweites Senden vom Gerät)
+        delete_starter(org, user, s)
         return {"ok": True}
     if kind == "score":
         s = _starter_ref(comp, op.get("starter"))

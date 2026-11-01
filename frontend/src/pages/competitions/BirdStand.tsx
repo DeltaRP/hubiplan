@@ -15,6 +15,7 @@ import {
   type StandApi,
   type Starter,
 } from '../../api/competitions.ts'
+import { StandFinish } from './StandFinish.tsx'
 import { describe, useStandStore, type LocalStarter } from './standStore.ts'
 
 export function BirdStand({
@@ -354,6 +355,15 @@ export function BirdStand({
             ))}
         </ul>
       </details>
+      {!closed && (
+        <StandFinish
+          api={api}
+          comp={comp}
+          pending={store.pending}
+          online={online}
+          onFinished={() => setLocal((l) => ({ ...l, status: 'endgueltig' }))}
+        />
+      )}
     </div>
   )
 }

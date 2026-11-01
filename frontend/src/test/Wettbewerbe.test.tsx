@@ -1,6 +1,6 @@
 // Wettbewerbe: schnelles Erfassen beim Kartenschießen (Name, Enter, Punkte, Enter) mit
 // Abgleich über die Warteschlange (Standmodus offline, Ralf 2026-11-01). Alles erfunden.
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it } from 'vitest'
@@ -147,6 +147,62 @@ describe('Wettbewerbe erfassen', () => {
     expect(await screen.findByRole('option', { name: /Otto Normal.*schon 25/ })).toBeVisible()
     await user.keyboard('{Enter}')
     await user.type(await screen.findByLabelText(/Punkte/), '28{Enter}')
-    expect(await screen.findByRole('alertdialog')).toHaveTextContent('Durch 28 ersetzen?')
+    const dialog = await screen.findByRole('alertdialog')
+    expect(dialog).toHaveTextContent('Durch 28 ersetzen?')
+    await user.click(within(dialog).getByRole('button', { name: 'Abbrechen' }))
+  })
+
+  it('löscht einen Wert und entfernt einen Schützen', async () => {
+    const calls = renderApp({
+      [`POST ${base}3/sync/`]: () => ({
+        status: 200,
+        body: { results: [{ ok: true }], conflicts: [], keys: {}, starters: [otto] },
+      }),
+    })
+    const user = userEvent.setup()
+    const ops = () =>
+      calls
+        .filter((c) => c.key === `POST ${base}3/sync/`)
+        .flatMap((c) => JSON.parse(String(c.init?.body)).ops)
+    const pick = async () => {
+      await user.type(await screen.findByLabelText('Schütze (Name oder Startnummer)'), 'otto')
+      expect(await screen.findByRole('option', { name: /Otto Normal/ })).toBeVisible()
+      await user.keyboard('{Enter}')
+    }
+    await pick()
+    await user.click(screen.getByRole('button', { name: 'Wert löschen' }))
+    await user.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Löschen' }),
+    )
+    await waitFor(() =>
+      expect(ops()).toContainEqual(
+        expect.objectContaining({ op: 'score', starter: 21, value: null }),
+      ),
+    )
+    await pick()
+    await user.click(screen.getByRole('button', { name: 'Aus dem Wettbewerb entfernen' }))
+    await user.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Entfernen' }),
+    )
+    await waitFor(() => expect(ops()).toContainEqual({ op: 'starter_delete', starter: 21 }))
+  })
+
+  it('schließt endgültig ab, wenn alles abgeglichen ist', async () => {
+    const calls = renderApp({
+      [`POST ${base}3/status/`]: () => ({
+        status: 200,
+        body: { status: 'endgueltig', status_label: 'endgültig' },
+      }),
+    })
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: 'Endgültig abschließen' }))
+    await user.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Abschließen' }),
+    )
+    expect(await screen.findByText(/Der Wettbewerb ist endgültig/)).toBeVisible()
+    const body = JSON.parse(
+      String(calls.find((c) => c.key === `POST ${base}3/status/`)?.init?.body),
+    )
+    expect(body).toEqual({ status: 'endgueltig' })
   })
 })
