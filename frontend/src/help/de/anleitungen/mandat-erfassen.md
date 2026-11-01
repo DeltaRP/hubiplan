@@ -7,6 +7,7 @@ rechte: [billing.edit]
 routen: [/finanzen/lastschrift]
 stichworte: [Mandat, SEPA, Einzugsermächtigung, IBAN]
 ---
+
 1. Lass dir vom Mitglied ein unterschriebenes SEPA-Mandat geben (Papier genügt).
 2. Öffne [Finanzen › Lastschriften](/finanzen/lastschrift) und dort **SEPA-Mandate**.
 3. Klicke auf **Mandat erfassen**, wähle das Mitglied und trage Kontoinhaber, IBAN und das Datum der Unterschrift ein.

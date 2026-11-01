@@ -5,6 +5,7 @@ bereich: konto
 routen: [/mein-konto/app]
 stichworte: [App, Handy, koppeln, Android, QR-Code]
 ---
+
 1. Installiere die HUBIplan-App auf dem Handy.
 2. Öffne im Browser [Mein Konto › App & andere Instanzen](/mein-konto/app) und klicke auf **App verbinden**.
 3. Scanne den angezeigten QR-Code mit der App.

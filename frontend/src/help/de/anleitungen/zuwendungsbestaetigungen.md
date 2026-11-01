@@ -7,6 +7,7 @@ rechte: [finance.edit]
 routen: [/finanzen/zuwendungen]
 stichworte: [Spendenquittung, Spende, Finanzamt, Jahresbestätigung]
 ---
+
 Vorher: Unter Angaben zur Steuerbegünstigung stehen Finanzamt, Steuernummer und Datum des Bescheids.
 
 1. Öffne [Finanzen › Zuwendungsbestätigungen](/finanzen/zuwendungen).

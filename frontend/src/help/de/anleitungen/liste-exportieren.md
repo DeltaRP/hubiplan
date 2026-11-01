@@ -7,6 +7,7 @@ rechte: [members.view]
 routen: [/mitglieder]
 stichworte: [Export, Excel, Liste, Adressen, Spalten]
 ---
+
 1. Filtere die [Mitgliederliste](/mitglieder) wie gewünscht, etwa nach Status oder Mitgliedsart.
 2. Wähle unter **Spalten**, welche Angaben die Liste zeigt.
 3. Klicke auf **Export**, wähle das Format und dann **Exportieren**.

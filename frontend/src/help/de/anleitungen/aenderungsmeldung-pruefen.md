@@ -7,6 +7,7 @@ rechte: [members.edit]
 routen: [/mitglieder/anfragen/aenderungen]
 stichworte: [Änderung, neue Adresse, Mitgliederbereich]
 ---
+
 1. Öffne [Mitglieder › Änderungsmeldungen](/mitglieder/anfragen/aenderungen).
 2. Vergleiche bei jeder Meldung die alten mit den neuen Angaben.
 3. Klicke auf **Übernehmen**, um die Änderung in die Akte zu schreiben, oder auf **Ablehnen**.

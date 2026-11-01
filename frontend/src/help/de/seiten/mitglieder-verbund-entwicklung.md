@@ -7,4 +7,5 @@ rechte: [members.view]
 routen: [/mitglieder/verbund/entwicklung]
 stichworte: [Statistik, Dachverband, Entwicklung]
 ---
+
 Die Entwicklung aller zeigt die Mitgliederzahlen über alle Mitgliedsvereine hinweg, etwa für Berichte an Versammlung oder Landesverband.

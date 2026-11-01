@@ -7,6 +7,7 @@ rechte: [members.edit]
 routen: [/mitglieder/:id, /mitglieder/jubilaeen]
 stichworte: [honour, decoration, jubilarian, award]
 ---
+
 1. Find the year's jubilarians under [Members › Anniversaries](/mitglieder/jubilaeen).
 2. Open the person's record.
 3. In the **Honours** section, choose the honour and the date and click **Award**.

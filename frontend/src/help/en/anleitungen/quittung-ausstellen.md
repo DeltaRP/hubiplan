@@ -7,6 +7,7 @@ rechte: [finance.edit]
 routen: [/finanzen/quittungen]
 stichworte: [receipt, cash, signature, voucher]
 ---
+
 1. Open [Finance › Receipts](/finanzen/quittungen) and click **Issue receipt**.
 2. Choose whether the club receives or pays out money, and enter amount, purpose and category.
 3. Click **Continue to signature**.

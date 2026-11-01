@@ -7,6 +7,7 @@ rechte: [finance.edit]
 routen: [/finanzen/abschluss]
 stichworte: [Jahresabschluss, Kassenbericht, Kassenprüfung, abschließen]
 ---
+
 1. Lies alle Kontoauszüge des Jahres ein und buche alle Belege.
 2. Zähle die Barkassen zum Jahresende.
 3. Öffne [Finanzen › Abschluss & Berichte](/finanzen/abschluss) und arbeite die Prüfliste „Vor dem Abschluss“ durch.

@@ -7,6 +7,7 @@ rechte: [finance.edit]
 routen: [/finanzen/kassenbuch]
 stichworte: [Buchung, Beleg, Kassenbuch, Einnahme, Ausgabe]
 ---
+
 1. Öffne [Finanzen › Kassenbuch](/finanzen/kassenbuch).
 2. Wähle **Einnahme** oder **Ausgabe** (oder Umbuchung zwischen zwei Konten).
 3. Trage Datum, Betrag, Konto, Kategorie und Buchungstext ein und klicke auf **Weiter**.

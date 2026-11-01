@@ -7,6 +7,7 @@ rechte: [billing.edit]
 routen: [/finanzen/rechnungen/beitragslaeufe]
 stichworte: [fee run, annual fee, invoices, billing]
 ---
+
 Before you start: the fee rates are set.
 
 1. Open [Finance › Fee runs](/finanzen/rechnungen/beitragslaeufe) and click **New fee run**.

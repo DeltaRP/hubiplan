@@ -7,6 +7,7 @@ rechte: [billing.edit]
 routen: [/finanzen/rechnungen]
 stichworte: [Rechnung, Uniform, Posten, einzeln]
 ---
+
 1. Öffne [Finanzen › Rechnungen](/finanzen/rechnungen) und klicke auf **Neue Rechnung**.
 2. Wähle, an wen die Rechnung geht, und klicke auf **Weiter**.
 3. Füge mit **Posten hinzufügen** die Posten hinzu und klicke auf **Entwurf anlegen**.

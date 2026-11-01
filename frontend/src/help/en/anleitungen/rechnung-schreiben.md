@@ -7,6 +7,7 @@ rechte: [billing.edit]
 routen: [/finanzen/rechnungen]
 stichworte: [invoice, uniform, item, single]
 ---
+
 1. Open [Finance › Invoices](/finanzen/rechnungen) and click **New invoice**.
 2. Choose who the invoice goes to and click **Next**.
 3. Add the items with **Add item** and click **Create draft**.

@@ -7,6 +7,7 @@ rechte: [members.edit]
 routen: [/mitglieder/:id, /mitglieder]
 stichworte: [Austritt, Kündigung, ausgetreten, Ende]
 ---
+
 1. Öffne in der [Mitgliederliste](/mitglieder) die Akte des Mitglieds.
 2. Klicke im Abschnitt **Abläufe** auf **Austritt erfassen**.
 3. Trage das **Austrittsdatum** und den Grund ein.

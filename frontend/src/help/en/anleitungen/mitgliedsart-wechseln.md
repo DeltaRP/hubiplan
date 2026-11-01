@@ -7,6 +7,7 @@ rechte: [members.edit]
 routen: [/mitglieder/:id]
 stichworte: [membership type, active, passive, change]
 ---
+
 1. Open the member's record from the [member list](/mitglieder).
 2. Under **Procedures**, click **Change membership type**.
 3. Choose the new membership type and the date from which it applies.

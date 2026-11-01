@@ -18,6 +18,7 @@ import {
   visibleFor,
 } from '../help/content.ts'
 import type { HelpEntry } from '../help/content.ts'
+import { highlight, labelsIn } from '../help/extras.ts'
 import { renderHelp } from '../help/markdown.ts'
 import SPEC from '../help/bilder.json'
 import EN from '../i18n/en.json'
@@ -215,12 +216,17 @@ describe('Auswahl', () => {
 
 const SESSION = 'GET /_allauth/browser/v1/auth/session'
 
-function renderApp(path: string, org = testOrg({ modules: ['members'] })) {
-  fakeApi({
+function renderApp(
+  path: string,
+  org: Record<string, unknown> = testOrg({ modules: ['members'] }),
+  routes: Parameters<typeof fakeApi>[0] = {},
+) {
+  const api = fakeApi({
     [SESSION]: () => ({ status: 200, body: { status: 200, data: { user: testUser } } }),
     'GET /api/me/organizations/': () => ({ status: 200, body: [org] }),
+    ...routes,
   })
-  return render(
+  render(
     <MemoryRouter initialEntries={[path]}>
       <AuthProvider>
         <OrgProvider>
@@ -229,6 +235,17 @@ function renderApp(path: string, org = testOrg({ modules: ['members'] })) {
       </AuthProvider>
     </MemoryRouter>,
   )
+  return api
+}
+
+const ORG_HELP = {
+  contacts: [],
+  contacts_from: null,
+  own_contacts: [],
+  notes: {},
+  admin_roles: ['Vorstand'],
+  rights: { 'members.edit': 'Mitglieder bearbeiten' },
+  can_edit: false,
 }
 
 describe('Oberfläche', () => {
@@ -237,7 +254,7 @@ describe('Oberfläche', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Hilfe' })).toBeInTheDocument()
     const nav = screen.getByRole('navigation', { name: 'Module' })
     expect(within(nav).getByRole('link', { name: 'Hilfe' })).toHaveAttribute('href', '/hilfe')
-    expect(await screen.findByRole('link', { name: 'Passwort ändern' })).toHaveAttribute(
+    expect((await screen.findAllByRole('link', { name: 'Passwort ändern' }))[0]).toHaveAttribute(
       'href',
       '/hilfe/passwort-aendern',
     )
@@ -296,5 +313,132 @@ describe('Oberfläche', () => {
     ).toBeInTheDocument()
     const result = await axe.run(document.body, { rules: { 'color-contrast': { enabled: false } } })
     expect(result.violations.map((v) => v.id)).toEqual([])
+  })
+
+  it('„Für dich“: erste Schritte abhaken, die Haken speichert das Konto', async () => {
+    const user = userEvent.setup()
+    const api = renderApp('/hilfe', testOrg({ modules: ['members'] }), {
+      'GET /api/me/help/': () => ({ status: 200, body: { help_done: ['guide.two_factor'] } }),
+      'POST /api/me/help/guide.password/': () => ({
+        status: 200,
+        body: { help_done: ['guide.password', 'guide.two_factor'] },
+      }),
+    })
+    const box = await screen.findByRole('checkbox', { name: 'Passwort ändern erledigt' })
+    await waitFor(() => expect(box).toBeEnabled())
+    expect(screen.getByRole('checkbox', { name: /Zwei-Faktor.* erledigt/ })).toBeChecked()
+    await user.click(box)
+    await waitFor(() => expect(box).toBeChecked())
+    expect(api.some((c) => c.key === 'POST /api/me/help/guide.password/')).toBe(true)
+    expect(screen.getByText(/2 von \d+ erledigt/)).toBeInTheDocument()
+  })
+
+  it('Ansicht als Rolle: Haken gesperrt, mit Hinweis', async () => {
+    renderApp(
+      '/hilfe',
+      testOrg({
+        modules: ['members'],
+        role_preview: { available: true, active: { id: 3, name: 'Kassierer' } },
+      }),
+    )
+    const box = await screen.findByRole('checkbox', { name: 'Passwort ändern erledigt' })
+    expect(box).toBeDisabled()
+    expect(screen.getByText(/wie sie Personen mit der Rolle „Kassierer“ sehen/)).toBeInTheDocument()
+  })
+
+  it('Warum sehe ich das nicht? Suche zeigt fehlende Rechte und wer sie vergibt', async () => {
+    const user = userEvent.setup()
+    renderApp('/hilfe', testOrg({ modules: ['members'] }), {
+      'GET /api/orgs/7/help/': () => ({ status: 200, body: ORG_HELP }),
+    })
+    await screen.findByRole('heading', { name: 'Wer hilft bei uns?' })
+    expect(
+      screen.getByText('Bei Fragen zu HUBIplan hilft dir jemand mit der Rolle „Vorstand“.'),
+    ).toBeInTheDocument()
+    await user.type(screen.getByLabelText('Hilfe durchsuchen'), 'Neues Mitglied aufnehmen')
+    expect(
+      await screen.findByRole('heading', { name: 'Dafür fehlt dir ein Recht' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Neues Mitglied aufnehmen' })).not.toBeInTheDocument()
+    expect(
+      screen.getAllByText(
+        'Dafür brauchst du das Recht „Mitglieder bearbeiten“. Vergeben kann es, wer die Rolle „Vorstand“ hat.',
+      ).length,
+    ).toBeGreaterThan(0)
+  })
+
+  it('Anleitung ohne Recht: Seite nennt das fehlende Recht', async () => {
+    renderApp('/hilfe/mitglied-aufnehmen', testOrg({ modules: ['members'] }), {
+      'GET /api/orgs/7/help/': () => ({ status: 200, body: ORG_HELP }),
+    })
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Neues Mitglied aufnehmen' }),
+    ).toBeInTheDocument()
+    expect(await screen.findByText(/Recht „Mitglieder bearbeiten“/)).toBeInTheDocument()
+  })
+
+  it('Ansprechpartner und Hinweise des Vereins; eigenen Hinweis ergänzen', async () => {
+    const user = userEvent.setup()
+    const state = {
+      ...ORG_HELP,
+      contacts: [{ name: 'Anna Beispiel', hint: 'Mitglieder', email: 'anna@example.org' }],
+      contacts_from: { name: 'Testbund', own: false },
+      notes: {
+        'guide.member_admit': [{ text: 'Formular B nutzen.', from: 'Testbund', own: false }],
+      },
+      can_edit: true,
+    }
+    const api = renderApp(
+      '/hilfe/mitglied-aufnehmen',
+      testOrg({ modules: ['members'], permissions: ['members.view', 'members.edit', 'org.edit'] }),
+      {
+        'GET /api/orgs/7/help/': () => ({ status: 200, body: state }),
+        'PUT /api/orgs/7/help/notes/guide.member_admit/': () => ({
+          status: 200,
+          body: {
+            ...state,
+            notes: {
+              'guide.member_admit': [
+                ...state.notes['guide.member_admit'],
+                { text: 'Bei uns die Kasse fragen.', from: 'TV Beispielhausen', own: true },
+              ],
+            },
+          },
+        }),
+      },
+    )
+    expect(await screen.findByText('Formular B nutzen.')).toBeInTheDocument()
+    expect(screen.getByText('Hinweis von Testbund')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Hinweis für unsere Einheit ergänzen' }))
+    await user.type(
+      screen.getByLabelText(/Hinweis zu dieser Anleitung/),
+      'Bei uns die Kasse fragen.',
+    )
+    await user.click(screen.getByRole('button', { name: 'Speichern' }))
+    expect(await screen.findByText('Bei uns die Kasse fragen.')).toBeInTheDocument()
+    const put = api.find((c) => c.key.startsWith('PUT '))
+    expect(JSON.parse(String(put?.init?.body))).toEqual({ text: 'Bei uns die Kasse fragen.' })
+
+    await user.click(screen.getByRole('link', { name: '← Alle Hilfe' }))
+    expect(await screen.findByText('Anna Beispiel')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'anna@example.org' })).toHaveAttribute(
+      'href',
+      'mailto:anna@example.org',
+    )
+    expect(screen.getByText('Angegeben von Testbund.')).toBeInTheDocument()
+  })
+})
+
+describe('Zeig es mir', () => {
+  it('findet das Bedienelement mit der fett genannten Beschriftung', () => {
+    expect(labelsIn('Klicke **Speichern**, dann **Weiter** und **Speichern**.')).toEqual([
+      'Speichern',
+      'Weiter',
+    ])
+    document.body.innerHTML =
+      '<main id="inhalt"><h1>Profil</h1><button>Weiter</button></main><aside class="help-panel"><button>Speichern</button></aside>'
+    expect(highlight(['Speichern'])).toBe(false)
+    expect(highlight(['Speichern', 'Weiter'])).toBe(true)
+    expect(document.querySelector('#inhalt button')).toHaveClass('help-highlight')
   })
 })

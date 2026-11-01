@@ -7,6 +7,7 @@ rechte: [billing.edit]
 routen: [/finanzen/lastschrift]
 stichworte: [SEPA, direct debit, collection, bank, XML]
 ---
+
 Before you start: the creditor ID is set under Setup › Invoice & payment, and the members have a SEPA mandate.
 
 1. Open [Finance › Direct debits](/finanzen/lastschrift).

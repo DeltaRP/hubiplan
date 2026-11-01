@@ -7,6 +7,7 @@ rechte: [members.edit]
 routen: [/mitglieder/import]
 stichworte: [Import, Excel, CSV, Übernahme, Tabelle]
 ---
+
 1. Öffne [Mitglieder › Import](/mitglieder/import).
 2. Unter **1. Datei hochladen** wählst du die Tabelle (Excel oder CSV, eine Zeile je Person).
 3. Unter **2. Spalten zuordnen** sagst du, welche Spalte was enthält, etwa Name, Geburtsdatum oder Eintritt.

@@ -7,6 +7,7 @@ rechte: [competitions.manage]
 routen: [/wettbewerbe]
 stichworte: [Schießen, Wettbewerb, Wertung, Rangliste, Urkunde]
 ---
+
 1. Öffne [Wettbewerbe](/wettbewerbe) und klicke auf **Neuer Wettbewerb**.
 2. Gib Name und Datum ein und klicke auf **Anlegen**.
 3. Füge die Wertungen hinzu: **Einzelwertung hinzufügen**, **Mannschaftswertung hinzufügen** oder eine Wertung der {pl}.

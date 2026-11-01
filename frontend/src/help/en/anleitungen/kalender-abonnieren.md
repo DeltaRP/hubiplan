@@ -6,6 +6,7 @@ modul: events
 routen: [/termine]
 stichworte: [calendar, subscription, iCal, phone, Outlook]
 ---
+
 1. Open [Events](/termine).
 2. In the calendar subscription section, click **Create personal link** and then **Copy link**.
 3. Add the link in your calendar as “subscribe to calendar” (internet calendar), for example on your phone, in Outlook or Thunderbird.

@@ -7,6 +7,7 @@ rechte: [billing.edit]
 routen: [/finanzen/rechnungen/mahnungen]
 stichworte: [Mahnung, Erinnerung, überfällig, nicht bezahlt]
 ---
+
 1. Öffne [Finanzen › Mahnungen](/finanzen/rechnungen/mahnungen).
 2. Unter **Fällige Mahnungen** stehen alle Rechnungen, deren Frist abgelaufen ist, mit der nächsten Mahnstufe.
 3. Prüfe die Liste. Wer schon bar bezahlt hat, bekommt vorher seine Zahlung gebucht.

@@ -7,6 +7,7 @@ rechte: [competitions.manage]
 routen: [/wettbewerbe]
 stichworte: [shooting, competition, scoring, ranking, certificate]
 ---
+
 1. Open [Competitions](/wettbewerbe) and click **New competition**.
 2. Enter name and date and click **Create**.
 3. Add the scorings: **Add individual ranking**, **Add team ranking** or a sub-unit scoring.

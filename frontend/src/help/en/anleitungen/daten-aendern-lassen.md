@@ -5,6 +5,7 @@ bereich: mein-bereich
 routen: [/mein-bereich/daten, /mein-bereich]
 stichworte: [address, move, IBAN, change, phone]
 ---
+
 1. Open [My details](/mein-bereich/daten) in your member area.
 2. Click **Change details** and enter the new details.
 3. Click **Send change for checking**.

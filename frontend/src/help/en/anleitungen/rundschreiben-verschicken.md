@@ -7,6 +7,7 @@ rechte: [circulars.send]
 routen: [/rundschreiben]
 stichworte: [circular, mailing, invitation, sending]
 ---
+
 1. Open [Circulars](/rundschreiben) and click **Write circular**.
 2. Choose the recipients, such as all members, boards or role holders.
 3. Choose the type: everyone receives an official notice, while people can unsubscribe from “information”.

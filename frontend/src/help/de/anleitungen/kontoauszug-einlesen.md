@@ -7,6 +7,7 @@ rechte: [finance.edit]
 routen: [/finanzen/kontoauszuege]
 stichworte: [Kontoauszug, CAMT, Bank, Umsätze, Zuordnung]
 ---
+
 1. Lade im Online-Banking den Kontoauszug als CAMT.053 herunter (oft „CAMT-Export“, XML oder ZIP).
 2. Öffne [Finanzen › Kontoauszüge](/finanzen/kontoauszuege), wähle die Datei und klicke auf **Einlesen**.
 3. HUBIplan schlägt für jeden Umsatz vor, wozu er gehört. Prüfe die Vorschläge und klicke auf **Übernehmen**, oder auf **Alle Vorschläge übernehmen**.

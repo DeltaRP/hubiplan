@@ -7,6 +7,7 @@ rechte: [circulars.send]
 routen: [/rundschreiben]
 stichworte: [Rundschreiben, Rundmail, Einladung, Versand]
 ---
+
 1. Öffne [Rundschreiben](/rundschreiben) und klicke auf **Rundschreiben verfassen**.
 2. Wähle die Empfänger, etwa alle Mitglieder, Vorstände oder Rolleninhaber.
 3. Wähle die Art: Eine offizielle Mitteilung bekommt jeder, von „Information“ kann man sich abmelden.

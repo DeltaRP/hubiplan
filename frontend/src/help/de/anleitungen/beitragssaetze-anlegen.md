@@ -7,6 +7,7 @@ rechte: [billing.edit]
 routen: [/finanzen/einstellungen/beitraege]
 stichworte: [Beitrag, Jahresbeitrag, Beitragssatz, Mitgliedsart]
 ---
+
 1. Öffne [Finanzen › Einrichtung › Beitragssätze](/finanzen/einstellungen/beitraege).
 2. Trage unter **Jahresbeitrag je Mitgliedsart** für jede Mitgliedsart den Betrag im Jahr ein.
 3. Lege bei Bedarf Altersstufen an, etwa für Jugendliche.

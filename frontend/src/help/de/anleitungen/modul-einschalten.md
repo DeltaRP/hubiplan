@@ -7,6 +7,7 @@ rechte: [platform.manage]
 routen: [/plattform]
 stichworte: [Modul, Funktion, freischalten, Webseite, Wettbewerbe]
 ---
+
 Module schaltet die Plattform-Verwaltung frei. Wer im Verein eine Funktion vermisst, wendet sich an sie.
 
 1. Öffne [Plattform](/plattform) und wähle die Einheit.

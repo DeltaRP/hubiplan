@@ -7,6 +7,7 @@ rechte: [platform.manage]
 routen: [/plattform]
 stichworte: [module, feature, enable, website, competitions]
 ---
+
 The platform administration enables modules. Anyone in the club who misses a feature contacts them.
 
 1. Open [Platform](/plattform) and choose the unit.

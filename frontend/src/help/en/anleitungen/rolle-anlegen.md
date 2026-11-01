@@ -7,6 +7,7 @@ rechte: [roles.manage]
 routen: [/einstellungen/rollen]
 stichworte: [role, rights, invite, access, treasurer]
 ---
+
 1. Open [Settings › Roles & users](/einstellungen/rollen) and click **New role**.
 2. Give the role a name, such as “treasurer”, and tick the rights it needs. Grant only as much as necessary.
 3. Click **Save**.

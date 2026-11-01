@@ -7,6 +7,7 @@ rechte: [roles.manage]
 routen: [/einstellungen/rollen]
 stichworte: [Rolle, Rechte, einladen, Zugang, Kassierer]
 ---
+
 1. Öffne [Einstellungen › Rollen & Benutzer](/einstellungen/rollen) und klicke auf **Neue Rolle**.
 2. Gib der Rolle einen Namen, etwa „Kassierer“, und hake die Rechte an, die sie braucht. Gib nur so viel wie nötig.
 3. Klicke auf **Speichern**.

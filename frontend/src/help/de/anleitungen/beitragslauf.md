@@ -7,6 +7,7 @@ rechte: [billing.edit]
 routen: [/finanzen/rechnungen/beitragslaeufe]
 stichworte: [Beitragslauf, Jahresbeitrag, Rechnungen, abrechnen]
 ---
+
 Vorher: Die Beitragssätze sind festgelegt.
 
 1. Öffne [Finanzen › Beitragsläufe](/finanzen/rechnungen/beitragslaeufe) und klicke auf **Neuer Beitragslauf**.

@@ -7,6 +7,7 @@ rechte: [docs.manage]
 routen: [/dokumente]
 stichworte: [file, upload, folder, minutes, share]
 ---
+
 1. Open [Documents](/dokumente).
 2. Create a folder with **Create folder** if needed and set who sees it.
 3. Open the folder and click **Upload**.

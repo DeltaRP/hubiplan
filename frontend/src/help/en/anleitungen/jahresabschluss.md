@@ -7,6 +7,7 @@ rechte: [finance.edit]
 routen: [/finanzen/abschluss]
 stichworte: [year-end closing, cash report, audit, close]
 ---
+
 1. Import all of the year's bank statements and book all receipts.
 2. Count the cash boxes at year end.
 3. Open [Finance › Closing & reports](/finanzen/abschluss) and work through the checklist “Before closing”.

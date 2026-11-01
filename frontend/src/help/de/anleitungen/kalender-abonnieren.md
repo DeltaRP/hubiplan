@@ -6,6 +6,7 @@ modul: events
 routen: [/termine]
 stichworte: [Kalender, Abo, iCal, Handy, Outlook]
 ---
+
 1. Öffne [Termine](/termine).
 2. Klicke beim Kalender-Abo auf **Persönlichen Link erstellen** und dann auf **Link kopieren**.
 3. Füge den Link in deinem Kalender als „Kalender abonnieren“ (Internetkalender) ein, etwa am Handy, in Outlook oder Thunderbird.

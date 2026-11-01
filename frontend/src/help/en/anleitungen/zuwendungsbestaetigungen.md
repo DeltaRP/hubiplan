@@ -7,6 +7,7 @@ rechte: [finance.edit]
 routen: [/finanzen/zuwendungen]
 stichworte: [donation receipt, donation, tax office, annual statement]
 ---
+
 Before you start: the tax office, tax number and date of the notice are entered under the tax-exempt status details.
 
 1. Open [Finance › Donation receipts](/finanzen/zuwendungen).

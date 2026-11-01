@@ -7,6 +7,7 @@ rechte: [finance.edit]
 routen: [/finanzen/quittungen]
 stichworte: [Quittung, bar, Unterschrift, Beleg]
 ---
+
 1. Öffne [Finanzen › Quittungen](/finanzen/quittungen) und klicke auf **Quittung ausstellen**.
 2. Wähle, ob der Verein Geld erhält oder auszahlt, und trage Betrag, Zweck und Kategorie ein.
 3. Klicke auf **Weiter zur Unterschrift**.

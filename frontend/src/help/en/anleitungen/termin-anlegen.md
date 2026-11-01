@@ -7,6 +7,7 @@ rechte: [events.manage]
 routen: [/termine]
 stichworte: [event, invitation, series, RSVP]
 ---
+
 1. Open [Events](/termine) and click **New event** (or a day in the calendar).
 2. Enter title, date, time and place; for regular meetings choose a repetition.
 3. Choose who is invited and whether acceptances and declines are collected.

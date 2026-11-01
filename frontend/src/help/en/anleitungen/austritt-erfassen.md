@@ -7,6 +7,7 @@ rechte: [members.edit]
 routen: [/mitglieder/:id, /mitglieder]
 stichworte: [leaving, resignation, left, end]
 ---
+
 1. In the [member list](/mitglieder), open the member's record.
 2. In the **Procedures** section, click **Record leaving**.
 3. Enter the **Leaving date** and the reason.

@@ -7,6 +7,7 @@ rechte: [finance.edit]
 routen: [/finanzen/kassenbuch]
 stichworte: [booking, receipt, cash book, income, expense]
 ---
+
 1. Open [Finance › Cash book](/finanzen/kassenbuch).
 2. Choose **Income** or **Expense** (or a transfer between two accounts).
 3. Enter date, amount, account, category and booking text and click **Next**.

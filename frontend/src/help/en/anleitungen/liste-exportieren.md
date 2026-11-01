@@ -7,6 +7,7 @@ rechte: [members.view]
 routen: [/mitglieder]
 stichworte: [export, Excel, list, addresses, columns]
 ---
+
 1. Filter the [member list](/mitglieder) as needed, for example by status or membership type.
 2. Under **Columns**, choose which details the list shows.
 3. Click **Export**, choose the format and then **Export**.

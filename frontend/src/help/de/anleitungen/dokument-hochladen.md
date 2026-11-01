@@ -7,6 +7,7 @@ rechte: [docs.manage]
 routen: [/dokumente]
 stichworte: [Datei, hochladen, Ordner, Protokoll, freigeben]
 ---
+
 1. Öffne [Dokumente](/dokumente).
 2. Lege bei Bedarf mit **Ordner anlegen** einen Ordner an und stelle ein, wer ihn sieht.
 3. Öffne den Ordner und klicke auf **Hochladen**.

@@ -7,6 +7,7 @@ rechte: [billing.edit]
 routen: [/finanzen/lastschrift]
 stichworte: [SEPA, Lastschrift, Einzug, Bank, XML]
 ---
+
 Vorher: Die Gläubiger-ID steht unter Einrichtung › Rechnung & Zahlung, und die Mitglieder haben ein SEPA-Mandat.
 
 1. Öffne [Finanzen › Lastschriften](/finanzen/lastschrift).
