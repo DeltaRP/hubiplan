@@ -7,7 +7,7 @@ from django.db import connection
 from django.utils import timezone
 
 from access.permissions import inherited_permissions, is_platform_admin
-from accounts.models import User, set_initial_password
+from accounts.models import User
 from accounts.tasks import expire_initial_passwords
 from core.tenancy import set_rls, tenant_context
 from devices.models import Device
@@ -124,6 +124,14 @@ def test_rueckgaengig_im_zug_geht_weiter(club, zug, kassierer, api):  # noqa: F8
 # --- AT-S04: Startpasswort läuft ab und muss ersetzt werden ---
 
 
+def set_initial_password(user) -> str:
+    """Altes Startpasswort wie vor der Umstellung auf Einladungen (FQ-16)."""
+    password = "Start-Passwort-2026"
+    user.set_password(password)
+    user.initial_password_expires = timezone.now() + datetime.timedelta(days=7)
+    return password
+
+
 def test_startpasswort_muss_ersetzt_werden_und_laeuft_ab(api):
     """Noch ausgegebene Startpasswörter (vor der Umstellung auf Einladungen)."""
     new_user = make_user("neu@example.org")
@@ -155,6 +163,33 @@ def test_eigenes_passwort_ersetzt_startpasswort(api):
     chef.refresh_from_db()
     assert not chef.must_change_password
     assert expire_initial_passwords() == 0
+
+
+def test_alte_startpasswoerter_umstellen(api):
+    """FQ-16 (Ralf 01.11.2026): nur zählen; mit --umstellen Link statt Startpasswort."""
+    from io import StringIO
+
+    from django.core import mail
+    from django.core.management import call_command
+
+    old = make_user("alt@example.org")
+    start = set_initial_password(old)
+    old.save()
+    make_user("normal@example.org")
+
+    out = StringIO()
+    call_command("startpasswoerter", stdout=out)
+    assert "1 Konten" in out.getvalue() and "alt@" not in out.getvalue()
+    old.refresh_from_db()
+    assert old.check_password(start)
+
+    out = StringIO()
+    call_command("startpasswoerter", "--umstellen", stdout=out)
+    assert "1 umgestellt, 1 Links verschickt" in out.getvalue()
+    old.refresh_from_db()
+    assert not old.has_usable_password() and not old.must_change_password
+    assert [m.to for m in mail.outbox] == [["alt@example.org"]]
+    assert "Passwort festlegen" in mail.outbox[0].subject
 
 
 # --- Frage 2: Einladungslink statt Startpasswort ---

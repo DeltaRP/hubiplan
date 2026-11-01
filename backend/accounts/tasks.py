@@ -16,18 +16,39 @@ def expire_initial_passwords() -> int:
     „Passwort vergessen“.
     """
     from .models import User
-    from .security import revoke_links
 
     count = 0
     with rls_bypass():
         for user in User.objects.filter(initial_password_expires__lt=timezone.now()):
-            user.set_unusable_password()
-            user.initial_password_expires = None
-            user.save(update_fields=["password", "initial_password_expires"])
-            # Verbundene App-Geräte hingen am Startpasswort
-            from devices.signals import revoke_devices
-
-            revoke_devices(user)
-            revoke_links(user)
+            retire_initial_password(user)
             count += 1
     return count
+
+
+def retire_initial_password(user) -> None:
+    """Startpasswort unbrauchbar machen; App-Geräte und offene Links hingen daran."""
+    from devices.signals import revoke_devices
+
+    from .security import revoke_links
+
+    user.set_unusable_password()
+    user.initial_password_expires = None
+    user.save(update_fields=["password", "initial_password_expires"])
+    revoke_devices(user)
+    revoke_links(user)
+
+
+def convert_initial_passwords() -> tuple[int, int]:
+    """Alle noch ausgegebenen Startpasswörter durch einen Einladungslink ersetzen (FQ-16).
+
+    Rückgabe: (umgestellte Konten, davon Mail verschickt)."""
+    from .invitations import send_password_link
+    from .models import User
+
+    converted = sent = 0
+    with rls_bypass():
+        for user in User.objects.filter(initial_password_expires__isnull=False):
+            retire_initial_password(user)
+            converted += 1
+            sent += send_password_link(user)
+    return converted, sent
