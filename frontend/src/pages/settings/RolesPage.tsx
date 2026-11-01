@@ -12,6 +12,7 @@ import { confirmDialog } from '../../components/dialog.ts'
 import { useAuth } from '../../auth/AuthContext.tsx'
 import { RoleForm, RoleTable } from '../../components/RoleEditor.tsx'
 import { ALL_ROLE_FIELDS } from '../../components/roles.ts'
+import { t } from '../../i18n/index.ts'
 
 const INVITATION_DAYS = 7
 
@@ -31,7 +32,8 @@ export function RolesPage() {
         onRetry={() => void Promise.all([roles.reload(), catalog.reload(), assignments.reload()])}
       />
     )
-  if (!roles.data || !catalog.data || !assignments.data) return <p className="muted">Lädt …</p>
+  if (!roles.data || !catalog.data || !assignments.data)
+    return <p className="muted">{t('Lädt …')}</p>
 
   const catalogData = catalog.data
   const reloadAll = async () => {
@@ -42,20 +44,21 @@ export function RolesPage() {
     <div className="stack">
       <div className="card card-wide">
         <div className="card-head">
-          <h2>Rollen</h2>
+          <h2>{t('Rollen')}</h2>
           {editing === null && (
             <button
               type="button"
               className="button button-ghost push-right"
               onClick={() => setEditing('new')}
             >
-              Neue Rolle
+              {t('Neue Rolle')}
             </button>
           )}
         </div>
         <p className="muted small">
-          Eine Rolle bündelt Berechtigungen, zum Beispiel „Kassierer“. Name und Rechte legt ihr
-          selbst fest.
+          {t(
+            'Eine Rolle bündelt Berechtigungen, zum Beispiel „Kassierer“. Name und Rechte legt ihr selbst fest.',
+          )}
         </p>
         {editing !== null && (
           <RoleForm
@@ -106,12 +109,20 @@ function confirmAssignedRoleRemoval(role: Role): Promise<boolean> {
   const count = role.assignment_count
   const message =
     count > 0
-      ? `${count === 1 ? 'Ein Benutzer hat' : `${count} Benutzer haben`} diese Rolle noch. ` +
-        `${count === 1 ? 'Die Zuordnung wird' : `Alle ${count} Zuordnungen werden`} beendet, ` +
-        'die Rechte der Rolle entfallen sofort. Auch frühere Zuordnungen dieser Rolle ' +
-        'verschwinden aus der Historie.'
+      ? t('{x} diese Rolle noch. ', {
+          x: count === 1 ? 'Ein Benutzer hat' : `${count} Benutzer haben`,
+        }) +
+        t('{x} beendet, ', {
+          x: count === 1 ? 'Die Zuordnung wird' : `Alle ${count} Zuordnungen werden`,
+        }) +
+        t('die Rechte der Rolle entfallen sofort. Auch frühere Zuordnungen dieser Rolle ') +
+        t('verschwinden aus der Historie.')
       : undefined
-  return confirmDialog({ title: `Rolle „${role.name}“ löschen?`, message, confirmLabel: 'Löschen' })
+  return confirmDialog({
+    title: t('Rolle „{name}“ löschen?', { name: role.name }),
+    message,
+    confirmLabel: t('Löschen'),
+  })
 }
 
 function UsersCard({
@@ -147,7 +158,7 @@ function UsersCard({
           valid_until: form.values.valid_until || null,
           member: member?.id ?? null,
         }),
-      'Rolle zugeordnet.',
+      t('Rolle zugeordnet.'),
     )) as Assignment | undefined
     if (result) {
       if (result.new_account) setCreated({ email: result.user_email, invited: !!result.invited })
@@ -174,17 +185,18 @@ function UsersCard({
 
   return (
     <div className="card card-wide">
-      <h2>Benutzer</h2>
+      <h2>{t('Benutzer')}</h2>
       <p className="muted small">
-        Ein Benutzerkonto ist der Login einer Person. Es kann Rollen in mehreren Organisationen
-        haben. Zuordnungen haben einen Zeitraum – so bleibt die Historie erhalten.
+        {t(
+          'Ein Benutzerkonto ist der Login einer Person. Es kann Rollen in mehreren Organisationen haben. Zuordnungen haben einen Zeitraum – so bleibt die Historie erhalten.',
+        )}
       </p>
       <table className="table">
         <thead>
           <tr>
-            <th>Benutzer</th>
-            <th>Rolle</th>
-            <th>Zeitraum</th>
+            <th>{t('Benutzer')}</th>
+            <th>{t('Rolle')}</th>
+            <th>{t('Zeitraum')}</th>
             <th />
           </tr>
         </thead>
@@ -209,23 +221,27 @@ function UsersCard({
           )}
         </tbody>
       </table>
-      <Checkbox label="Auch frühere Zuordnungen zeigen" checked={showAll} onChange={setShowAll} />
+      <Checkbox
+        label={t('Auch frühere Zuordnungen zeigen')}
+        checked={showAll}
+        onChange={setShowAll}
+      />
       {error && <Alert kind="error">{error}</Alert>}
 
       <form className="subcard" onSubmit={add}>
-        <h3>Rolle zuordnen</h3>
+        <h3>{t('Rolle zuordnen')}</h3>
         <div className="grid-2">
           <Field
-            label="E-Mail-Adresse"
+            label={t('E-Mail-Adresse')}
             type="email"
             required
             value={form.values.email}
             error={form.errors.email}
-            hint="Gibt es noch kein Konto, wird eines angelegt."
+            hint={t('Gibt es noch kein Konto, wird eines angelegt.')}
             onChange={(e) => form.set('email', e.target.value)}
           />
           <SelectField
-            label="Rolle"
+            label={t('Rolle')}
             value={form.values.role}
             error={form.errors.role}
             onChange={(e) => form.set('role', Number(e.target.value))}
@@ -245,7 +261,7 @@ function UsersCard({
             onChange={(e) => form.set('valid_from', e.target.value)}
           />
           <Field
-            label="bis (optional)"
+            label={t('bis (optional)')}
             type="date"
             value={form.values.valid_until}
             error={form.errors.valid_until}
@@ -256,7 +272,7 @@ function UsersCard({
           <MemberPicker
             orgId={orgId}
             value={member}
-            label="Mitgliedsakte der Person (optional, für die Rollen-Historie)"
+            label={t('Mitgliedsakte der Person (optional, für die Rollen-Historie)')}
             onChange={(m) => {
               setMember(m)
               if (m && m.email && !form.values.email) form.set('email', m.email)
@@ -267,15 +283,22 @@ function UsersCard({
         {created && (
           <Alert kind={created.invited ? 'info' : 'error'}>
             {created.invited
-              ? `Neues Konto für ${created.email} angelegt. Die Einladung mit einem Link zum ` +
-                `Festlegen des Passworts ist per E-Mail unterwegs (gilt ${INVITATION_DAYS} Tage).`
-              : `Neues Konto für ${created.email} angelegt, aber die Einladung konnte nicht ` +
-                'verschickt werden. Die Person kann auf der Anmeldeseite „Passwort vergessen“ ' +
-                'wählen und so ihr Passwort festlegen.'}
+              ? t('Neues Konto für {email} angelegt. Die Einladung mit einem Link zum ', {
+                  email: created.email,
+                }) +
+                t(
+                  'Festlegen des Passworts ist per E-Mail unterwegs (gilt {INVITATION_DAYS} Tage).',
+                  { INVITATION_DAYS },
+                )
+              : t('Neues Konto für {email} angelegt, aber die Einladung konnte nicht ', {
+                  email: created.email,
+                }) +
+                t('verschickt werden. Die Person kann auf der Anmeldeseite „Passwort vergessen“ ') +
+                t('wählen und so ihr Passwort festlegen.')}
           </Alert>
         )}
         <button type="submit" className="button button-primary" disabled={form.busy}>
-          Zuordnen
+          {t('Zuordnen')}
         </button>
       </form>
     </div>
@@ -328,13 +351,13 @@ function AssignmentRow({
 
   async function resetMfa() {
     const ok = await confirmDialog({
-      title: `Zwei-Faktor-Anmeldung von ${who} zurücksetzen?`,
+      title: t('Zwei-Faktor-Anmeldung von {who} zurücksetzen?', { who }),
       message:
-        'Nur, wenn die Person ihr Handy und ihre Wiederherstellungscodes verloren hat und du ' +
-        'dich vergewissert hast, dass sie es wirklich ist (persönlich oder per Telefon). Sie ' +
-        'bekommt eine Mail, ihre App-Geräte werden abgemeldet, und bis sie den zweiten Faktor ' +
-        'neu einrichtet, ruhen ihre heiklen Rechte.',
-      confirmLabel: 'Zurücksetzen',
+        t('Nur, wenn die Person ihr Handy und ihre Wiederherstellungscodes verloren hat und du ') +
+        t('dich vergewissert hast, dass sie es wirklich ist (persönlich oder per Telefon). Sie ') +
+        t('bekommt eine Mail, ihre App-Geräte werden abgemeldet, und bis sie den zweiten Faktor ') +
+        t('neu einrichtet, ruhen ihre heiklen Rechte.'),
+      confirmLabel: t('Zurücksetzen'),
     })
     if (ok) await run(() => orgApi.resetMfa(orgId, a.id))
   }
@@ -355,11 +378,13 @@ function AssignmentRow({
 
   async function remove() {
     const ok = await confirmDialog({
-      title: 'Zuordnung löschen?',
+      title: t('Zuordnung löschen?'),
       message:
-        `${who} verliert die Rolle „${a.role_name}“, und die Zuordnung verschwindet aus der ` +
-        'Historie. Für ein normales Ende der Amtszeit lieber „bis“ setzen.',
-      confirmLabel: 'Löschen',
+        t('{who} verliert die Rolle „{role_name}“, und die Zuordnung verschwindet aus der ', {
+          who,
+          role_name: a.role_name,
+        }) + t('Historie. Für ein normales Ende der Amtszeit lieber „bis“ setzen.'),
+      confirmLabel: t('Löschen'),
     })
     if (ok) await run(() => orgApi.deleteAssignment(orgId, a.id))
   }
@@ -375,17 +400,28 @@ function AssignmentRow({
         <td rowSpan={span > 1 ? span : undefined}>
           {(a.person_name || a.user_name) && <div>{a.person_name ?? a.user_name}</div>}
           <div className="small muted">{a.user_email}</div>
-          {isClub && !a.member_record && <div className="small muted">ohne Mitgliedsakte</div>}
-          {span > 1 && <div className="small muted">{span} Rollen, es gelten alle Rechte</div>}
+          {isClub && !a.member_record && (
+            <div className="small muted">{t('ohne Mitgliedsakte')}</div>
+          )}
+          {span > 1 && (
+            <div className="small muted">
+              {span} {t('Rollen, es gelten alle Rechte')}
+            </div>
+          )}
         </td>
       )}
       <td>
         {a.role_name}
         {isClub && editing && (
-          <MemberPicker orgId={orgId} value={member} label="Mitgliedsakte" onChange={setMember} />
+          <MemberPicker
+            orgId={orgId}
+            value={member}
+            label={t('Mitgliedsakte')}
+            onChange={setMember}
+          />
         )}
         {isClub && editing && (
-          <div className="small muted">Gilt für alle Rollen dieses Kontos hier.</div>
+          <div className="small muted">{t('Gilt für alle Rollen dieses Kontos hier.')}</div>
         )}
       </td>
       <td className="small">
@@ -438,7 +474,7 @@ function AssignmentRow({
                 )
               }
             >
-              Speichern
+              {t('Speichern')}
             </button>
             <button
               type="button"
@@ -452,7 +488,7 @@ function AssignmentRow({
                 setEditing(false)
               }}
             >
-              Abbrechen
+              {t('Abbrechen')}
             </button>
             <button
               type="button"
@@ -460,7 +496,7 @@ function AssignmentRow({
               disabled={busy}
               onClick={() => void remove()}
             >
-              Löschen
+              {t('Löschen')}
             </button>
           </div>
         ) : (
@@ -474,16 +510,16 @@ function AssignmentRow({
                 setEditing(true)
               }}
             >
-              Bearbeiten
+              {t('Bearbeiten')}
             </button>
             {a.is_active && !a.valid_until && a.valid_from <= today && (
               <button type="button" className="link-button" onClick={onEnd}>
-                Beenden
+                {t('Beenden')}
               </button>
             )}
             {span > 0 && a.is_active && a.has_mfa && a.user_email !== user?.email && (
               <button type="button" className="link-button" onClick={() => void resetMfa()}>
-                2FA zurücksetzen
+                {t('2FA zurücksetzen')}
               </button>
             )}
           </div>

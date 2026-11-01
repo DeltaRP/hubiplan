@@ -10,6 +10,7 @@ import { TextArea } from './TextArea.tsx'
 import { Alert, Checkbox, Field, LoadError, SaveStatus, SelectField } from '../../components/ui.tsx'
 import { useActiveOrg, useOrg } from '../../org/OrgContext.tsx'
 import { Term, Why } from '../../learning/Aids.tsx'
+import { t } from '../../i18n/index.ts'
 
 const FIELDS: (keyof ImprintFields)[] = [
   'mode',
@@ -40,8 +41,8 @@ export function ImprintMissing({ missing }: { missing: string[] }) {
   if (missing.length === 0) return null
   return (
     <Alert kind="info">
-      Im Impressum fehlen noch Angaben: {missing.join(', ')}.{' '}
-      <Link to="/einstellungen/impressum">Impressum ergänzen</Link>
+      {t('Im Impressum fehlen noch Angaben:')} {missing.join(', ')}.{' '}
+      <Link to="/einstellungen/impressum">{t('Impressum ergänzen')}</Link>
     </Alert>
   )
 }
@@ -79,49 +80,57 @@ export function ImprintEditor({
   return (
     <form className="card card-wide" onSubmit={(e) => e.preventDefault()}>
       {editable && <SaveStatus auto={auto} />}
-      <h2>Impressum {isPlatform ? 'der Plattform' : state.organization.name}</h2>
+      <h2>
+        {t('Impressum')} {isPlatform ? t('der Plattform') : state.organization.name}
+      </h2>
       <p className="muted small">
-        HUBIplan zeigt die Angaben auf einer öffentlichen Seite und verlinkt sie in jeder Mail und
-        auf den öffentlichen Seiten. Ob die Angaben vollständig und richtig sind, muss{' '}
-        {isPlatform ? 'der Betreiber' : 'die Einheit'} selbst prüfen (keine Rechtsberatung).
+        {t(
+          'HUBIplan zeigt die Angaben auf einer öffentlichen Seite und verlinkt sie in jeder Mail und auf den öffentlichen Seiten. Ob die Angaben vollständig und richtig sind, muss',
+        )}{' '}
+        {isPlatform ? t('der Betreiber') : t('die Einheit')}{' '}
+        {t('selbst prüfen (keine Rechtsberatung).')}
       </p>
       <p className="small">
-        Öffentlich: <Link to={imprintPath(key)}>Impressum</Link> ·{' '}
+        {t('Öffentlich:')} <Link to={imprintPath(key)}>{t('Impressum')}</Link> ·{' '}
         <Link to={privacyPath(key)}>
-          {isPlatform ? 'Datenschutzerklärung' : 'Datenschutzhinweise'}
+          {isPlatform ? t('Datenschutzerklärung') : t('Datenschutzhinweise')}
         </Link>
       </p>
       {!isPlatform && (
         <p className="muted small">
-          Die Datenschutzhinweise für Mitglieder und für die Webseite stehen gemeinsam unter{' '}
-          <Link to="/einstellungen/datenschutz">Einstellungen › Datenschutz</Link>.
+          {t('Die Datenschutzhinweise für Mitglieder und für die Webseite stehen gemeinsam unter')}{' '}
+          <Link to="/einstellungen/datenschutz">{t('Einstellungen › Datenschutz')}</Link>.
         </p>
       )}
       {current.missing.length > 0 && (
-        <Alert kind="info">Es fehlen noch: {current.missing.join(', ')}.</Alert>
+        <Alert kind="info">
+          {t('Es fehlen noch:')} {current.missing.join(', ')}.
+        </Alert>
       )}
       <fieldset disabled={!editable}>
         {!isPlatform && (
           <SelectField
-            label="Impressum"
+            label={t('Impressum')}
             value={v.mode}
             error={errors.mode}
             onChange={(e) => set('mode', e.target.value as ImprintFields['mode'])}
           >
-            <option value="inherit">von der übergeordneten Einheit übernehmen</option>
-            <option value="own">eigenes Impressum</option>
-            <option value="link">auf eigenes Impressum verlinken (z. B. eigene Website)</option>
+            <option value="inherit">{t('von der übergeordneten Einheit übernehmen')}</option>
+            <option value="own">{t('eigenes Impressum')}</option>
+            <option value="link">
+              {t('auf eigenes Impressum verlinken (z. B. eigene Website)')}
+            </option>
           </SelectField>
         )}
         {v.mode === 'inherit' && !current.owner.is_self && (
           <p className="muted">
-            Es gilt das Impressum von {current.owner.name}
+            {t('Es gilt das Impressum von')} {current.owner.name}
             {isUnit ? '' : ' (bzw. der Plattform, wenn darüber keine Einheit eines hat)'}.
           </p>
         )}
         {v.mode === 'link' && (
           <Field
-            label="Adresse des eigenen Impressums"
+            label={t('Adresse des eigenen Impressums')}
             type="url"
             placeholder="https://"
             value={v.external_url}
@@ -132,33 +141,35 @@ export function ImprintEditor({
         {v.mode === 'own' && (
           <>
             <p className="muted small">
-              Leere Felder werden aus den Stammdaten übernommen (Einstellungen › Organisation).
+              {t(
+                'Leere Felder werden aus den Stammdaten übernommen (Einstellungen › Organisation).',
+              )}
             </p>
             <div className="grid-2">
               <Field
-                label={isPlatform ? 'Betreiber (Name bzw. Firma)' : 'Name'}
+                label={isPlatform ? t('Betreiber (Name bzw. Firma)') : t('Name')}
                 value={v.name}
                 placeholder={p.name}
                 error={errors.name}
                 onChange={(e) => set('name', e.target.value)}
               />
               <Field
-                label="Rechtsform"
+                label={t('Rechtsform')}
                 value={v.legal_form}
                 placeholder={
                   isPlatform
-                    ? 'z. B. Einzelunternehmen, GmbH'
+                    ? t('z. B. Einzelunternehmen, GmbH')
                     : v.registered
-                      ? 'eingetragener Verein'
-                      : 'z. B. nicht eingetragener Verein'
+                      ? t('eingetragener Verein')
+                      : t('z. B. nicht eingetragener Verein')
                 }
                 error={errors.legal_form}
                 onChange={(e) => set('legal_form', e.target.value)}
               />
             </div>
-            <h3>Anschrift (ladungsfähig, kein Postfach)</h3>
+            <h3>{t('Anschrift (ladungsfähig, kein Postfach)')}</h3>
             <Field
-              label="Straße und Hausnummer"
+              label={t('Straße und Hausnummer')}
               value={v.street}
               placeholder={p.address.street}
               error={errors.street}
@@ -173,7 +184,7 @@ export function ImprintEditor({
                 onChange={(e) => set('postal_code', e.target.value)}
               />
               <Field
-                label="Ort"
+                label={t('Ort')}
                 value={v.city}
                 placeholder={p.address.city}
                 error={errors.city}
@@ -181,37 +192,37 @@ export function ImprintEditor({
               />
             </div>
             <h3>
-              <Term k="board_26">Vertretungsberechtigt</Term>
+              <Term k="board_26">{t('Vertretungsberechtigt')}</Term>
             </h3>
             {!isPlatform && (
               <p className="muted small">
                 {current.representatives.length > 0
-                  ? `Aus den Rollen: ${current.representatives
-                      .map((r) => `${r.name} (${r.role})`)
-                      .join(', ')}.`
-                  : 'Noch keine Rolle mit „vertritt die Einheit (§ 26 BGB)“ besetzt.'}{' '}
-                Das Kennzeichen setzt du unter{' '}
-                <Link to="/einstellungen/rollen">Rollen &amp; Benutzer</Link>. Ein Text hier ersetzt
-                die Angaben aus den Rollen.
+                  ? t('Aus den Rollen: {x}.', {
+                      x: current.representatives.map((r) => `${r.name} (${r.role})`).join(', '),
+                    })
+                  : t('Noch keine Rolle mit „vertritt die Einheit (§ 26 BGB)“ besetzt.')}{' '}
+                {t('Das Kennzeichen setzt du unter')}{' '}
+                <Link to="/einstellungen/rollen">{t('Rollen & Benutzer')}</Link>. Ein Text hier
+                ersetzt die Angaben aus den Rollen.
               </p>
             )}
             <TextArea
               label={
                 isPlatform
-                  ? 'Vertreten durch (bei Firmen oder Vereinen)'
-                  : 'Vertreten durch (optional)'
+                  ? t('Vertreten durch (bei Firmen oder Vereinen)')
+                  : t('Vertreten durch (optional)')
               }
               value={v.representatives}
               error={errors.representatives}
               onChange={(val) => set('representatives', val)}
             />
-            <h3>Kontakt</h3>
+            <h3>{t('Kontakt')}</h3>
             <p className="muted small">
-              Nötig sind zwei schnelle Wege, üblich sind E-Mail und Telefon.
+              {t('Nötig sind zwei schnelle Wege, üblich sind E-Mail und Telefon.')}
             </p>
             <div className="grid-2">
               <Field
-                label="E-Mail"
+                label={t('E-Mail')}
                 type="email"
                 value={v.email}
                 placeholder={p.email}
@@ -219,7 +230,7 @@ export function ImprintEditor({
                 onChange={(e) => set('email', e.target.value)}
               />
               <Field
-                label="Telefon"
+                label={t('Telefon')}
                 value={v.phone}
                 placeholder={p.phone}
                 error={errors.phone}
@@ -227,37 +238,41 @@ export function ImprintEditor({
               />
             </div>
             <h3>
-              <Term k="register">Register</Term> und <Term k="vat_id">Steuer</Term>
+              <Term k="register">{t('Register')}</Term> und <Term k="vat_id">{t('Steuer')}</Term>
             </h3>
             <Checkbox
               label={
                 isPlatform
-                  ? 'Im Handels- oder Vereinsregister eingetragen'
-                  : 'Eingetragener Verein (e.V., im Vereinsregister)'
+                  ? t('Im Handels- oder Vereinsregister eingetragen')
+                  : t('Eingetragener Verein (e.V., im Vereinsregister)')
               }
               checked={v.registered}
               onChange={(val) => set('registered', val)}
             />
             <p className="muted small">
               {v.registered
-                ? 'Registergericht und Registernummer gehören dann ins Impressum und auf den Briefbogen.'
-                : 'Ohne Registereintrag (z. B. nicht eingetragener Verein) entfallen die Registerangaben.'}
+                ? t(
+                    'Registergericht und Registernummer gehören dann ins Impressum und auf den Briefbogen.',
+                  )
+                : t(
+                    'Ohne Registereintrag (z. B. nicht eingetragener Verein) entfallen die Registerangaben.',
+                  )}
             </p>
             <div className="grid-3">
               {v.registered && (
                 <>
                   <Field
-                    label="Registergericht"
+                    label={t('Registergericht')}
                     value={v.register_court}
-                    placeholder="z. B. Amtsgericht Neuss"
+                    placeholder={t('z. B. Amtsgericht Neuss')}
                     required
                     error={errors.register_court}
                     onChange={(e) => set('register_court', e.target.value)}
                   />
                   <Field
-                    label="Registernummer"
+                    label={t('Registernummer')}
                     value={v.register_number}
-                    placeholder="z. B. VR 1234"
+                    placeholder={t('z. B. VR 1234')}
                     required
                     error={errors.register_number}
                     onChange={(e) => set('register_number', e.target.value)}
@@ -265,31 +280,35 @@ export function ImprintEditor({
                 </>
               )}
               <Field
-                label="USt-IdNr. (falls vorhanden)"
+                label={t('USt-IdNr. (falls vorhanden)')}
                 value={v.vat_id}
                 error={errors.vat_id}
                 onChange={(e) => set('vat_id', e.target.value)}
               />
             </div>
-            <h3>Weitere Angaben (optional)</h3>
+            <h3>{t('Weitere Angaben (optional)')}</h3>
             <TextArea
               id="verantwortlich"
-              label="Verantwortlich nach § 18 Abs. 2 MStV (Name und Anschrift)"
-              hint="Empfohlen, sobald die Webseite eigene Texte hat (Begrüßung, Chronik), und bei einer Vereinszeitung."
+              label={t('Verantwortlich nach § 18 Abs. 2 MStV (Name und Anschrift)')}
+              hint={t(
+                'Empfohlen, sobald die Webseite eigene Texte hat (Begrüßung, Chronik), und bei einer Vereinszeitung.',
+              )}
               value={v.responsible}
               error={errors.responsible}
               onChange={(val) => set('responsible', val)}
             />
             <TextArea
-              label="Datenschutzbeauftragte(r)"
-              hint="Pflicht erst, wenn mindestens 20 Personen ständig mit Personendaten arbeiten."
+              label={t('Datenschutzbeauftragte(r)')}
+              hint={t(
+                'Pflicht erst, wenn mindestens 20 Personen ständig mit Personendaten arbeiten.',
+              )}
               value={v.data_protection_officer}
               error={errors.data_protection_officer}
               onChange={(val) => set('data_protection_officer', val)}
             />
             <Why k="dpo" />
             <TextArea
-              label="Weiterer Text"
+              label={t('Weiterer Text')}
               value={v.extra_text}
               error={errors.extra_text}
               onChange={(val) => set('extra_text', val)}
@@ -321,16 +340,22 @@ export function ImprintSettingsPage() {
     <>
       {units.error && (
         <LoadError
-          message={`Die ${org.department_label_plural} konnten nicht geladen werden; ihre Impressen sind deshalb gerade nicht wählbar. ${units.error}`}
+          message={t(
+            'Die {department_label_plural} konnten nicht geladen werden; ihre Impressen sind deshalb gerade nicht wählbar. {error}',
+            { department_label_plural: org.department_label_plural, error: units.error },
+          )}
           onRetry={() => void units.reload()}
         />
       )}
       {list.length > 0 && (
         <div className="card card-wide">
           <SelectField
-            label="Impressum für"
+            label={t('Impressum für')}
             value={unitId ?? ''}
-            hint={`${org.department_label_plural} übernehmen standardmäßig das Impressum von ${org.name}.`}
+            hint={t(
+              '{department_label_plural} übernehmen standardmäßig das Impressum von {name}.',
+              { department_label_plural: org.department_label_plural, name: org.name },
+            )}
             onChange={(e) => setUnitId(e.target.value ? Number(e.target.value) : null)}
           >
             <option value="">{org.name}</option>
@@ -343,7 +368,7 @@ export function ImprintSettingsPage() {
         </div>
       )}
       {state.error && <Alert kind="error">{state.error}</Alert>}
-      {!state.data && !state.error && <p className="muted">Lädt …</p>}
+      {!state.data && !state.error && <p className="muted">{t('Lädt …')}</p>}
       {state.data && state.data.organization.id === (unitId ?? org.id) && (
         <ImprintEditor
           key={state.data.organization.id}
@@ -364,7 +389,7 @@ export function ImprintSettingsPage() {
 export function PlatformImprintPage() {
   const { data, error } = useLoad(() => imprintApi.platform(), [])
   if (error) return <Alert kind="error">{error}</Alert>
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
   return (
     <>
       <ImprintEditor state={data} editable save={(changes) => imprintApi.updatePlatform(changes)} />

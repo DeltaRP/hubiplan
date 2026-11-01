@@ -10,6 +10,7 @@ import { parseTextList } from '../../components/lists.ts'
 import { Alert, Checkbox, Field, SaveStatus, SelectField } from '../../components/ui.tsx'
 import { useActiveOrg } from '../../org/OrgContext.tsx'
 import { useTerms } from '../../org/terms.ts'
+import { t } from '../../i18n/index.ts'
 
 const typeLabel = (tmx: FieldType) => FIELD_TYPES.find((x) => x.value === tmx)?.label ?? tmx
 
@@ -27,7 +28,7 @@ export function FieldsPage() {
   const [busy, setBusy] = useState(false)
 
   if (error) return <Alert kind="error">{error}</Alert>
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
   const current = data.filter((f) => !f.is_archived)
   const archived = data.filter((f) => f.is_archived)
 
@@ -57,26 +58,28 @@ export function FieldsPage() {
     }
   }
 
-  const persons = (n: number) => (n === 1 ? '1 Person' : `${n} Personen`)
+  const persons = (n: number) => (n === 1 ? t('1 Person') : t('{n} Personen', { n }))
 
   return (
     <div className="card card-wide">
       <div className="card-head">
-        <h2>Zusatzfelder</h2>
+        <h2>{t('Zusatzfelder')}</h2>
         {editable && editing === null && (
           <button
             type="button"
             className="button button-ghost push-right"
             onClick={() => setEditing('new')}
           >
-            Neues Feld
+            {t('Neues Feld')}
           </button>
         )}
       </div>
       <p className="muted small">
-        Eigene Felder für die Mitgliedsakte. Wiederholbare Felder haben mehrere Einträge je Person,
-        z. B. Auszeichnungen mit Bezeichnung, Datum und verleihender Organisation.
-        {org.type === 'federation' && ` Verbandsweite Felder gelten in allen ${terms.pl_dat}.`}
+        {t(
+          'Eigene Felder für die Mitgliedsakte. Wiederholbare Felder haben mehrere Einträge je Person, z. B. Auszeichnungen mit Bezeichnung, Datum und verleihender Organisation.',
+        )}
+        {org.type === 'federation' &&
+          t(' Verbandsweite Felder gelten in allen {pl_dat}.', { pl_dat: terms.pl_dat })}
       </p>
       {editing !== null && (
         <FieldForm
@@ -93,25 +96,35 @@ export function FieldsPage() {
         />
       )}
       {removing && (
-        <div className="subcard" role="dialog" aria-label="Zusatzfeld entfernen">
+        <div className="subcard" role="dialog" aria-label={t('Zusatzfeld entfernen')}>
           {removing.usage.deletable ? (
             <p>
-              „{removing.field.label}“ ist bei niemandem ausgefüllt und wird{' '}
-              <strong>gelöscht</strong>.
+              {t('„{label}“ ist bei niemandem ausgefüllt und wird', {
+                label: removing.field.label,
+              })}{' '}
+              <strong>{t('gelöscht')}</strong>.
             </p>
           ) : (
             <>
               <p>
-                „{removing.field.label}“ ist bei {persons(removing.usage.value_count)} ausgefüllt
+                {t('„{label}“ ist bei {x} ausgefüllt', {
+                  label: removing.field.label,
+                  x: persons(removing.usage.value_count),
+                })}
                 {removing.field.federation_wide && ` (in allen ${terms.pl_dat})`}.
               </p>
               <p className="muted small">
-                <strong>Archivieren</strong>: Das Feld verschwindet aus Mitgliedsakte und Export,
-                die Werte bleiben erhalten und das Feld lässt sich wiederherstellen.{' '}
-                <strong>Samt Werten löschen</strong>: Feld und alle Werte werden endgültig entfernt.
+                <strong>{t('Archivieren')}</strong>
+                {t(
+                  ': Das Feld verschwindet aus Mitgliedsakte und Export, die Werte bleiben erhalten und das Feld lässt sich wiederherstellen.',
+                )}{' '}
+                <strong>{t('Samt Werten löschen')}</strong>
+                {t(': Feld und alle Werte werden endgültig entfernt.')}
               </p>
               <Checkbox
-                label={`Ja, alle Werte bei ${persons(removing.usage.value_count)} endgültig löschen`}
+                label={t('Ja, alle Werte bei {x} endgültig löschen', {
+                  x: persons(removing.usage.value_count),
+                })}
                 checked={confirmValues}
                 onChange={setConfirmValues}
               />
@@ -126,11 +139,11 @@ export function FieldsPage() {
                 onClick={() =>
                   void run(
                     () => fieldApi.archive(org.id, removing.field.id),
-                    `„${removing.field.label}“ wurde archiviert.`,
+                    t('„{label}“ wurde archiviert.', { label: removing.field.label }),
                   )
                 }
               >
-                Archivieren
+                {t('Archivieren')}
               </button>
             )}
             <button
@@ -140,27 +153,27 @@ export function FieldsPage() {
               onClick={() =>
                 void run(
                   () => fieldApi.remove(org.id, removing.field.id, !removing.usage.deletable),
-                  `„${removing.field.label}“ wurde gelöscht.`,
+                  t('„{label}“ wurde gelöscht.', { label: removing.field.label }),
                 )
               }
             >
-              {removing.usage.deletable ? 'Löschen' : 'Samt Werten löschen'}
+              {removing.usage.deletable ? t('Löschen') : t('Samt Werten löschen')}
             </button>
             <button type="button" className="button button-ghost" onClick={() => setRemoving(null)}>
-              Abbrechen
+              {t('Abbrechen')}
             </button>
           </div>
         </div>
       )}
       {message && <Alert kind={message.kind}>{message.text}</Alert>}
       {current.length === 0 ? (
-        <p className="muted">Noch keine Zusatzfelder.</p>
+        <p className="muted">{t('Noch keine Zusatzfelder.')}</p>
       ) : (
         <table className="table">
           <thead>
             <tr>
-              <th>Feld</th>
-              <th>Typ</th>
+              <th>{t('Feld')}</th>
+              <th>{t('Typ')}</th>
               <th />
             </tr>
           </thead>
@@ -180,7 +193,7 @@ export function FieldsPage() {
                 </td>
                 <td className="small">
                   {f.repeatable
-                    ? `wiederholbar: ${f.subfields.map((s) => s.label).join(', ')}`
+                    ? t('wiederholbar: {x}', { x: f.subfields.map((s) => s.label).join(', ') })
                     : typeLabel(f.field_type)}
                   {f.field_type === 'choice' && !f.repeatable && ` (${f.choices.join(', ')})`}
                 </td>
@@ -188,15 +201,15 @@ export function FieldsPage() {
                   {editable && !f.inherited && (
                     <>
                       <button type="button" className="link-button" onClick={() => setEditing(f)}>
-                        Bearbeiten
+                        {t('Bearbeiten')}
                       </button>{' '}
                       <button
                         type="button"
                         className="link-button"
-                        aria-label={`${f.label} löschen`}
+                        aria-label={t('{label} löschen', { label: f.label })}
                         onClick={() => void askRemove(f)}
                       >
-                        Löschen
+                        {t('Löschen')}
                       </button>
                     </>
                   )}
@@ -208,9 +221,9 @@ export function FieldsPage() {
       )}
       {archived.length > 0 && (
         <>
-          <h3>Archivierte Zusatzfelder</h3>
+          <h3>{t('Archivierte Zusatzfelder')}</h3>
           <p className="muted small">
-            Nicht in Mitgliedsakte und Export sichtbar; die Werte bleiben gespeichert.
+            {t('Nicht in Mitgliedsakte und Export sichtbar; die Werte bleiben gespeichert.')}
           </p>
           <ul className="role-list">
             {archived.map((f) => (
@@ -226,19 +239,19 @@ export function FieldsPage() {
                       onClick={() =>
                         void run(
                           () => fieldApi.restore(org.id, f.id),
-                          `„${f.label}“ ist wieder verfügbar.`,
+                          t('„{label}“ ist wieder verfügbar.', { label: f.label }),
                         )
                       }
                     >
-                      Wiederherstellen
+                      {t('Wiederherstellen')}
                     </button>{' '}
                     <button
                       type="button"
                       className="button button-ghost"
-                      aria-label={`${f.label} löschen`}
+                      aria-label={t('{label} löschen', { label: f.label })}
                       onClick={() => void askRemove(f)}
                     >
-                      Löschen
+                      {t('Löschen')}
                     </button>
                   </span>
                 )}
@@ -318,11 +331,11 @@ function FieldForm({
     // Benutzte Unterfelder nur nach Rückfrage (die Werte gehen verloren)
     if (field?.in_use && sub.key && field.subfields.some((s) => s.key === sub.key)) {
       const ok = await confirmDialog({
-        title: `Unterfeld „${sub.label}“ entfernen?`,
+        title: t('Unterfeld „{label}“ entfernen?', { label: sub.label }),
         message:
-          'Das Feld ist bei Personen ausgefüllt. Die Werte dieses Unterfelds werden dabei ' +
-          'bei allen Personen gelöscht.',
-        confirmLabel: 'Samt Werten entfernen',
+          t('Das Feld ist bei Personen ausgefüllt. Die Werte dieses Unterfelds werden dabei ') +
+          t('bei allen Personen gelöscht.'),
+        confirmLabel: t('Samt Werten entfernen'),
         danger: true,
       })
       if (!ok) return
@@ -350,27 +363,27 @@ function FieldForm({
       {field && <SaveStatus auto={auto} />}
       <div className="grid-2">
         <Field
-          label="Bezeichnung"
+          label={t('Bezeichnung')}
           required
           value={v.label}
           error={form.errors.label}
           onChange={(e) => form.set('label', e.target.value)}
         />
         <Field
-          label="Hinweis (optional)"
+          label={t('Hinweis (optional)')}
           value={v.help_text}
           onChange={(e) => form.set('help_text', e.target.value)}
         />
       </div>
       <Checkbox
-        label="wiederholbar (mehrere Einträge mit Unterfeldern)"
+        label={t('wiederholbar (mehrere Einträge mit Unterfeldern)')}
         checked={v.repeatable}
         onChange={(x) => form.set('repeatable', x)}
       />
       {!v.repeatable ? (
         <>
           <SelectField
-            label="Typ"
+            label={t('Typ')}
             value={v.field_type}
             onChange={(e) => form.set('field_type', e.target.value as FieldType)}
           >
@@ -382,7 +395,7 @@ function FieldForm({
           </SelectField>
           {v.field_type === 'choice' && (
             <label className="field">
-              <span>Auswahlwerte (ein Wert pro Zeile)</span>
+              <span>{t('Auswahlwerte (ein Wert pro Zeile)')}</span>
               <textarea
                 rows={4}
                 value={v.choices}
@@ -394,17 +407,17 @@ function FieldForm({
         </>
       ) : (
         <fieldset className="field">
-          <span>Unterfelder</span>
+          <span>{t('Unterfelder')}</span>
           {v.subfields.map((s, i) => (
             <div key={i} className="subfield-row">
               <input
-                aria-label={`Unterfeld ${i + 1}`}
-                placeholder="Bezeichnung"
+                aria-label={t('Unterfeld {x}', { x: i + 1 })}
+                placeholder={t('Bezeichnung')}
                 value={s.label}
                 onChange={(e) => setSub(i, { label: e.target.value })}
               />
               <select
-                aria-label={`Typ von Unterfeld ${i + 1}`}
+                aria-label={t('Typ von Unterfeld {x}', { x: i + 1 })}
                 value={s.type}
                 onChange={(e) => setSub(i, { type: e.target.value as FieldType })}
               >
@@ -416,8 +429,8 @@ function FieldForm({
               </select>
               {s.type === 'choice' && (
                 <ListInput
-                  aria-label={`Auswahlwerte von Unterfeld ${i + 1}`}
-                  placeholder="Werte, durch Komma getrennt"
+                  aria-label={t('Auswahlwerte von Unterfeld {x}', { x: i + 1 })}
+                  placeholder={t('Werte, durch Komma getrennt')}
                   value={s.choices ?? []}
                   parse={parseTextList}
                   onChange={(choices) => setSub(i, { choices })}
@@ -433,14 +446,14 @@ function FieldForm({
             className="button button-ghost"
             onClick={() => form.set('subfields', [...v.subfields, { label: '', type: 'text' }])}
           >
-            Unterfeld hinzufügen
+            {t('Unterfeld hinzufügen')}
           </button>
           {form.errors.subfields && <small className="field-error">{form.errors.subfields}</small>}
         </fieldset>
       )}
       {isFederation && (
         <Checkbox
-          label={`verbandsweit (gilt in allen ${tm.pl_dat})`}
+          label={t('verbandsweit (gilt in allen {pl_dat})', { pl_dat: tm.pl_dat })}
           checked={v.federation_wide}
           onChange={(x) => form.set('federation_wide', x)}
         />
@@ -452,11 +465,11 @@ function FieldForm({
           className={field ? 'button button-ghost' : 'button button-primary'}
           disabled={form.busy}
         >
-          {field ? 'Schließen' : 'Anlegen'}
+          {field ? t('Schließen') : t('Anlegen')}
         </button>
         {!field && (
           <button type="button" className="button button-ghost" onClick={onCancel}>
-            Abbrechen
+            {t('Abbrechen')}
           </button>
         )}
       </div>

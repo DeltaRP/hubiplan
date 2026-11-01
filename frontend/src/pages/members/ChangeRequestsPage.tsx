@@ -10,6 +10,7 @@ import { errorMessage, formatDateTime, useLoad } from '../../components/forms.ts
 import { Alert, LoadError } from '../../components/ui.tsx'
 import { useActiveOrg } from '../../org/OrgContext.tsx'
 import { ChangeTable } from '../portal/PortalPage.tsx'
+import { t } from '../../i18n/index.ts'
 
 export function ChangeRequestsPage() {
   const org = useActiveOrg()
@@ -26,28 +27,28 @@ export function ChangeRequestsPage() {
   return (
     <>
       <div className="card card-wide filters">
-        <select aria-label="Status" value={status} onChange={(e) => setStatus(e.target.value)}>
+        <select aria-label={t('Status')} value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="pending">offen</option>
-          <option value="accepted">übernommen</option>
+          <option value="accepted">{t('übernommen')}</option>
           <option value="rejected">abgelehnt</option>
           <option value="alle">alle</option>
         </select>
       </div>
       {error && (
         <LoadError
-          message={`Die Änderungsmeldungen konnten nicht geladen werden (${error}).`}
+          message={t('Die Änderungsmeldungen konnten nicht geladen werden ({error}).', { error })}
           onRetry={() => void reload()}
         />
       )}
       {!data ? (
         !error && (
           <p className="muted" role="status">
-            Lädt …
+            {t('Lädt …')}
           </p>
         )
       ) : data.length === 0 ? (
         <div className="card empty-state">
-          <p>Keine Meldungen.</p>
+          <p>{t('Keine Meldungen.')}</p>
         </div>
       ) : (
         <div className="stack">
@@ -85,9 +86,9 @@ function RequestCard({
         // Inzwischen im Verein geänderte Felder: erst nachfragen
         if (!(err instanceof ApiError) || err.status !== 409) throw err
         const ok = await confirmDialog({
-          title: 'Neuere Angaben überschreiben?',
+          title: t('Neuere Angaben überschreiben?'),
           message: err.message,
-          confirmLabel: 'Trotzdem annehmen',
+          confirmLabel: t('Trotzdem annehmen'),
         })
         if (!ok) return
         await portalApi.decide(orgId, c.id, accept, response, true)
@@ -107,16 +108,24 @@ function RequestCard({
           <Link to={`/mitglieder/${c.member_id}`}>{c.member_name}</Link>
         </h2>
         <span className="muted small push-right">
-          {c.status_label} · gemeldet {formatDateTime(c.created_at)}
+          {c.status_label} {t('· gemeldet')} {formatDateTime(c.created_at)}
         </span>
       </div>
       <ChangeTable request={c} />
-      {c.message && <p className="small">Nachricht: {c.message}</p>}
-      {c.response && <p className="small">Antwort: {c.response}</p>}
+      {c.message && (
+        <p className="small">
+          {t('Nachricht:')} {c.message}
+        </p>
+      )}
+      {c.response && (
+        <p className="small">
+          {t('Antwort:')} {c.response}
+        </p>
+      )}
       {c.status === 'pending' && canEdit && (
         <>
           <label className="field">
-            <span>Antwort an das Mitglied (optional)</span>
+            <span>{t('Antwort an das Mitglied (optional)')}</span>
             <input value={response} maxLength={500} onChange={(e) => setResponse(e.target.value)} />
           </label>
           <div className="button-row">
@@ -126,7 +135,7 @@ function RequestCard({
               disabled={busy}
               onClick={() => void decide(true)}
             >
-              Übernehmen
+              {t('Übernehmen')}
             </button>
             <button
               type="button"
@@ -134,7 +143,7 @@ function RequestCard({
               disabled={busy}
               onClick={() => void decide(false)}
             >
-              Ablehnen
+              {t('Ablehnen')}
             </button>
           </div>
         </>

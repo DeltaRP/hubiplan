@@ -7,6 +7,7 @@ import { Alert } from '../../components/ui.tsx'
 import { todayIso } from '../../api/members.ts'
 import { confirmDialog } from '../../components/dialog.ts'
 import { Term, Why } from '../../learning/Aids.tsx'
+import { t } from '../../i18n/index.ts'
 
 const LINK_STATE: Record<UploadLink['state'], string> = {
   open: 'offen',
@@ -57,14 +58,14 @@ export function PhotoSection({
 
   return (
     <div className="card card-wide photo-section">
-      <h2>Foto</h2>
+      <h2>{t('Foto')}</h2>
       <Why k="photo_consent" />
       <div className="photo-row">
         <div className="photo-frame">
           {photo ? (
-            <img src={photo.url} alt="Foto des Mitglieds" />
+            <img src={photo.url} alt={t('Foto des Mitglieds')} />
           ) : (
-            <span className="muted small">kein Foto</span>
+            <span className="muted small">{t('kein Foto')}</span>
           )}
         </div>
         <div className="photo-info">
@@ -74,10 +75,19 @@ export function PhotoSection({
             </p>
           )}
           <p className="small">
-            Foto-<Term k="consent">Einwilligung</Term>:{' '}
+            {t('Foto-')}
+            <Term k="consent">{t('Einwilligung')}</Term>:{' '}
             {state.photo_consent_at
-              ? `${formatDate(state.photo_consent_at)} (${state.photo_consent_source === 'member' ? 'vom Mitglied' : state.photo_consent_source === 'app' ? 'vom Mitglied in der App' : 'durch den Vorstand erfasst'})`
-              : 'liegt nicht vor'}
+              ? t('{x} ({x2})', {
+                  x: formatDate(state.photo_consent_at),
+                  x2:
+                    state.photo_consent_source === 'member'
+                      ? 'vom Mitglied'
+                      : state.photo_consent_source === 'app'
+                        ? 'vom Mitglied in der App'
+                        : 'durch den Vorstand erfasst',
+                })
+              : t('liegt nicht vor')}
           </p>
           {canManage && !editing && (
             <div className="button-row">
@@ -86,7 +96,7 @@ export function PhotoSection({
                 className="button button-ghost"
                 onClick={() => setEditing(true)}
               >
-                {photo ? 'Foto ersetzen' : 'Foto hochladen'}
+                {photo ? t('Foto ersetzen') : t('Foto hochladen')}
               </button>
               {photo && (
                 <>
@@ -94,7 +104,7 @@ export function PhotoSection({
                     type="button"
                     className="button button-ghost"
                     disabled={busy}
-                    aria-label="Foto nach links drehen"
+                    aria-label={t('Foto nach links drehen')}
                     onClick={() => void run(() => photoApi.rotate(orgId, memberId, 'left'))}
                   >
                     ⟲
@@ -103,7 +113,7 @@ export function PhotoSection({
                     type="button"
                     className="button button-ghost"
                     disabled={busy}
-                    aria-label="Foto nach rechts drehen"
+                    aria-label={t('Foto nach rechts drehen')}
                     onClick={() => void run(() => photoApi.rotate(orgId, memberId, 'right'))}
                   >
                     ⟳
@@ -113,11 +123,16 @@ export function PhotoSection({
                     className="button button-danger"
                     disabled={busy}
                     onClick={async () => {
-                      if (await confirmDialog({ title: 'Foto löschen?', confirmLabel: 'Löschen' }))
+                      if (
+                        await confirmDialog({
+                          title: t('Foto löschen?'),
+                          confirmLabel: t('Löschen'),
+                        })
+                      )
                         void run(() => photoApi.remove(orgId, memberId))
                     }}
                   >
-                    Löschen
+                    {t('Löschen')}
                   </button>
                 </>
               )}
@@ -129,16 +144,16 @@ export function PhotoSection({
                   onClick={async () => {
                     if (
                       await confirmDialog({
-                        title: 'Einwilligung als widerrufen erfassen?',
-                        message: 'Vorhandene Fotos werden gelöscht.',
-                        confirmLabel: 'Widerruf erfassen',
+                        title: t('Einwilligung als widerrufen erfassen?'),
+                        message: t('Vorhandene Fotos werden gelöscht.'),
+                        confirmLabel: t('Widerruf erfassen'),
                       })
                     ) {
                       void run(() => photoApi.setConsent(orgId, memberId, null))
                     }
                   }}
                 >
-                  Einwilligung widerrufen
+                  {t('Einwilligung widerrufen')}
                 </button>
               ) : null}
             </div>
@@ -148,8 +163,8 @@ export function PhotoSection({
 
       {canManage && pending && (
         <div className="subcard">
-          <h3>Vom Mitglied hochgeladen – wartet auf Freigabe</h3>
-          <img src={pending.url} alt="Neues Foto des Mitglieds" className="photo-pending" />
+          <h3>{t('Vom Mitglied hochgeladen – wartet auf Freigabe')}</h3>
+          <img src={pending.url} alt={t('Neues Foto des Mitglieds')} className="photo-pending" />
           <div className="button-row">
             <button
               type="button"
@@ -157,7 +172,7 @@ export function PhotoSection({
               disabled={busy}
               onClick={() => void run(() => photoApi.decide(orgId, memberId, 'approve'))}
             >
-              Freigeben
+              {t('Freigeben')}
             </button>
             <button
               type="button"
@@ -165,7 +180,7 @@ export function PhotoSection({
               disabled={busy}
               onClick={() => void run(() => photoApi.decide(orgId, memberId, 'reject'))}
             >
-              Ablehnen
+              {t('Ablehnen')}
             </button>
           </div>
         </div>
@@ -175,7 +190,7 @@ export function PhotoSection({
         <div className="subcard">
           <PhotoEditor
             busy={busy}
-            submitLabel="Foto speichern"
+            submitLabel={t('Foto speichern')}
             onCancel={() => setEditing(false)}
             onDone={async (blob) => {
               const ok = await run(() => photoApi.upload(orgId, memberId, blob, consent))
@@ -190,8 +205,10 @@ export function PhotoSection({
                   onChange={(e) => setConsent(e.target.checked)}
                 />
                 <span>
-                  Die Einwilligung des Mitglieds zur Verwendung des Fotos liegt vor (Datum: heute,{' '}
-                  {formatDate(todayIso())}).
+                  {t(
+                    'Die Einwilligung des Mitglieds zur Verwendung des Fotos liegt vor (Datum: heute,  {x}).',
+                    { x: formatDate(todayIso()) },
+                  )}
                 </span>
               </label>
             )}
@@ -232,10 +249,11 @@ function UploadLinks({
 
   return (
     <div className="upload-links">
-      <h3>Foto vom Mitglied anfordern</h3>
+      <h3>{t('Foto vom Mitglied anfordern')}</h3>
       <p className="muted small">
-        Persönlicher Link ohne Anmeldung: 14 Tage gültig, einmal nutzbar. Das Mitglied gibt dort
-        seine Einwilligung und schneidet das Bild selbst zu.
+        {t(
+          'Persönlicher Link ohne Anmeldung: 14 Tage gültig, einmal nutzbar. Das Mitglied gibt dort seine Einwilligung und schneidet das Bild selbst zu.',
+        )}
       </p>
       <div className="button-row">
         <button
@@ -243,18 +261,18 @@ function UploadLinks({
           className="button button-ghost"
           disabled={!hasEmail}
           onClick={() => void create(true)}
-          title={hasEmail ? undefined : 'Keine E-Mail-Adresse hinterlegt'}
+          title={hasEmail ? undefined : t('Keine E-Mail-Adresse hinterlegt')}
         >
-          Link per E-Mail senden
+          {t('Link per E-Mail senden')}
         </button>
         <button type="button" className="button button-ghost" onClick={() => void create(false)}>
-          Link erzeugen und kopieren
+          {t('Link erzeugen und kopieren')}
         </button>
       </div>
       {created?.url && (
         <Alert kind="info">
-          {created.sent_to ? `Gesendet an ${created.sent_to}. ` : ''}Link (nur jetzt sichtbar):{' '}
-          <code>{created.url}</code>{' '}
+          {created.sent_to ? t('Gesendet an {sent_to}. ', { sent_to: created.sent_to }) : ''}
+          {t('Link (nur jetzt sichtbar):')} <code>{created.url}</code>{' '}
           <button
             type="button"
             className="link-button"
@@ -276,7 +294,8 @@ function UploadLinks({
           {data.map((l) => (
             <li key={l.id}>
               {formatDateTime(l.created_at)} · {LINK_STATE[l.state]}
-              {l.sent_to && ` · an ${l.sent_to}`} · gültig bis {formatDate(l.expires_at)}
+              {l.sent_to && t(' · an {sent_to}', { sent_to: l.sent_to })} {t('· gültig bis')}{' '}
+              {formatDate(l.expires_at)}
               {l.state === 'open' && (
                 <button
                   type="button"

@@ -6,6 +6,7 @@ import { errorMessage, formatDate, formatDateTime, useLoad } from '../../compone
 import { Alert } from '../../components/ui.tsx'
 import { useActiveOrg } from '../../org/OrgContext.tsx'
 import { useTerms } from '../../org/terms.ts'
+import { t } from '../../i18n/index.ts'
 
 /** Wechselanfragen: eingegangene beantworten, gestellte verfolgen. */
 export function TransfersPage() {
@@ -14,21 +15,23 @@ export function TransfersPage() {
   const terms = useTerms()
   const { data, error, reload } = useLoad(() => memberApi.transfers(org.id), [org.id])
   if (error) return <Alert kind="error">{error}</Alert>
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
   const incoming = data.filter((tm) => tm.direction === 'incoming')
   const outgoing = data.filter((tm) => tm.direction === 'outgoing')
 
   return (
     <>
       <p className="muted">
-        Will {terms.e_ein_anderer} {terms.dv_im} ein Mitglied aktiv aufnehmen, das bei euch noch
-        aktiv ist, bestätigt ihr hier den Austritt oder den Wechsel zu einer nicht aktiven Art.
+        {t(
+          'Will {e_ein_anderer} {dv_im} ein Mitglied aktiv aufnehmen, das bei euch noch aktiv ist, bestätigt ihr hier den Austritt oder den Wechsel zu einer nicht aktiven Art.',
+          { e_ein_anderer: terms.e_ein_anderer, dv_im: terms.dv_im },
+        )}
       </p>
       <div className="stack">
         <div className="card card-wide">
-          <h2>Eingegangen</h2>
+          <h2>{t('Eingegangen')}</h2>
           {incoming.length === 0 ? (
-            <p className="muted">Keine Anfragen.</p>
+            <p className="muted">{t('Keine Anfragen.')}</p>
           ) : (
             incoming.map((tm) => (
               <IncomingItem
@@ -42,9 +45,9 @@ export function TransfersPage() {
           )}
         </div>
         <div className="card card-wide">
-          <h2>Gestellt</h2>
+          <h2>{t('Gestellt')}</h2>
           {outgoing.length === 0 ? (
-            <p className="muted">Keine Anfragen.</p>
+            <p className="muted">{t('Keine Anfragen.')}</p>
           ) : (
             outgoing.map((tm) => (
               <OutgoingItem
@@ -66,17 +69,21 @@ function Summary({ t: tm }: { t: Transfer }) {
   return (
     <>
       <div>
-        <strong>{tm.person_name}</strong> · geb. {formatDate(tm.birth_date)}
+        <strong>{tm.person_name}</strong> {t('· geb.')} {formatDate(tm.birth_date)}
       </div>
       <div className="small">
-        {tm.from_org_name} → {tm.to_org_name} als „{tm.member_type_name}“ ab{' '}
+        {tm.from_org_name}{' '}
+        {t('→ {to_org_name} als „{member_type_name}“ ab', {
+          to_org_name: tm.to_org_name,
+          member_type_name: tm.member_type_name,
+        })}{' '}
         {formatDate(tm.entry_date)}
       </div>
       {tm.message && <div className="small muted">„{tm.message}“</div>}
       <div className="small muted">
         gestellt {formatDateTime(tm.created_at)} · {tm.status_label}
-        {tm.decision_label && ` · ${tm.decision_label}`}
-        {tm.response && ` · Antwort: „${tm.response}“`}
+        {tm.decision_label && t(' · {decision_label}', { decision_label: tm.decision_label })}
+        {tm.response && t(' · Antwort: „{response}“', { response: tm.response })}
       </div>
     </>
   )
@@ -124,8 +131,8 @@ function IncomingItem({
       {transfer.status === 'pending' && canEdit && (
         <div className="transfer-actions">
           <input
-            aria-label="Antwort (optional)"
-            placeholder="Antwort (optional)"
+            aria-label={t('Antwort (optional)')}
+            placeholder={t('Antwort (optional)')}
             value={response}
             onChange={(e) => setResponse(e.target.value)}
           />
@@ -136,14 +143,14 @@ function IncomingItem({
               disabled={busy}
               onClick={() => void decide('exit')}
             >
-              Austritt bestätigen
+              {t('Austritt bestätigen')}
             </button>
             <select
-              aria-label="nicht aktive Art"
+              aria-label={t('nicht aktive Art')}
               value={newType}
               onChange={(e) => setNewType(e.target.value)}
             >
-              <option value="">Wechsel zu nicht aktiver Art …</option>
+              <option value="">{t('Wechsel zu nicht aktiver Art …')}</option>
               {passive.map((tm) => (
                 <option key={tm.id} value={tm.id}>
                   {tm.name}
@@ -156,7 +163,7 @@ function IncomingItem({
               disabled={busy || !newType}
               onClick={() => void decide('change_type')}
             >
-              Art wechseln und bestätigen
+              {t('Art wechseln und bestätigen')}
             </button>
             <button
               type="button"
@@ -164,7 +171,7 @@ function IncomingItem({
               disabled={busy}
               onClick={() => void decide('reject')}
             >
-              Ablehnen
+              {t('Ablehnen')}
             </button>
           </div>
         </div>
@@ -202,7 +209,7 @@ function OutgoingItem({
             }
           }}
         >
-          Anfrage zurückziehen
+          {t('Anfrage zurückziehen')}
         </button>
       )}
       {error && <Alert kind="error">{error}</Alert>}

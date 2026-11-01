@@ -34,6 +34,7 @@ import { MemberPicker } from '../../components/MemberPicker.tsx'
 import { SortableList, SortHint } from '../../components/Sortable.tsx'
 import { memberApi, todayIso } from '../../api/members.ts'
 import type { MemberRow } from '../../api/members.ts'
+import { t, tn } from '../../i18n/index.ts'
 
 export function DepartmentsPage() {
   const org = useActiveOrg()
@@ -52,23 +53,27 @@ export function DepartmentsPage() {
   }, [selected])
 
   if (org.type !== 'club')
-    return <Alert kind="info">Nur Einheiten mit Mitgliedern haben {labelPlural}.</Alert>
+    return (
+      <Alert kind="info">
+        {t('Nur Einheiten mit Mitgliedern haben {labelPlural}.', { labelPlural })}
+      </Alert>
+    )
   if (error) return <Alert kind="error">{error}</Alert>
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
 
   const current = data.find((d) => d.id === selected) ?? null
 
   async function remove(dep: Department) {
     const own = ownTerms(dep, tmx)
     const ok = await confirmDialog({
-      title: `„${dep.name}“ löschen?`,
+      title: t('„{name}“ löschen?', { name: dep.name }),
       message: fillTerms(
-        'Nur möglich, solange {diesem} keine Mitglieder und Rolleninhaber zugeordnet sind ' +
-          'oder waren und {nom} keine eigenen Untereinheiten hat. Sonst {akk} besser auf ' +
-          'inaktiv setzen.',
+        t('Nur möglich, solange {diesem} keine Mitglieder und Rolleninhaber zugeordnet sind ') +
+          t('oder waren und {nom} keine eigenen Untereinheiten hat. Sonst {akk} besser auf ') +
+          t('inaktiv setzen.'),
         own,
       ),
-      confirmLabel: 'Löschen',
+      confirmLabel: t('Löschen'),
     })
     if (!ok) return
     try {
@@ -76,16 +81,19 @@ export function DepartmentsPage() {
       if (selected === dep.id) setSelected(null)
       reload()
     } catch (err) {
-      await alertDialog({ title: `${own.Sg} nicht gelöscht`, message: errorMessage(err) })
+      await alertDialog({
+        title: t('{Sg} nicht gelöscht', { Sg: own.Sg }),
+        message: errorMessage(err),
+      })
     }
   }
 
   const columns: Column<Department>[] = [
     {
       key: 'name',
-      label: 'Name',
+      label: t('Name'),
       value: (d) => d.path ?? d.name,
-      searchText: (d) => `${d.path ?? d.name} ${d.short_name ?? ''}`,
+      searchText: (d) => t('{x} {x2}', { x: d.path ?? d.name, x2: d.short_name ?? '' }),
       render: (d) => (
         <span
           className="cell-with-logo"
@@ -103,18 +111,18 @@ export function DepartmentsPage() {
         </span>
       ),
     },
-    { key: 'short_name', label: 'Kurzname', value: (d) => d.short_name ?? '', optional: true },
+    { key: 'short_name', label: t('Kurzname'), value: (d) => d.short_name ?? '', optional: true },
     {
       key: 'founding_year',
-      label: 'Gründungsjahr',
+      label: t('Gründungsjahr'),
       value: (d) => d.founding_year,
       numeric: true,
       optional: true,
     },
-    { key: 'members', label: 'Mitglieder', value: (d) => d.member_count ?? 0, numeric: true },
+    { key: 'members', label: t('Mitglieder'), value: (d) => d.member_count ?? 0, numeric: true },
     {
       key: 'roles',
-      label: 'Rollen',
+      label: t('Rollen'),
       value: (d) => d.roles.length,
       searchText: (d) => d.roles.map((r) => r.name).join(' '),
       render: (d) =>
@@ -128,13 +136,13 @@ export function DepartmentsPage() {
     },
     {
       key: 'status',
-      label: 'Status',
-      value: (d) => (d.is_remote ? 'andere Instanz' : d.is_active ? 'aktiv' : 'inaktiv'),
+      label: t('Status'),
+      value: (d) => (d.is_remote ? t('andere Instanz') : d.is_active ? 'aktiv' : 'inaktiv'),
       filter: {
-        allLabel: 'aktive und inaktive',
+        allLabel: t('aktive und inaktive'),
         options: [
-          { value: 'aktiv', label: 'nur aktive' },
-          { value: 'inaktiv', label: 'nur inaktive' },
+          { value: 'aktiv', label: t('nur aktive') },
+          { value: 'inaktiv', label: t('nur inaktive') },
         ],
       },
     },
@@ -152,7 +160,7 @@ export function DepartmentsPage() {
               aria-pressed={sorting}
               onClick={() => setSorting((x) => !x)}
             >
-              {sorting ? 'Schließen' : 'Reihenfolge ändern'}
+              {sorting ? t('Schließen') : t('Reihenfolge ändern')}
             </button>
           )}
         </div>
@@ -168,9 +176,11 @@ export function DepartmentsPage() {
             columns={columns}
             rowKey={(d) => d.id}
             searchPlaceholder={`${labelPlural} durchsuchen: Name, Kurzname, Rolle`}
-            emptyText={`Noch keine ${labelPlural} angelegt.`}
+            emptyText={t('Noch keine {labelPlural} angelegt.', { labelPlural })}
             countText={(n, total) =>
-              n === total ? `${total} ${total === 1 ? label : labelPlural}` : `${n} von ${total}`
+              n === total
+                ? t('{total} {x}', { total, x: total === 1 ? label : labelPlural })
+                : t('{n} von {total}', { n, total })
             }
             rowClassName={(d) =>
               [!d.is_active && 'inactive', d.id === selected && 'selected']
@@ -180,14 +190,17 @@ export function DepartmentsPage() {
             actions={(d) => (
               <>
                 <IconButton
-                  label={`${d.name} ${editable && !d.is_remote ? 'bearbeiten' : 'anzeigen'}`}
+                  label={t('{name} {x}', {
+                    name: d.name,
+                    x: editable && !d.is_remote ? 'bearbeiten' : 'anzeigen',
+                  })}
                   icon={editable && !d.is_remote ? <EditIcon /> : <ViewIcon />}
                   aria-pressed={d.id === selected}
                   onClick={() => setSelected((s) => (s === d.id ? null : d.id))}
                 />
                 {editable && !d.is_remote && (
                   <IconButton
-                    label={`${d.name} löschen`}
+                    label={t('{name} löschen', { name: d.name })}
                     icon={<DeleteIcon />}
                     danger
                     onClick={() => void remove(d)}
@@ -279,7 +292,7 @@ function NewDepartment({
           founding_year: form.values.founding_year ? Number(form.values.founding_year) : null,
           parent_unit: form.values.parent_unit ? Number(form.values.parent_unit) : null,
         }),
-      `${label} angelegt.`,
+      t('{label} angelegt.', { label }),
     )
     if (ok) {
       form.setValues({
@@ -295,10 +308,10 @@ function NewDepartment({
     <form className="card" onSubmit={create}>
       <h2>{label} anlegen</h2>
       <SelectField
-        label="Gehört zu"
+        label={t('Gehört zu')}
         value={form.values.parent_unit}
         error={form.errors.parent_unit}
-        hint="Untereinheiten können selbst wieder Untereinheiten haben."
+        hint={t('Untereinheiten können selbst wieder Untereinheiten haben.')}
         onChange={(e) => form.set('parent_unit', e.target.value)}
       >
         <option value="">direkt {terms.e_zum}</option>
@@ -312,22 +325,22 @@ function NewDepartment({
       </SelectField>
       <div className="grid-3">
         <Field
-          label="Vollständiger Name"
+          label={t('Vollständiger Name')}
           required
           value={form.values.name}
           error={form.errors.name}
           onChange={(e) => form.set('name', e.target.value)}
         />
         <Field
-          label="Kurzname (optional)"
+          label={t('Kurzname (optional)')}
           maxLength={50}
           value={form.values.short_name}
           error={form.errors.short_name}
-          hint="Für Navigation, Listen und Auswahlfelder"
+          hint={t('Für Navigation, Listen und Auswahlfelder')}
           onChange={(e) => form.set('short_name', e.target.value)}
         />
         <Field
-          label="Gründungsjahr (optional)"
+          label={t('Gründungsjahr (optional)')}
           type="number"
           min={800}
           max={2100}
@@ -338,7 +351,7 @@ function NewDepartment({
       </div>
       {form.message && <Alert kind={form.message.kind}>{form.message.text}</Alert>}
       <button type="submit" className="button button-primary" disabled={form.busy}>
-        Anlegen
+        {t('Anlegen')}
       </button>
     </form>
   )
@@ -396,11 +409,13 @@ function DepartmentCard({
     const count = below(dep.id, units).filter((u) => u.is_active).length
     if (!on && count) {
       const ok = await confirmDialog({
-        title: `„${dep.name}“ stilllegen?`,
-        message:
-          `Damit ${count === 1 ? 'wird auch 1 Untereinheit' : `werden auch ${count} Untereinheiten`} ` +
-          'darunter stillgelegt. Wird sie wieder aktiv, kommen diese mit zurück.',
-        confirmLabel: 'Stilllegen',
+        title: t('„{name}“ stilllegen?', { name: dep.name }),
+        message: tn(
+          'Damit wird auch 1 Untereinheit darunter stillgelegt. Wird sie wieder aktiv, kommt diese mit zurück.',
+          'Damit werden auch {n} Untereinheiten darunter stillgelegt. Wird sie wieder aktiv, kommen diese mit zurück.',
+          count,
+        ),
+        confirmLabel: t('Stilllegen'),
       })
       if (!ok) return
     }
@@ -416,8 +431,8 @@ function DepartmentCard({
     date_precision: dep.date_precision,
     fiscal_start_month: dep.fiscal_start_month,
     fiscal_start_day: dep.fiscal_start_day,
-    department_label: dep.department_label ?? 'Gruppe',
-    department_label_plural: dep.department_label_plural ?? 'Gruppen',
+    department_label: dep.department_label ?? t('Gruppe'),
+    department_label_plural: dep.department_label_plural ?? t('Gruppen'),
     department_label_gender: (dep.department_label_gender ?? 'f') as Gender,
     department_label_genitive: dep.department_label_genitive ?? '',
     department_label_en: dep.department_label_en ?? '',
@@ -456,11 +471,13 @@ function DepartmentCard({
         <div>
           <h2>{dep.name}</h2>
           <p className="muted small">
-            {dep.short_name && `Kurzname: ${dep.short_name} · `}
-            {dep.founding_year != null && `gegründet ${dep.founding_year} · `}
-            Geschäftsjahr {fiscalDescription(dep.fiscal_start_month, dep.fiscal_start_day)}
-            {dep.date_precision && ` · Mitgliedschaften ${DATE_PRECISION_WORD[dep.date_precision]}`}
-            {!dep.is_active && ' · inaktiv'}
+            {dep.short_name && t('Kurzname: {short_name} · ', { short_name: dep.short_name })}
+            {dep.founding_year != null &&
+              t('gegründet {founding_year} · ', { founding_year: dep.founding_year })}
+            {t('Geschäftsjahr')} {fiscalDescription(dep.fiscal_start_month, dep.fiscal_start_day)}
+            {dep.date_precision &&
+              t(' · Mitgliedschaften {x}', { x: DATE_PRECISION_WORD[dep.date_precision] })}
+            {!dep.is_active && t(' · inaktiv')}
           </p>
         </div>
         {/* Felder speichern automatisch; Schließen wartet nur auf die letzte Änderung */}
@@ -469,14 +486,14 @@ function DepartmentCard({
           className="button button-ghost push-right"
           onClick={() => (editable ? void finish() : onClose())}
         >
-          Schließen
+          {t('Schließen')}
         </button>
       </div>
       {dep.is_remote && (
         <Alert kind="info">
-          Diese Einheit führt ihre Daten auf einer eigenen HUBIplan-Instanz. Sie ist über den
-          Verbund gekoppelt und pflegt sich dort; hier ist sie nur zu sehen. Die Kopplung steht
-          unter Einstellungen › Verbund.
+          {t(
+            'Diese Einheit führt ihre Daten auf einer eigenen HUBIplan-Instanz. Sie ist über den Verbund gekoppelt und pflegt sich dort; hier ist sie nur zu sehen. Die Kopplung steht unter Einstellungen › Verbund.',
+          )}
         </Alert>
       )}
 
@@ -485,21 +502,21 @@ function DepartmentCard({
           <SaveStatus auto={auto} />
           <div className="grid-3">
             <Field
-              label="Vollständiger Name"
+              label={t('Vollständiger Name')}
               required
               value={form.values.name}
               error={form.errors.name}
               onChange={(e) => form.set('name', e.target.value)}
             />
             <Field
-              label="Kurzname (optional)"
+              label={t('Kurzname (optional)')}
               maxLength={50}
               value={form.values.short_name}
               error={form.errors.short_name}
               onChange={(e) => form.set('short_name', e.target.value)}
             />
             <Field
-              label="Gründungsjahr (optional)"
+              label={t('Gründungsjahr (optional)')}
               type="number"
               min={800}
               max={2100}
@@ -509,7 +526,7 @@ function DepartmentCard({
             />
           </div>
           <Field
-            label="Homepage (optional)"
+            label={t('Homepage (optional)')}
             inputMode="url"
             placeholder="https://"
             value={form.values.website}
@@ -518,8 +535,11 @@ function DepartmentCard({
           />
           {hasWebsite && (
             <Checkbox
-              label="Homepage auf der Webseite verlinken"
-              hint={`Der Link steht auf der Seite von ${dep.name} und öffnet sich in einem neuen Tab.`}
+              label={t('Homepage auf der Webseite verlinken')}
+              hint={t(
+                'Der Link steht auf der Seite von {name} und öffnet sich in einem neuen Tab.',
+                { name: dep.name },
+              )}
               checked={form.values.website_on_site}
               disabled={!form.values.website.trim()}
               onChange={(on) => form.set('website_on_site', on)}
@@ -535,20 +555,22 @@ function DepartmentCard({
             />
           )}
           <Checkbox
-            label={`${dep.name} ist aktiv`}
+            label={t('{name} ist aktiv', { name: dep.name })}
             hint={
               below(dep.id, units).length
-                ? 'statt Löschen auf inaktiv setzen; legt auch alle Untereinheiten darunter still'
-                : 'statt Löschen auf inaktiv setzen, wenn es Mitglieder gab'
+                ? t(
+                    'statt Löschen auf inaktiv setzen; legt auch alle Untereinheiten darunter still',
+                  )
+                : t('statt Löschen auf inaktiv setzen, wenn es Mitglieder gab')
             }
             checked={form.values.is_active}
             onChange={(on) => void toggleActive(on)}
           />
           <SelectField
-            label="Gehört zu"
+            label={t('Gehört zu')}
             value={form.values.parent_unit}
             error={form.errors.parent_unit}
-            hint="Umhängen: Untereinheiten und Mitglieder wandern mit."
+            hint={t('Umhängen: Untereinheiten und Mitglieder wandern mit.')}
             onChange={(e) => form.set('parent_unit', e.target.value)}
           >
             <option value="">direkt {terms.e_zum}</option>
@@ -570,10 +592,10 @@ function DepartmentCard({
             }}
           />
           <SelectField
-            label="Genauigkeit für Mitgliedschaften"
+            label={t('Genauigkeit für Mitgliedschaften')}
             value={form.values.date_precision}
             error={form.errors.date_precision}
-            hint={`Wie Ein- und Austritt in ${inThis} angezeigt werden.`}
+            hint={t('Wie Ein- und Austritt in {inThis} angezeigt werden.', { inThis })}
             onChange={(e) => form.set('date_precision', e.target.value as DatePrecision | '')}
           >
             <option value="">wie {tm.e_nom}</option>
@@ -585,22 +607,24 @@ function DepartmentCard({
           </SelectField>
           {hasBilling && (
             <>
-              <h3>Beitrag</h3>
+              <h3>{t('Beitrag')}</h3>
               <Checkbox
-                label={`Mitglieder von ${dep.name} sind beitragsfrei`}
-                hint="Gilt auch für die Einheiten darunter. Der Beitragslauf berechnet für sie 0 € und nennt sie in der Prüfliste. Der Beitrag an den Dachverband bleibt."
+                label={t('Mitglieder von {name} sind beitragsfrei', { name: dep.name })}
+                hint={t(
+                  'Gilt auch für die Einheiten darunter. Der Beitragslauf berechnet für sie 0 € und nennt sie in der Prüfliste. Der Beitrag an den Dachverband bleibt.',
+                )}
                 checked={form.values.fee_exempt}
                 onChange={(on) => form.set('fee_exempt', on)}
               />
             </>
           )}
-          <h3>Verwaltung</h3>
+          <h3>{t('Verwaltung')}</h3>
           <Checkbox
-            label={`${dep.name} verwaltet sich selbst`}
+            label={t('{name} verwaltet sich selbst', { name: dep.name })}
             hint={
               form.values.own_workspace
-                ? 'Mit eigenem Arbeitsbereich immer an.'
-                : 'Rolleninhaber bekommen Zugänge mit Rechten.'
+                ? t('Mit eigenem Arbeitsbereich immer an.')
+                : t('Rolleninhaber bekommen Zugänge mit Rechten.')
             }
             checked={form.values.self_managed || form.values.own_workspace}
             disabled={form.values.own_workspace}
@@ -609,15 +633,22 @@ function DepartmentCard({
           <Why k="unit_self_managed" />
           <p className="muted small">
             {form.values.self_managed || form.values.own_workspace
-              ? `Die Mitglieder bleiben ${tm.e_beim}. Wer in ${inThis} eine Rolle mit Rechten hat, arbeitet mit eigenem Zugang.`
-              : 'Die Einheit darüber verwaltet alles. Rollen sind reine Ämter: keine Rechte, keine Zugänge, keine E-Mails.'}
+              ? t(
+                  'Die Mitglieder bleiben {e_beim}. Wer in {inThis} eine Rolle mit Rechten hat, arbeitet mit eigenem Zugang.',
+                  { e_beim: tm.e_beim, inThis },
+                )
+              : t(
+                  'Die Einheit darüber verwaltet alles. Rollen sind reine Ämter: keine Rechte, keine Zugänge, keine E-Mails.',
+                )}
           </p>
           {form.errors.self_managed && <Alert kind="error">{form.errors.self_managed}</Alert>}
           {(form.values.self_managed || form.values.own_workspace) && (
             <>
-              <h3>Eigener Arbeitsbereich</h3>
+              <h3>{t('Eigener Arbeitsbereich')}</h3>
               <Checkbox
-                label={`${dep.name} führt eine eigene Kasse und hat eigene Rollen mit Zugängen`}
+                label={t('{name} führt eine eigene Kasse und hat eigene Rollen mit Zugängen', {
+                  name: dep.name,
+                })}
                 checked={form.values.own_workspace}
                 onChange={(on) => {
                   form.set('own_workspace', on)
@@ -625,23 +656,25 @@ function DepartmentCard({
                 }}
               />
               <p className="muted small">
-                Die Mitglieder bleiben {tm.e_beim}. Der Arbeitsbereich erscheint oben in der
-                Auswahl. Wer hier Rollen verwaltet, richtet dort die Zugänge ein; wer hier die Kasse
-                sieht, sieht dort die Kasse mit (nur lesen).
+                {t(
+                  'Die Mitglieder bleiben {e_beim}. Der Arbeitsbereich erscheint oben in der Auswahl. Wer hier Rollen verwaltet, richtet dort die Zugänge ein; wer hier die Kasse sieht, sieht dort die Kasse mit (nur lesen).',
+                  { e_beim: tm.e_beim },
+                )}
               </p>
             </>
           )}
           {hasWebsite && (form.values.own_workspace || form.values.own_website) && (
             <>
               <Checkbox
-                label={`${dep.name} hat eine eigene Webseite`}
+                label={t('{name} hat eine eigene Webseite', { name: dep.name })}
                 checked={form.values.own_website}
                 onChange={(on) => form.set('own_website', on)}
               />
               <p className="muted small">
-                Optional. Gepflegt wird sie im Arbeitsbereich unter „Webseite“, mit eigenen Texten,
-                eigener Domain und eigenen Ansprechpartnern. Die Mitglieder und ihre Einwilligungen
-                kommen {tm.e_vom}.
+                {t(
+                  'Optional. Gepflegt wird sie im Arbeitsbereich unter „Webseite“, mit eigenen Texten, eigener Domain und eigenen Ansprechpartnern. Die Mitglieder und ihre Einwilligungen kommen {e_vom}.',
+                  { e_vom: tm.e_vom },
+                )}
               </p>
               {form.errors.own_website && <Alert kind="error">{form.errors.own_website}</Alert>}
             </>
@@ -649,9 +682,11 @@ function DepartmentCard({
           {/* Ohne Untereinheiten braucht es keine Bezeichnung dafür */}
           {hasChildren && (
             <>
-              <h3>Bezeichnung der Untereinheiten</h3>
+              <h3>{t('Bezeichnung der Untereinheiten')}</h3>
               <p className="muted small">
-                So heißen Einheiten, die zu {inThis} gehören (z. B. „Gruppe“ oder „Rotte“).
+                {t('So heißen Einheiten, die zu {inThis} gehören (z. B. „Gruppe“ oder „Rotte“).', {
+                  inThis,
+                })}
               </p>
               <LabelFields
                 preview="children"
@@ -681,7 +716,7 @@ function DepartmentCard({
               />
             </>
           )}
-          <h4>Wappen / Logo</h4>
+          <h4>{t('Wappen / Logo')}</h4>
           <LogoUpload
             uploadUrl={orgApi.departmentLogoUrl(orgId, dep.id)}
             logoUrl={dep.logo_url}
@@ -689,9 +724,9 @@ function DepartmentCard({
           />
           {hasWebsite && (
             <p className="muted small" data-testid="unit-gallery-hint">
-              Fotos fürs Bilderkarussell gehören nicht hierher:{' '}
+              {t('Fotos fürs Bilderkarussell gehören nicht hierher:')}{' '}
               <Link to={`/webseite/inhalte?einheit=${dep.id}`}>
-                Webseite › Texte › Text für {dep.name}
+                {t('Webseite › Texte › Text für')} {dep.name}
               </Link>
             </p>
           )}
@@ -703,14 +738,16 @@ function DepartmentCard({
       )}
 
       <div className="card-head">
-        <h3>Rollen in {inThis}</h3>
+        <h3>
+          {t('Rollen in')} {inThis}
+        </h3>
         {editable && roleEdit === null && (
           <button
             type="button"
             className="button button-ghost push-right"
             onClick={() => setRoleEdit('new')}
           >
-            Neue Rolle
+            {t('Neue Rolle')}
           </button>
         )}
       </div>
@@ -755,10 +792,10 @@ function DepartmentCard({
       <RoleTable
         roles={dep.roles.map((r) => ({ ...r, holders: r.holders.map((h) => h.name) }))}
         catalog={catalog}
-        holderLabel="Inhaber"
+        holderLabel={t('Inhaber')}
         noPermissions="keine (nur Amt)"
         showPermissions={!!dep.self_managed}
-        editLabel={editable ? 'Bearbeiten' : 'Ansehen'}
+        editLabel={editable ? t('Bearbeiten') : t('Ansehen')}
         onEdit={(r) => setRoleEdit(dep.roles.find((x) => x.id === r.id) ?? null)}
         onReorder={
           editable
@@ -770,26 +807,28 @@ function DepartmentCard({
       <UnitHolders orgId={orgId} dep={dep} onChange={onChange} />
       {dep.self_managed ? (
         <p className="muted small">
-          Eine Rolle ohne Rechte ist ein reines Amt: Die Inhaber brauchen kein Konto und bekommen
-          keine E-Mail. Rechte wirken nur, wenn unter Organisation → Zugänge für Mitglieder
-          eingeschaltet sind und der Inhaber einen Zugang hat (z. B. über „Verwalter einrichten“).
+          {t(
+            'Eine Rolle ohne Rechte ist ein reines Amt: Die Inhaber brauchen kein Konto und bekommen keine E-Mail. Rechte wirken nur, wenn unter Organisation → Zugänge für Mitglieder eingeschaltet sind und der Inhaber einen Zugang hat (z. B. über „Verwalter einrichten“).',
+          )}
         </p>
       ) : (
         <p className="muted small">
-          {dep.name} wird von oben verwaltet: Die Rollen sind reine Ämter, ohne Konto und ohne
-          E-Mail. Eigene Zugänge gibt es erst mit „verwaltet sich selbst“ (oben unter Bearbeiten).
+          {dep.name}{' '}
+          {t(
+            'wird von oben verwaltet: Die Rollen sind reine Ämter, ohne Konto und ohne E-Mail. Eigene Zugänge gibt es erst mit „verwaltet sich selbst“ (oben unter Bearbeiten).',
+          )}
         </p>
       )}
       <details className="statute-details">
-        <summary>Satzung</summary>
+        <summary>{t('Satzung')}</summary>
         <StatutePanel orgId={orgId} departmentId={dep.id} heading="h3" />
       </details>
       <details className="statute-details">
-        <summary>Beitragsordnung</summary>
+        <summary>{t('Beitragsordnung')}</summary>
         <StatutePanel orgId={orgId} departmentId={dep.id} heading="h3" kind="fee_rules" />
       </details>
       <details className="statute-details">
-        <summary>Gründungsurkunde</summary>
+        <summary>{t('Gründungsurkunde')}</summary>
         <StatutePanel orgId={orgId} departmentId={dep.id} heading="h3" kind="founding_deed" />
       </details>
     </div>
@@ -838,38 +877,44 @@ function UnitHolders({
     e.preventDefault()
     const picked = dep.roles.find((r) => String(r.id) === roleId)
     if (!member || !picked) return
-    const name = `${member.first_name} ${member.last_name}`
+    const name = t('{first_name} {last_name}', {
+      first_name: member.first_name,
+      last_name: member.last_name,
+    })
     const ok = await run(
       () => memberApi.addDepartmentRole(orgId, member.id, { role: picked.id, valid_from: from }),
-      `${name} hat jetzt die Rolle „${picked.name}“. Es wurde kein Konto angelegt und keine E-Mail verschickt.`,
+      t(
+        '{name} hat jetzt die Rolle „{name2}“. Es wurde kein Konto angelegt und keine E-Mail verschickt.',
+        { name, name2: picked.name },
+      ),
     )
     if (ok) setMember(null)
   }
 
   async function end(h: (typeof rows)[number]) {
     const ok = await confirmDialog({
-      title: `Rolle „${h.role.name}“ von ${h.name} beenden?`,
-      message: 'Die Amtszeit endet heute und bleibt in der Mitgliederakte erhalten.',
-      confirmLabel: 'Beenden',
+      title: t('Rolle „{name}“ von {name2} beenden?', { name: h.role.name, name2: h.name }),
+      message: t('Die Amtszeit endet heute und bleibt in der Mitgliederakte erhalten.'),
+      confirmLabel: t('Beenden'),
     })
     if (!ok) return
     await run(
       () => memberApi.endDepartmentRole(orgId, h.membership, h.id, today),
-      `Die Rolle „${h.role.name}“ von ${h.name} ist beendet.`,
+      t('Die Rolle „{name}“ von {name2} ist beendet.', { name: h.role.name, name2: h.name }),
     )
   }
 
   return (
     <div className="subcard" data-testid="unit-holders">
-      <h3>Wer hat welche Rolle?</h3>
+      <h3>{t('Wer hat welche Rolle?')}</h3>
       {rows.length === 0 ? (
-        <p className="muted small">Noch niemand.</p>
+        <p className="muted small">{t('Noch niemand.')}</p>
       ) : (
         <table className="table">
           <thead>
             <tr>
-              <th>Mitglied</th>
-              <th>Rolle</th>
+              <th>{t('Mitglied')}</th>
+              <th>{t('Rolle')}</th>
               <th>seit</th>
               <th />
             </tr>
@@ -888,7 +933,7 @@ function UnitHolders({
                       disabled={busy}
                       onClick={() => void end(h)}
                     >
-                      Beenden
+                      {t('Beenden')}
                     </button>
                   )}
                 </td>
@@ -900,12 +945,17 @@ function UnitHolders({
       {canEdit && (
         <form onSubmit={add} className="stack">
           <p className="muted small">
-            Mitglied aus der Mitgliederliste wählen. Es wird kein Konto angelegt und keine E-Mail
-            verschickt.
+            {t(
+              'Mitglied aus der Mitgliederliste wählen. Es wird kein Konto angelegt und keine E-Mail verschickt.',
+            )}
           </p>
-          <MemberPicker orgId={orgId} value={member} onChange={setMember} label="Mitglied" />
+          <MemberPicker orgId={orgId} value={member} onChange={setMember} label={t('Mitglied')} />
           <div className="grid-2">
-            <SelectField label="Rolle" value={roleId} onChange={(e) => setRole(e.target.value)}>
+            <SelectField
+              label={t('Rolle')}
+              value={roleId}
+              onChange={(e) => setRole(e.target.value)}
+            >
               {dep.roles.map((r) => (
                 <option key={r.id} value={String(r.id)}>
                   {r.name}
@@ -922,7 +972,7 @@ function UnitHolders({
           </div>
           <div className="button-row">
             <button type="submit" className="button button-primary" disabled={!member || busy}>
-              Rolle zuordnen
+              {t('Rolle zuordnen')}
             </button>
           </div>
         </form>
@@ -959,14 +1009,24 @@ function ManagerSetup({
       const r = await orgApi.setupUnitManager(orgId, dep.id, member.id)
       const mail =
         r.mail === 'invitation'
-          ? `Eine Einladung zum Festlegen des Passworts ging an ${r.email}.`
+          ? t('Eine Einladung zum Festlegen des Passworts ging an {email}.', { email: r.email })
           : r.mail === 'none'
-            ? `Die E-Mail an ${r.email} konnte nicht gesendet werden; bitte später über „Zugang“ in der Mitgliederakte erneut senden.`
-            : `Ein Hinweis zur Anmeldung ging an ${r.email}.`
-      const extra = r.workspace_role ? ` und im Arbeitsbereich die Rolle „${r.workspace_role}“` : ''
+            ? t(
+                'Die E-Mail an {email} konnte nicht gesendet werden; bitte später über „Zugang“ in der Mitgliederakte erneut senden.',
+                { email: r.email },
+              )
+            : t('Ein Hinweis zur Anmeldung ging an {email}.', { email: r.email })
+      const extra = r.workspace_role
+        ? t(' und im Arbeitsbereich die Rolle „{workspace_role}“', {
+            workspace_role: r.workspace_role,
+          })
+        : ''
       setMessage({
         kind: 'success',
-        text: `${member.first_name} ${member.last_name} hat jetzt die Rolle „${r.role}“ mit allen Rechten${extra}. ${mail}`,
+        text: t(
+          '{first_name} {last_name} hat jetzt die Rolle „{role}“ mit allen Rechten{extra}. {mail}',
+          { first_name: member.first_name, last_name: member.last_name, role: r.role, extra, mail },
+        ),
       })
       setMember(null)
       onChange()
@@ -979,18 +1039,18 @@ function ManagerSetup({
 
   return (
     <form onSubmit={submit} className="stack" data-testid="unit-manager">
-      <h3>Verwalter einrichten</h3>
+      <h3>{t('Verwalter einrichten')}</h3>
       <p className="muted small">
-        Gibt einem Mitglied die Rolle „Leitung“ mit allen Rechten in {inThis}
-        {dep.own_workspace ? ' (auch für Kasse und Rechnungen)' : ''} und richtet ihm einen Zugang
-        ein. Die Person braucht eine E-Mail-Adresse und kann danach selbst weitere Rollen vergeben.
-        Nur nötig, wenn jemand selbst in HUBIplan arbeiten soll; Ämter ohne Zugang vergibst du unter
-        „Wer hat welche Rolle?“.
+        {t('Gibt einem Mitglied die Rolle „Leitung“ mit allen Rechten in')} {inThis}
+        {dep.own_workspace ? ' (auch für Kasse und Rechnungen)' : ''}{' '}
+        {t(
+          'und richtet ihm einen Zugang ein. Die Person braucht eine E-Mail-Adresse und kann danach selbst weitere Rollen vergeben. Nur nötig, wenn jemand selbst in HUBIplan arbeiten soll; Ämter ohne Zugang vergibst du unter „Wer hat welche Rolle?“.',
+        )}
       </p>
-      <MemberPicker orgId={orgId} value={member} onChange={setMember} label="Mitglied" />
+      <MemberPicker orgId={orgId} value={member} onChange={setMember} label={t('Mitglied')} />
       <div className="button-row">
         <button type="submit" className="button button-primary" disabled={!member || busy}>
-          Verwalter einrichten
+          {t('Verwalter einrichten')}
         </button>
       </div>
       {message && <Alert kind={message.kind}>{message.text}</Alert>}
@@ -1014,7 +1074,7 @@ function UnitOrder({
   if (children.length === 0) return null
   return (
     <SortableList
-      ariaLabel={parent === null ? 'Reihenfolge' : 'Reihenfolge darunter'}
+      ariaLabel={parent === null ? t('Reihenfolge') : t('Reihenfolge darunter')}
       items={children}
       id={(u) => u.id}
       label={(u) => u.name}

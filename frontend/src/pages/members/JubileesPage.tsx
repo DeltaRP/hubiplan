@@ -9,6 +9,7 @@ import { ExportPanel } from '../../components/ExportPanel.tsx'
 import { useActiveOrg } from '../../org/OrgContext.tsx'
 import { HowTo } from '../../learning/Aids.tsx'
 import { buildTerms } from '../../org/terms.ts'
+import { t } from '../../i18n/index.ts'
 
 function plusDays(iso: string, days: number): string {
   const d = new Date(`${iso}T12:00:00`) // Mittag: Sommerzeitwechsel verschiebt den Tag nicht
@@ -27,8 +28,8 @@ interface PersonJubilees {
 
 /** Name mit Untereinheit in Klammern, z. B. „Erika Muster (Jägerzug)“ */
 function nameWithUnits(p: { first_name: string; last_name: string; units?: string }): string {
-  const name = `${p.first_name} ${p.last_name}`
-  return p.units ? `${name} (${p.units})` : name
+  const name = t('{first_name} {last_name}', { first_name: p.first_name, last_name: p.last_name })
+  return p.units ? t('{name} ({units})', { name, units: p.units }) : name
 }
 
 /**
@@ -50,14 +51,16 @@ export function unitJubileeHeading(rows: UnitJubileeRow[]): { title: string; col
       row.label_gender,
       row.label_genitive,
     )
-    return ids.size === 1 ? tm.gen : `der ${tm.pl}`
+    return ids.size === 1 ? tm.gen : t('der {pl}', { pl: tm.pl })
   })
   const list =
-    parts.length > 1 ? `${parts.slice(0, -1).join(', ')} und ${parts[parts.length - 1]}` : parts[0]
+    parts.length > 1
+      ? t('{x} und {x2}', { x: parts.slice(0, -1).join(', '), x2: parts[parts.length - 1] })
+      : parts[0]
   const labels = new Set(rows.map((r) => r.label))
   return {
-    title: `${rows.length === 1 ? 'Jubiläum' : 'Jubiläen'} ${list ?? ''}`.trim(),
-    column: labels.size === 1 ? [...labels][0] : 'Name',
+    title: t('{x} {x2}', { x: rows.length === 1 ? 'Jubiläum' : 'Jubiläen', x2: list ?? '' }).trim(),
+    column: labels.size === 1 ? [...labels][0] : t('Name'),
   }
 }
 
@@ -104,7 +107,7 @@ export function JubileesPage() {
             className="button button-ghost"
             onClick={() => setShowExport((s) => !s)}
           >
-            Export
+            {t('Export')}
           </button>
         )}
       </div>
@@ -122,10 +125,10 @@ export function JubileesPage() {
           <table className="table" aria-label={unitHeading.title}>
             <thead>
               <tr>
-                <th>Jahr</th>
+                <th>{t('Jahr')}</th>
                 <th>{unitHeading.column}</th>
-                <th>Jubiläum</th>
-                <th className="col-optional">gegründet</th>
+                <th>{t('Jubiläum')}</th>
+                <th className="col-optional">{t('gegründet')}</th>
               </tr>
             </thead>
             <tbody>
@@ -135,7 +138,9 @@ export function JubileesPage() {
                   <td>
                     {r.path} <span className="muted small">{r.label}</span>
                   </td>
-                  <td>{r.years} Jahre</td>
+                  <td>
+                    {r.years} {t('Jahre')}
+                  </td>
                   <td className="col-optional">{r.founding_year}</td>
                 </tr>
               ))}
@@ -145,21 +150,23 @@ export function JubileesPage() {
       )}
       {error && <Alert kind="error">{error}</Alert>}
       {!data ? (
-        <p className="muted">Lädt …</p>
+        <p className="muted">{t('Lädt …')}</p>
       ) : (
         <div className="card card-wide">
           <HowTo k="calc_jubilee" />
           <p className="muted small">
-            {data.results.length} Jubiläen · Stufen und die Regel für die Dauer stellt jede
-            Organisation unter Mitglieder → Einrichtung → Jubiläen & Dauer ein.
+            {data.results.length}{' '}
+            {t(
+              'Jubiläen · Stufen und die Regel für die Dauer stellt jede Organisation unter Mitglieder → Einrichtung → Jubiläen & Dauer ein.',
+            )}
           </p>
           {data.results.length > 0 && (
             <table className="table">
               <thead>
                 <tr>
-                  <th>Datum</th>
-                  <th>Name</th>
-                  <th>Jubiläum</th>
+                  <th>{t('Datum')}</th>
+                  <th>{t('Name')}</th>
+                  <th>{t('Jubiläum')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -178,7 +185,7 @@ export function JubileesPage() {
                         </td>
                       )}
                       <td>
-                        {r.years} Jahre {r.organization_short ?? r.organization}
+                        {r.years} {t('Jahre')} {r.organization_short ?? r.organization}
                       </td>
                     </tr>
                   )),
@@ -207,13 +214,13 @@ export function JubileeTile() {
   const unitRows: UnitJubileeRow[] = units.data?.results ?? []
   return (
     <div className="card tile">
-      <h2>Anstehende Jubiläen</h2>
+      <h2>{t('Anstehende Jubiläen')}</h2>
       {unitRows.length > 0 && (
         <ul className="plain-list" aria-label={unitJubileeHeading(unitRows).title}>
           {unitRows.slice(0, 3).map((r) => (
             <li key={`${r.id}-${r.years}`} className="tile-entry">
               <span className="tile-entry-title">
-                {r.years} Jahre {r.short_name || r.name}
+                {r.years} {t('Jahre')} {r.short_name || r.name}
               </span>
               <span className="tile-entry-meta muted small">
                 <span>{r.label}</span>
@@ -225,9 +232,9 @@ export function JubileeTile() {
         </ul>
       )}
       {!data ? (
-        <p className="muted">Lädt …</p>
+        <p className="muted">{t('Lädt …')}</p>
       ) : data.results.length === 0 ? (
-        <p className="muted">In den nächsten 90 Tagen keine.</p>
+        <p className="muted">{t('In den nächsten 90 Tagen keine.')}</p>
       ) : (
         <ul className="plain-list">
           {groupByPerson(data.results)
@@ -253,7 +260,7 @@ export function JubileeTile() {
         </ul>
       )}
       <Link to="/mitglieder/jubilaeen" className="small">
-        Alle Jubiläen
+        {t('Alle Jubiläen')}
       </Link>
     </div>
   )
@@ -268,7 +275,7 @@ function birthdayLabel(iso: string, today: string): string {
   if (iso === today) return 'heute'
   if (iso === plusDays(today, 1)) return 'morgen'
   const d = new Date(`${iso}T12:00:00`)
-  return `${WEEKDAYS[d.getDay()]}, ${d.getDate()}.${d.getMonth() + 1}.`
+  return t('{x}, {x2}.{x3}.', { x: WEEKDAYS[d.getDay()], x2: d.getDate(), x3: d.getMonth() + 1 })
 }
 
 /** Kachel auf der Startseite: Geburtstage der nächsten 30 Tage */
@@ -284,15 +291,17 @@ export function BirthdayTile() {
   const shown = showAll ? rows : rows.slice(0, BIRTHDAY_PREVIEW)
   return (
     <div className="card tile">
-      <h2>Anstehende Geburtstage</h2>
+      <h2>{t('Anstehende Geburtstage')}</h2>
       {error ? (
-        <p className="muted">Geburtstage lassen sich gerade nicht laden.</p>
+        <p className="muted">{t('Geburtstage lassen sich gerade nicht laden.')}</p>
       ) : !data ? (
-        <p className="muted">Lädt …</p>
+        <p className="muted">{t('Lädt …')}</p>
       ) : rows.length === 0 ? (
-        <p className="muted">In den nächsten {BIRTHDAY_DAYS} Tagen keine.</p>
+        <p className="muted">
+          {t('In den nächsten {BIRTHDAY_DAYS} Tagen keine.', { BIRTHDAY_DAYS })}
+        </p>
       ) : (
-        <ul className="plain-list" aria-label="Geburtstage">
+        <ul className="plain-list" aria-label={t('Geburtstage')}>
           {shown.map((r) => (
             <li
               key={`${r.member_id}-${r.date}`}
@@ -304,7 +313,9 @@ export function BirthdayTile() {
               <span className="tile-entry-meta muted small">
                 <span>{birthdayLabel(r.date, today)}</span>
                 <span aria-hidden="true">·</span>
-                <span>{r.age} Jahre</span>
+                <span>
+                  {r.age} {t('Jahre')}
+                </span>
               </span>
             </li>
           ))}
@@ -314,13 +325,14 @@ export function BirthdayTile() {
         <p className="muted small">
           {showAll ? (
             <button type="button" className="link-button" onClick={() => setShowAll(false)}>
-              Weniger zeigen
+              {t('Weniger zeigen')}
             </button>
           ) : (
             <>
-              und {rows.length - BIRTHDAY_PREVIEW} weitere in den nächsten {BIRTHDAY_DAYS} Tagen ·{' '}
+              und {rows.length - BIRTHDAY_PREVIEW}{' '}
+              {t('weitere in den nächsten {BIRTHDAY_DAYS} Tagen ·', { BIRTHDAY_DAYS })}{' '}
               <button type="button" className="link-button" onClick={() => setShowAll(true)}>
-                alle zeigen
+                {t('alle zeigen')}
               </button>
             </>
           )}

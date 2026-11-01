@@ -9,6 +9,7 @@ import { Alert } from '../../components/ui.tsx'
 import { errorMessage, formatDateTime, useLoad } from '../../components/forms.ts'
 import { useActiveOrg } from '../../org/OrgContext.tsx'
 import { Term } from '../../learning/Aids.tsx'
+import { t } from '../../i18n/index.ts'
 
 export function AuditPage() {
   const org = useActiveOrg()
@@ -23,20 +24,20 @@ export function AuditPage() {
   const searching = !!(query.q || query.von || query.bis)
   return (
     <div className="card card-wide">
-      <h2>Änderungsprotokoll</h2>
+      <h2>{t('Änderungsprotokoll')}</h2>
       <p className="muted small">
-        Wer hat wann was geändert. Änderungen der letzten 30 Tage lassen sich rückgängig machen,
-        Gelöschtes lässt sich wiederherstellen. Ältere Einträge findest du über die Suche oder durch
-        Blättern.
+        {t(
+          'Wer hat wann was geändert. Änderungen der letzten 30 Tage lassen sich rückgängig machen, Gelöschtes lässt sich wiederherstellen. Ältere Einträge findest du über die Suche oder durch Blättern.',
+        )}
       </p>
-      <nav className="tabs" aria-label="Ansicht">
+      <nav className="tabs" aria-label={t('Ansicht')}>
         <button
           type="button"
           className={`tab${onlyDeleted ? '' : ' active'}`}
           aria-current={onlyDeleted ? undefined : 'page'}
           onClick={() => setQuery({ ...query, aktion: undefined, seite: 1 })}
         >
-          Alle Änderungen
+          {t('Alle Änderungen')}
         </button>
         <button
           type="button"
@@ -44,21 +45,21 @@ export function AuditPage() {
           aria-current={onlyDeleted ? 'page' : undefined}
           onClick={() => setQuery({ ...query, aktion: 'delete', seite: 1 })}
         >
-          Papierkorb
+          {t('Papierkorb')}
         </button>
       </nav>
       <AuditChain orgId={org.id} />
-      <ListSearch query={query} onChange={setQuery} placeholder="Objekt, Person oder Art" />
+      <ListSearch query={query} onChange={setQuery} placeholder={t('Objekt, Person oder Art')} />
       {error && <Alert kind="error">{error}</Alert>}
-      {!data && !error && <p className="muted">Lädt …</p>}
+      {!data && !error && <p className="muted">{t('Lädt …')}</p>}
       {data &&
         (entries.length === 0 ? (
           <p className="muted">
             {searching
-              ? 'Keine passenden Einträge.'
+              ? t('Keine passenden Einträge.')
               : onlyDeleted
-                ? 'Nichts gelöscht.'
-                : 'Noch keine Einträge.'}
+                ? t('Nichts gelöscht.')
+                : t('Noch keine Einträge.')}
           </p>
         ) : (
           <>
@@ -72,7 +73,11 @@ export function AuditPage() {
                 />
               ))}
             </ul>
-            <Pager data={data} noun="Einträge" onPage={(seite) => setQuery({ ...query, seite })} />
+            <Pager
+              data={data}
+              noun={t('Einträge')}
+              onPage={(seite) => setQuery({ ...query, seite })}
+            />
           </>
         ))}
     </div>
@@ -106,18 +111,22 @@ function AuditChain({ orgId }: { orgId: number }) {
         {check ? (
           <>
             {check.ok ? (
-              <strong>Protokoll unverändert</strong>
+              <strong>{t('Protokoll unverändert')}</strong>
             ) : (
-              <strong>Protokoll wurde verändert</strong>
+              <strong>{t('Protokoll wurde verändert')}</strong>
             )}
-            {` · ${check.entries} Einträge, geprüft am ${formatDateTime(check.checked_at)}`}
-            {check.cleared > 0 && ` · ${check.cleared} aus Datenschutzgründen geleert`}
+            {t(' · {entries} Einträge, geprüft am {x}', {
+              entries: check.entries,
+              x: formatDateTime(check.checked_at),
+            })}
+            {check.cleared > 0 &&
+              t(' · {cleared} aus Datenschutzgründen geleert', { cleared: check.cleared })}
           </>
         ) : (
-          'Das Protokoll wurde noch nicht geprüft.'
+          t('Das Protokoll wurde noch nicht geprüft.')
         )}{' '}
         <button type="button" className="link-button" disabled={busy} onClick={() => void run()}>
-          Jetzt prüfen
+          {t('Jetzt prüfen')}
         </button>
       </p>
       {check && !check.ok && (
@@ -131,10 +140,10 @@ function AuditChain({ orgId }: { orgId: number }) {
         </Alert>
       )}
       <p className="muted small">
-        Das Protokoll ist <Term k="chained_log">verkettet</Term>: Jeder Eintrag enthält eine
-        Prüfsumme seines Vorgängers. Wird ein Eintrag direkt in der Datenbank geändert oder
-        gelöscht, fällt das hier auf. Die Prüfung läuft täglich; bei einem Fehler geht eine Warnung
-        an die Betreiber.
+        {t('Das Protokoll ist')} <Term k="chained_log">verkettet</Term>
+        {t(
+          ': Jeder Eintrag enthält eine Prüfsumme seines Vorgängers. Wird ein Eintrag direkt in der Datenbank geändert oder gelöscht, fällt das hier auf. Die Prüfung läuft täglich; bei einem Fehler geht eine Warnung an die Betreiber.',
+        )}
       </p>
       {error && <Alert kind="error">{error}</Alert>}
     </div>
@@ -164,8 +173,8 @@ function AuditItem({
         <strong>{entry.object_type}</strong> „{entry.object_repr}“ {entry.action_label}
       </div>
       <div className="muted small">
-        {formatDateTime(entry.timestamp)} · {entry.user_email || 'System'}
-        {entry.via ? ` · über ${entry.via}` : ''}
+        {formatDateTime(entry.timestamp)} · {entry.user_email || t('System')}
+        {entry.via ? t(' · über {via}', { via: entry.via }) : ''}
       </div>
       {entry.action === 'update' && changes.length > 0 && (
         <ul className="changes small">

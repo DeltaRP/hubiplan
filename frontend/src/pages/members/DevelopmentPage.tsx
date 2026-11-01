@@ -20,6 +20,7 @@ import { useTerms } from '../../org/terms.ts'
 import { HowTo } from '../../learning/Aids.tsx'
 import { ownMembers } from './access.ts'
 import { locale } from '../../i18n/index.ts'
+import { t } from '../../i18n/index.ts'
 
 /** Mitglieder › Entwicklung: eigene Mitglieder (``own``) oder alle Einheiten darunter
  *  (``all``, mit Freigabe der Plattform). */
@@ -32,8 +33,8 @@ export function MembersDevelopmentPage({ view = 'own' }: { view?: 'own' | 'all' 
     <section>
       <div className="page-head">
         <div>
-          <p className="muted small eyebrow">Mitglieder</p>
-          <h1>Entwicklung</h1>
+          <p className="muted small eyebrow">{t('Mitglieder')}</p>
+          <h1>{t('Entwicklung')}</h1>
         </div>
       </div>
       <MemberDevelopment
@@ -41,7 +42,9 @@ export function MembersDevelopmentPage({ view = 'own' }: { view?: 'own' | 'all' 
         load={(q) => (federation ? statsApi.federation(org.id, q) : statsApi.club(org.id, q))}
         note={
           federation
-            ? `Gezählt werden Mitgliedschaften mit einer an ${tm.e_akk} gemeldeten Mitgliedsart.`
+            ? t('Gezählt werden Mitgliedschaften mit einer an {e_akk} gemeldeten Mitgliedsart.', {
+                e_akk: tm.e_akk,
+              })
             : undefined
         }
       />
@@ -72,11 +75,15 @@ export function MemberDevelopment({
     <div className="stack">
       <RangePicker
         range={range}
-        info={loaded ? `${formatDate(loaded.von)} bis ${formatDate(loaded.bis)}` : undefined}
+        info={
+          loaded
+            ? t('{x} bis {x2}', { x: formatDate(loaded.von), x2: formatDate(loaded.bis) })
+            : undefined
+        }
       />
       {note && <p className="muted small">{note}</p>}
       {error && <Alert kind="error">{error}</Alert>}
-      {!loaded && !error && <p className="muted">Lädt …</p>}
+      {!loaded && !error && <p className="muted">{t('Lädt …')}</p>}
       {loaded && <MemberCharts data={loaded} />}
     </div>
   )
@@ -85,12 +92,12 @@ export function MemberDevelopment({
 function MemberCharts({ data }: { data: MemberStats }) {
   const s = data.summary
   const labels = data.buckets.map((b) => b.label)
-  const per = data.raster === 'monat' ? 'je Monat' : 'je Jahr'
+  const per = data.raster === 'monat' ? t('je Monat') : t('je Jahr')
   const change = s.end - s.start
   if (s.start === 0 && s.end === 0 && s.entries === 0 && s.exits === 0)
     return (
       <div className="card empty-state">
-        <p>In diesem Zeitraum gibt es keine Mitglieder.</p>
+        <p>{t('In diesem Zeitraum gibt es keine Mitglieder.')}</p>
       </div>
     )
   // Alle Untereinheiten einzeln; in der Legende ein- und ausblendbar (Ralf 2026-10-29)
@@ -105,37 +112,41 @@ function MemberCharts({ data }: { data: MemberStats }) {
     <>
       <div className="tiles tiles-figures">
         <div className="card tile">
-          <h2>Mitglieder am {formatDate(data.bis)}</h2>
+          <h2>
+            {t('Mitglieder am')} {formatDate(data.bis)}
+          </h2>
           <p className="amount-big">{count(s.end)}</p>
           <p className="small muted">
             {signed(change)} seit {formatDate(data.von)} ({count(s.start)})
           </p>
-          <p className="small muted">Bestand nach den Austritten dieses Tages</p>
+          <p className="small muted">{t('Bestand nach den Austritten dieses Tages')}</p>
         </div>
         <div className="card tile">
-          <h2>Eintritte</h2>
+          <h2>{t('Eintritte')}</h2>
           <p className="amount-big">{count(s.entries)}</p>
         </div>
         <div className="card tile">
-          <h2>Austritte</h2>
+          <h2>{t('Austritte')}</h2>
           <p className="amount-big">{count(s.exits)}</p>
         </div>
       </div>
       <HowTo k="calc_members_on_date" />
 
       <ChartCard
-        title="Mitgliederbestand"
-        note={`Bestand am Ende jedes ${data.raster === 'monat' ? 'Monats' : 'Jahres'}, nach den Austritten des Tages`}
+        title={t('Mitgliederbestand')}
+        note={t('Bestand am Ende jedes {x}, nach den Austritten des Tages', {
+          x: data.raster === 'monat' ? 'Monats' : 'Jahres',
+        })}
       >
         <TimeChart
-          title="Mitgliederbestand"
+          title={t('Mitgliederbestand')}
           kind="line"
           labels={labels}
           format={count}
           series={[
             {
               key: 'bestand',
-              name: 'Mitglieder',
+              name: t('Mitglieder'),
               color: PRIMARY,
               values: data.buckets.map((b) => b.count),
             },
@@ -143,22 +154,22 @@ function MemberCharts({ data }: { data: MemberStats }) {
         />
       </ChartCard>
 
-      <ChartCard title={`Eintritte und Austritte ${per}`}>
+      <ChartCard title={t('Eintritte und Austritte {per}', { per })}>
         <TimeChart
-          title={`Eintritte und Austritte ${per}`}
+          title={t('Eintritte und Austritte {per}', { per })}
           kind="bar"
           labels={labels}
           format={count}
           series={[
             {
               key: 'ein',
-              name: 'Eintritte',
+              name: t('Eintritte'),
               color: INCOME,
               values: data.buckets.map((b) => b.entries),
             },
             {
               key: 'aus',
-              name: 'Austritte',
+              name: t('Austritte'),
               color: EXPENSE,
               values: data.buckets.map((b) => b.exits),
             },
@@ -167,9 +178,9 @@ function MemberCharts({ data }: { data: MemberStats }) {
       </ChartCard>
 
       {types.length > 0 && (
-        <ChartCard title="Nach Mitgliedsart">
+        <ChartCard title={t('Nach Mitgliedsart')}>
           <TimeChart
-            title="Mitglieder nach Mitgliedsart"
+            title={t('Mitglieder nach Mitgliedsart')}
             kind="line"
             labels={labels}
             format={count}
@@ -179,9 +190,9 @@ function MemberCharts({ data }: { data: MemberStats }) {
       )}
 
       {groups.length > 1 && (
-        <ChartCard title={`Nach ${data.groups_title}`}>
+        <ChartCard title={t('Nach {groups_title}', { groups_title: data.groups_title })}>
           <TimeChart
-            title={`Mitglieder nach ${data.groups_title}`}
+            title={t('Mitglieder nach {groups_title}', { groups_title: data.groups_title })}
             kind="line"
             labels={labels}
             format={count}
@@ -193,7 +204,7 @@ function MemberCharts({ data }: { data: MemberStats }) {
 
       <div className="chart-pair">
         <ChartCard
-          title="Altersstruktur"
+          title={t('Altersstruktur')}
           note={
             <AgeSummaries
               items={[
@@ -204,15 +215,15 @@ function MemberCharts({ data }: { data: MemberStats }) {
           }
         >
           <BarList
-            head="Alter"
+            head={t('Alter')}
             format={count}
             series={[
               {
                 key: 'start',
-                name: `am ${formatDate(data.ages.start_on ?? data.von)}`,
+                name: t('am {x}', { x: formatDate(data.ages.start_on ?? data.von) }),
                 color: PREVIOUS,
               },
-              { key: 'end', name: `am ${formatDate(data.bis)}`, color: PRIMARY },
+              { key: 'end', name: t('am {x}', { x: formatDate(data.bis) }), color: PRIMARY },
             ]}
             rows={data.ages.groups.map((g, i) => ({
               key: g,
@@ -221,14 +232,14 @@ function MemberCharts({ data }: { data: MemberStats }) {
             }))}
           />
         </ChartCard>
-        <ChartCard title="Austrittsgründe">
+        <ChartCard title={t('Austrittsgründe')}>
           {data.exit_reasons.length === 0 ? (
-            <p className="muted">Keine Austritte im Zeitraum.</p>
+            <p className="muted">{t('Keine Austritte im Zeitraum.')}</p>
           ) : (
             <BarList
-              head="Grund"
+              head={t('Grund')}
               format={count}
-              series={[{ key: 'n', name: 'Austritte', color: EXPENSE }]}
+              series={[{ key: 'n', name: t('Austritte'), color: EXPENSE }]}
               rows={data.exit_reasons.map((r) => ({
                 key: r.reason,
                 label: r.label,
@@ -255,17 +266,19 @@ function AgeSummaries({ items }: { items: [string, AgeSummary | undefined][] }) 
     <dl className="age-summary">
       {shown.map(({ day, mean, sd, count }) => (
         <div key={day}>
-          <dt>Durchschnittsalter am {day}</dt>
+          <dt>
+            {t('Durchschnittsalter am')} {day}
+          </dt>
           <dd>
-            {oneDecimal(mean)} Jahre
+            {oneDecimal(mean)} {t('Jahre')}
             {sd !== null && (
               <>
                 {' '}
-                (<abbr title="Standardabweichung über den ganzen Bestand">SD</abbr> {oneDecimal(sd)}
-                )
+                (<abbr title={t('Standardabweichung über den ganzen Bestand')}>SD</abbr>{' '}
+                {oneDecimal(sd)})
               </>
             )}
-            , {count.toLocaleString(locale())} {count === 1 ? 'Person' : 'Personen'}
+            , {count.toLocaleString(locale())} {count === 1 ? t('Person') : t('Personen')}
           </dd>
         </div>
       ))}

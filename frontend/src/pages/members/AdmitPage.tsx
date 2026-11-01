@@ -10,6 +10,7 @@ import { useChangesGuard } from '../../components/leaveGuard.ts'
 import { Alert, Field, SelectField } from '../../components/ui.tsx'
 import { useActiveOrg } from '../../org/OrgContext.tsx'
 import { useTerms } from '../../org/terms.ts'
+import { t } from '../../i18n/index.ts'
 
 type Step = 'person' | 'details'
 
@@ -81,7 +82,7 @@ export function AdmitPage() {
     }
     const created = await form.submit(
       () => memberApi.admit(org.id, payload, requestKey),
-      'Aufgenommen.',
+      t('Aufgenommen.'),
     )
     if (created) {
       setDone(true)
@@ -106,7 +107,9 @@ export function AdmitPage() {
           city: v.city,
           country: v.country,
         }),
-      `Wechselanfrage gestellt. Sobald ${terms.e_der_andere} zustimmt, wird die Aufnahme gespeichert.`,
+      t('Wechselanfrage gestellt. Sobald {e_der_andere} zustimmt, wird die Aufnahme gespeichert.', {
+        e_der_andere: terms.e_der_andere,
+      }),
     )
     if (sent) setTransferSent(true)
   }
@@ -119,59 +122,64 @@ export function AdmitPage() {
   return (
     <section>
       <p>
-        <Link to="/mitglieder">← Mitglieder</Link>
+        <Link to="/mitglieder">{t('← Mitglieder')}</Link>
       </p>
-      <h1>Mitglied aufnehmen</h1>
+      <h1>{t('Mitglied aufnehmen')}</h1>
 
       {types.error && (
         <Alert kind="error">
-          Die Mitgliedsarten konnten nicht geladen werden ({types.error}). Deine Eingaben bleiben
-          erhalten.{' '}
+          {t(
+            'Die Mitgliedsarten konnten nicht geladen werden ({error}). Deine Eingaben bleiben erhalten.',
+            { error: types.error },
+          )}{' '}
           <button type="button" className="link-button" onClick={() => void types.reload()}>
-            Erneut laden
+            {t('Erneut laden')}
           </button>
         </Alert>
       )}
       {types.data && activeTypes.length === 0 && (
         <Alert kind="error">
-          Für die Aufnahme fehlt noch eine Mitgliedsart. Lege zuerst unter{' '}
+          {t('Für die Aufnahme fehlt noch eine Mitgliedsart. Lege zuerst unter')}{' '}
           <Link to="/mitglieder/einrichtung/mitgliedsarten">
-            Mitglieder → Einrichtung → Mitgliedsarten
+            {t('Mitglieder → Einrichtung → Mitgliedsarten')}
           </Link>{' '}
-          mindestens eine an.
+          {t('mindestens eine an.')}
         </Alert>
       )}
 
       {step === 'person' ? (
         <form className="card card-wide" onSubmit={checkPerson}>
-          <h2>1. Person</h2>
+          <h2>{t('1. Person')}</h2>
           <p className="muted small">
             {fed
-              ? `Zuerst prüfen wir, ob es die Person schon gibt – zum Beispiel als Mitglied ${terms.e_eines_anderen} ${terms.dv_im}.`
-              : 'Zuerst prüfen wir, ob es die Person schon gibt.'}
+              ? t(
+                  'Zuerst prüfen wir, ob es die Person schon gibt – zum Beispiel als Mitglied {e_eines_anderen} {dv_im}.',
+                  { e_eines_anderen: terms.e_eines_anderen, dv_im: terms.dv_im },
+                )
+              : t('Zuerst prüfen wir, ob es die Person schon gibt.')}
           </p>
           <div className="grid-4">
             <Field
-              label="Name"
+              label={t('Name')}
               required
               value={v.last_name}
               onChange={(ev) => form.set('last_name', ev.target.value)}
             />
             <Field
-              label="Vorname"
+              label={t('Vorname')}
               required
               value={v.first_name}
               onChange={(ev) => form.set('first_name', ev.target.value)}
             />
             <Field
-              label="Geburtsdatum"
+              label={t('Geburtsdatum')}
               type="date"
               required
               value={v.birth_date}
               onChange={(ev) => form.set('birth_date', ev.target.value)}
             />
             <SelectField
-              label="Geschlecht"
+              label={t('Geschlecht')}
               value={v.gender}
               onChange={(ev) => form.set('gender', ev.target.value as Gender)}
             >
@@ -184,18 +192,21 @@ export function AdmitPage() {
           </div>
           {checkError && <Alert kind="error">{checkError}</Alert>}
           <button type="submit" className="button button-primary" disabled={checking}>
-            Weiter
+            {t('Weiter')}
           </button>
         </form>
       ) : (
         <form className="stack" onSubmit={save}>
           {duplicates.length > 0 && (
             <div className="card card-wide">
-              <h2>Mögliche Treffer</h2>
+              <h2>{t('Mögliche Treffer')}</h2>
               <p className="muted small">
                 {fed
-                  ? `Ist eine dieser Personen gemeint? Dann wird sie verknüpft: Verbandsnummer und Eintritt in ${terms.dv_akk} bleiben erhalten.`
-                  : 'Ist eine dieser Personen gemeint? Dann wird sie verknüpft.'}
+                  ? t(
+                      'Ist eine dieser Personen gemeint? Dann wird sie verknüpft: Verbandsnummer und Eintritt in {dv_akk} bleiben erhalten.',
+                      { dv_akk: terms.dv_akk },
+                    )
+                  : t('Ist eine dieser Personen gemeint? Dann wird sie verknüpft.')}
               </p>
               <ul className="duplicates">
                 {duplicates.map((d) => (
@@ -213,10 +224,13 @@ export function AdmitPage() {
                           {d.last_name}, {d.first_name}
                         </strong>{' '}
                         · {formatDate(d.birth_date)}
-                        {d.member_number && ` · Verbandsnr. ${d.member_number}`}
-                        {d.clubs && d.clubs.length > 0 && ` · Mitglied in: ${d.clubs.join(', ')}`}
+                        {d.member_number &&
+                          t(' · Verbandsnr. {member_number}', { member_number: d.member_number })}
+                        {d.clubs &&
+                          d.clubs.length > 0 &&
+                          t(' · Mitglied in: {x}', { x: d.clubs.join(', ') })}
                         {d.already_member_here &&
-                          ' · ist oder war schon Mitglied hier (Wiedereintritt in der Akte)'}
+                          t(' · ist oder war schon Mitglied hier (Wiedereintritt in der Akte)')}
                       </span>
                     </label>
                   </li>
@@ -229,7 +243,7 @@ export function AdmitPage() {
                       checked={linked === null}
                       onChange={() => setLinked(null)}
                     />
-                    <span>Keine davon – neue Person anlegen</span>
+                    <span>{t('Keine davon – neue Person anlegen')}</span>
                   </label>
                 </li>
               </ul>
@@ -237,22 +251,22 @@ export function AdmitPage() {
           )}
 
           <div className="card card-wide">
-            <h2>2. Mitgliedschaft</h2>
+            <h2>{t('2. Mitgliedschaft')}</h2>
             <p className="muted small">
               {v.last_name}, {v.first_name} · {formatDate(v.birth_date)}{' '}
               <button type="button" className="link-button" onClick={() => setStep('person')}>
-                ändern
+                {t('ändern')}
               </button>
             </p>
             <div className="grid-3">
               <SelectField
-                label="Mitgliedsart"
+                label={t('Mitgliedsart')}
                 required
                 value={v.member_type}
                 error={e.member_type}
                 onChange={(ev) => form.set('member_type', ev.target.value)}
               >
-                <option value="">– bitte wählen –</option>
+                <option value="">{t('– bitte wählen –')}</option>
                 {activeTypes.map((tm) => (
                   <option key={tm.id} value={tm.id}>
                     {tm.name}
@@ -260,7 +274,7 @@ export function AdmitPage() {
                 ))}
               </SelectField>
               <Field
-                label="Eintritt"
+                label={t('Eintritt')}
                 type="date"
                 required
                 value={v.entry_date}
@@ -268,7 +282,7 @@ export function AdmitPage() {
                 onChange={(ev) => form.set('entry_date', ev.target.value)}
               />
               <Field
-                label={`Mitgliedsnummer ${terms.e_im} (optional)`}
+                label={t('Mitgliedsnummer {e_im} (optional)', { e_im: terms.e_im })}
                 value={v.club_number}
                 error={e.club_number}
                 onChange={(ev) => form.set('club_number', ev.target.value)}
@@ -276,11 +290,11 @@ export function AdmitPage() {
             </div>
             {selectedType && (
               <p className="muted small">
-                {selectedType.active ? 'aktiv' : 'nicht aktiv'}
+                {selectedType.active ? 'aktiv' : t('nicht aktiv')}
                 {fed &&
                   (selectedType.reported
-                    ? ` · wird an ${terms.dv_akk} gemeldet`
-                    : ' · wird nicht gemeldet')}
+                    ? t(' · wird an {dv_akk} gemeldet', { dv_akk: terms.dv_akk })
+                    : t(' · wird nicht gemeldet'))}
               </p>
             )}
             {departments.data && departments.data.length > 0 && (
@@ -313,25 +327,27 @@ export function AdmitPage() {
           </div>
 
           <div className="card card-wide">
-            <h2>3. Kontakt und Anschrift</h2>
+            <h2>{t('3. Kontakt und Anschrift')}</h2>
             <div className="grid-2">
               <Field
-                label="E-Mail-Adresse (optional)"
+                label={t('E-Mail-Adresse (optional)')}
                 type="email"
-                hint="Ohne E-Mail erhält das Mitglied Schreiben per Brief. Ein Online-Zugang kann später eingerichtet werden."
+                hint={t(
+                  'Ohne E-Mail erhält das Mitglied Schreiben per Brief. Ein Online-Zugang kann später eingerichtet werden.',
+                )}
                 value={v.email}
                 error={e.email}
                 onChange={(ev) => form.set('email', ev.target.value)}
               />
               <Field
-                label="Telefon (optional)"
+                label={t('Telefon (optional)')}
                 value={v.phone}
                 error={e.phone}
                 onChange={(ev) => form.set('phone', ev.target.value)}
               />
             </div>
             <Field
-              label="Straße und Hausnummer"
+              label={t('Straße und Hausnummer')}
               required
               value={v.street}
               error={e.street}
@@ -346,14 +362,14 @@ export function AdmitPage() {
                 onChange={(ev) => form.set('postal_code', ev.target.value)}
               />
               <Field
-                label="Ort"
+                label={t('Ort')}
                 required
                 value={v.city}
                 error={e.city}
                 onChange={(ev) => form.set('city', ev.target.value)}
               />
               <Field
-                label="Land"
+                label={t('Land')}
                 value={v.country}
                 error={e.country}
                 onChange={(ev) => form.set('country', ev.target.value)}
@@ -366,29 +382,32 @@ export function AdmitPage() {
           {activeConflict && !transferSent && (
             <div className="card card-wide">
               <p>
-                Ihr könnt {terms.e_beim_anderen} eine <strong>Wechselanfrage</strong> stellen. Dort
-                bestätigt man dann den Austritt oder den Wechsel zu einer nicht aktiven Art.
+                {t('Ihr könnt {e_beim_anderen} eine', { e_beim_anderen: terms.e_beim_anderen })}{' '}
+                <strong>{t('Wechselanfrage')}</strong>{' '}
+                {t(
+                  'stellen. Dort bestätigt man dann den Austritt oder den Wechsel zu einer nicht aktiven Art.',
+                )}
               </p>
               <button
                 type="button"
                 className="button button-primary"
                 onClick={() => void requestTransfer()}
               >
-                Wechselanfrage stellen
+                {t('Wechselanfrage stellen')}
               </button>
             </div>
           )}
           {transferSent && (
             <Link to="/mitglieder/anfragen" className="button button-ghost">
-              Zu den Wechselanfragen
+              {t('Zu den Wechselanfragen')}
             </Link>
           )}
           <div className="button-row">
             <button type="submit" className="button button-primary" disabled={form.busy}>
-              Aufnehmen
+              {t('Aufnehmen')}
             </button>
             <Link to="/mitglieder" className="button button-ghost">
-              Abbrechen
+              {t('Abbrechen')}
             </Link>
           </div>
         </form>

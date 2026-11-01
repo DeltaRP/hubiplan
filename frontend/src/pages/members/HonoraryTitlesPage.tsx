@@ -16,12 +16,13 @@ import { useActiveOrg } from '../../org/OrgContext.tsx'
 import { useTerms } from '../../org/terms.ts'
 import { ownMembers } from './access.ts'
 import { SortableList, SortHint } from '../../components/Sortable.tsx'
+import { t } from '../../i18n/index.ts'
 
 const FEE_MODES: { value: HonoraryFeeMode; label: string }[] = [
-  { value: 'none', label: 'keine Beitragsänderung' },
+  { value: 'none', label: t('keine Beitragsänderung') },
   { value: 'free', label: 'beitragsfrei' },
-  { value: 'amount', label: 'fester Jahresbeitrag' },
-  { value: 'discount', label: 'Abschlag in Prozent' },
+  { value: 'amount', label: t('fester Jahresbeitrag') },
+  { value: 'discount', label: t('Abschlag in Prozent') },
 ]
 
 export function HonoraryTitlesPage() {
@@ -35,7 +36,7 @@ export function HonoraryTitlesPage() {
   const federation = org.type === 'federation'
 
   if (error) return <Alert kind="error">{error}</Alert>
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
 
   async function run(action: () => Promise<unknown>, success: string) {
     setMessage(null)
@@ -60,42 +61,45 @@ export function HonoraryTitlesPage() {
     }
     if (usage.deletable) {
       const ok = await confirmDialog({
-        title: `„${title.name}“ löschen?`,
-        message: 'Die Ehrung wurde noch nie verliehen.',
-        confirmLabel: 'Löschen',
+        title: t('„{name}“ löschen?', { name: title.name }),
+        message: t('Die Ehrung wurde noch nie verliehen.'),
+        confirmLabel: t('Löschen'),
       })
       if (ok) {
         await run(
           () => memberApi.deleteHonoraryTitle(org.id, title.id),
-          `„${title.name}“ wurde gelöscht.`,
+          t('„{name}“ wurde gelöscht.', { name: title.name }),
         )
       }
       return
     }
     const ok = await confirmDialog({
-      title: `„${title.name}“ archivieren?`,
-      message: `Die Ehrung ist verliehen (${usage.reasons.join(', ')}) und wird deshalb archiviert statt gelöscht. Bestehende Verleihungen bleiben, neue sind nicht mehr möglich.`,
-      confirmLabel: 'Archivieren',
+      title: t('„{name}“ archivieren?', { name: title.name }),
+      message: t(
+        'Die Ehrung ist verliehen ({x}) und wird deshalb archiviert statt gelöscht. Bestehende Verleihungen bleiben, neue sind nicht mehr möglich.',
+        { x: usage.reasons.join(', ') },
+      ),
+      confirmLabel: t('Archivieren'),
     })
     if (ok) {
       await run(
         () => memberApi.archiveHonoraryTitle(org.id, title.id),
-        `„${title.name}“ wurde archiviert.`,
+        t('„{name}“ wurde archiviert.', { name: title.name }),
       )
     }
   }
 
   const columns: Column<HonoraryTitle>[] = [
-    { key: 'name', label: 'Ehrung', value: (tmx) => tmx.name },
+    { key: 'name', label: t('Ehrung'), value: (tmx) => tmx.name },
     {
       key: 'fee',
-      label: federation ? 'Verbandsbeitrag' : 'Beitrag',
-      value: (tmx) => tmx.fee_text || 'unverändert',
+      label: federation ? t('Verbandsbeitrag') : t('Beitrag'),
+      value: (tmx) => tmx.fee_text || t('unverändert'),
       filter: true,
     },
     {
       key: 'status',
-      label: 'Status',
+      label: t('Status'),
       value: (tmx) => (tmx.is_archived ? 'archiviert' : 'aktiv'),
       filter: { initial: 'aktiv' },
     },
@@ -104,7 +108,7 @@ export function HonoraryTitlesPage() {
   return (
     <div className="card card-wide">
       <div className="card-head">
-        <h2>Ehrungen</h2>
+        <h2>{t('Ehrungen')}</h2>
         {editable && editing === null && (
           <div className="button-row push-right">
             {data.filter((tmx) => !tmx.is_archived).length > 1 && (
@@ -114,7 +118,7 @@ export function HonoraryTitlesPage() {
                 aria-pressed={sorting}
                 onClick={() => setSorting((x) => !x)}
               >
-                {sorting ? 'Schließen' : 'Reihenfolge ändern'}
+                {sorting ? t('Schließen') : t('Reihenfolge ändern')}
               </button>
             )}
             {!sorting && (
@@ -123,21 +127,28 @@ export function HonoraryTitlesPage() {
                 className="button button-ghost"
                 onClick={() => setEditing('new')}
               >
-                Neue Ehrung
+                {t('Neue Ehrung')}
               </button>
             )}
           </div>
         )}
       </div>
       <p className="muted small">
-        Ehrungen wie Ehrenmitglied oder Ehrenmajor vergebt ihr in der Mitgliederakte, mit Beginn und
-        optional Ende. Eine Ehrung kann den{' '}
-        {federation ? `Verbandsbeitrag, den ${tm.nom} für das Mitglied zahlt` : 'Mitgliedsbeitrag'}{' '}
-        ändern. Hat ein Mitglied mehrere solcher Ehrungen, gilt die günstigste.
+        {t(
+          'Ehrungen wie Ehrenmitglied oder Ehrenmajor vergebt ihr in der Mitgliederakte, mit Beginn und optional Ende. Eine Ehrung kann den',
+        )}{' '}
+        {federation
+          ? t('Verbandsbeitrag, den {nom} für das Mitglied zahlt', { nom: tm.nom })
+          : t('Mitgliedsbeitrag')}{' '}
+        {t('ändern. Hat ein Mitglied mehrere solcher Ehrungen, gilt die günstigste.')}
         {(!federation || ownMembers(org)) &&
-          ' Würden, die jedes Jahr wechseln (König, Prinz), pflegt ihr dagegen unter Mitglieder › Würdenträger.'}
+          t(
+            ' Würden, die jedes Jahr wechseln (König, Prinz), pflegt ihr dagegen unter Mitglieder › Würdenträger.',
+          )}
         {federation &&
-          ` Die ${tm.pl} sehen die Ehrungen, die ihr ihren Mitgliedern verliehen habt.`}
+          t(' Die {pl} sehen die Ehrungen, die ihr ihren Mitgliedern verliehen habt.', {
+            pl: tm.pl,
+          })}
       </p>
       {editing !== null && (
         <TitleForm
@@ -157,7 +168,7 @@ export function HonoraryTitlesPage() {
         <>
           <SortHint website={org.modules.includes('website')} />
           <SortableList
-            ariaLabel="Reihenfolge der Ehrungen"
+            ariaLabel={t('Reihenfolge der Ehrungen')}
             items={data.filter((tmx) => !tmx.is_archived)}
             id={(tmx) => tmx.id}
             label={(tmx) => tmx.name}
@@ -173,35 +184,35 @@ export function HonoraryTitlesPage() {
         </>
       ) : (
         <DataTable
-          label="Ehrungen"
+          label={t('Ehrungen')}
           rows={data}
           rowKey={(tmx) => tmx.id}
           columns={columns}
-          emptyText="Noch keine Ehrungen angelegt."
+          emptyText={t('Noch keine Ehrungen angelegt.')}
           rowClassName={(tmx) => (tmx.is_archived ? 'inactive' : undefined)}
           actions={
             editable
               ? (tmx) =>
                   tmx.is_archived ? (
                     <IconButton
-                      label={`${tmx.name} wiederherstellen`}
+                      label={t('{name} wiederherstellen', { name: tmx.name })}
                       icon={<RestoreIcon />}
                       onClick={() =>
                         void run(
                           () => memberApi.restoreHonoraryTitle(org.id, tmx.id),
-                          `„${tmx.name}“ ist wieder verfügbar.`,
+                          t('„{name}“ ist wieder verfügbar.', { name: tmx.name }),
                         )
                       }
                     />
                   ) : (
                     <>
                       <IconButton
-                        label={`${tmx.name} bearbeiten`}
+                        label={t('{name} bearbeiten', { name: tmx.name })}
                         icon={<EditIcon />}
                         onClick={() => setEditing(tmx)}
                       />
                       <IconButton
-                        label={`${tmx.name} löschen`}
+                        label={t('{name} löschen', { name: tmx.name })}
                         icon={<DeleteIcon />}
                         danger
                         onClick={() => void remove(tmx)}
@@ -267,18 +278,18 @@ function TitleForm({
   }
 
   return (
-    <form className="subcard" onSubmit={save} aria-label="Ehrung bearbeiten">
+    <form className="subcard" onSubmit={save} aria-label={t('Ehrung bearbeiten')}>
       {title && <SaveStatus auto={auto} />}
       <div className="grid-2">
         <Field
-          label="Bezeichnung"
+          label={t('Bezeichnung')}
           required
           value={v.name}
           error={form.errors.name}
           onChange={(e) => form.set('name', e.target.value)}
         />
         <SelectField
-          label="Beitrag"
+          label={t('Beitrag')}
           value={v.fee_mode}
           error={form.errors.fee_mode}
           onChange={(e) => form.set('fee_mode', e.target.value as HonoraryFeeMode)}
@@ -291,7 +302,7 @@ function TitleForm({
         </SelectField>
         {v.fee_mode === 'amount' && (
           <Field
-            label="Jahresbeitrag in €"
+            label={t('Jahresbeitrag in €')}
             type="number"
             step="0.01"
             min="0"
@@ -303,7 +314,7 @@ function TitleForm({
         )}
         {v.fee_mode === 'discount' && (
           <Field
-            label="Abschlag in %"
+            label={t('Abschlag in %')}
             type="number"
             step="0.01"
             min="0.01"
@@ -316,20 +327,20 @@ function TitleForm({
         )}
       </div>
       <Checkbox
-        label="nur Jahr der Verleihung (statt Zeitraum von–bis)"
+        label={t('nur Jahr der Verleihung (statt Zeitraum von–bis)')}
         checked={v.year_only}
         onChange={(on) => form.set('year_only', on)}
       />
       {hasWebsite && (
         <>
           <Checkbox
-            label="auf der Webseite zeigen (z. B. Ehrenmitglieder; nicht bei Widerspruch)"
+            label={t('auf der Webseite zeigen (z. B. Ehrenmitglieder; nicht bei Widerspruch)')}
             checked={v.is_public}
             onChange={(on) => form.set('is_public', on)}
           />
           {v.is_public && (
             <Field
-              label="Mehrzahl (Überschrift auf der Webseite bei mehreren Trägern)"
+              label={t('Mehrzahl (Überschrift auf der Webseite bei mehreren Trägern)')}
               value={v.name_plural}
               placeholder={title?.plural || undefined}
               error={form.errors.name_plural}
@@ -345,11 +356,11 @@ function TitleForm({
           className={title ? 'button button-ghost' : 'button button-primary'}
           disabled={form.busy}
         >
-          {title ? 'Schließen' : 'Anlegen'}
+          {title ? t('Schließen') : t('Anlegen')}
         </button>
         {!title && (
           <button type="button" className="button button-ghost" onClick={onCancel}>
-            Abbrechen
+            {t('Abbrechen')}
           </button>
         )}
       </div>

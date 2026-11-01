@@ -9,6 +9,7 @@ import type { DatePrecision } from '../../components/forms.ts'
 import { Freshness, LoadError } from '../../components/ui.tsx'
 import { ExportPanel } from '../../components/ExportPanel.tsx'
 import { useActiveOrg } from '../../org/OrgContext.tsx'
+import { t } from '../../i18n/index.ts'
 
 interface Column {
   key: string
@@ -20,48 +21,56 @@ interface Column {
 const COLUMNS: Column[] = [
   {
     key: 'member_type',
-    label: 'Mitgliedsart',
+    label: t('Mitgliedsart'),
     value: (r) => r.member_type ?? '–',
     sort: 'art',
   },
   {
     key: 'birth_date',
-    label: 'Geburtsdatum',
+    label: t('Geburtsdatum'),
     value: (r) => (r.birth_year_only ? r.birth_date.slice(0, 4) : formatDate(r.birth_date)),
     sort: 'geburtsdatum',
   },
-  { key: 'gender', label: 'Geschlecht', value: (r) => r.gender || '–' },
+  { key: 'gender', label: t('Geschlecht'), value: (r) => r.gender || '–' },
   {
     key: 'entry_date',
-    label: 'Eintritt',
+    label: t('Eintritt'),
     value: (r, p) => formatMemberDate(r.entry_date, p),
     sort: 'eintritt',
   },
-  { key: 'exit_date', label: 'Austritt', value: (r, p) => formatMemberDate(r.exit_date, p) },
-  { key: 'club_number', label: 'Mitgliedsnr.', value: (r) => r.club_number || '–', sort: 'nummer' },
+  { key: 'exit_date', label: t('Austritt'), value: (r, p) => formatMemberDate(r.exit_date, p) },
+  {
+    key: 'club_number',
+    label: t('Mitgliedsnr.'),
+    value: (r) => r.club_number || '–',
+    sort: 'nummer',
+  },
   {
     key: 'member_number',
-    label: 'Verbandsnr.',
+    label: t('Verbandsnr.'),
     value: (r) => (r.member_number ? String(r.member_number) : '–'),
   },
   {
     key: 'departments',
-    label: 'Abteilung',
+    label: t('Abteilung'),
     value: (r) => r.departments.join(', ') || '–',
     sort: 'abteilung',
   },
   {
     key: 'honorary_titles',
-    label: 'Ehrungen',
+    label: t('Ehrungen'),
     value: (r) => (r.honorary_titles ?? []).join(', ') || '–',
     sort: 'ehrentitel',
   },
-  { key: 'email', label: 'E-Mail', value: (r) => r.email || '–' },
-  { key: 'phone', label: 'Telefon', value: (r) => r.phone || '–' },
+  { key: 'email', label: t('E-Mail'), value: (r) => r.email || '–' },
+  { key: 'phone', label: t('Telefon'), value: (r) => r.phone || '–' },
   {
     key: 'address',
-    label: 'Anschrift',
-    value: (r) => [r.street, `${r.postal_code} ${r.city}`.trim()].filter(Boolean).join(', ') || '–',
+    label: t('Anschrift'),
+    value: (r) =>
+      [r.street, t('{postal_code} {city}', { postal_code: r.postal_code, city: r.city }).trim()]
+        .filter(Boolean)
+        .join(', ') || '–',
   },
 ]
 
@@ -182,7 +191,7 @@ export function MemberListPage() {
   return (
     <section>
       <div className="page-head">
-        <h1>Mitglieder</h1>
+        <h1>{t('Mitglieder')}</h1>
         <span className="push-right" />
         {canExport && (
           <button
@@ -190,7 +199,7 @@ export function MemberListPage() {
             className="button button-ghost"
             onClick={() => setShowExport((s) => !s)}
           >
-            Export
+            {t('Export')}
           </button>
         )}
         {org.permissions.includes(PERM.cardsManage) && (
@@ -204,14 +213,16 @@ export function MemberListPage() {
               ehrentitel: params.ehrentitel,
               sortierung: params.sortierung,
             })}
-            title="Ausweise mit QR-Code für alle aktuellen Mitglieder der Auswahl (10 je A4-Seite)"
+            title={t(
+              'Ausweise mit QR-Code für alle aktuellen Mitglieder der Auswahl (10 je A4-Seite)',
+            )}
           >
-            Ausweise (PDF)
+            {t('Ausweise (PDF)')}
           </a>
         )}
         {canEdit && (
           <Link to="/mitglieder/neu" className="button button-primary">
-            Mitglied aufnehmen
+            {t('Mitglied aufnehmen')}
           </Link>
         )}
       </div>
@@ -220,26 +231,26 @@ export function MemberListPage() {
         <input
           type="search"
           className="search-input"
-          placeholder="Suchen: Name, E-Mail, Mitglieds- oder Verbandsnummer"
-          aria-label="Mitglieder suchen"
+          placeholder={t('Suchen: Name, E-Mail, Mitglieds- oder Verbandsnummer')}
+          aria-label={t('Mitglieder suchen')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
         <select
-          aria-label="Status"
+          aria-label={t('Status')}
           value={params.status}
           onChange={(e) => setParams((p) => ({ ...p, status: e.target.value, page: 1 }))}
         >
-          <option value="aktiv">aktuelle Mitglieder</option>
-          <option value="ehemalig">ehemalige Mitglieder</option>
+          <option value="aktiv">{t('aktuelle Mitglieder')}</option>
+          <option value="ehemalig">{t('ehemalige Mitglieder')}</option>
           <option value="alle">alle</option>
         </select>
         <select
-          aria-label="Mitgliedsart"
+          aria-label={t('Mitgliedsart')}
           value={params.art ?? ''}
           onChange={(e) => setParams((p) => ({ ...p, art: e.target.value, page: 1 }))}
         >
-          <option value="">alle Mitgliedsarten</option>
+          <option value="">{t('alle Mitgliedsarten')}</option>
           {types.data?.map((tm) => (
             <option key={tm.id} value={tm.id}>
               {tm.name}
@@ -247,17 +258,17 @@ export function MemberListPage() {
           ))}
         </select>
         <select
-          aria-label="Geschlecht"
+          aria-label={t('Geschlecht')}
           value={params.geschlecht ?? ''}
           onChange={(e) => setParams((p) => ({ ...p, geschlecht: e.target.value, page: 1 }))}
         >
-          <option value="">alle Geschlechter</option>
+          <option value="">{t('alle Geschlechter')}</option>
           {GENDERS.filter((g) => g.value).map((g) => (
             <option key={g.value} value={g.value}>
               {g.label}
             </option>
           ))}
-          <option value="ohne">ohne Angabe</option>
+          <option value="ohne">{t('ohne Angabe')}</option>
         </select>
         {departments.data && departments.data.length > 0 && (
           <select
@@ -275,15 +286,17 @@ export function MemberListPage() {
         )}
         {titles.data && titles.data.length > 0 && (
           <select
-            aria-label="Ehrungen"
+            aria-label={t('Ehrungen')}
             value={params.ehrentitel ?? ''}
             onChange={(e) => setParams((p) => ({ ...p, ehrentitel: e.target.value, page: 1 }))}
           >
-            <option value="">alle (mit und ohne Ehrung)</option>
-            <option value="mit">mit Ehrung</option>
+            <option value="">{t('alle (mit und ohne Ehrung)')}</option>
+            <option value="mit">{t('mit Ehrung')}</option>
             {titles.data.map((tm) => (
               <option key={tm.id} value={tm.id}>
-                {tm.own ? tm.name : `${tm.name} (${tm.owner_name})`}
+                {tm.own
+                  ? tm.name
+                  : t('{name} ({owner_name})', { name: tm.name, owner_name: tm.owner_name })}
                 {tm.is_archived ? ' (archiviert)' : ''}
               </option>
             ))}
@@ -294,7 +307,7 @@ export function MemberListPage() {
           className="button button-ghost"
           onClick={() => setShowColumns((s) => !s)}
         >
-          Spalten
+          {t('Spalten')}
         </button>
         {showColumns && (
           <div className="column-picker">
@@ -329,21 +342,22 @@ export function MemberListPage() {
         />
       )}
       {!data ? (
-        !error && <p className="muted">Lädt …</p>
+        !error && <p className="muted">{t('Lädt …')}</p>
       ) : (
         <div className={`card card-wide${stale ? ' is-stale' : ''}`}>
           <p className="muted small">
-            {data.count} {data.count === 1 ? 'Mitglied' : 'Mitglieder'}
+            {data.count} {data.count === 1 ? t('Mitglied') : t('Mitglieder')}
           </p>
           {data.count === 0 ? (
-            <p className="muted">Keine Mitglieder gefunden.</p>
+            <p className="muted">{t('Keine Mitglieder gefunden.')}</p>
           ) : (
             <table className="table member-table">
               <thead>
                 <tr>
                   <th aria-sort={ariaSort('name')}>
                     <button type="button" className="th-sort" onClick={() => sortBy('name')}>
-                      Name{sortMark('name')}
+                      {t('Name')}
+                      {sortMark('name')}
                     </button>
                   </th>
                   {visible.map((c) => (
@@ -404,10 +418,10 @@ export function MemberListPage() {
                 disabled={(params.page ?? 1) <= 1}
                 onClick={() => setParams((p) => ({ ...p, page: (p.page ?? 1) - 1 }))}
               >
-                Zurück
+                {t('Zurück')}
               </button>
               <span className="small">
-                Seite {params.page} von {pages}
+                {t('Seite {page} von', { page: params.page })} {pages}
               </span>
               <button
                 type="button"
@@ -415,7 +429,7 @@ export function MemberListPage() {
                 disabled={(params.page ?? 1) >= pages}
                 onClick={() => setParams((p) => ({ ...p, page: (p.page ?? 1) + 1 }))}
               >
-                Weiter
+                {t('Weiter')}
               </button>
             </div>
           )}

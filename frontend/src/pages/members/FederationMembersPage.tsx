@@ -20,6 +20,7 @@ import { HonoraryAwards } from './HonoraryAwards.tsx'
 import { memberApi } from '../../api/members.ts'
 import { useTerms } from '../../org/terms.ts'
 import { Term } from '../../learning/Aids.tsx'
+import { t } from '../../i18n/index.ts'
 
 type FedRow = MemberRow & { club: string; club_id: number }
 type FedDetail = MemberDetail & { club: string; readonly: boolean; remote?: boolean }
@@ -34,11 +35,13 @@ export function FederationMembersPage({ prefix = '/mitglieder' }: { prefix?: str
   if (!org.federation_member_access || org.federation_member_access === 'none') {
     return (
       <section>
-        <h1>Mitglieder</h1>
+        <h1>{t('Mitglieder')}</h1>
         <div className="card empty-state">
           <p>
-            Die Plattform hat den Zugriff auf Mitgliedsdaten der {tm.pl} für {tm.e_diesen} nicht
-            freigegeben.
+            {t(
+              'Die Plattform hat den Zugriff auf Mitgliedsdaten der {pl} für {e_diesen} nicht freigegeben.',
+              { pl: tm.pl, e_diesen: tm.e_diesen },
+            )}
           </p>
         </div>
       </section>
@@ -102,7 +105,9 @@ function FederationList({ prefix }: { prefix: string }) {
   return (
     <section>
       <div className="page-head">
-        <h1>Mitglieder {tm.e_im}</h1>
+        <h1>
+          {t('Mitglieder')} {tm.e_im}
+        </h1>
         {org.permissions.includes(PERM.cardsManage) && (
           <a
             className="button button-ghost push-right"
@@ -114,9 +119,11 @@ function FederationList({ prefix }: { prefix: string }) {
               ehrentitel: params.ehrentitel,
               sortierung: params.sortierung,
             })}
-            title="Ausweise mit QR-Code für alle aktuellen Mitglieder der Auswahl (10 je A4-Seite)"
+            title={t(
+              'Ausweise mit QR-Code für alle aktuellen Mitglieder der Auswahl (10 je A4-Seite)',
+            )}
           >
-            Ausweise (PDF)
+            {t('Ausweise (PDF)')}
           </a>
         )}
         {org.permissions.includes(PERM.exportRun) && (
@@ -125,20 +132,21 @@ function FederationList({ prefix }: { prefix: string }) {
             className="button button-ghost"
             onClick={() => setShowExport((s) => !s)}
           >
-            Export
+            {t('Export')}
           </button>
         )}
       </div>
       <p className="muted small">
-        Zugriff: {org.federation_member_access === 'write' ? 'lesen und ändern' : 'nur lesen'} ·
-        jeder Zugriff wird protokolliert.
+        {t('Zugriff:')}{' '}
+        {org.federation_member_access === 'write' ? t('lesen und ändern') : t('nur lesen')}{' '}
+        {t('· jeder Zugriff wird protokolliert.')}
       </p>
       <div className="card card-wide filters">
         <input
           type="search"
           className="search-input"
-          aria-label="Suchen"
-          placeholder="Suchen: Name oder Verbandsnummer"
+          aria-label={t('Suchen')}
+          placeholder={t('Suchen: Name oder Verbandsnummer')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -155,22 +163,24 @@ function FederationList({ prefix }: { prefix: string }) {
           ))}
         </select>
         <select
-          aria-label="Status"
+          aria-label={t('Status')}
           value={params.status}
           onChange={(e) => set('status', e.target.value)}
         >
-          <option value="aktiv">aktuelle Mitglieder</option>
+          <option value="aktiv">{t('aktuelle Mitglieder')}</option>
           <option value="ehemalig">ehemalige</option>
           <option value="alle">alle</option>
         </select>
         {titles.data && titles.data.length > 0 && (
           <select
-            aria-label="Ehrungen"
+            aria-label={t('Ehrungen')}
             value={params.ehrentitel ?? ''}
             onChange={(e) => set('ehrentitel', e.target.value)}
           >
-            <option value="">alle (mit und ohne Ehrung)</option>
-            <option value="mit">mit Ehrung {tm.e_gen}</option>
+            <option value="">{t('alle (mit und ohne Ehrung)')}</option>
+            <option value="mit">
+              {t('mit Ehrung')} {tm.e_gen}
+            </option>
             {titles.data.map((tmx) => (
               <option key={tmx.id} value={tmx.id}>
                 {tmx.name}
@@ -185,7 +195,7 @@ function FederationList({ prefix }: { prefix: string }) {
             checked={params.gemeldet === '1'}
             onChange={(e) => set('gemeldet', e.target.checked ? '1' : '')}
           />
-          <span>nur gemeldete</span>
+          <span>{t('nur gemeldete')}</span>
         </label>
         <label className="checkbox">
           <input
@@ -193,7 +203,7 @@ function FederationList({ prefix }: { prefix: string }) {
             checked={params.aktiv === '1'}
             onChange={(e) => set('aktiv', e.target.checked ? '1' : '')}
           />
-          <span>nur aktive</span>
+          <span>{t('nur aktive')}</span>
         </label>
       </div>
       {showExport && (
@@ -206,23 +216,25 @@ function FederationList({ prefix }: { prefix: string }) {
       )}
       {error && <Alert kind="error">{error}</Alert>}
       {!data ? (
-        <p className="muted">Lädt …</p>
+        <p className="muted">{t('Lädt …')}</p>
       ) : (
         <div className="card card-wide">
-          <p className="muted small">{data.count} Mitgliedschaften</p>
+          <p className="muted small">
+            {data.count} {t('Mitgliedschaften')}
+          </p>
           <table className="table member-table">
             <thead>
               <tr>
-                <th>Name</th>
+                <th>{t('Name')}</th>
                 <th>{tm.Sg}</th>
                 <th className="col-optional">
-                  <Term k="federation_number">Verbandsnr.</Term>
+                  <Term k="federation_number">{t('Verbandsnr.')}</Term>
                 </th>
                 <th className="col-optional">
-                  <Term k="member_type">Mitgliedsart</Term>
+                  <Term k="member_type">{t('Mitgliedsart')}</Term>
                 </th>
-                <th className="col-optional">Eintritt</th>
-                <th className="col-optional">Ehrungen</th>
+                <th className="col-optional">{t('Eintritt')}</th>
+                <th className="col-optional">{t('Ehrungen')}</th>
               </tr>
             </thead>
             <tbody>
@@ -252,10 +264,10 @@ function FederationList({ prefix }: { prefix: string }) {
                 disabled={page <= 1}
                 onClick={() => setPage((p) => p - 1)}
               >
-                Zurück
+                {t('Zurück')}
               </button>
               <span className="small">
-                Seite {page} von {pages}
+                {t('Seite {page} von', { page })} {pages}
               </span>
               <button
                 type="button"
@@ -263,7 +275,7 @@ function FederationList({ prefix }: { prefix: string }) {
                 disabled={page >= pages}
                 onClick={() => setPage((p) => p + 1)}
               >
-                Weiter
+                {t('Weiter')}
               </button>
             </div>
           )}
@@ -282,19 +294,23 @@ function FederationDetail({ prefix }: { prefix: string }) {
     [org.id, id],
   )
   if (error) return <Alert kind="error">{error}</Alert>
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
   return (
     <section>
       <p>
-        <Link to={prefix}>← Mitglieder {tm.e_im}</Link>
+        <Link to={prefix}>
+          {t('← Mitglieder')} {tm.e_im}
+        </Link>
       </p>
       <h1>
         {data.first_name} {data.last_name}
       </h1>
       <p className="muted">
-        {data.club} · {data.status === 'active' ? 'Mitglied' : 'ehemaliges Mitglied'}
-        {data.current_type && ` · ${data.current_type.member_type_name}`}
-        {data.federation?.member_number && ` · Verbandsnr. ${data.federation.member_number}`}
+        {data.club} · {data.status === 'active' ? t('Mitglied') : t('ehemaliges Mitglied')}
+        {data.current_type &&
+          t(' · {member_type_name}', { member_type_name: data.current_type.member_type_name })}
+        {data.federation?.member_number &&
+          t(' · Verbandsnr. {member_number}', { member_number: data.federation.member_number })}
       </p>
       <div className="stack">
         {data.remote ? (
@@ -319,24 +335,31 @@ function FederationDetail({ prefix }: { prefix: string }) {
         />
         {org.permissions.includes(PERM.cardsManage) && data.status === 'active' && (
           <div className="card card-wide">
-            <h2>Mitgliedsausweis</h2>
+            <h2>{t('Mitgliedsausweis')}</h2>
             <p className="muted small">
-              Sperren und neu erzeugen kann {tm.nom}. Hier lässt sich der Ausweis drucken.
+              {t('Sperren und neu erzeugen kann {nom}. Hier lässt sich der Ausweis drucken.', {
+                nom: tm.nom,
+              })}
             </p>
             <a
               className="button button-ghost"
               href={cardApi.orgPdfUrl(org.id, { mitglied: data.id })}
             >
-              Ausweis als PDF
+              {t('Ausweis als PDF')}
             </a>
           </div>
         )}
         <div className="card card-wide">
-          <h2>Mitgliedschaft {tm.e_im}</h2>
+          <h2>
+            {t('Mitgliedschaft')} {tm.e_im}
+          </h2>
           {data.federation && (
             <p>
-              Eintritt: {formatMemberDate(data.federation.entry_date, org.date_precision)} ·{' '}
-              {data.duration.federation?.years ?? 0} Jahre ({data.duration.federation?.rule})
+              {t('Eintritt: {x} ·', {
+                x: formatMemberDate(data.federation.entry_date, org.date_precision),
+              })}{' '}
+              {data.duration.federation?.years ?? 0}{' '}
+              {t('Jahre ({rule})', { rule: data.duration.federation?.rule })}
             </p>
           )}
           <ul className="plain-list">
@@ -385,26 +408,26 @@ function FederationMasterData({
       }}
     >
       <div className="card-head">
-        <h2>Kontakt und Anschrift</h2>
+        <h2>{t('Kontakt und Anschrift')}</h2>
         {!member.readonly && <SaveStatus auto={auto} />}
       </div>
       <fieldset disabled={member.readonly}>
         <div className="grid-2">
           <Field
-            label="E-Mail"
+            label={t('E-Mail')}
             type="email"
             value={form.values.email}
             error={form.errors.email}
             onChange={(e) => form.set('email', e.target.value)}
           />
           <Field
-            label="Telefon"
+            label={t('Telefon')}
             value={form.values.phone}
             onChange={(e) => form.set('phone', e.target.value)}
           />
         </div>
         <Field
-          label="Straße und Hausnummer"
+          label={t('Straße und Hausnummer')}
           value={form.values.street}
           error={form.errors.street}
           onChange={(e) => form.set('street', e.target.value)}
@@ -416,7 +439,7 @@ function FederationMasterData({
             onChange={(e) => form.set('postal_code', e.target.value)}
           />
           <Field
-            label="Ort"
+            label={t('Ort')}
             value={form.values.city}
             onChange={(e) => form.set('city', e.target.value)}
           />
@@ -460,7 +483,7 @@ export function SuggestCorrection({
     }
     try {
       await api.post(`/api/orgs/${orgId}/peering/members/${member.id}/suggest/`, data)
-      setMsg({ kind: 'success', text: `Der Vorschlag ist an ${owner} unterwegs.` })
+      setMsg({ kind: 'success', text: t('Der Vorschlag ist an {owner} unterwegs.', { owner }) })
     } catch (e) {
       setMsg({ kind: 'error', text: errorMessage(e) })
     } finally {
@@ -470,30 +493,30 @@ export function SuggestCorrection({
 
   return (
     <div className="card card-wide">
-      <h2>Angaben aus der Meldung</h2>
+      <h2>{t('Angaben aus der Meldung')}</h2>
       <p className="muted small">{intro}</p>
       {canEdit && (
         <>
           <div className="grid-2">
             <Field
-              label="Name"
+              label={t('Name')}
               value={values.last_name}
               onChange={(e) => setValues({ ...values, last_name: e.target.value })}
             />
             <Field
-              label="Vorname"
+              label={t('Vorname')}
               value={values.first_name}
               onChange={(e) => setValues({ ...values, first_name: e.target.value })}
             />
           </div>
           <Field
-            label="Geburtsdatum"
+            label={t('Geburtsdatum')}
             type="date"
             value={values.birth_date}
             onChange={(e) => setValues({ ...values, birth_date: e.target.value })}
           />
           <Field
-            label={`Nachricht an ${owner}`}
+            label={t('Nachricht an {owner}', { owner })}
             value={values.message}
             onChange={(e) => setValues({ ...values, message: e.target.value })}
           />
@@ -504,7 +527,7 @@ export function SuggestCorrection({
               disabled={busy}
               onClick={() => void send()}
             >
-              Korrektur vorschlagen
+              {t('Korrektur vorschlagen')}
             </button>
           </div>
         </>

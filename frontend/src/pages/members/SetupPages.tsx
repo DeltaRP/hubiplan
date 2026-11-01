@@ -11,6 +11,7 @@ import type { DatePrecision } from '../../components/forms.ts'
 import { Alert, Checkbox, SaveStatus, SelectField } from '../../components/ui.tsx'
 import { useActiveOrg, useOrg } from '../../org/OrgContext.tsx'
 import { useTerms } from '../../org/terms.ts'
+import { t } from '../../i18n/index.ts'
 
 type Form = ReturnType<typeof useForm<OrgDetail>>
 
@@ -39,7 +40,7 @@ function OrgSettingsCard({
   const org = useActiveOrg()
   const { data, error, setData } = useLoad(() => orgApi.detail(org.id), [org.id])
   if (error) return <Alert kind="error">{error}</Alert>
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
   return (
     <SettingsForm key={data.id} detail={data} fields={fields} title={title} onSaved={setData}>
       {children}
@@ -85,7 +86,7 @@ function SettingsForm({
       <h2>{title}</h2>
       <fieldset disabled={!editable}>{children(form, detail)}</fieldset>
       {!editable && (
-        <p className="muted small">Du kannst diese Angaben ansehen, aber nicht ändern.</p>
+        <p className="muted small">{t('Du kannst diese Angaben ansehen, aber nicht ändern.')}</p>
       )}
     </form>
   )
@@ -95,29 +96,36 @@ function SettingsForm({
 export function MemberDurationSettings() {
   const tm = useTerms()
   return (
-    <OrgSettingsCard fields={DURATION_FIELDS} title="Jubiläen und Mitgliedsdauer">
+    <OrgSettingsCard fields={DURATION_FIELDS} title={t('Jubiläen und Mitgliedsdauer')}>
       {({ values: v, set, errors }, detail) => (
         <>
           <ListInput
-            label="Jubiläumsstufen (Jahre, durch Komma getrennt)"
+            label={t('Jubiläumsstufen (Jahre, durch Komma getrennt)')}
             value={v.jubilee_years}
             parse={parseNumberList}
             error={errors.jubilee_years}
             onChange={(years) => set('jubilee_years', years)}
           />
           <ListInput
-            label={`Jubiläen ${tm.e_gen} und der ${tm.pl} (Jahre seit Gründung)`}
+            label={t('Jubiläen {e_gen} und der {pl} (Jahre seit Gründung)', {
+              e_gen: tm.e_gen,
+              pl: tm.pl,
+            })}
             value={v.unit_jubilee_years ?? []}
             parse={parseNumberList}
             error={errors.unit_jubilee_years}
-            hint="Gezählt wird ab dem Gründungsjahr, jahresgenau (z. B. 100 Jahre im ganzen Jahr)."
+            hint={t(
+              'Gezählt wird ab dem Gründungsjahr, jahresgenau (z. B. 100 Jahre im ganzen Jahr).',
+            )}
             onChange={(years) => set('unit_jubilee_years', years)}
           />
           <SelectField
-            label="Genauigkeit für Mitgliedschaften und Jubiläen"
+            label={t('Genauigkeit für Mitgliedschaften und Jubiläen')}
             value={v.date_precision}
             error={errors.date_precision}
-            hint="Gilt für die Anzeige von Ein- und Austritt und für die Jubiläen. Gespeichert wird immer tagesgenau. Jahresgenau: Eintritt 2001 ergibt 25 Jahre im ganzen Jahr 2026."
+            hint={t(
+              'Gilt für die Anzeige von Ein- und Austritt und für die Jubiläen. Gespeichert wird immer tagesgenau. Jahresgenau: Eintritt 2001 ergibt 25 Jahre im ganzen Jahr 2026.',
+            )}
             onChange={(e) => set('date_precision', e.target.value as DatePrecision)}
           >
             {DATE_PRECISION_OPTIONS.map((o) => (
@@ -128,7 +136,7 @@ export function MemberDurationSettings() {
           </SelectField>
           {detail.type === 'federation' && (
             <SelectField
-              label={`Was zählt für die Dauer ${tm.e_im}?`}
+              label={t('Was zählt für die Dauer {e_im}?', { e_im: tm.e_im })}
               value={v.federation_duration_rule}
               error={errors.federation_duration_rule}
               onChange={(e) =>
@@ -138,8 +146,8 @@ export function MemberDurationSettings() {
                 )
               }
             >
-              <option value="all_reported">alle gemeldeten Zeiten</option>
-              <option value="active_reported">nur gemeldete aktive Zeiten</option>
+              <option value="all_reported">{t('alle gemeldeten Zeiten')}</option>
+              <option value="active_reported">{t('nur gemeldete aktive Zeiten')}</option>
             </SelectField>
           )}
         </>
@@ -152,23 +160,30 @@ export function MemberDurationSettings() {
 export function MemberPortalSettings() {
   const tm = useTerms()
   return (
-    <OrgSettingsCard fields={PORTAL_FIELDS} title="Mitgliederbereich und Fotos">
+    <OrgSettingsCard fields={PORTAL_FIELDS} title={t('Mitgliederbereich und Fotos')}>
       {({ values: v, set }) => (
         <>
-          <h3>Zugänge für Mitglieder</h3>
+          <h3>{t('Zugänge für Mitglieder')}</h3>
           <Checkbox
-            label="Mitgliederbereich: Mitglieder können sich anmelden, ihre Daten ansehen und Änderungen melden"
+            label={t(
+              'Mitgliederbereich: Mitglieder können sich anmelden, ihre Daten ansehen und Änderungen melden',
+            )}
             checked={v.member_portal_enabled}
             onChange={(val) => set('member_portal_enabled', val)}
           />
           <Checkbox
-            label={`Änderungen der Mitglieder an Kontaktdaten und Anschrift erst nach Bestätigung durch ${tm.e_akk} übernehmen (sonst gelten sie sofort)`}
+            label={t(
+              'Änderungen der Mitglieder an Kontaktdaten und Anschrift erst nach Bestätigung durch {e_akk} übernehmen (sonst gelten sie sofort)',
+              { e_akk: tm.e_akk },
+            )}
             checked={v.contact_changes_need_approval}
             onChange={(val) => set('contact_changes_need_approval', val)}
           />
-          <h3>Mitgliederfotos</h3>
+          <h3>{t('Mitgliederfotos')}</h3>
           <Checkbox
-            label="Fotos, die Mitglieder über ihren Upload-Link hochladen, erst nach Freigabe durch den Vorstand anzeigen"
+            label={t(
+              'Fotos, die Mitglieder über ihren Upload-Link hochladen, erst nach Freigabe durch den Vorstand anzeigen',
+            )}
             checked={v.photo_approval_required}
             onChange={(val) => set('photo_approval_required', val)}
           />
