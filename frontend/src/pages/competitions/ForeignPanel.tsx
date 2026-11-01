@@ -14,6 +14,7 @@ import {
 import { confirmDialog } from '../../components/dialog.ts'
 import { errorMessage, useLoad } from '../../components/forms.ts'
 import { Alert, LoadError } from '../../components/ui.tsx'
+import { t } from '../../i18n/index.ts'
 
 export function ForeignPanel({ org, comp }: { org: number; comp: CompetitionDetail }) {
   const starters = useLoad(() => competitionsApi.starters(org, comp.id), [org, comp.id])
@@ -46,13 +47,19 @@ export function ForeignPanel({ org, comp }: { org: number; comp: CompetitionDeta
     const taken = new Set((starters.data ?? []).map((s) => s.membership))
     return members.data
       .filter((m) => !taken.has(m.membership))
-      .filter((m) => q.split(/\s+/).every((w) => foldName(`${m.name} ${m.unit_name}`).includes(w)))
+      .filter((m) =>
+        q
+          .split(/\s+/)
+          .every((w) =>
+            foldName(t('{name} {unit_name}', { name: m.name, unit_name: m.unit_name })).includes(w),
+          ),
+      )
       .slice(0, 8)
   }, [query, members.data, starters.data])
 
   if (starters.error) return <LoadError message={starters.error} onRetry={reload} />
   if (!starters.data || !teams.data || !standings.data)
-    return <p className="muted">Wird geladen …</p>
+    return <p className="muted">{t('Wird geladen …')}</p>
   const blocks = standings.data.scorings
 
   return (
@@ -60,9 +67,9 @@ export function ForeignPanel({ org, comp }: { org: number; comp: CompetitionDeta
       {error && <Alert kind="error">{error}</Alert>}
       {!closed && (
         <div className="card card-wide">
-          <h2>Eigene Schützen</h2>
+          <h2>{t('Eigene Schützen')}</h2>
           <label className="field">
-            <span>Mitglied hinzufügen (Name)</span>
+            <span>{t('Mitglied hinzufügen (Name)')}</span>
             <input value={query} autoComplete="off" onChange={(e) => setQuery(e.target.value)} />
           </label>
           {hits.length > 0 && (
@@ -88,7 +95,7 @@ export function ForeignPanel({ org, comp }: { org: number; comp: CompetitionDeta
           <p className="muted small">
             {starters.data.length
               ? starters.data.map((s) => s.name).join(', ')
-              : 'Noch niemand eingetragen.'}
+              : t('Noch niemand eingetragen.')}
           </p>
         </div>
       )}
@@ -137,12 +144,12 @@ function TeamsCard({
 }) {
   return (
     <div className="card card-wide">
-      <h2>Mannschaften</h2>
+      <h2>{t('Mannschaften')}</h2>
       {teams.map((tm) => (
         <fieldset key={tm.id} className="team-box" disabled={closed}>
           <legend>
             <input
-              aria-label="Name der Mannschaft"
+              aria-label={t('Name der Mannschaft')}
               defaultValue={tm.name}
               onBlur={(e) => {
                 const v = e.target.value.trim()
@@ -178,14 +185,14 @@ function TeamsCard({
                 className="button button-ghost"
                 onClick={async () => {
                   const ok = await confirmDialog({
-                    title: 'Mannschaft entfernen',
-                    message: `„${tm.name}“ mit Platz und Wert entfernen?`,
-                    confirmLabel: 'Entfernen',
+                    title: t('Mannschaft entfernen'),
+                    message: t('„{name}“ mit Platz und Wert entfernen?', { name: tm.name }),
+                    confirmLabel: t('Entfernen'),
                   })
                   if (ok) await run(() => competitionsApi.removeTeam(org, comp.id, tm.id))
                 }}
               >
-                Mannschaft entfernen
+                {t('Mannschaft entfernen')}
               </button>
             </div>
           )}
@@ -198,7 +205,7 @@ function TeamsCard({
             className="button button-ghost"
             onClick={() => void run(() => competitionsApi.addTeam(org, comp.id))}
           >
-            Mannschaft hinzufügen
+            {t('Mannschaft hinzufügen')}
           </button>
         </div>
       )}
@@ -257,21 +264,25 @@ function PlacingCard({
     <div className="card card-wide">
       <h2>{scoring.name}</h2>
       {scoring.field_size ? (
-        <p className="muted">{scoring.field_size} Teilnehmer insgesamt</p>
+        <p className="muted">
+          {scoring.field_size} {t('Teilnehmer insgesamt')}
+        </p>
       ) : (
-        <p className="muted">Teilnehmerzahl insgesamt unter „Einrichten“ (für „Platz 2 von 14“).</p>
+        <p className="muted">
+          {t('Teilnehmerzahl insgesamt unter „Einrichten“ (für „Platz 2 von 14“).')}
+        </p>
       )}
       {!block.rows.length ? (
-        <p className="muted">{team ? 'Noch keine Mannschaft.' : 'Noch keine Schützen.'}</p>
+        <p className="muted">{team ? t('Noch keine Mannschaft.') : t('Noch keine Schützen.')}</p>
       ) : (
         <div className="table-scroll">
           <table className="table">
             <thead>
               <tr>
-                <th>{team ? 'Mannschaft' : 'Name'}</th>
-                <th className="num">Platz</th>
-                <th className="num">Wert</th>
-                <th>Bemerkung</th>
+                <th>{team ? t('Mannschaft') : t('Name')}</th>
+                <th className="num">{t('Platz')}</th>
+                <th className="num">{t('Wert')}</th>
+                <th>{t('Bemerkung')}</th>
               </tr>
             </thead>
             <tbody>
@@ -293,7 +304,7 @@ function PlacingCard({
                   <td className="num">
                     <input
                       name="place"
-                      aria-label={`Platz ${r.name}`}
+                      aria-label={t('Platz {name}', { name: r.name })}
                       className="input-narrow"
                       inputMode="numeric"
                       disabled={closed}
@@ -303,7 +314,7 @@ function PlacingCard({
                   <td className="num">
                     <input
                       name="value"
-                      aria-label={`Wert ${r.name}`}
+                      aria-label={t('Wert {name}', { name: r.name })}
                       className="input-narrow"
                       inputMode="decimal"
                       disabled={closed}
@@ -313,7 +324,7 @@ function PlacingCard({
                   <td>
                     <input
                       name="note"
-                      aria-label={`Bemerkung ${r.name}`}
+                      aria-label={t('Bemerkung {name}', { name: r.name })}
                       disabled={closed}
                       defaultValue={r.note ?? ''}
                     />

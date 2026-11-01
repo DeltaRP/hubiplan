@@ -12,6 +12,7 @@ import { useLoad } from '../../components/forms.ts'
 import { Alert, LoadError } from '../../components/ui.tsx'
 import { ShootoffBlock } from './Shootoffs.tsx'
 import { HowTo, Term } from '../../learning/Aids.tsx'
+import { t } from '../../i18n/index.ts'
 
 export function ResultsPanel({
   org,
@@ -33,27 +34,28 @@ export function ResultsPanel({
 
   if (standings.error) return <LoadError message={standings.error} onRetry={reload} />
   const data = standings.data
-  if (!data) return <p className="muted">Wird geladen …</p>
+  if (!data) return <p className="muted">{t('Wird geladen …')}</p>
   const exp = (q: string) => competitionsApi.exportUrl(org, comp.id, q)
 
   return (
     <>
       <div className="button-row">
         <a className="button button-ghost" href={exp('als=pdf')} target="_blank" rel="noreferrer">
-          Ergebnisliste (PDF)
+          {t('Ergebnisliste (PDF)')}
         </a>
         <a className="button button-ghost" href={exp('als=xlsx')}>
-          Excel
+          {t('Excel')}
         </a>
         <button type="button" className="button button-ghost" onClick={reload}>
-          Aktualisieren
+          {t('Aktualisieren')}
         </button>
       </div>
       {data.bird && <BirdResults bird={data.bird} />}
       {data.open_shootoffs > 0 && (
         <Alert kind="info">
-          <Term k="comp_tie">Gleichstand</Term> auf <Term k="comp_prize_place">Preisplätzen</Term>:
-          Stechen nötig. Erst danach lässt sich der Wettbewerb endgültig abschließen.
+          <Term k="comp_tie">{t('Gleichstand')}</Term> auf{' '}
+          <Term k="comp_prize_place">{t('Preisplätzen')}</Term>
+          {t(': Stechen nötig. Erst danach lässt sich der Wettbewerb endgültig abschließen.')}
         </Alert>
       )}
       {data.scorings.map((block) => {
@@ -72,7 +74,7 @@ export function ResultsPanel({
             />
             {block.without_value.length > 0 && (
               <p className="muted small">
-                Ohne Ergebnis: {block.without_value.map((w) => w.name).join(', ')}
+                {t('Ohne Ergebnis:')} {block.without_value.map((w) => w.name).join(', ')}
               </p>
             )}
           </div>
@@ -80,9 +82,9 @@ export function ResultsPanel({
       })}
       {'count' in data.stats && <StatsCard stats={data.stats as Stats} />}
       <p className="muted small">
-        Zustand ändern und abschließen unter „Einrichten“.{' '}
+        {t('Zustand ändern und abschließen unter „Einrichten“.')}{' '}
         <button type="button" className="link-button" onClick={onChanged}>
-          Neu laden
+          {t('Neu laden')}
         </button>
       </p>
     </>
@@ -94,26 +96,26 @@ function BirdResults({ bird }: { bird: BirdState }) {
   return (
     <>
       <div className="card card-wide">
-        <h2>Pfänderliste</h2>
+        <h2>{t('Pfänderliste')}</h2>
         <div className="table-scroll">
           <table className="table">
             <thead>
               <tr>
                 <th>
-                  <Term k="comp_prize">Pfand</Term>
+                  <Term k="comp_prize">{t('Pfand')}</Term>
                 </th>
-                <th>Schütze</th>
-                <th>Einheit / Verein</th>
-                <th className="num">Schuss Nr.</th>
-                <th className="num">Schüsse</th>
-                <th>Preis</th>
+                <th>{t('Schütze')}</th>
+                <th>{t('Einheit / Verein')}</th>
+                <th className="num">{t('Schuss Nr.')}</th>
+                <th className="num">{t('Schüsse')}</th>
+                <th>{t('Preis')}</th>
               </tr>
             </thead>
             <tbody>
               {bird.prizes.map((p) => (
                 <tr key={p.id}>
                   <td>{p.name}</td>
-                  <td>{p.winner_name || <span className="muted">hängt noch</span>}</td>
+                  <td>{p.winner_name || <span className="muted">{t('hängt noch')}</span>}</td>
                   <td>{p.unit_name || p.club}</td>
                   <td className="num">{p.shot_number ?? ''}</td>
                   <td className="num">{p.shots_for ?? ''}</td>
@@ -125,31 +127,39 @@ function BirdResults({ bird }: { bird: BirdState }) {
         </div>
       </div>
       <div className="card card-wide">
-        <h2>Kennzahlen</h2>
+        <h2>{t('Kennzahlen')}</h2>
         <dl className="stats-list">
-          <dt>Schüsse insgesamt</dt>
+          <dt>{t('Schüsse insgesamt')}</dt>
           <dd>{st.shots}</dd>
-          <dt>Schützen</dt>
+          <dt>{t('Schützen')}</dt>
           <dd>
-            {st.starters} ({st.members} Mitglieder, {st.guests} Gäste)
+            {st.starters}{' '}
+            {t('({members} Mitglieder, {guests} Gäste)', {
+              members: st.members,
+              guests: st.guests,
+            })}
           </dd>
           {st.rounds ? (
             <>
               <dt>
-                <Term k="comp_round">Runden</Term>
+                <Term k="comp_round">{t('Runden')}</Term>
               </dt>
               <dd>{st.rounds}</dd>
             </>
           ) : null}
           {st.duration_minutes !== null ? (
             <>
-              <dt>Dauer</dt>
-              <dd>{st.duration_minutes} Minuten</dd>
+              <dt>{t('Dauer')}</dt>
+              <dd>
+                {st.duration_minutes} {t('Minuten')}
+              </dd>
             </>
           ) : null}
           {st.per_unit.map((u) => (
             <Fragment key={u.name}>
-              <dt>Pfänder {u.name}</dt>
+              <dt>
+                {t('Pfänder')} {u.name}
+              </dt>
               <dd>{u.count}</dd>
             </Fragment>
           ))}
@@ -158,10 +168,13 @@ function BirdResults({ bird }: { bird: BirdState }) {
           <p className="muted small">
             {bird.draw.missing.length ? (
               <>
-                Ohne <Term k="comp_lot">Losnummer</Term>: {bird.draw.missing.join(', ')}.{' '}
+                {t('Ohne')} <Term k="comp_lot">{t('Losnummer')}</Term>:{' '}
+                {bird.draw.missing.join(', ')}.{' '}
               </>
             ) : null}
-            {bird.draw.gaps.length ? `Nicht vergebene Nummern: ${bird.draw.gaps.join(', ')}.` : ''}
+            {bird.draw.gaps.length
+              ? t('Nicht vergebene Nummern: {x}.', { x: bird.draw.gaps.join(', ') })
+              : ''}
           </p>
         )}
       </div>
@@ -172,17 +185,19 @@ function BirdResults({ bird }: { bird: BirdState }) {
 function ForeignTable({ block }: { block: StandingBlock }) {
   const team = block.kind === 'mannschaft'
   if (!block.rows.length)
-    return <p className="muted">{team ? 'Noch keine Mannschaften.' : 'Noch keine Schützen.'}</p>
+    return (
+      <p className="muted">{team ? t('Noch keine Mannschaften.') : t('Noch keine Schützen.')}</p>
+    )
   return (
     <div className="table-scroll">
       <table className="table">
         <thead>
           <tr>
-            <th className="num">Platz</th>
-            <th>{team ? 'Mannschaft' : 'Name'}</th>
-            <th>{team ? 'Schützen' : 'Einheit'}</th>
-            <th className="num">Wert</th>
-            <th>Bemerkung</th>
+            <th className="num">{t('Platz')}</th>
+            <th>{team ? t('Mannschaft') : t('Name')}</th>
+            <th>{team ? t('Schützen') : t('Einheit')}</th>
+            <th className="num">{t('Wert')}</th>
+            <th>{t('Bemerkung')}</th>
           </tr>
         </thead>
         <tbody>
@@ -190,7 +205,9 @@ function ForeignTable({ block }: { block: StandingBlock }) {
             <tr key={r.key} className={r.prize ? 'row-prize' : undefined}>
               <td className="num">
                 {r.place ? `${r.place}.` : '–'}
-                {r.place && block.field_size ? ` von ${block.field_size}` : ''}
+                {r.place && block.field_size
+                  ? t(' von {field_size}', { field_size: block.field_size })
+                  : ''}
               </td>
               <td>{r.name}</td>
               <td>{team ? (r.members ?? []).join(', ') : r.unit_name || r.club}</td>
@@ -207,20 +224,20 @@ function ForeignTable({ block }: { block: StandingBlock }) {
 function StandingTable({ block }: { block: StandingBlock }) {
   const unit = block.kind === 'einheit'
   const hasShootoff = block.rows.some((r) => r.shootoff && Object.keys(r.shootoff).length)
-  if (!block.rows.length) return <p className="muted">Noch keine Ergebnisse.</p>
+  if (!block.rows.length) return <p className="muted">{t('Noch keine Ergebnisse.')}</p>
   return (
     <div className="table-scroll">
       <table className="table">
         <thead>
           <tr>
-            <th className="num">Platz</th>
-            <th>{unit ? 'Einheit' : 'Name'}</th>
-            <th>{unit ? 'Schützen' : 'Einheit / Verein'}</th>
-            {unit && <th>Bester Schütze</th>}
-            <th className="num">Wert</th>
+            <th className="num">{t('Platz')}</th>
+            <th>{unit ? t('Einheit') : t('Name')}</th>
+            <th>{unit ? t('Schützen') : t('Einheit / Verein')}</th>
+            {unit && <th>{t('Bester Schütze')}</th>}
+            <th className="num">{t('Wert')}</th>
             {hasShootoff && (
               <th className="num">
-                <Term k="comp_shootoff">Stechen</Term>
+                <Term k="comp_shootoff">{t('Stechen')}</Term>
               </th>
             )}
           </tr>
@@ -234,13 +251,13 @@ function StandingTable({ block }: { block: StandingBlock }) {
                 {r.out_of_competition ? (
                   <>
                     {' '}
-                    (<Term k="comp_ooc">außer Konkurrenz</Term>)
+                    (<Term k="comp_ooc">{t('außer Konkurrenz')}</Term>)
                   </>
                 ) : null}
                 {r.guest ? (
                   <span className="muted">
                     {' '}
-                    · <Term k="comp_guest">Gast</Term>
+                    · <Term k="comp_guest">{t('Gast')}</Term>
                   </span>
                 ) : null}
               </td>
@@ -249,7 +266,7 @@ function StandingTable({ block }: { block: StandingBlock }) {
               <td className="num">
                 {r.value_text || <span className="muted">{r.reason}</span>}
                 {r.decided_by ? (
-                  <span className="muted small" title="entschieden durch">
+                  <span className="muted small" title={t('entschieden durch')}>
                     {' '}
                     · {r.decided_by}
                   </span>
@@ -270,15 +287,19 @@ function StandingTable({ block }: { block: StandingBlock }) {
 function StatsCard({ stats }: { stats: Stats }) {
   return (
     <div className="card card-wide">
-      <h2>Kennzahlen</h2>
+      <h2>{t('Kennzahlen')}</h2>
       <dl className="stats-list">
-        <dt>Schützen</dt>
+        <dt>{t('Schützen')}</dt>
         <dd>
-          {stats.count} ({stats.members} Mitglieder, {stats.guests} Gäste)
+          {stats.count}{' '}
+          {t('({members} Mitglieder, {guests} Gäste)', {
+            members: stats.members,
+            guests: stats.guests,
+          })}
         </dd>
-        <dt>Durchschnitt</dt>
+        <dt>{t('Durchschnitt')}</dt>
         <dd>{stats.average}</dd>
-        <dt>Höchster / niedrigster Wert</dt>
+        <dt>{t('Höchster / niedrigster Wert')}</dt>
         <dd>
           {stats.max} / {stats.min}
         </dd>
@@ -288,12 +309,12 @@ function StatsCard({ stats }: { stats: Stats }) {
           <table className="table">
             <thead>
               <tr>
-                <th>Einheit</th>
-                <th className="num">Schützen</th>
-                <th className="num">Mitglieder</th>
-                <th className="num">Beteiligung</th>
-                <th className="num">Durchschnitt</th>
-                <th className="num">Bester Wert</th>
+                <th>{t('Einheit')}</th>
+                <th className="num">{t('Schützen')}</th>
+                <th className="num">{t('Mitglieder')}</th>
+                <th className="num">{t('Beteiligung')}</th>
+                <th className="num">{t('Durchschnitt')}</th>
+                <th className="num">{t('Bester Wert')}</th>
               </tr>
             </thead>
             <tbody>
@@ -302,7 +323,11 @@ function StatsCard({ stats }: { stats: Stats }) {
                   <td>{u.name}</td>
                   <td className="num">{u.count}</td>
                   <td className="num">{u.members}</td>
-                  <td className="num">{u.participation !== null ? `${u.participation} %` : ''}</td>
+                  <td className="num">
+                    {u.participation !== null
+                      ? t('{participation} %', { participation: u.participation })
+                      : ''}
+                  </td>
                   <td className="num">{u.average}</td>
                   <td className="num">{u.best}</td>
                 </tr>

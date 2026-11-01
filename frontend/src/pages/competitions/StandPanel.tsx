@@ -25,6 +25,7 @@ import type { PhotoSuggestion } from './photo.ts'
 import { TargetPad, type PadHit } from './TargetPad.tsx'
 import { scoreShot, totalText } from './targetMath.ts'
 import { describe, guestOrigin, useStandStore } from './standStore.ts'
+import { t } from '../../i18n/index.ts'
 
 type Hit =
   | { kind: 'starter'; starter: Starter }
@@ -54,11 +55,13 @@ export function StandPanel({
       setNotice(
         [
           values.length
-            ? `Auf einem anderen Gerät später geändert, dieser Wert gilt: ${values
-                .map((c) => `${c.name} ${showValue(c.value, scoring?.decimals ?? 0)}`)
-                .join(', ')}`
+            ? t('Auf einem anderen Gerät später geändert, dieser Wert gilt: {x}', {
+                x: values
+                  .map((c) => `${c.name} ${showValue(c.value, scoring?.decimals ?? 0)}`)
+                  .join(', '),
+              })
             : '',
-          ...notes.map((c) => `${c.name} ${c.note}.`),
+          ...notes.map((c) => t('{name} {note}.', { name: c.name, note: c.note })),
         ]
           .filter(Boolean)
           .join(' '),
@@ -87,7 +90,7 @@ export function StandPanel({
     if (!q) return []
     const words = q.split(/\s+/)
     const match = (name: string, extra = '') => {
-      const hay = foldName(`${name} ${extra}`)
+      const hay = foldName(t('{name} {extra}', { name, extra }))
       return words.every((w) => hay.includes(w))
     }
     const startersHit = local.starters
@@ -162,21 +165,28 @@ export function StandPanel({
     }
     const value = points.trim().replace(',', '.')
     if (value !== '' && !Number.isFinite(Number(value))) {
-      setNotice('Bitte eine Zahl eingeben.')
+      setNotice(t('Bitte eine Zahl eingeben.'))
       return
     }
     const max = scoring.max_per_shot
       ? Number(scoring.max_per_shot) * (scoring.counted_shots || scoring.shots || 0)
       : 0
     if (value !== '' && max && Number(value) > max) {
-      setNotice(`Höchstens ${showValue(String(max), 0)}.`)
+      setNotice(t('Höchstens {x}.', { x: showValue(String(max), 0) }))
       return
     }
     if (value !== '' && photoSum !== '' && Number(value) !== Number(photoSum)) {
       const ok = await confirmDialog({
-        title: 'Weicht vom Foto ab',
-        message: `Eingegeben: ${showValue(value, scoring.decimals)} ${scoring.unit_label}. Das Foto ergibt ${showValue(photoSum, scoring.decimals)}. Bitte die Scheibe prüfen. Die Eingabe trotzdem speichern?`,
-        confirmLabel: 'Eingabe speichern',
+        title: t('Weicht vom Foto ab'),
+        message: t(
+          'Eingegeben: {x} {unit_label}. Das Foto ergibt {x2}. Bitte die Scheibe prüfen. Die Eingabe trotzdem speichern?',
+          {
+            x: showValue(value, scoring.decimals),
+            unit_label: scoring.unit_label,
+            x2: showValue(photoSum, scoring.decimals),
+          },
+        ),
+        confirmLabel: t('Eingabe speichern'),
         danger: false,
       })
       if (!ok) return
@@ -190,9 +200,14 @@ export function StandPanel({
       const old = s.values[String(scoring.id)]
       if (old !== undefined && old !== '' && value !== '' && Number(old) !== Number(value)) {
         const ok = await confirmDialog({
-          title: 'Schon erfasst',
-          message: `${s.name} hat schon ${showValue(old, scoring.decimals)} ${scoring.unit_label}. Durch ${showValue(value, scoring.decimals)} ersetzen?`,
-          confirmLabel: 'Ersetzen',
+          title: t('Schon erfasst'),
+          message: t('{name} hat schon {x} {unit_label}. Durch {x2} ersetzen?', {
+            name: s.name,
+            x: showValue(old, scoring.decimals),
+            unit_label: scoring.unit_label,
+            x2: showValue(value, scoring.decimals),
+          }),
+          confirmLabel: t('Ersetzen'),
           danger: false,
         })
         if (!ok) return
@@ -209,10 +224,16 @@ export function StandPanel({
         ),
         recent: [{ ref, name, value, at }, ...l.recent].slice(0, 10),
       }))
-      setNotice(`${name}: ${showValue(value, scoring.decimals)} ${scoring.unit_label}`)
+      setNotice(
+        t('{name}: {x} {unit_label}', {
+          name,
+          x: showValue(value, scoring.decimals),
+          unit_label: scoring.unit_label,
+        }),
+      )
     } else {
       push(null)
-      setNotice(`${name} eingetragen.`)
+      setNotice(t('{name} eingetragen.', { name }))
     }
     setChosen(null)
     setQuery('')
@@ -253,7 +274,7 @@ export function StandPanel({
     if (!chosen || !scoring) return
     const max = scoring.shots
     if (max && padHits.length > max) {
-      setNotice(`Höchstens ${max} Treffer.`)
+      setNotice(t('Höchstens {max} Treffer.', { max }))
       return
     }
     const before = chosen.kind === 'starter' ? storedHits(chosen.starter) : []
@@ -275,7 +296,7 @@ export function StandPanel({
     )
     if (same && chosen.kind === 'starter') {
       push(null)
-      setNotice(`${name}: unverändert.`)
+      setNotice(t('{name}: unverändert.', { name }))
     } else {
       const at = new Date().toISOString()
       const hits = padHits.map((h) => ({
@@ -300,8 +321,12 @@ export function StandPanel({
       }))
       setNotice(
         value
-          ? `${name}: ${showValue(value, scoring.decimals)} ${scoring.unit_label}`
-          : `${name} eingetragen.`,
+          ? t('{name}: {x} {unit_label}', {
+              name,
+              x: showValue(value, scoring.decimals),
+              unit_label: scoring.unit_label,
+            })
+          : t('{name} eingetragen.', { name }),
       )
     }
     setPadHits([])
@@ -319,9 +344,12 @@ export function StandPanel({
   async function clearValue(s: Starter) {
     if (!scoring) return
     const ok = await confirmDialog({
-      title: 'Wert löschen',
-      message: `Den Wert von ${s.name} löschen? ${s.name} steht danach wieder unter „Noch offen“.`,
-      confirmLabel: 'Löschen',
+      title: t('Wert löschen'),
+      message: t('Den Wert von {name} löschen? {name2} steht danach wieder unter „Noch offen“.', {
+        name: s.name,
+        name2: s.name,
+      }),
+      confirmLabel: t('Löschen'),
     })
     if (!ok) return
     const ref = s.key ?? s.id
@@ -333,15 +361,15 @@ export function StandPanel({
       ),
       recent: l.recent.filter((r) => r.ref !== ref),
     }))
-    setNotice(`Wert von ${s.name} gelöscht.`)
+    setNotice(t('Wert von {name} gelöscht.', { name: s.name }))
     backToSearch()
   }
 
   async function removeStarter(s: Starter) {
     const ok = await confirmDialog({
-      title: 'Aus dem Wettbewerb entfernen',
-      message: `${s.name} mit allen Werten aus dem Wettbewerb entfernen?`,
-      confirmLabel: 'Entfernen',
+      title: t('Aus dem Wettbewerb entfernen'),
+      message: t('{name} mit allen Werten aus dem Wettbewerb entfernen?', { name: s.name }),
+      confirmLabel: t('Entfernen'),
     })
     if (!ok) return
     const ref = s.key ?? s.id
@@ -350,11 +378,11 @@ export function StandPanel({
       starters: l.starters.filter((x) => (x.key ?? x.id) !== ref),
       recent: l.recent.filter((r) => r.ref !== ref),
     }))
-    setNotice(`${s.name} entfernt.`)
+    setNotice(t('{name} entfernt.', { name: s.name }))
     backToSearch()
   }
 
-  if (!scoring) return <p className="muted">Zuerst eine Einzelwertung anlegen.</p>
+  if (!scoring) return <p className="muted">{t('Zuerst eine Einzelwertung anlegen.')}</p>
 
   const open = local.starters.filter((s) => !s.values[String(scoring.id)])
   // Zuletzt erfasst über alle Geräte: Zeitpunkt vom Server, dazu eigene noch nicht
@@ -379,20 +407,22 @@ export function StandPanel({
 
   return (
     <div className={`stand${fullscreen ? ' stand-full' : ''}`}>
-      <section className="stand-block" aria-label="Erfassen">
+      <section className="stand-block" aria-label={t('Erfassen')}>
         <p className={`stand-sync ${pending ? 'stand-sync-wait' : 'stand-sync-ok'}`} role="status">
-          {online ? '' : 'Kein Empfang · '}
+          {online ? '' : t('Kein Empfang · ')}
           {statusText}
         </p>
         {syncError && <p className="alert alert-error">{syncError}</p>}
         {closed ? (
-          <p className="alert alert-info">Der Wettbewerb ist endgültig, Eingaben sind gesperrt.</p>
+          <p className="alert alert-info">
+            {t('Der Wettbewerb ist endgültig, Eingaben sind gesperrt.')}
+          </p>
         ) : (
           <form className="stand-entry" onSubmit={submit}>
             {!chosen ? (
               <>
                 <label className="stand-label" htmlFor="stand-suche">
-                  Schütze (Name oder Startnummer)
+                  {t('Schütze (Name oder Startnummer)')}
                 </label>
                 <input
                   id="stand-suche"
@@ -429,17 +459,17 @@ export function StandPanel({
                 <p className="stand-chosen">
                   <strong>{hitName(chosen)}</strong>
                   {chosen.kind === 'member' && chosen.member.unit_name
-                    ? ` · ${chosen.member.unit_name}`
+                    ? t(' · {unit_name}', { unit_name: chosen.member.unit_name })
                     : ''}
                   {chosen.kind === 'starter' && chosen.starter.unit_name
-                    ? ` · ${chosen.starter.unit_name}`
+                    ? t(' · {unit_name}', { unit_name: chosen.starter.unit_name })
                     : ''}
-                  {chosen.kind === 'guest' ? ' · neuer Gast' : ''}
+                  {chosen.kind === 'guest' ? t(' · neuer Gast') : ''}
                 </p>
                 {chosen.kind === 'guest' && (
                   <>
                     <label className="stand-label" htmlFor="stand-verein">
-                      Verein oder Einheit (optional)
+                      {t('Verein oder Einheit (optional)')}
                     </label>
                     <input
                       id="stand-verein"
@@ -459,7 +489,7 @@ export function StandPanel({
                 {tapping && target ? (
                   <>
                     <p className="stand-label">
-                      Treffer antippen
+                      {t('Treffer antippen')}
                       {scoring.counted_shots
                         ? ` (${scoring.counted_shots} von ${scoring.shots ?? '?'} zählen)`
                         : ''}
@@ -479,7 +509,7 @@ export function StandPanel({
                     )}
                     {target.photo && !online && (
                       <p className="muted small">
-                        Ohne Empfang geht die Fotoerkennung nicht; Antippen geht immer.
+                        {t('Ohne Empfang geht die Fotoerkennung nicht; Antippen geht immer.')}
                       </p>
                     )}
                     {photoNote && (
@@ -489,16 +519,18 @@ export function StandPanel({
                       >
                         <strong>
                           {photoNote.hits.length
-                            ? `Vorschlag aus dem Foto: ${photoNote.hits.length} Treffer.`
-                            : 'Auf dem Foto wurden keine Treffer gefunden.'}
+                            ? t('Vorschlag aus dem Foto: {n} Treffer.', {
+                                n: photoNote.hits.length,
+                              })
+                            : t('Auf dem Foto wurden keine Treffer gefunden.')}
                         </strong>{' '}
-                        {photoNote.needsReview ? 'Bitte genau prüfen' : 'Bitte prüfen'}, falls nötig
-                        verschieben, dann speichern.
+                        {photoNote.needsReview ? t('Bitte genau prüfen') : t('Bitte prüfen')}
+                        {t(', falls nötig verschieben, dann speichern.')}
                         {photoNote.note && <span className="small"> ({photoNote.note})</span>}
                         {/ineinander|überlappend/.test(photoNote.note) && (
                           <span className="small">
                             {' '}
-                            <Term k="comp_hole_in_hole">Loch in Loch</Term>
+                            <Term k="comp_hole_in_hole">{t('Loch in Loch')}</Term>
                           </span>
                         )}
                       </div>
@@ -513,7 +545,7 @@ export function StandPanel({
                       onChange={setPadHits}
                     />
                     <button type="button" className="link-button" onClick={() => setSumOnly(true)}>
-                      Nur die Summe eingeben
+                      {t('Nur die Summe eingeben')}
                     </button>
                   </>
                 ) : (
@@ -555,22 +587,25 @@ export function StandPanel({
                         {photoSum ? (
                           <>
                             <strong>
-                              Foto zum Vergleich: {showValue(photoSum, scoring.decimals)}{' '}
-                              {scoring.unit_label} ({photoNote.hits.length} Treffer).
+                              {t('Foto zum Vergleich: {x}  {unit_label} ({n} Treffer).', {
+                                x: showValue(photoSum, scoring.decimals),
+                                unit_label: scoring.unit_label,
+                                n: photoNote.hits.length,
+                              })}
                             </strong>{' '}
                             {photoDiffers &&
-                              'Weicht von der Eingabe ab, bitte die Scheibe prüfen. '}
-                            {photoNote.needsReview && 'Erkennung unsicher. '}
+                              t('Weicht von der Eingabe ab, bitte die Scheibe prüfen. ')}
+                            {photoNote.needsReview && t('Erkennung unsicher. ')}
                             <button
                               type="button"
                               className="link-button"
                               onClick={() => setSumOnly(false)}
                             >
-                              Treffer ansehen
+                              {t('Treffer ansehen')}
                             </button>
                           </>
                         ) : (
-                          <strong>Auf dem Foto wurden keine Treffer gefunden.</strong>
+                          <strong>{t('Auf dem Foto wurden keine Treffer gefunden.')}</strong>
                         )}
                       </div>
                     )}
@@ -581,14 +616,14 @@ export function StandPanel({
                         className="link-button"
                         onClick={() => setSumOnly(false)}
                       >
-                        Treffer auf der Scheibe antippen
+                        {t('Treffer auf der Scheibe antippen')}
                       </button>
                     )}
                   </>
                 )}
                 <div className="button-row stand-buttons">
                   <button type="submit" className="button">
-                    Speichern
+                    {t('Speichern')}
                   </button>
                   <button
                     type="button"
@@ -598,7 +633,7 @@ export function StandPanel({
                       setTimeout(() => searchRef.current?.focus(), 0)
                     }}
                   >
-                    Abbrechen
+                    {t('Abbrechen')}
                   </button>
                 </div>
                 {chosen.kind === 'starter' && (
@@ -609,7 +644,7 @@ export function StandPanel({
                         className="button button-ghost"
                         onClick={() => void clearValue(chosen.starter)}
                       >
-                        Wert löschen
+                        {t('Wert löschen')}
                       </button>
                     )}
                     <button
@@ -617,7 +652,7 @@ export function StandPanel({
                       className="button button-ghost"
                       onClick={() => void removeStarter(chosen.starter)}
                     >
-                      Aus dem Wettbewerb entfernen
+                      {t('Aus dem Wettbewerb entfernen')}
                     </button>
                   </div>
                 )}
@@ -631,7 +666,7 @@ export function StandPanel({
           </p>
         )}
         <details className="stand-section" open={!fullscreen || undefined}>
-          <summary>Zuletzt erfasst ({recent.length})</summary>
+          <summary>{t('Zuletzt erfasst ({n})', { n: recent.length })}</summary>
           <ul className="stand-list">
             {recent.map((r) => (
               <li key={`${r.ref}-${r.at}`}>
@@ -651,7 +686,7 @@ export function StandPanel({
           </ul>
         </details>
         <details className="stand-section">
-          <summary>Noch offen ({open.length})</summary>
+          <summary>{t('Noch offen ({n})', { n: open.length })}</summary>
           <ul className="stand-list">
             {open.map((s) => (
               <li key={s.key ?? s.id}>
@@ -726,14 +761,14 @@ function hitLabel(h: Hit, scoring: Scoring) {
         <span className="muted">
           {' '}
           {h.member.unit_name}
-          {h.member.birth_year ? ` · ${h.member.birth_year}` : ''}
+          {h.member.birth_year ? t(' · {birth_year}', { birth_year: h.member.birth_year }) : ''}
         </span>
         <span className="push-right muted">neu</span>
       </>
     )
   return (
     <>
-      Neu: <strong>„{h.name}“</strong> als Gast hinzufügen
+      {t('Neu:')} <strong>„{h.name}“</strong> {t('als Gast hinzufügen')}
     </>
   )
 }

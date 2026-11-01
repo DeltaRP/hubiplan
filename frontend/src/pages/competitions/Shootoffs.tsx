@@ -14,6 +14,7 @@ import { confirmDialog } from '../../components/dialog.ts'
 import { errorMessage, useLoad } from '../../components/forms.ts'
 import { Alert } from '../../components/ui.tsx'
 import { Why } from '../../learning/Aids.tsx'
+import { t } from '../../i18n/index.ts'
 
 type Rules = { shots: number | null; counted_shots: number | null }
 
@@ -67,8 +68,10 @@ export function ShootoffBlock({
       {block.open.map((tm) => (
         <div key={tm.keys.join()} className="alert alert-info">
           <p>
-            Platz {tm.place}: {tm.names.join(', ')}{' '}
-            {tm.shootoff ? `– ${tm.shootoff}. Stechen läuft` : '– Stechen nötig'}
+            {t('Platz {place}:', { place: tm.place })} {tm.names.join(', ')}{' '}
+            {tm.shootoff
+              ? t('– {shootoff}. Stechen läuft', { shootoff: tm.shootoff })
+              : t('– Stechen nötig')}
           </p>
           {!tm.shootoff &&
             !closed &&
@@ -76,7 +79,7 @@ export function ShootoffBlock({
               <RulesForm
                 initial={proposal}
                 unit={unit}
-                submitLabel="Stechen anlegen"
+                submitLabel={t('Stechen anlegen')}
                 onSubmit={(rules) => void create(tm.keys, rules)}
                 onCancel={() => setCreating(null)}
               />
@@ -87,7 +90,7 @@ export function ShootoffBlock({
                   className="button"
                   onClick={() => setCreating(tm.keys.join())}
                 >
-                  Stechen anlegen …
+                  {t('Stechen anlegen …')}
                 </button>
               </div>
             ))}
@@ -136,18 +139,18 @@ function RulesForm({
     >
       <div className="grid-3">
         <label className="field">
-          <span>Schüsse im Stechen</span>
+          <span>{t('Schüsse im Stechen')}</span>
           <input
             type="number"
             min={1}
             value={shots}
             onChange={(e) => setShots(e.target.value)}
-            placeholder="ohne feste Zahl"
+            placeholder={t('ohne feste Zahl')}
           />
         </label>
         {!unit && (
           <label className="field">
-            <span>davon gewertet</span>
+            <span>{t('davon gewertet')}</span>
             <input
               type="number"
               min={1}
@@ -164,7 +167,7 @@ function RulesForm({
           {submitLabel}
         </button>
         <button type="button" className="button button-ghost" onClick={onCancel}>
-          Abbrechen
+          {t('Abbrechen')}
         </button>
       </div>
     </form>
@@ -216,9 +219,9 @@ function ShootOffCard({
 
   async function remove() {
     const ok = await confirmDialog({
-      title: 'Stechen entfernen',
-      message: `${so.number}. Stechen mit allen Werten entfernen?`,
-      confirmLabel: 'Entfernen',
+      title: t('Stechen entfernen'),
+      message: t('{number}. Stechen mit allen Werten entfernen?', { number: so.number }),
+      confirmLabel: t('Entfernen'),
     })
     if (!ok) return
     try {
@@ -234,9 +237,9 @@ function ShootOffCard({
       <div className="card-head">
         <h3>
           {so.number}. Stechen
-          {so.shots ? ` · ${so.shots} Schuss` : ''}
+          {so.shots ? t(' · {shots} Schuss', { shots: so.shots }) : ''}
           {so.counted_shots && so.counted_shots !== so.shots
-            ? `, davon ${so.counted_shots} gewertet`
+            ? t(', davon {counted_shots} gewertet', { counted_shots: so.counted_shots })
             : ''}
         </h3>
         {api.printUrl && (
@@ -246,7 +249,7 @@ function ShootOffCard({
             target="_blank"
             rel="noreferrer"
           >
-            Stechliste (PDF)
+            {t('Stechliste (PDF)')}
           </a>
         )}
       </div>
@@ -255,7 +258,7 @@ function ShootOffCard({
         <RulesForm
           initial={so}
           unit={unit}
-          submitLabel="Regeln speichern"
+          submitLabel={t('Regeln speichern')}
           onSubmit={(rules) => void setRules(rules)}
           onCancel={() => setEditing(false)}
         />
@@ -263,9 +266,9 @@ function ShootOffCard({
       <table className="table">
         <thead>
           <tr>
-            {unitShootoff && <th>Einheit</th>}
-            <th>Schütze</th>
-            <th className="num">Wert</th>
+            {unitShootoff && <th>{t('Einheit')}</th>}
+            <th>{t('Schütze')}</th>
+            <th className="num">{t('Wert')}</th>
           </tr>
         </thead>
         <tbody>
@@ -287,7 +290,7 @@ function ShootOffCard({
                 <input
                   className="inline-edit num"
                   inputMode={decimals ? 'decimal' : 'numeric'}
-                  aria-label={`Wert im Stechen für ${e.name}`}
+                  aria-label={t('Wert im Stechen für {name}', { name: e.name })}
                   defaultValue={showValue(e.value, decimals)}
                   disabled={closed}
                   onBlur={(ev) => {
@@ -308,12 +311,12 @@ function ShootOffCard({
         <div className="button-row">
           {!hasValues && !editing && (
             <button type="button" className="button button-ghost" onClick={() => setEditing(true)}>
-              Regeln ändern
+              {t('Regeln ändern')}
             </button>
           )}
           {api.remove && (
             <button type="button" className="button button-ghost" onClick={() => void remove()}>
-              Stechen entfernen
+              {t('Stechen entfernen')}
             </button>
           )}
         </div>
@@ -338,11 +341,11 @@ function UnitShooter({
   return (
     <select
       className="inline-edit"
-      aria-label="Schütze im Stechen"
+      aria-label={t('Schütze im Stechen')}
       value={entry.membership ?? ''}
       onChange={(e) => e.target.value && onPick(Number(e.target.value))}
     >
-      <option value="">{entry.membership ? entry.name : 'bitte wählen'}</option>
+      <option value="">{entry.membership ? entry.name : t('bitte wählen')}</option>
       {(data ?? []).map((m) => (
         <option key={m.membership} value={m.membership}>
           {m.name}

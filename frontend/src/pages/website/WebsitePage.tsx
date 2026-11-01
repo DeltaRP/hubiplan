@@ -36,9 +36,9 @@ import { sectionTitle } from './sections.ts'
 import { TextEditor } from '../../components/texteditor/TextEditor.tsx'
 
 const STATE_TEXT: Record<string, string> = {
-  off: 'Aus: Die Webseite ist nicht erreichbar.',
-  maintenance: 'Wartung: Besucher sehen nur eine Wartungsseite mit Impressum und Datenschutz.',
-  public: 'Öffentlich: Die Webseite ist für alle sichtbar.',
+  off: t('Aus: Die Webseite ist nicht erreichbar.'),
+  maintenance: t('Wartung: Besucher sehen nur eine Wartungsseite mit Impressum und Datenschutz.'),
+  public: t('Öffentlich: Die Webseite ist für alle sichtbar.'),
 }
 
 export function WebsitePage() {
@@ -49,7 +49,7 @@ export function WebsitePage() {
   const [message, setMessage] = useState<string | null>(null)
 
   if (error) return <LoadError message={error} onRetry={() => void reload()} />
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
 
   async function setup() {
     setBusy(true)
@@ -67,32 +67,35 @@ export function WebsitePage() {
     <section>
       <div className="page-head">
         <div>
-          <p className="muted small eyebrow">Webseite</p>
-          <h1>{data.website ? sectionTitle(location.pathname) : 'Webseite'}</h1>
+          <p className="muted small eyebrow">{t('Webseite')}</p>
+          <h1>{data.website ? sectionTitle(location.pathname) : t('Webseite')}</h1>
         </div>
       </div>
       {!data.module_enabled && (
         <Alert kind="info">
-          Das Modul „Webseite“ ist für {org.name} nicht freigeschaltet. Die Plattform schaltet es
-          für Einheiten frei, die eine eigene Webseite bekommen sollen.
+          {t(
+            'Das Modul „Webseite“ ist für {name} nicht freigeschaltet. Die Plattform schaltet es für Einheiten frei, die eine eigene Webseite bekommen sollen.',
+            { name: org.name },
+          )}
         </Alert>
       )}
       {data.module_enabled && !data.website && (
         <div className="card card-wide">
-          <h2>Webseite einrichten</h2>
+          <h2>{t('Webseite einrichten')}</h2>
           <p>
-            HUBIplan stellt Vorstand, Untereinheiten, Termine mit Kalender-Abo, Social-Media-Links
-            und ein Kontaktformular für eine öffentliche Webseite bereit. Personendaten erscheinen
-            nur nach den Regeln zu Einwilligung und Widerspruch.
+            {t(
+              'HUBIplan stellt Vorstand, Untereinheiten, Termine mit Kalender-Abo, Social-Media-Links und ein Kontaktformular für eine öffentliche Webseite bereit. Personendaten erscheinen nur nach den Regeln zu Einwilligung und Widerspruch.',
+            )}
           </p>
           <p className="muted small">
-            Eine neue Webseite startet im Wartungsmodus: Besucher sehen nur einen Hinweis, du selbst
-            kannst sie in der Vorschau ansehen.
+            {t(
+              'Eine neue Webseite startet im Wartungsmodus: Besucher sehen nur einen Hinweis, du selbst kannst sie in der Vorschau ansehen.',
+            )}
           </p>
           {message && <Alert kind="error">{message}</Alert>}
           {data.can_manage && (
             <button type="button" className="button" disabled={busy} onClick={() => void setup()}>
-              Webseite einrichten
+              {t('Webseite einrichten')}
             </button>
           )}
         </div>
@@ -157,10 +160,11 @@ function WebsiteAdmin({
 
   async function remove() {
     const ok = await confirmDialog({
-      title: 'Webseite entfernen?',
-      message:
+      title: t('Webseite entfernen?'),
+      message: t(
         'Einstellungen, Domains und Vorschau-Links werden gelöscht. Die Daten in HUBIplan (Mitglieder, Termine, Einwilligungen) bleiben erhalten.',
-      confirmLabel: 'Entfernen',
+      ),
+      confirmLabel: t('Entfernen'),
     })
     if (!ok) return
     try {
@@ -183,33 +187,35 @@ function WebsiteAdmin({
     <>
       <ChecklistCard website={website} />
       {settings(
-        'Zustand',
+        t('Zustand'),
         <>
           <SelectField
-            label="Zustand der Webseite"
+            label={t('Zustand der Webseite')}
             value={v.state}
             error={errors.state}
             hint={STATE_TEXT[v.state]}
             onChange={(e) => set('state', e.target.value as WebsiteSettings['state'])}
           >
-            <option value="off">Aus</option>
-            <option value="maintenance">Wartung</option>
-            <option value="public">Öffentlich</option>
+            <option value="off">{t('Aus')}</option>
+            <option value="maintenance">{t('Wartung')}</option>
+            <option value="public">{t('Öffentlich')}</option>
           </SelectField>
           {data.preview_only && (
             <Alert kind="info">
-              Auf diesem Server sind alle Webseiten nur in der Vorschau sichtbar (Testserver).
+              {t(
+                'Auf diesem Server sind alle Webseiten nur in der Vorschau sichtbar (Testserver).',
+              )}
             </Alert>
           )}
           <TextEditor
-            label="Hinweis auf der Wartungsseite"
+            label={t('Hinweis auf der Wartungsseite')}
             value={v.maintenance_text}
             error={errors.maintenance_text}
             rows={3}
             onChange={(text) => set('maintenance_text', text)}
           />
           <p className="muted small">
-            Schlüssel der Webseite in der öffentlichen Schnittstelle:{' '}
+            {t('Schlüssel der Webseite in der öffentlichen Schnittstelle:')}{' '}
             <code>{website.public_key}</code>
           </p>
         </>,
@@ -217,10 +223,10 @@ function WebsiteAdmin({
       <PreviewCard data={data} website={website} onChange={reload} />
       {data.can_manage && (
         <div className="card card-wide">
-          <h2>Webseite entfernen</h2>
+          <h2>{t('Webseite entfernen')}</h2>
           {message && <Alert kind="error">{message}</Alert>}
           <button type="button" className="button button-danger" onClick={() => void remove()}>
-            Webseite entfernen
+            {t('Webseite entfernen')}
           </button>
         </div>
       )}
@@ -231,7 +237,7 @@ function WebsiteAdmin({
     <>
       {data.designs ? (
         settings(
-          'Design',
+          t('Design'),
           <DesignChooser
             data={data}
             design={v.design ?? 'classic'}
@@ -241,7 +247,7 @@ function WebsiteAdmin({
           />,
         )
       ) : (
-        <Alert kind="info">Auf diesem Server gibt es keine Designs zur Auswahl.</Alert>
+        <Alert kind="info">{t('Auf diesem Server gibt es keine Designs zur Auswahl.')}</Alert>
       )}
       <SiteLanguage
         value={v.language ?? 'de'}
@@ -255,10 +261,10 @@ function WebsiteAdmin({
   const structure = (
     <>
       {settings(
-        'Bausteine',
+        t('Bausteine'),
         <>
           <p className="muted small">
-            Welche Bereiche die Webseite zeigt, in der Reihenfolge des Menüs.
+            {t('Welche Bereiche die Webseite zeigt, in der Reihenfolge des Menüs.')}
           </p>
           {website.menu_items && (
             <MenuTree
@@ -286,7 +292,7 @@ function WebsiteAdmin({
       {data.home_labels &&
         v.home_sections &&
         settings(
-          'Startseite',
+          t('Startseite'),
           <HomeSections
             data={data}
             value={v.home_sections}
@@ -295,26 +301,26 @@ function WebsiteAdmin({
           />,
         )}
       {settings(
-        'Personen',
+        t('Personen'),
         <>
           <div className="grid-2">
             <SelectField
-              label="Namensform"
+              label={t('Namensform')}
               value={v.name_format}
               onChange={(e) => set('name_format', e.target.value as WebsiteSettings['name_format'])}
             >
-              <option value="full">Vorname Name</option>
-              <option value="initial">Vorname N.</option>
+              <option value="full">{t('Vorname Name')}</option>
+              <option value="initial">{t('Vorname N.')}</option>
             </SelectField>
             <SelectField
-              label="Personen ohne Einwilligung (z. B. in der Chronik)"
+              label={t('Personen ohne Einwilligung (z. B. in der Chronik)')}
               value={v.missing_consent}
               onChange={(e) =>
                 set('missing_consent', e.target.value as WebsiteSettings['missing_consent'])
               }
             >
               <option value="omit">auslassen</option>
-              <option value="nn">als „N. N.“ zeigen</option>
+              <option value="nn">{t('als „N. N.“ zeigen')}</option>
             </SelectField>
           </div>
           <div className="aid-row">
@@ -322,26 +328,27 @@ function WebsiteAdmin({
             <Why k="web_consent" />
           </div>
           <Checkbox
-            label="Unbesetzte Funktionen als „derzeit unbesetzt“ zeigen"
+            label={t('Unbesetzte Funktionen als „derzeit unbesetzt“ zeigen')}
             checked={v.show_vacant}
             onChange={(on) => set('show_vacant', on)}
           />
           <p className="muted small">
-            Welche Funktionen erscheinen, legst du an den Rollen fest („auf der Webseite zeigen“).
-            Einwilligungen und Widersprüche stehen in der Mitgliederakte unter „Veröffentlichung“.
+            {t(
+              'Welche Funktionen erscheinen, legst du an den Rollen fest („auf der Webseite zeigen“). Einwilligungen und Widersprüche stehen in der Mitgliederakte unter „Veröffentlichung“.',
+            )}
           </p>
         </>,
       )}
       {settings(
-        'Untereinheiten',
+        t('Untereinheiten'),
         <>
           <SelectField
-            label="Untereinheiten auf der Webseite"
+            label={t('Untereinheiten auf der Webseite')}
             value={v.units_mode}
             onChange={(e) => set('units_mode', e.target.value as WebsiteSettings['units_mode'])}
           >
             <option value="all">alle</option>
-            <option value="selected">ausgewählte</option>
+            <option value="selected">{t('ausgewählte')}</option>
             <option value="none">keine</option>
           </SelectField>
           {v.units_mode === 'selected' &&
@@ -362,27 +369,27 @@ function WebsiteAdmin({
         </>,
       )}
       {settings(
-        'Termine',
+        t('Termine'),
         <>
           <Checkbox
-            label="Öffentliche Termine der Untereinheiten im Kalender der Webseite"
+            label={t('Öffentliche Termine der Untereinheiten im Kalender der Webseite')}
             checked={v.include_unit_events}
             onChange={(on) => set('include_unit_events', on)}
           />
           <Checkbox
-            label="Öffentliche Termine der übergeordneten Einheiten im Kalender der Webseite"
-            hint="z. B. Dachverband; nur Termine, die nach unten freigegeben sind"
+            label={t('Öffentliche Termine der übergeordneten Einheiten im Kalender der Webseite')}
+            hint={t('z. B. Dachverband; nur Termine, die nach unten freigegeben sind')}
             checked={v.include_parent_events}
             onChange={(on) => set('include_parent_events', on)}
           />
         </>,
       )}
       {settings(
-        'Würdenträger',
+        t('Würdenträger'),
         <>
           <Checkbox
-            label="Weitergegebene Würden der übergeordneten Einheiten zeigen"
-            hint="z. B. Könige des Dachverbands; nur die Träger, die aus eurer Einheit kamen"
+            label={t('Weitergegebene Würden der übergeordneten Einheiten zeigen')}
+            hint={t('z. B. Könige des Dachverbands; nur die Träger, die aus eurer Einheit kamen')}
             checked={v.include_parent_honors}
             onChange={(on) => set('include_parent_honors', on)}
           />
@@ -395,10 +402,10 @@ function WebsiteAdmin({
     <>
       <DomainsCard data={data} website={website} onChange={reload} />
       {settings(
-        'Suchmaschinen',
+        t('Suchmaschinen'),
         <>
           <Checkbox
-            label="Suchmaschinen dürfen die Webseite aufnehmen"
+            label={t('Suchmaschinen dürfen die Webseite aufnehmen')}
             checked={v.allow_indexing}
             onChange={(on) => set('allow_indexing', on)}
           />
@@ -411,15 +418,17 @@ function WebsiteAdmin({
   const contact = (
     <>
       {settings(
-        'Kontaktformular',
+        t('Kontaktformular'),
         <Field
-          label="Höchstens Mails aus dem Kontaktformular je Stunde"
+          label={t('Höchstens Mails aus dem Kontaktformular je Stunde')}
           type="number"
           min={1}
           max={100}
           value={v.contact_limit_per_hour}
           error={errors.contact_limit_per_hour}
-          hint="Schützt das Postfach vor Massenversand (Mails von Rundschreiben zählen beim Anbieter mit)."
+          hint={t(
+            'Schützt das Postfach vor Massenversand (Mails von Rundschreiben zählen beim Anbieter mit).',
+          )}
           onChange={(e) => set('contact_limit_per_hour', Number(e.target.value))}
         />,
       )}
@@ -437,7 +446,7 @@ function WebsiteAdmin({
             data.can_edit_content ? (
               <ContentPage />
             ) : (
-              <Alert kind="info">Dafür fehlt dir das Recht „Inhalte bearbeiten“.</Alert>
+              <Alert kind="info">{t('Dafür fehlt dir das Recht „Inhalte bearbeiten“.')}</Alert>
             )
           }
         />
@@ -447,7 +456,7 @@ function WebsiteAdmin({
             data.can_edit_content ? (
               <ImagesPage />
             ) : (
-              <Alert kind="info">Dafür fehlt dir das Recht „Inhalte bearbeiten“.</Alert>
+              <Alert kind="info">{t('Dafür fehlt dir das Recht „Inhalte bearbeiten“.')}</Alert>
             )
           }
         />
@@ -457,7 +466,7 @@ function WebsiteAdmin({
             data.can_edit_content ? (
               <SocialPage />
             ) : (
-              <Alert kind="info">Dafür fehlt dir das Recht „Inhalte bearbeiten“.</Alert>
+              <Alert kind="info">{t('Dafür fehlt dir das Recht „Inhalte bearbeiten“.')}</Alert>
             )
           }
         />
@@ -467,7 +476,7 @@ function WebsiteAdmin({
         <Route path="kontakt" element={contact} />
         {/* Datenschutzhinweise stehen jetzt unter Einstellungen › Datenschutz */}
         <Route path="datenschutz" element={<Navigate to="/einstellungen/datenschutz" replace />} />
-        <Route path="*" element={<SubpageUnavailable to="/webseite" label="Zur Webseite" />} />
+        <Route path="*" element={<SubpageUnavailable to="/webseite" label={t('Zur Webseite')} />} />
       </Routes>
     </>
   )
@@ -495,7 +504,9 @@ function HomeSections({
   return (
     <>
       <p className="muted small">
-        Was die Startseite zeigt, von oben nach unten. Die Reihenfolge änderst du mit den Pfeilen.
+        {t(
+          'Was die Startseite zeigt, von oben nach unten. Die Reihenfolge änderst du mit den Pfeilen.',
+        )}
       </p>
       <ol className="home-sections">
         {value.map((s, index) => {
@@ -505,7 +516,9 @@ function HomeSections({
           const needs = data.home_needs_block?.[s.key]
           const blockOff = needs ? blocks[needs] === false : false
           const hint = blockOff
-            ? `Erscheint nicht: Der Bereich „${data.block_labels[needs!] ?? needs}“ ist oben ausgeschaltet.`
+            ? t('Erscheint nicht: Der Bereich „{x}“ ist oben ausgeschaltet.', {
+                x: data.block_labels[needs!] ?? needs,
+              })
             : data.home_hints?.[s.key]
           return (
             <li key={s.key}>
@@ -520,7 +533,7 @@ function HomeSections({
                   type="button"
                   className="button button-ghost"
                   disabled={index === 0}
-                  aria-label={`${label} nach oben`}
+                  aria-label={t('{label} nach oben', { label })}
                   onClick={() => move(index, -1)}
                 >
                   ↑
@@ -529,7 +542,7 @@ function HomeSections({
                   type="button"
                   className="button button-ghost"
                   disabled={index === value.length - 1}
-                  aria-label={`${label} nach unten`}
+                  aria-label={t('{label} nach unten', { label })}
                   onClick={() => move(index, 1)}
                 >
                   ↓
@@ -570,12 +583,16 @@ function DomainsCard({
 
   return (
     <div className="card card-wide">
-      <h2>Domains</h2>
+      <h2>{t('Domains')}</h2>
       <p className="muted small">
-        Unter diesen Adressen erkennt die Webseite {org.name}. Die Domain muss beim Anbieter auf den
-        Server der Webseite zeigen.
+        {t(
+          'Unter diesen Adressen erkennt die Webseite {name}. Die Domain muss beim Anbieter auf den Server der Webseite zeigen.',
+          { name: org.name },
+        )}
       </p>
-      {website.domains.length === 0 && <p className="muted">Noch keine Domain eingetragen.</p>}
+      {website.domains.length === 0 && (
+        <p className="muted">{t('Noch keine Domain eingetragen.')}</p>
+      )}
       <ul className="plain-list">
         {website.domains.map((d) => (
           <li key={d.id}>
@@ -589,16 +606,16 @@ function DomainsCard({
                     className="button button-ghost"
                     onClick={() => void run(() => websiteApi.makePrimary(org.id, d.id))}
                   >
-                    Als Hauptadresse
+                    {t('Als Hauptadresse')}
                   </button>
                 )}
                 <button
                   type="button"
                   className="button button-ghost"
-                  aria-label={`${d.hostname} entfernen`}
+                  aria-label={t('{hostname} entfernen', { hostname: d.hostname })}
                   onClick={() => void run(() => websiteApi.removeDomain(org.id, d.id))}
                 >
-                  Entfernen
+                  {t('Entfernen')}
                 </button>
               </span>
             )}
@@ -615,13 +632,13 @@ function DomainsCard({
           }}
         >
           <Field
-            label="Domain hinzufügen"
+            label={t('Domain hinzufügen')}
             placeholder="www.beispiel-verein.de"
             value={host}
             onChange={(e) => setHost(e.target.value)}
           />
           <button type="submit" className="button" disabled={!host.trim()}>
-            Hinzufügen
+            {t('Hinzufügen')}
           </button>
         </form>
       )}
@@ -648,8 +665,8 @@ function ChecklistCard({ website }: { website: Website }) {
   const open = website.checks.filter((c) => !c.ok)
   return (
     <div className="card card-wide">
-      <h2>Prüfliste vor dem Veröffentlichen</h2>
-      {open.length === 0 && <Alert kind="success">Alles erledigt.</Alert>}
+      <h2>{t('Prüfliste vor dem Veröffentlichen')}</h2>
+      {open.length === 0 && <Alert kind="success">{t('Alles erledigt.')}</Alert>}
       <ul className="plain-list">
         {website.checks.map((c) => (
           <li key={c.key}>
@@ -668,7 +685,7 @@ function ChecklistCard({ website }: { website: Website }) {
                   <>
                     {' '}
                     <Link to={CHECK_LINKS[c.key]} className="small">
-                      Erledigen
+                      {t('Erledigen')}
                     </Link>
                   </>
                 )}
@@ -679,8 +696,9 @@ function ChecklistCard({ website }: { website: Website }) {
       </ul>
       {open.some((c) => c.blocking) && (
         <p className="muted small">
-          Solange ein nötiger Punkt offen ist, lässt sich die Webseite nicht auf „Öffentlich“
-          schalten.
+          {t(
+            'Solange ein nötiger Punkt offen ist, lässt sich die Webseite nicht auf „Öffentlich“ schalten.',
+          )}
         </p>
       )}
     </div>
@@ -712,7 +730,7 @@ function PreviewCard({
       if (result.url) {
         window.open(result.url, '_blank', 'noopener')
         setOpened(result.url)
-      } else setError('Für die Vorschau fehlt noch eine Domain.')
+      } else setError(t('Für die Vorschau fehlt noch eine Domain.'))
     } catch (err) {
       setError(errorMessage(err))
     }
@@ -741,65 +759,68 @@ function PreviewCard({
 
   return (
     <div className="card card-wide">
-      <h2>Vorschau</h2>
+      <h2>{t('Vorschau')}</h2>
       <p className="muted small">
-        In der Vorschau siehst du die vollständige Webseite, auch im Wartungsmodus, mit dem Hinweis
-        „Vorschau – nicht öffentlich“.
+        {t(
+          'In der Vorschau siehst du die vollständige Webseite, auch im Wartungsmodus, mit dem Hinweis „Vorschau – nicht öffentlich“.',
+        )}
       </p>
       {error && <Alert kind="error">{error}</Alert>}
       <button type="button" className="button" onClick={() => void open()}>
-        Vorschau öffnen
+        {t('Vorschau öffnen')}
       </button>
       {opened && (
         <p className="muted small">
-          Kein neues Fenster?{' '}
+          {t('Kein neues Fenster?')}{' '}
           <a href={opened} target="_blank" rel="noopener noreferrer">
-            Vorschau hier öffnen
+            {t('Vorschau hier öffnen')}
           </a>
           .
         </p>
       )}
       {data.can_manage && (
         <>
-          <h3>Vorschau-Links zum Weitergeben</h3>
+          <h3>{t('Vorschau-Links zum Weitergeben')}</h3>
           <p className="muted small">
-            Zum Beispiel für Vorstandsmitglieder ohne Zugang zu HUBIplan. Jeder Link gilt höchstens
-            14 Tage und lässt sich jederzeit widerrufen.
+            {t(
+              'Zum Beispiel für Vorstandsmitglieder ohne Zugang zu HUBIplan. Jeder Link gilt höchstens 14 Tage und lässt sich jederzeit widerrufen.',
+            )}
           </p>
           {created?.url && (
             <Alert kind="success">
-              Neuer Link (wird nur jetzt angezeigt): <code>{created.url}</code>
+              {t('Neuer Link (wird nur jetzt angezeigt):')} <code>{created.url}</code>
             </Alert>
           )}
           {created && !created.url && (
             <Alert kind="info">
-              Link angelegt. Für eine Adresse fehlt noch eine Domain; Schlüssel:{' '}
+              {t('Link angelegt. Für eine Adresse fehlt noch eine Domain; Schlüssel:')}{' '}
               <code>{created.token}</code>
             </Alert>
           )}
           <ul className="plain-list">
             {website.preview_links.map((link) => (
               <li key={link.id}>
-                {link.label || 'Vorschau-Link'} · gültig bis {formatDateTime(link.expires_at)}
+                {link.label || t('Vorschau-Link')} {t('· gültig bis')}{' '}
+                {formatDateTime(link.expires_at)}
                 {!link.is_active ? ' (abgelaufen)' : ''}{' '}
                 <button
                   type="button"
                   className="button button-ghost"
                   onClick={() => void revoke(link)}
                 >
-                  Widerrufen
+                  {t('Widerrufen')}
                 </button>
               </li>
             ))}
           </ul>
           <div className="grid-2">
             <Field
-              label="Bezeichnung (z. B. für wen)"
+              label={t('Bezeichnung (z. B. für wen)')}
               value={label}
               onChange={(e) => setLabel(e.target.value)}
             />
             <Field
-              label="Gültig (Tage)"
+              label={t('Gültig (Tage)')}
               type="number"
               min={1}
               max={14}
@@ -808,7 +829,7 @@ function PreviewCard({
             />
           </div>
           <button type="button" className="button" onClick={() => void create()}>
-            Vorschau-Link erzeugen
+            {t('Vorschau-Link erzeugen')}
           </button>
         </>
       )}
@@ -833,20 +854,28 @@ function HeldCard() {
 
   return (
     <div className="card card-wide">
-      <h2>Zurückgehaltene Nachrichten</h2>
+      <h2>{t('Zurückgehaltene Nachrichten')}</h2>
       <p className="muted small">
-        Nachrichten aus dem Kontaktformular, die nach Spam aussehen oder über der Obergrenze je
-        Stunde lagen. Sie werden nach 7 Tagen automatisch gelöscht.
+        {t(
+          'Nachrichten aus dem Kontaktformular, die nach Spam aussehen oder über der Obergrenze je Stunde lagen. Sie werden nach 7 Tagen automatisch gelöscht.',
+        )}
       </p>
       {error && <LoadError message={error} onRetry={() => void reload()} />}
-      {data && data.length === 0 && <p className="muted">Keine.</p>}
+      {data && data.length === 0 && <p className="muted">{t('Keine.')}</p>}
       <ul className="plain-list">
         {(data ?? []).map((m) => (
           <li key={m.id}>
-            <strong>{m.subject}</strong> · von {m.sender_name} ({m.sender_email}) an{' '}
-            {m.recipient_name} · {formatDateTime(m.created_at)}
+            <strong>{m.subject}</strong>{' '}
+            {t('· von {sender_name} ({sender_email}) an  {recipient_name} ·', {
+              sender_name: m.sender_name,
+              sender_email: m.sender_email,
+              recipient_name: m.recipient_name,
+            })}{' '}
+            {formatDateTime(m.created_at)}
             <br />
-            <small className="muted">Grund: {m.reason}</small>
+            <small className="muted">
+              {t('Grund:')} {m.reason}
+            </small>
             <p className="mail-body">{m.body}</p>
             <div className="button-row">
               <button
@@ -854,14 +883,14 @@ function HeldCard() {
                 className="button"
                 onClick={() => void run(() => heldApi.release(org.id, m.id))}
               >
-                Zustellen
+                {t('Zustellen')}
               </button>
               <button
                 type="button"
                 className="button button-ghost"
                 onClick={() => void run(() => heldApi.discard(org.id, m.id))}
               >
-                Verwerfen
+                {t('Verwerfen')}
               </button>
             </div>
           </li>

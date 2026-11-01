@@ -122,7 +122,7 @@ export function AwardsCard({ org, comp }: { org: number; comp: CompetitionDetail
           {data.map((a) => (
             <li key={a.id}>
               <strong>{name(a)}</strong>
-              {!a.prize && ` · ${places(a)}`}: {awardText(a)}
+              {!a.prize && t(' · {x}', { x: places(a) })}: {awardText(a)}
               {canManage && (
                 <button
                   type="button"
@@ -192,7 +192,9 @@ export function AwardsCard({ org, comp }: { org: number; comp: CompetitionDetail
                   .filter((d) => !d.is_archived)
                   .map((d) => (
                     <option key={d.id} value={d.id}>
-                      {d.unit_name ? `${d.name} (${d.unit_name})` : d.name}
+                      {d.unit_name
+                        ? t('{name} ({unit_name})', { name: d.name, unit_name: d.unit_name })
+                        : d.name}
                     </option>
                   ))}
               </SelectField>
@@ -659,8 +661,9 @@ export function TrophiesPage() {
               {tr.holders.map((h) => (
                 <li key={h.id}>
                   {h.year}: <strong>{h.name}</strong>
-                  {h.streak > 1 && ` · ${tn('{n}. Sieg in Folge', '{n}. Sieg in Folge', h.streak)}`}
-                  {h.kept && ` · ${t('in den Besitz übergegangen')}`}
+                  {h.streak > 1 &&
+                    t(' · {x}', { x: tn('{n}. Sieg in Folge', '{n}. Sieg in Folge', h.streak) })}
+                  {h.kept && t(' · {x}', { x: t('in den Besitz übergegangen') })}
                 </li>
               ))}
             </ul>

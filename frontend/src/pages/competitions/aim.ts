@@ -1,3 +1,4 @@
+import { t } from '../../i18n/index.ts'
 // Live-Kamera (Schießscheiben Schritt 5): ein kleines Graubild je Kamerabild prüfen und
 // sagen, ob die Scheibe gut im Bild ist. Nur grob und schnell (etwa 160 Bildpunkte breit);
 // die genaue Auswertung macht danach der Server mit dem vollen Foto.
@@ -191,24 +192,24 @@ export interface Aim {
  * durch den äußersten Ring (die ganze Scheibe soll ins Bild, aber möglichst groß).
  */
 export function judge(f: Frame, blackShare: number, prev?: Frame | null): Aim {
-  if (f.light < 50) return { ok: false, hint: 'Zu dunkel – bitte mehr Licht.' }
+  if (f.light < 50) return { ok: false, hint: t('Zu dunkel – bitte mehr Licht.') }
   const s = f.spot
-  if (!s) return { ok: false, hint: 'Scheibe nicht gefunden – den Spiegel ins Bild halten.' }
+  if (!s) return { ok: false, hint: t('Scheibe nicht gefunden – den Spiegel ins Bild halten.') }
   const whole = s.size / blackShare // äußerster Ring im Verhältnis zur kürzeren Bildseite
-  if (whole > 0.95) return { ok: false, hint: 'Etwas weiter weg – die ganze Scheibe ins Bild.' }
-  if (whole < 0.6) return { ok: false, hint: 'Näher heran.' }
+  if (whole > 0.95) return { ok: false, hint: t('Etwas weiter weg – die ganze Scheibe ins Bild.') }
+  if (whole < 0.6) return { ok: false, hint: t('Näher heran.') }
   if (Math.hypot(s.cx - 0.5, s.cy - 0.5) > 0.12) {
-    return { ok: false, hint: 'Scheibe in die Mitte des Bildes.' }
+    return { ok: false, hint: t('Scheibe in die Mitte des Bildes.') }
   }
-  if (s.round < 0.93) return { ok: false, hint: 'Gerade von oben halten, nicht schräg.' }
+  if (s.round < 0.93) return { ok: false, hint: t('Gerade von oben halten, nicht schräg.') }
   if (prev?.spot) {
     const moved = Math.hypot(s.cx - prev.spot.cx, s.cy - prev.spot.cy)
     if (moved > 0.01 || Math.abs(s.size - prev.spot.size) > 0.02) {
-      return { ok: false, hint: 'Ruhig halten …' }
+      return { ok: false, hint: t('Ruhig halten …') }
     }
   }
-  if (f.sharp < 2) return { ok: false, hint: 'Unscharf – ruhig halten.' }
-  return { ok: true, hint: 'Gut so – gleich wird ausgelöst.' }
+  if (f.sharp < 2) return { ok: false, hint: t('Unscharf – ruhig halten.') }
+  return { ok: true, hint: t('Gut so – gleich wird ausgelöst.') }
 }
 
 /** Kann der Browser die Kamera live zeigen (nur über HTTPS bzw. localhost)? */

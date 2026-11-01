@@ -1,5 +1,6 @@
 // Reine Hilfen für den Menübaum (MenuTree.tsx); gleiche Regeln wie website/menu.py.
 import type { MenuNode, MenuItem } from '../../api/website.ts'
+import { t } from '../../i18n/index.ts'
 
 export type Tree = MenuNode[]
 
@@ -52,7 +53,7 @@ export function take(tree: Tree, key: string): [Tree, MenuNode] {
     const i = n.children.findIndex((c) => c.key === key)
     if (i >= 0) return [next, n.children.splice(i, 1)[0]]
   }
-  throw new Error(`Menüpunkt ${key} fehlt`)
+  throw new Error(t('Menüpunkt {key} fehlt', { key }))
 }
 
 /** Ort im Baum: Hauptpunkt an Stelle ``index`` oder Unterpunkt von ``parent`` */

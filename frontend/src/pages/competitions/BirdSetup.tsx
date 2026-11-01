@@ -13,6 +13,7 @@ import { errorMessage, useLoad } from '../../components/forms.ts'
 import { Alert, LoadError } from '../../components/ui.tsx'
 import { HowTo, Term, Why } from '../../learning/Aids.tsx'
 import { locale } from '../../i18n/index.ts'
+import { t } from '../../i18n/index.ts'
 
 function numOrNull(text: string): number | null {
   const n = parseInt(text, 10)
@@ -56,16 +57,17 @@ export function PrizesCard({
 
   return (
     <div className="card card-wide">
-      <h2>Pfänder</h2>
+      <h2>{t('Pfänder')}</h2>
       <p className="muted">
-        In der Reihenfolge, in der sie meist fallen. Namen und Anzahl sind frei (z. B. „Zepter“,
-        „Apfel“, „Krone“ beim Königsvogel).
+        {t(
+          'In der Reihenfolge, in der sie meist fallen. Namen und Anzahl sind frei (z. B. „Zepter“, „Apfel“, „Krone“ beim Königsvogel).',
+        )}
       </p>
       <ul className="prize-setup">
         {prizes.map((p, i) => (
           <li key={p.id}>
             <input
-              aria-label="Pfand"
+              aria-label={t('Pfand')}
               defaultValue={p.name}
               disabled={closed}
               onBlur={(e) => {
@@ -75,8 +77,8 @@ export function PrizesCard({
               }}
             />
             <input
-              aria-label={`Preis für ${p.name}`}
-              placeholder="Preis (optional)"
+              aria-label={t('Preis für {name}', { name: p.name })}
+              placeholder={t('Preis (optional)')}
               defaultValue={p.award}
               disabled={closed}
               onBlur={(e) => {
@@ -93,7 +95,7 @@ export function PrizesCard({
                 <button
                   type="button"
                   className="button button-ghost"
-                  aria-label={`${p.name} nach oben`}
+                  aria-label={t('{name} nach oben', { name: p.name })}
                   disabled={i === 0}
                   onClick={() => void move(i, -1)}
                 >
@@ -102,7 +104,7 @@ export function PrizesCard({
                 <button
                   type="button"
                   className="button button-ghost"
-                  aria-label={`${p.name} nach unten`}
+                  aria-label={t('{name} nach unten', { name: p.name })}
                   disabled={i === prizes.length - 1}
                   onClick={() => void move(i, 1)}
                 >
@@ -113,14 +115,14 @@ export function PrizesCard({
                   className="button button-ghost"
                   onClick={async () => {
                     const ok = await confirmDialog({
-                      title: 'Pfand entfernen',
-                      message: `„${p.name}“ entfernen?`,
-                      confirmLabel: 'Entfernen',
+                      title: t('Pfand entfernen'),
+                      message: t('„{name}“ entfernen?', { name: p.name }),
+                      confirmLabel: t('Entfernen'),
                     })
                     if (ok) await run(() => competitionsApi.removePrize(org, comp.id, p.id))
                   }}
                 >
-                  Entfernen
+                  {t('Entfernen')}
                 </button>
               </span>
             )}
@@ -139,13 +141,13 @@ export function PrizesCard({
           }}
         >
           <input
-            aria-label="Neues Pfand"
-            placeholder="Neues Pfand"
+            aria-label={t('Neues Pfand')}
+            placeholder={t('Neues Pfand')}
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
           <button type="submit" className="button button-ghost">
-            Pfand hinzufügen
+            {t('Pfand hinzufügen')}
           </button>
         </form>
       )}
@@ -176,7 +178,7 @@ export function ManualPrizes({ org, comp }: { org: number; comp: CompetitionDeta
   return (
     <details className="card card-wide">
       <summary>
-        <strong>Nachträglich erfassen</strong>{' '}
+        <strong>{t('Nachträglich erfassen')}</strong>{' '}
         <span className="muted">(wenn am Stand auf Papier gezählt wurde)</span>
       </summary>
       <div className="table-scroll">
@@ -184,12 +186,12 @@ export function ManualPrizes({ org, comp }: { org: number; comp: CompetitionDeta
           <thead>
             <tr>
               <th>
-                <Term k="comp_prize">Pfand</Term>
+                <Term k="comp_prize">{t('Pfand')}</Term>
               </th>
-              <th>Schütze</th>
-              <th className="num">Schuss Nr. gesamt</th>
+              <th>{t('Schütze')}</th>
+              <th className="num">{t('Schuss Nr. gesamt')}</th>
               <th className="num">
-                <Term k="comp_shots_for">Schüsse für das Pfand</Term>
+                <Term k="comp_shots_for">{t('Schüsse für das Pfand')}</Term>
               </th>
             </tr>
           </thead>
@@ -199,14 +201,14 @@ export function ManualPrizes({ org, comp }: { org: number; comp: CompetitionDeta
                 <td>{p.name}</td>
                 <td>
                   <select
-                    aria-label={`Schütze für ${p.name}`}
+                    aria-label={t('Schütze für {name}', { name: p.name })}
                     disabled={closed}
                     value={p.winner ?? ''}
                     onChange={(e) =>
                       void save(p.id, { winner: e.target.value ? Number(e.target.value) : null })
                     }
                   >
-                    <option value="">– hängt noch –</option>
+                    <option value="">{t('– hängt noch –')}</option>
                     {starters.data
                       ?.slice()
                       .sort((a, b) => a.name.localeCompare(b.name))
@@ -220,7 +222,7 @@ export function ManualPrizes({ org, comp }: { org: number; comp: CompetitionDeta
                 </td>
                 <td className="num">
                   <input
-                    aria-label={`Schuss Nr. für ${p.name}`}
+                    aria-label={t('Schuss Nr. für {name}', { name: p.name })}
                     inputMode="numeric"
                     className="input-narrow"
                     disabled={closed || !p.fallen}
@@ -233,7 +235,7 @@ export function ManualPrizes({ org, comp }: { org: number; comp: CompetitionDeta
                 </td>
                 <td className="num">
                   <input
-                    aria-label={`Schüsse für ${p.name}`}
+                    aria-label={t('Schüsse für {name}', { name: p.name })}
                     inputMode="numeric"
                     className="input-narrow"
                     disabled={closed || !p.fallen}
@@ -250,8 +252,9 @@ export function ManualPrizes({ org, comp }: { org: number; comp: CompetitionDeta
         </table>
       </div>
       <p className="muted small">
-        Die Gesamtzahl der Schüsse steht unter „Einrichten“. Starter kommen über „Schützen und
-        Losnummern“ oben dazu.
+        {t(
+          'Die Gesamtzahl der Schüsse steht unter „Einrichten“. Starter kommen über „Schützen und Losnummern“ oben dazu.',
+        )}
       </p>
       <HowTo k="how_comp_shots_for" />
       {error && <Alert kind="error">{error}</Alert>}
@@ -281,9 +284,11 @@ export function StandAccessCard({ org, comp }: { org: number; comp: CompetitionD
 
   async function revoke(a: StandAccessInfo) {
     const ok = await confirmDialog({
-      title: 'Standzugang beenden',
-      message: `Den Standzugang ${a.label ? `„${a.label}“ ` : ''}beenden? Das Gerät kann danach nichts mehr eintragen.`,
-      confirmLabel: 'Beenden',
+      title: t('Standzugang beenden'),
+      message: t('Den Standzugang {x}beenden? Das Gerät kann danach nichts mehr eintragen.', {
+        x: a.label ? `„${a.label}“ ` : '',
+      }),
+      confirmLabel: t('Beenden'),
     })
     if (!ok) return
     try {
@@ -299,31 +304,39 @@ export function StandAccessCard({ org, comp }: { org: number; comp: CompetitionD
   return (
     <div className="card card-wide">
       <h2>
-        <Term k="comp_stand_access_term">Standzugang</Term> für ein geliehenes Gerät
+        <Term k="comp_stand_access_term">{t('Standzugang')}</Term> {t('für ein geliehenes Gerät')}
       </h2>
       <p className="muted">
-        Öffnet nur diesen Wettbewerb im <Term k="comp_stand_mode">Standmodus</Term>, ohne Anmeldung.
-        Das Gerät kann nur erfassen und sieht von Mitgliedern nur Name und Untereinheit. Der Zugang
-        endet am Ende des Wettbewerbstags oder wenn du ihn beendest.
+        {t('Öffnet nur diesen Wettbewerb im')} <Term k="comp_stand_mode">{t('Standmodus')}</Term>
+        {t(
+          ', ohne Anmeldung. Das Gerät kann nur erfassen und sieht von Mitgliedern nur Name und Untereinheit. Der Zugang endet am Ende des Wettbewerbstags oder wenn du ihn beendest.',
+        )}
       </p>
       {comp.status !== 'endgueltig' && (
         <div className="button-row">
           <input
-            aria-label="Bezeichnung des Geräts"
-            placeholder="z. B. Tablet Stand 1"
+            aria-label={t('Bezeichnung des Geräts')}
+            placeholder={t('z. B. Tablet Stand 1')}
             value={label}
             onChange={(e) => setLabel(e.target.value)}
           />
           <button type="button" className="button" onClick={() => void create()}>
-            Standzugang erzeugen
+            {t('Standzugang erzeugen')}
           </button>
         </div>
       )}
       {created && link && (
         <div className="stand-access-new">
-          <QRCodeSVG value={link} size={200} marginSize={2} title="QR-Code für den Standzugang" />
+          <QRCodeSVG
+            value={link}
+            size={200}
+            marginSize={2}
+            title={t('QR-Code für den Standzugang')}
+          />
           <p>
-            Mit dem Gerät den QR-Code scannen oder diesen Link öffnen. Er erscheint nur jetzt:
+            {t(
+              'Mit dem Gerät den QR-Code scannen oder diesen Link öffnen. Er erscheint nur jetzt:',
+            )}
             <br />
             <code className="break-all">{link}</code>
           </p>
@@ -333,7 +346,7 @@ export function StandAccessCard({ org, comp }: { org: number; comp: CompetitionD
               className="button button-ghost"
               onClick={() => void navigator.clipboard?.writeText(link)}
             >
-              Link kopieren
+              {t('Link kopieren')}
             </button>
           </div>
         </div>
@@ -342,7 +355,7 @@ export function StandAccessCard({ org, comp }: { org: number; comp: CompetitionD
         <ul className="stand-list">
           {active.map((a) => (
             <li key={a.id}>
-              {a.label || 'Standzugang'}{' '}
+              {a.label || t('Standzugang')}{' '}
               <span className="muted">
                 bis{' '}
                 {new Date(a.expires_at).toLocaleString(locale(), {
@@ -355,7 +368,7 @@ export function StandAccessCard({ org, comp }: { org: number; comp: CompetitionD
                 className="button button-ghost push-right"
                 onClick={() => void revoke(a)}
               >
-                Beenden
+                {t('Beenden')}
               </button>
             </li>
           ))}

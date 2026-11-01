@@ -9,6 +9,7 @@ import { PrivacyPublish } from '../../components/PrivacyPublish.tsx'
 import { Alert, Field, SaveStatus, SelectField } from '../../components/ui.tsx'
 import { useActiveOrg } from '../../org/OrgContext.tsx'
 import { TextEditor } from '../../components/texteditor/TextEditor.tsx'
+import { t } from '../../i18n/index.ts'
 
 export function PrivacyCard({
   data,
@@ -70,9 +71,9 @@ function PrivacyForm({
     if (
       values.privacy_text.trim() &&
       !(await confirmDialog({
-        title: 'Datenschutzhinweise neu erzeugen?',
-        message: 'Der bisherige Text wird ersetzt. Eigene Ergänzungen bitte vorher sichern.',
-        confirmLabel: 'Neu erzeugen',
+        title: t('Datenschutzhinweise neu erzeugen?'),
+        message: t('Der bisherige Text wird ersetzt. Eigene Ergänzungen bitte vorher sichern.'),
+        confirmLabel: t('Neu erzeugen'),
       }))
     )
       return
@@ -81,36 +82,36 @@ function PrivacyForm({
 
   return (
     <div className="card card-wide">
-      <h2>Datenschutzhinweise der Webseite</h2>
+      <h2>{t('Datenschutzhinweise der Webseite')}</h2>
       <p className="muted small">
-        Für Besucher der Webseite: Zugriffsdaten, Kontaktformular, Kalender-Abo, Personen auf der
-        Seite, Links zu sozialen Netzwerken. Die Fußzeile der Webseite verlinkt diesen Text.
-        HUBIplan erzeugt einen Entwurf passend zu den Bausteinen; Angaben in eckigen Klammern bitte
-        ergänzen. Erzeugen und Bearbeiten ändern nur den Entwurf (er speichert automatisch),
-        öffentlich wird er erst mit „Veröffentlichen“. Ein Vorschlag, keine Rechtsberatung.
+        {t(
+          'Für Besucher der Webseite: Zugriffsdaten, Kontaktformular, Kalender-Abo, Personen auf der Seite, Links zu sozialen Netzwerken. Die Fußzeile der Webseite verlinkt diesen Text. HUBIplan erzeugt einen Entwurf passend zu den Bausteinen; Angaben in eckigen Klammern bitte ergänzen. Erzeugen und Bearbeiten ändern nur den Entwurf (er speichert automatisch), öffentlich wird er erst mit „Veröffentlichen“. Ein Vorschlag, keine Rechtsberatung.',
+        )}
       </p>
       {data.can_manage && <SaveStatus auto={auto} />}
       {outdated && (
         <Alert kind="info">
-          Die Bausteine haben sich seit der Erzeugung geändert. Bitte neu erzeugen und prüfen.
+          {t(
+            'Die Bausteine haben sich seit der Erzeugung geändert. Bitte neu erzeugen und prüfen.',
+          )}
         </Alert>
       )}
       {error && <Alert kind="error">{error}</Alert>}
       <fieldset disabled={!data.can_manage}>
         <SelectField
-          label="Datenschutzhinweise"
+          label={t('Datenschutzhinweise')}
           value={values.privacy_mode}
           error={form.errors.privacy_mode}
           onChange={(e) =>
             form.set('privacy_mode', e.target.value as WebsitePrivacy['privacy_mode'])
           }
         >
-          <option value="text">eigener Text</option>
-          <option value="link">auf eigene Seite verlinken</option>
+          <option value="text">{t('eigener Text')}</option>
+          <option value="link">{t('auf eigene Seite verlinken')}</option>
         </SelectField>
         {values.privacy_mode === 'link' ? (
           <Field
-            label="Adresse der Datenschutzhinweise"
+            label={t('Adresse der Datenschutzhinweise')}
             type="url"
             value={values.privacy_url}
             error={form.errors.privacy_url}
@@ -118,13 +119,13 @@ function PrivacyForm({
           />
         ) : (
           <TextEditor
-            label="Entwurf der Datenschutzhinweise"
+            label={t('Entwurf der Datenschutzhinweise')}
             value={values.privacy_text}
             error={form.errors.privacy_text}
             rows={14}
             hint={
               website.privacy_generated_at
-                ? `Zuletzt erzeugt: ${formatDateTime(website.privacy_generated_at)}`
+                ? t('Zuletzt erzeugt: {x}', { x: formatDateTime(website.privacy_generated_at) })
                 : undefined
             }
             onChange={(text) => form.set('privacy_text', text)}
@@ -133,7 +134,7 @@ function PrivacyForm({
         {values.privacy_mode === 'text' && (
           <div className="button-row">
             <button type="button" className="button" onClick={() => void generate()}>
-              {values.privacy_text.trim() ? 'Entwurf neu erzeugen' : 'Textentwurf erzeugen'}
+              {values.privacy_text.trim() ? t('Entwurf neu erzeugen') : t('Textentwurf erzeugen')}
             </button>
           </div>
         )}

@@ -14,6 +14,7 @@ import type {
   SyncResult,
 } from '../../api/competitions.ts'
 import { errorMessage } from '../../components/forms.ts'
+import { t, tn } from '../../i18n/index.ts'
 
 export type LocalStarter = Starter & { key?: string | null }
 
@@ -154,17 +155,23 @@ export function useStandStore(
         setOnline(true)
         setSyncError(
           ops.length
-            ? 'Der Wettbewerb wurde zurückgesetzt, die Eingaben dieses Geräts von vorher sind verworfen.'
+            ? t(
+                'Der Wettbewerb wurde zurückgesetzt, die Eingaben dieses Geräts von vorher sind verworfen.',
+              )
             : null,
         )
         return
       }
       const failed = res.results
-        .map((r, i) => (r.ok ? null : `${describe(ops[i], localRef.current)}: ${r.error}`))
+        .map((r, i) =>
+          r.ok
+            ? null
+            : t('{x}: {error}', { x: describe(ops[i], localRef.current), error: r.error }),
+        )
         .filter(Boolean)
       apply(res, ops.length)
       setOnline(true)
-      setSyncError(failed.length ? `Nicht übernommen: ${failed.join('; ')}` : null)
+      setSyncError(failed.length ? t('Nicht übernommen: {x}', { x: failed.join('; ') }) : null)
       if (res.conflicts.length) conflictsRef.current?.(res.conflicts)
     } catch (err) {
       setOnline(false)
@@ -227,8 +234,10 @@ export function useStandStore(
 
   const pending = local.ops.length
   const statusText = pending
-    ? `${pending} ${pending === 1 ? 'Eingabe wartet' : 'Eingaben warten'} auf ${online ? 'Abgleich' : 'Empfang'}`
-    : 'Alles gespeichert'
+    ? online
+      ? tn('{n} Eingabe wartet auf Abgleich', '{n} Eingaben warten auf Abgleich', pending)
+      : tn('{n} Eingabe wartet auf Empfang', '{n} Eingaben warten auf Empfang', pending)
+    : t('Alles gespeichert')
 
   return { local, setLocal, push, sync, online, syncError, pending, statusText }
 }
@@ -270,12 +279,12 @@ export function useVersion(api: StandApi, onChange: () => void, enabled = true) 
 /** Eine Eingabe für Fehlermeldungen benennen. */
 export function describe(op: SyncOp, l: Local): string {
   if (op.op === 'starter')
-    return op.name ?? l.members.find((m) => m.membership === op.membership)?.name ?? 'Schütze'
-  if (op.op === 'undo') return 'Rückgängig'
-  if (op.op.startsWith('shootoff')) return 'Stechen'
-  if (!('starter' in op)) return 'Eingabe'
+    return op.name ?? l.members.find((m) => m.membership === op.membership)?.name ?? t('Schütze')
+  if (op.op === 'undo') return t('Rückgängig')
+  if (op.op.startsWith('shootoff')) return t('Stechen')
+  if (!('starter' in op)) return t('Eingabe')
   const s = l.starters.find((x) => x.id === op.starter || (!!x.key && x.key === op.starter))
-  return s?.name ?? 'Eingabe'
+  return s?.name ?? t('Eingabe')
 }
 
 /** Gast (Ralf 2026-11-01): freier Verein oder eine Untereinheit des Wettbewerbs. Passt der

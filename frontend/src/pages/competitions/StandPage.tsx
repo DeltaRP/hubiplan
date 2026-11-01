@@ -18,6 +18,7 @@ import { BirdStand } from './BirdStand.tsx'
 import { LiveTables } from './LiveTables.tsx'
 import { StandPanel } from './StandPanel.tsx'
 import { locale } from '../../i18n/index.ts'
+import { t } from '../../i18n/index.ts'
 
 export function StandPage() {
   const params = useParams()
@@ -30,7 +31,7 @@ export function StandPage() {
       org={org}
       exit={
         <Link className="button button-ghost" to={`/wettbewerbe/${id}`}>
-          Standmodus verlassen
+          {t('Standmodus verlassen')}
         </Link>
       }
     />
@@ -67,10 +68,11 @@ function StandShell({ api, exit, org }: { api: StandApi; exit: ReactNode; org?: 
   return (
     <main className="stand-page">
       <header className="stand-head">
-        <strong>{data?.title ?? 'Standmodus'}</strong>
+        <strong>{data?.title ?? t('Standmodus')}</strong>
         {data?.stand_access && (
           <span className="muted small">
-            Standzugang{data.stand_access.label ? ` ${data.stand_access.label}` : ''} bis{' '}
+            {t('Standzugang')}
+            {data.stand_access.label ? ` ${data.stand_access.label}` : ''} bis{' '}
             {new Date(data.stand_access.expires_at).toLocaleTimeString(locale(), {
               hour: '2-digit',
               minute: '2-digit',
@@ -86,7 +88,7 @@ function StandShell({ api, exit, org }: { api: StandApi; exit: ReactNode; org?: 
                 aria-expanded={showAccess}
                 onClick={() => setShowAccess((v) => !v)}
               >
-                Anderes Gerät per QR-Code
+                {t('Anderes Gerät per QR-Code')}
               </button>
             )}
             {exit}
@@ -98,8 +100,9 @@ function StandShell({ api, exit, org }: { api: StandApi; exit: ReactNode; org?: 
       {data &&
         (!data.own ? (
           <p className="alert alert-info">
-            Bei fremden Wettbewerben gibt es keinen Standmodus. Plätze bitte unter „Erfassen“
-            eintragen.
+            {t(
+              'Bei fremden Wettbewerben gibt es keinen Standmodus. Plätze bitte unter „Erfassen“ eintragen.',
+            )}
           </p>
         ) : data.form === 'vogel' ? (
           <BirdStand api={api} comp={data} fullscreen />

@@ -1,6 +1,7 @@
 // Webseite: Unterpunkte in der Seitenleiste (wie bei Mitglieder und Finanzen).
 import { PERM } from '../../api/orgs.ts'
 import type { OrgSummary } from '../../api/orgs.ts'
+import { t } from '../../i18n/index.ts'
 
 export interface NavItem {
   to: string
@@ -8,14 +9,14 @@ export interface NavItem {
 }
 
 const ALL: NavItem[] = [
-  { to: '/webseite', label: 'Übersicht' },
-  { to: '/webseite/inhalte', label: 'Texte' },
-  { to: '/webseite/bilder', label: 'Bilder' },
-  { to: '/webseite/beitraege', label: 'Social Media' },
-  { to: '/webseite/aufbau', label: 'Menü und Bereiche' },
-  { to: '/webseite/gestaltung', label: 'Gestaltung' },
-  { to: '/webseite/kontakt', label: 'Kontaktformular' },
-  { to: '/webseite/domain', label: 'Internetadresse' },
+  { to: '/webseite', label: t('Übersicht') },
+  { to: '/webseite/inhalte', label: t('Texte') },
+  { to: '/webseite/bilder', label: t('Bilder') },
+  { to: '/webseite/beitraege', label: t('Social Media') },
+  { to: '/webseite/aufbau', label: t('Menü und Bereiche') },
+  { to: '/webseite/gestaltung', label: t('Gestaltung') },
+  { to: '/webseite/kontakt', label: t('Kontaktformular') },
+  { to: '/webseite/domain', label: t('Internetadresse') },
 ]
 
 /** Wer nur Inhalte pflegt, sieht nur „Texte“, „Bilder“ und „Social Media“. */
@@ -33,5 +34,5 @@ export function websiteSections(org: OrgSummary | null): NavItem[] {
 /** Überschrift zum aktuellen Pfad */
 export function sectionTitle(pathname: string): string {
   const path = pathname.replace(/\/+$/, '') || '/webseite'
-  return ALL.find((s) => s.to === path)?.label ?? 'Webseite'
+  return ALL.find((s) => s.to === path)?.label ?? t('Webseite')
 }

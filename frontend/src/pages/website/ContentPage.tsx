@@ -25,10 +25,11 @@ import { TextEditor } from '../../components/texteditor/TextEditor.tsx'
 import { ImageChoice, ImagePicker } from './images.tsx'
 import { imageLabel } from './imageTools.ts'
 import type { Unit } from './images.tsx'
+import { t } from '../../i18n/index.ts'
 
 function status(tm: WebsiteTextSummary): string {
-  if (!tm.is_published) return 'Entwurf, nicht veröffentlicht'
-  return tm.has_changes ? 'veröffentlicht, Entwurf mit Änderungen' : 'veröffentlicht'
+  if (!tm.is_published) return t('Entwurf, nicht veröffentlicht')
+  return tm.has_changes ? t('veröffentlicht, Entwurf mit Änderungen') : t('veröffentlicht')
 }
 
 export function ContentPage() {
@@ -54,34 +55,35 @@ export function ContentPage() {
   }
 
   if (error) return <LoadError message={error} onRetry={() => void reload()} />
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
 
   const groups: { title: string; kind: string }[] = [
-    { title: 'Startseite', kind: 'greeting' },
-    { title: 'Textseiten', kind: 'page' },
-    { title: 'Texte der Untereinheiten', kind: 'unit' },
+    { title: t('Startseite'), kind: 'greeting' },
+    { title: t('Textseiten'), kind: 'page' },
+    { title: t('Texte der Untereinheiten'), kind: 'unit' },
   ]
 
   return (
     <>
       <div className="card card-wide">
-        <h2>Texte</h2>
+        <h2>{t('Texte')}</h2>
         <p className="muted small">
-          Texte gestaltest du mit den Knöpfen über dem Text: Überschriften, fett, kursiv, Listen,
-          Links und Bilder. Wer lieber Markdown schreibt, schaltet mit „Markdown“ um. Besucher sehen
-          erst, was du veröffentlichst. Bilder lädst und bearbeitest du unter{' '}
-          <Link to="/webseite/bilder">Webseite › Bilder</Link>.
+          {t(
+            'Texte gestaltest du mit den Knöpfen über dem Text: Überschriften, fett, kursiv, Listen, Links und Bilder. Wer lieber Markdown schreibt, schaltet mit „Markdown“ um. Besucher sehen erst, was du veröffentlichst. Bilder lädst und bearbeitest du unter',
+          )}{' '}
+          <Link to="/webseite/bilder">{t('Webseite › Bilder')}</Link>.
         </p>
         {groups.map((g) => {
           const items = data.texts.filter((tm) => tm.kind === g.kind)
           return (
             <div key={g.kind}>
               <h3>{g.title}</h3>
-              {items.length === 0 && <p className="muted">Noch keine.</p>}
+              {items.length === 0 && <p className="muted">{t('Noch keine.')}</p>}
               {g.kind === 'page' && items.length > 0 && (
                 <p className="muted small">
-                  Wo die Textseiten im Menü stehen, legst du unter{' '}
-                  <Link to="/webseite/aufbau">Webseite › Menü und Bereiche › Bausteine</Link> fest.
+                  {t('Wo die Textseiten im Menü stehen, legst du unter')}{' '}
+                  <Link to="/webseite/aufbau">{t('Webseite › Menü und Bereiche › Bausteine')}</Link>{' '}
+                  fest.
                 </p>
               )}
               <TextList
@@ -132,7 +134,7 @@ export function ContentPage() {
         ) : (
           <div className="button-row">
             <button type="button" className="button" onClick={() => setAdding('page')}>
-              Neue Textseite
+              {t('Neue Textseite')}
             </button>
             {data.units.length > 0 && (
               <button
@@ -140,7 +142,7 @@ export function ContentPage() {
                 className="button button-ghost"
                 onClick={() => setAdding('unit')}
               >
-                Text für eine Untereinheit
+                {t('Text für eine Untereinheit')}
               </button>
             )}
           </div>
@@ -211,11 +213,11 @@ function NewText({
         void save()
       }}
     >
-      <h3>{kind === 'page' ? 'Neue Textseite' : 'Text für eine Untereinheit'}</h3>
+      <h3>{kind === 'page' ? t('Neue Textseite') : t('Text für eine Untereinheit')}</h3>
       {kind === 'page' ? (
         <div className="grid-2">
           <Field
-            label="Titel"
+            label={t('Titel')}
             required
             value={v.title}
             error={errors.title}
@@ -238,7 +240,7 @@ function NewText({
             }}
           />
           <Field
-            label="Adresse (z. B. anfahrt; „geschichte“ erscheint als Chronik)"
+            label={t('Adresse (z. B. anfahrt; „geschichte“ erscheint als Chronik)')}
             required
             value={v.slug}
             error={errors.slug}
@@ -247,7 +249,7 @@ function NewText({
         </div>
       ) : (
         <SelectField
-          label="Untereinheit"
+          label={t('Untereinheit')}
           value={v.department}
           error={errors.department}
           onChange={(e) => set('department', Number(e.target.value))}
@@ -262,10 +264,10 @@ function NewText({
       {form.message?.kind === 'error' && <Alert kind="error">{form.message.text}</Alert>}
       <div className="button-row">
         <button type="submit" className="button button-primary" disabled={form.busy}>
-          Anlegen
+          {t('Anlegen')}
         </button>
         <button type="button" className="button button-ghost" onClick={() => onDone(null)}>
-          Abbrechen
+          {t('Abbrechen')}
         </button>
       </div>
     </form>
@@ -288,7 +290,7 @@ function TextPanel({
   const org = useActiveOrg()
   const { data, error, reload, setData } = useLoad(() => contentApi.text(org.id, id), [org.id, id])
   if (error) return <LoadError message={error} onRetry={() => void reload()} />
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
   return (
     <TextForm
       key={`${data.id}-${data.updated_at}-${data.revisions.length}`}
@@ -340,7 +342,7 @@ function TextForm({
     text.kind === 'unit' && text.department
       ? (units.find((u) => u.id === text.department) ?? {
           id: text.department,
-          name: text.department_name ?? 'Untereinheit',
+          name: text.department_name ?? t('Untereinheit'),
         })
       : null
   const reloadImages = () => void images.reload()
@@ -357,9 +359,9 @@ function TextForm({
 
   async function remove() {
     const ok = await confirmDialog({
-      title: `„${text.title}“ löschen?`,
-      message: 'Die Seite verschwindet von der Webseite, frühere Fassungen werden mit gelöscht.',
-      confirmLabel: 'Löschen',
+      title: t('„{title}“ löschen?', { title: text.title }),
+      message: t('Die Seite verschwindet von der Webseite, frühere Fassungen werden mit gelöscht.'),
+      confirmLabel: t('Löschen'),
     })
     if (!ok) return
     try {
@@ -371,16 +373,20 @@ function TextForm({
   }
 
   return (
-    <form className="subcard" onSubmit={(e) => e.preventDefault()} aria-label="Text bearbeiten">
+    <form
+      className="subcard"
+      onSubmit={(e) => e.preventDefault()}
+      aria-label={t('Text bearbeiten')}
+    >
       <SaveStatus auto={auto} />
       <p className="muted small">
         {current.is_published
-          ? `Veröffentlicht am ${formatDateTime(current.published_at!)}.`
-          : 'Noch nicht veröffentlicht.'}{' '}
-        {current.is_published && current.has_changes && 'Der Entwurf hat Änderungen.'}
+          ? t('Veröffentlicht am {x}.', { x: formatDateTime(current.published_at!) })
+          : t('Noch nicht veröffentlicht.')}{' '}
+        {current.is_published && current.has_changes && t('Der Entwurf hat Änderungen.')}
       </p>
       <Field
-        label="Titel"
+        label={t('Titel')}
         value={v.title}
         error={errors.title}
         onChange={(e) => set('title', e.target.value)}
@@ -388,20 +394,20 @@ function TextForm({
       {text.kind === 'page' && (
         <div className="grid-2">
           <Field
-            label="Adresse"
+            label={t('Adresse')}
             value={v.slug}
             error={errors.slug}
             onChange={(e) => set('slug', e.target.value)}
           />
           <Checkbox
-            label="im Menü zeigen"
+            label={t('im Menü zeigen')}
             checked={v.show_in_menu}
             onChange={(on) => set('show_in_menu', on)}
           />
         </div>
       )}
       <TextEditor
-        label="Text"
+        label={t('Text')}
         value={v.body}
         error={errors.body}
         rows={12}
@@ -410,7 +416,7 @@ function TextForm({
           <ImagePicker
             images={images.data ?? []}
             unit={unit}
-            title="Bild einfügen"
+            title={t('Bild einfügen')}
             onUploaded={reloadImages}
             onPick={(picked) => (picked[0] ? insert(picked[0]) : cancel())}
             onCancel={cancel}
@@ -420,7 +426,7 @@ function TextForm({
         onChange={(body) => set('body', body)}
       />
       <ImageChoice
-        label={text.kind === 'unit' ? 'Bild der Untereinheit' : 'Bild oben auf der Seite'}
+        label={text.kind === 'unit' ? t('Bild der Untereinheit') : t('Bild oben auf der Seite')}
         value={v.image}
         images={images.data ?? []}
         unit={unit}
@@ -450,7 +456,7 @@ function TextForm({
           className="button button-primary"
           onClick={() => void act(() => contentApi.publish(org.id, text.id))}
         >
-          Veröffentlichen
+          {t('Veröffentlichen')}
         </button>
         {current.is_published && (
           <button
@@ -458,29 +464,29 @@ function TextForm({
             className="button button-ghost"
             onClick={() => void act(() => contentApi.unpublish(org.id, text.id))}
           >
-            Veröffentlichung zurücknehmen
+            {t('Veröffentlichung zurücknehmen')}
           </button>
         )}
         {text.kind !== 'greeting' && (
           <button type="button" className="button button-danger" onClick={() => void remove()}>
-            Löschen
+            {t('Löschen')}
           </button>
         )}
       </div>
       {text.revisions.length > 0 && (
         <>
-          <h4>Frühere Fassungen</h4>
+          <h4>{t('Frühere Fassungen')}</h4>
           <ul className="plain-list">
             {text.revisions.map((r) => (
               <li key={r.id}>
                 {formatDateTime(r.published_at)}
-                {r.published_by && ` · ${r.published_by}`}{' '}
+                {r.published_by && t(' · {published_by}', { published_by: r.published_by })}{' '}
                 <button
                   type="button"
                   className="button button-ghost"
                   onClick={() => void act(() => contentApi.restore(org.id, text.id, r.id))}
                 >
-                  In den Entwurf holen
+                  {t('In den Entwurf holen')}
                 </button>
               </li>
             ))}
@@ -533,10 +539,12 @@ function GalleryPicker({
   }
   return (
     <fieldset className="gallery-picker">
-      <legend>Bilderkarussell (optional)</legend>
+      <legend>{t('Bilderkarussell (optional)')}</legend>
       <p className="muted small">
-        Mit zwei oder mehr Bildern zeigt die Startseite statt des einzelnen Bildes ein Karussell zum
-        Durchblättern. Es wechselt von selbst und lässt sich anhalten. Bis zu {MAX_GALLERY} Bilder.
+        {t(
+          'Mit zwei oder mehr Bildern zeigt die Startseite statt des einzelnen Bildes ein Karussell zum Durchblättern. Es wechselt von selbst und lässt sich anhalten. Bis zu {MAX_GALLERY} Bilder.',
+          { MAX_GALLERY },
+        )}
       </p>
       {chosen.length > 0 && (
         <ol className="gallery-list">
@@ -549,7 +557,7 @@ function GalleryPicker({
                   type="button"
                   className="button button-ghost"
                   disabled={index === 0}
-                  aria-label={`${imageLabel(byId.get(id)!)} nach vorn`}
+                  aria-label={t('{x} nach vorn', { x: imageLabel(byId.get(id)!) })}
                   onClick={() => move(index, -1)}
                 >
                   ↑
@@ -558,7 +566,7 @@ function GalleryPicker({
                   type="button"
                   className="button button-ghost"
                   disabled={index === chosen.length - 1}
-                  aria-label={`${imageLabel(byId.get(id)!)} nach hinten`}
+                  aria-label={t('{x} nach hinten', { x: imageLabel(byId.get(id)!) })}
                   onClick={() => move(index, 1)}
                 >
                   ↓
@@ -566,10 +574,10 @@ function GalleryPicker({
                 <button
                   type="button"
                   className="button button-ghost"
-                  aria-label={`${imageLabel(byId.get(id)!)} entfernen`}
+                  aria-label={t('{x} entfernen', { x: imageLabel(byId.get(id)!) })}
                   onClick={() => onChange(chosen.filter((x) => x !== id))}
                 >
-                  Entfernen
+                  {t('Entfernen')}
                 </button>
               </span>
             </li>
@@ -579,16 +587,16 @@ function GalleryPicker({
       {chosen.length > 1 && (
         <div className="grid-2">
           <SelectField
-            label="Beginnt mit"
+            label={t('Beginnt mit')}
             value={random ? 'random' : 'first'}
-            hint={random ? undefined : 'Das erste Bild legen Sie mit ↑ ↓ fest.'}
+            hint={random ? undefined : t('Das erste Bild legen Sie mit ↑ ↓ fest.')}
             onChange={(e) => onRandomChange(e.target.value === 'random')}
           >
-            <option value="first">dem ersten Bild der Liste</option>
-            <option value="random">einem zufälligen Bild</option>
+            <option value="first">{t('dem ersten Bild der Liste')}</option>
+            <option value="random">{t('einem zufälligen Bild')}</option>
           </SelectField>
           <Field
-            label="Nächstes Bild nach (Sekunden)"
+            label={t('Nächstes Bild nach (Sekunden)')}
             type="number"
             inputMode="numeric"
             className="gallery-interval"
@@ -596,7 +604,10 @@ function GalleryPicker({
             max={MAX_INTERVAL}
             step={1}
             value={seconds}
-            hint={`${MIN_INTERVAL} bis ${MAX_INTERVAL} Sekunden, Standard 7.`}
+            hint={t('{MIN_INTERVAL} bis {MAX_INTERVAL} Sekunden, Standard 7.', {
+              MIN_INTERVAL,
+              MAX_INTERVAL,
+            })}
             error={intervalError}
             onChange={(e) => {
               // Erst gültige Werte übernehmen, damit Tippen nicht zwischendurch speichert
@@ -610,14 +621,14 @@ function GalleryPicker({
       )}
       <div className="button-row">
         <button type="button" className="button button-ghost" onClick={() => setPicking(true)}>
-          {chosen.length ? 'Bilder ändern' : 'Bilder wählen'}
+          {chosen.length ? t('Bilder ändern') : t('Bilder wählen')}
         </button>
       </div>
       {picking && (
         <ImagePicker
           images={images}
           unit={unit}
-          title="Bilder fürs Karussell"
+          title={t('Bilder fürs Karussell')}
           multiple
           max={MAX_GALLERY}
           initial={chosen}

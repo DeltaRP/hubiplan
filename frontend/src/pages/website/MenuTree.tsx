@@ -8,6 +8,7 @@ import { normalizeMenu, placeOf, put, rowsOf, sameTree, take } from './menuTree.
 import type { Place, Tree } from './menuTree.ts'
 import { GripIcon } from '../../components/Sortable.tsx'
 import { Checkbox } from '../../components/ui.tsx'
+import { t } from '../../i18n/index.ts'
 
 /** Wie weit nach rechts (px) ein Punkt gezogen werden muss, um Unterpunkt zu werden */
 const INDENT = 28
@@ -53,8 +54,12 @@ export function MenuTree({
     const p = placeOf(next, key)
     setAnnounce(
       p.parent === null
-        ? `${label(key)} ist jetzt Hauptpunkt an Stelle ${p.index + 1}.`
-        : `${label(key)} ist jetzt Unterpunkt von ${label(p.parent)} an Stelle ${p.index + 1}.`,
+        ? t('{x} ist jetzt Hauptpunkt an Stelle {x2}.', { x: label(key), x2: p.index + 1 })
+        : t('{x} ist jetzt Unterpunkt von {x2} an Stelle {x3}.', {
+            x: label(key),
+            x2: label(p.parent),
+            x3: p.index + 1,
+          }),
     )
   }
 
@@ -218,9 +223,11 @@ export function MenuTree({
               if (el) handles.current.set(node.key, el)
               else handles.current.delete(node.key)
             }}
-            aria-label={`${item.label} verschieben`}
-            aria-roledescription="Griff zum Verschieben"
-            title="Ziehen zum Verschieben; auf einen anderen Punkt ziehen macht ihn zum Unterpunkt (oder Pfeiltasten)"
+            aria-label={t('{label} verschieben', { label: item.label })}
+            aria-roledescription={t('Griff zum Verschieben')}
+            title={t(
+              'Ziehen zum Verschieben; auf einen anderen Punkt ziehen macht ihn zum Unterpunkt (oder Pfeiltasten)',
+            )}
             onPointerDown={(e) => onPointerDown(e, node.key)}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
@@ -238,12 +245,12 @@ export function MenuTree({
   return (
     <>
       <p className="muted small sort-hint">
-        Reihenfolge des Menüs: am Griff <GripIcon /> ziehen. Ziehst du einen Punkt auf einen
-        anderen, wird er sein Unterpunkt; ziehst du einen Unterpunkt nach links heraus, wird er
-        wieder Hauptpunkt. Mit der Tastatur: Griff anklicken, ↑ ↓ verschieben, → einrücken, ←
-        ausrücken.
+        {t('Reihenfolge des Menüs: am Griff')} <GripIcon />{' '}
+        {t(
+          'ziehen. Ziehst du einen Punkt auf einen anderen, wird er sein Unterpunkt; ziehst du einen Unterpunkt nach links heraus, wird er wieder Hauptpunkt. Mit der Tastatur: Griff anklicken, ↑ ↓ verschieben, → einrücken, ← ausrücken.',
+        )}
       </p>
-      <ul className="sortable-list menu-tree" aria-label="Menü der Webseite">
+      <ul className="sortable-list menu-tree" aria-label={t('Menü der Webseite')}>
         {tree.flatMap((n) => [row(n, 0), ...n.children.map((c) => row(c, 1))])}
       </ul>
       <p className="sr-only" aria-live="polite">

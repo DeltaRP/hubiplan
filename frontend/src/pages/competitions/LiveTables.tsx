@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import type { StandApi, StandingBlock } from '../../api/competitions.ts'
 import { useVersion } from './standStore.ts'
+import { t } from '../../i18n/index.ts'
 
 export function LiveTables({ api }: { api: StandApi }) {
   const [blocks, setBlocks] = useState<StandingBlock[] | null>(null)
@@ -30,20 +31,20 @@ export function LiveTables({ api }: { api: StandApi }) {
 
   if (!blocks) return null
   return (
-    <aside className="stand-live" aria-label="Aktuelle Tabellen">
-      {stale && <p className="muted small">Ohne Empfang: Stand der letzten Abfrage.</p>}
+    <aside className="stand-live" aria-label={t('Aktuelle Tabellen')}>
+      {stale && <p className="muted small">{t('Ohne Empfang: Stand der letzten Abfrage.')}</p>}
       {blocks.map((b) => (
         <section key={b.scoring} className="stand-live-block stand-block">
           <h2>{b.name}</h2>
           {b.rows.length === 0 ? (
-            <p className="muted small">Noch keine Werte.</p>
+            <p className="muted small">{t('Noch keine Werte.')}</p>
           ) : (
             <table className="table">
               <thead>
                 <tr>
-                  <th className="num">Platz</th>
-                  <th>{b.kind === 'einheit' ? 'Einheit' : 'Name'}</th>
-                  <th className="num">Wert</th>
+                  <th className="num">{t('Platz')}</th>
+                  <th>{b.kind === 'einheit' ? t('Einheit') : t('Name')}</th>
+                  <th className="num">{t('Wert')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -59,7 +60,10 @@ export function LiveTables({ api }: { api: StandApi }) {
                         r.reason ? (
                           <span className="muted small"> · {r.reason}</span>
                         ) : r.count !== undefined ? (
-                          <span className="muted small"> · {r.count} Schützen</span>
+                          <span className="muted small">
+                            {' '}
+                            {t('· {count} Schützen', { count: r.count })}
+                          </span>
                         ) : null
                       ) : (
                         (r.unit_name || r.club) && (
@@ -74,7 +78,7 @@ export function LiveTables({ api }: { api: StandApi }) {
               </tbody>
             </table>
           )}
-          {b.open.length > 0 && <p className="muted small">* Gleichstand: Stechen nötig</p>}
+          {b.open.length > 0 && <p className="muted small">{t('* Gleichstand: Stechen nötig')}</p>}
         </section>
       ))}
     </aside>

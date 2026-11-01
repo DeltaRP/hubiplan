@@ -6,6 +6,7 @@ import type { PhotoResult } from '../../api/competitions.ts'
 import { cameraAvailable } from './aim.ts'
 import { LiveCamera } from './LiveCamera.tsx'
 import { errorText, shrinkPhoto, toSuggestion, type PhotoSuggestion } from './photo.ts'
+import { t } from '../../i18n/index.ts'
 
 export function PhotoButton({
   detect,
@@ -52,7 +53,7 @@ export function PhotoButton({
         accept="image/*"
         capture="environment"
         hidden
-        aria-label="Foto der Scheibe"
+        aria-label={t('Foto der Scheibe')}
         onChange={(e) => void onFile(e.target.files?.[0])}
       />
       <button
@@ -61,7 +62,7 @@ export function PhotoButton({
         disabled={disabled || busy}
         onClick={() => input.current?.click()}
       >
-        {busy ? 'Foto wird ausgewertet …' : 'Foto der Scheibe'}
+        {busy ? t('Foto wird ausgewertet …') : t('Foto der Scheibe')}
       </button>
       {blackShare && cameraAvailable() ? (
         <button
@@ -73,7 +74,7 @@ export function PhotoButton({
             setLive(true)
           }}
         >
-          Live-Kamera
+          {t('Live-Kamera')}
         </button>
       ) : null}
       {live && blackShare ? (

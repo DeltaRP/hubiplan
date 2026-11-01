@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { CompetitionDetail, StandApi } from '../../api/competitions.ts'
 import { confirmDialog } from '../../components/dialog.ts'
 import { errorMessage } from '../../components/forms.ts'
+import { t } from '../../i18n/index.ts'
 
 export function StandFinish({
   api,
@@ -25,9 +26,12 @@ export function StandFinish({
 
   async function finish() {
     const ok = await confirmDialog({
-      title: 'Endgültig abschließen',
-      message: `„${comp.title}“ endgültig abschließen? Danach sind keine Eingaben mehr möglich. Wieder öffnen geht unter „Einrichten“.`,
-      confirmLabel: 'Abschließen',
+      title: t('Endgültig abschließen'),
+      message: t(
+        '„{title}“ endgültig abschließen? Danach sind keine Eingaben mehr möglich. Wieder öffnen geht unter „Einrichten“.',
+        { title: comp.title },
+      ),
+      confirmLabel: t('Abschließen'),
       danger: false,
     })
     if (!ok || !api.finish) return
@@ -52,11 +56,13 @@ export function StandFinish({
           disabled={!ready || busy}
           onClick={() => void finish()}
         >
-          Endgültig abschließen
+          {t('Endgültig abschließen')}
         </button>
       </div>
       {!ready && (
-        <p className="muted small">Erst wenn alle Eingaben abgeglichen sind (Empfang nötig).</p>
+        <p className="muted small">
+          {t('Erst wenn alle Eingaben abgeglichen sind (Empfang nötig).')}
+        </p>
       )}
       {error && <p className="alert alert-error">{error}</p>}
     </div>

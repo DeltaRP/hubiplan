@@ -76,16 +76,17 @@ function CompetitionList() {
 
   return (
     <section>
-      <h1>Wettbewerbe</h1>
+      <h1>{t('Wettbewerbe')}</h1>
       <p className="muted">
-        Eigene Schießen mit Einzel- und Zugwertung und Stechen, Vogelschießen mit Pfändern, und
-        fremde Wettbewerbe, bei denen ihr eure Plätze eintragt.
+        {t(
+          'Eigene Schießen mit Einzel- und Zugwertung und Stechen, Vogelschießen mit Pfändern, und fremde Wettbewerbe, bei denen ihr eure Plätze eintragt.',
+        )}
       </p>
       {error && <LoadError message={error} onRetry={reload} />}
       {canManage && !creating && (
         <div className="button-row">
           <button type="button" className="button" onClick={() => setCreating(true)}>
-            Neuer Wettbewerb
+            {t('Neuer Wettbewerb')}
           </button>
         </div>
       )}
@@ -98,34 +99,34 @@ function CompetitionList() {
       )}
       {data && (
         <DataTable<Competition>
-          label="Wettbewerbe"
+          label={t('Wettbewerbe')}
           rows={data}
           rowKey={(c) => c.id}
           initialSort={{ key: 'date', dir: 'desc' }}
-          emptyText="Noch keine Wettbewerbe."
+          emptyText={t('Noch keine Wettbewerbe.')}
           columns={[
             {
               key: 'date',
-              label: 'Datum',
+              label: t('Datum'),
               value: (c) => c.date,
               render: (c) => new Date(c.date).toLocaleDateString(locale()),
             },
             {
               key: 'title',
-              label: 'Wettbewerb',
+              label: t('Wettbewerb'),
               value: (c) => c.title,
               render: (c) => <Link to={`/wettbewerbe/${c.id}`}>{c.title}</Link>,
             },
-            { key: 'occasion', label: 'Anlass', value: (c) => c.occasion, optional: true },
+            { key: 'occasion', label: t('Anlass'), value: (c) => c.occasion, optional: true },
             {
               key: 'starters',
-              label: 'Starter',
+              label: t('Starter'),
               value: (c) => c.starter_count,
               numeric: true,
             },
             {
               key: 'status',
-              label: 'Zustand',
+              label: t('Zustand'),
               value: (c) => c.status_label,
               filter: true,
             },
@@ -178,22 +179,22 @@ function NewCompetition({
     <div className="card card-wide">
       <form onSubmit={save}>
         <div className="card-head">
-          <h2>Neuer Wettbewerb</h2>
+          <h2>{t('Neuer Wettbewerb')}</h2>
           <button type="button" className="button button-ghost push-right" onClick={onClose}>
-            Abbrechen
+            {t('Abbrechen')}
           </button>
         </div>
         <div className="grid-3">
           <Field
-            label="Titel"
+            label={t('Titel')}
             required
-            placeholder="z. B. Preisschießen 2027"
+            placeholder={t('z. B. Preisschießen 2027')}
             value={v.title}
             error={errors.title}
             onChange={(e) => set('title', e.target.value)}
           />
           <Field
-            label="Datum"
+            label={t('Datum')}
             type="date"
             required
             value={v.date}
@@ -201,15 +202,15 @@ function NewCompetition({
             onChange={(e) => set('date', e.target.value)}
           />
           <SelectField
-            label="Vorlage"
+            label={t('Vorlage')}
             value={v.template}
             onChange={(e) => set('template', e.target.value)}
           >
-            <option value="schiessen">Schießen mit Einzel- und Zugwertung</option>
-            <option value="einfach">nur Einzelwertung</option>
-            <option value="vogel">Vogelschießen mit Pfändern</option>
-            <option value="fremd">Fremder Wettbewerb (eigene Plätze eintragen)</option>
-            <option value="">leer (Wertungen selbst anlegen)</option>
+            <option value="schiessen">{t('Schießen mit Einzel- und Zugwertung')}</option>
+            <option value="einfach">{t('nur Einzelwertung')}</option>
+            <option value="vogel">{t('Vogelschießen mit Pfändern')}</option>
+            <option value="fremd">{t('Fremder Wettbewerb (eigene Plätze eintragen)')}</option>
+            <option value="">{t('leer (Wertungen selbst anlegen)')}</option>
           </SelectField>
           <EventPicker
             org={org}
@@ -224,8 +225,8 @@ function NewCompetition({
           />
           {v.template === 'fremd' && (
             <Field
-              label="Ausrichter"
-              placeholder="z. B. Bürger-Schützenverein"
+              label={t('Ausrichter')}
+              placeholder={t('z. B. Bürger-Schützenverein')}
               value={v.organizer}
               error={errors.organizer}
               onChange={(e) => set('organizer', e.target.value)}
@@ -236,7 +237,7 @@ function NewCompetition({
         {form.message && <Alert kind={form.message.kind}>{form.message.text}</Alert>}
         <div className="button-row">
           <button type="submit" className="button" disabled={form.busy}>
-            Anlegen
+            {t('Anlegen')}
           </button>
         </div>
       </form>
@@ -254,31 +255,31 @@ function CompetitionArea() {
   const standApi = useMemo(() => orgStandApi(org.id, id), [org.id, id])
   const [showAccess, setShowAccess] = useState(false)
   if (error) return <LoadError message={error} onRetry={reload} />
-  if (!data) return <p className="muted">Wird geladen …</p>
+  if (!data) return <p className="muted">{t('Wird geladen …')}</p>
   const base = `/wettbewerbe/${id}`
   return (
     <section>
       <p>
-        <Link to="/wettbewerbe">← Alle Wettbewerbe</Link>
+        <Link to="/wettbewerbe">{t('← Alle Wettbewerbe')}</Link>
       </p>
       <h1>{data.title}</h1>
       <p className="muted">
         {new Date(data.date).toLocaleDateString(locale())}
-        {data.occasion ? ` · ${data.occasion}` : ''}
-        {data.discipline ? ` · ${data.discipline}` : ''}
+        {data.occasion ? t(' · {occasion}', { occasion: data.occasion }) : ''}
+        {data.discipline ? t(' · {discipline}', { discipline: data.discipline }) : ''}
         {!data.own && data.organizer ? (
           <>
             {' '}
-            · <Term k="comp_organizer">Ausrichter</Term>: {data.organizer}
+            · <Term k="comp_organizer">{t('Ausrichter')}</Term>: {data.organizer}
           </>
         ) : null}{' '}
         · {STATUS_LABELS[data.status]}
       </p>
       <Tabs
         items={[
-          { to: base, label: 'Erfassen' },
-          { to: `${base}/auswertung`, label: 'Auswertung' },
-          { to: `${base}/einrichten`, label: 'Einrichten' },
+          { to: base, label: t('Erfassen') },
+          { to: `${base}/auswertung`, label: t('Auswertung') },
+          { to: `${base}/einrichten`, label: t('Einrichten') },
         ]}
       />
       <Routes>
@@ -289,7 +290,7 @@ function CompetitionArea() {
               <div className="button-row">
                 {data.own && (
                   <a className="button button-ghost" href={`/stand/${org.id}/${id}`}>
-                    Standmodus (Vollbild, Handy, offline)
+                    {t('Standmodus (Vollbild, Handy, offline)')}
                   </a>
                 )}
                 {data.own && data.can_manage && data.status !== 'endgueltig' && (
@@ -299,7 +300,7 @@ function CompetitionArea() {
                     aria-expanded={showAccess}
                     onClick={() => setShowAccess((v) => !v)}
                   >
-                    Anderes Gerät per QR-Code
+                    {t('Anderes Gerät per QR-Code')}
                   </button>
                 )}
                 <PrintMenu org={org.id} comp={data} />
@@ -349,28 +350,28 @@ function CompetitionArea() {
 export function PrintMenu({ org, comp }: { org: number; comp: CompetitionDetail }) {
   async function print() {
     const choices = !comp.own
-      ? [{ value: 'pdf', label: 'Ergebnisliste' }]
+      ? [{ value: 'pdf', label: t('Ergebnisliste') }]
       : comp.form === 'vogel'
         ? [
-            { value: 'losliste', label: 'Losliste (zum Zählen auf Papier)' },
-            { value: 'pfaenderliste', label: 'Leere Pfänderliste' },
-            { value: 'pdf', label: 'Pfänderliste mit Ergebnissen' },
+            { value: 'losliste', label: t('Losliste (zum Zählen auf Papier)') },
+            { value: 'pfaenderliste', label: t('Leere Pfänderliste') },
+            { value: 'pdf', label: t('Pfänderliste mit Ergebnissen') },
           ]
         : [
             {
               value: 'schiessliste&sortierung=name',
-              label: 'Schießliste nach Name',
-              hint: 'Zum Eintragen am Stand, erfasste Werte sind eingedruckt',
+              label: t('Schießliste nach Name'),
+              hint: t('Zum Eintragen am Stand, erfasste Werte sind eingedruckt'),
             },
             {
               value: 'schiessliste&sortierung=einheit',
-              label: 'Schießliste nach Zug',
-              hint: 'Je Zug eine Tabelle mit Feldern für die Zugwertung',
+              label: t('Schießliste nach Zug'),
+              hint: t('Je Zug eine Tabelle mit Feldern für die Zugwertung'),
             },
             {
               value: 'schiessliste&leer=1',
-              label: 'Leere Schießliste',
-              hint: 'Ohne Namen, für Nachmeldungen',
+              label: t('Leere Schießliste'),
+              hint: t('Ohne Namen, für Nachmeldungen'),
             },
           ]
     if (comp.own) {
@@ -389,13 +390,13 @@ export function PrintMenu({ org, comp }: { org: number; comp: CompetitionDetail 
     }
     // Nach dem Schießen zuerst die Ergebnisliste (Ralf 2026-11-01)
     if (comp.own && comp.form !== 'vogel') {
-      const result = { value: 'pdf', label: 'Ergebnisliste', hint: 'Plätze und Punkte' }
+      const result = { value: 'pdf', label: t('Ergebnisliste'), hint: t('Plätze und Punkte') }
       if (comp.status === 'vorlaeufig' || comp.status === 'endgueltig') choices.unshift(result)
       else choices.push(result)
     }
     const choice = await choiceDialog({
-      title: 'Drucken',
-      message: 'Welche Vorlage? (PDF zum Ausdrucken)',
+      title: t('Drucken'),
+      message: t('Welche Vorlage? (PDF zum Ausdrucken)'),
       choices,
       cancelValue: '',
     })
@@ -409,7 +410,7 @@ export function PrintMenu({ org, comp }: { org: number; comp: CompetitionDetail 
   }
   return (
     <button type="button" className="button button-ghost" onClick={() => void print()}>
-      Drucken …
+      {t('Drucken …')}
     </button>
   )
 }
@@ -470,11 +471,14 @@ function Setup({
 
   async function reset() {
     const choice = await choiceDialog({
-      title: 'Wettbewerb zurücksetzen',
-      message: `Bei „${comp.title}“ alle erfassten Ergebnisse löschen (Werte, Stechen, Schüsse, gefallene Pfänder)? Regeln, Pfänder, Standzugang und Termin bleiben, der Zustand geht auf „Vorbereitung“. Das lässt sich nicht rückgängig machen.`,
+      title: t('Wettbewerb zurücksetzen'),
+      message: t(
+        'Bei „{title}“ alle erfassten Ergebnisse löschen (Werte, Stechen, Schüsse, gefallene Pfänder)? Regeln, Pfänder, Standzugang und Termin bleiben, der Zustand geht auf „Vorbereitung“. Das lässt sich nicht rückgängig machen.',
+        { title: comp.title },
+      ),
       choices: [
-        { value: 'ergebnisse', label: 'Nur Ergebnisse löschen' },
-        { value: 'alles', label: 'Ergebnisse und Schützen löschen' },
+        { value: 'ergebnisse', label: t('Nur Ergebnisse löschen') },
+        { value: 'alles', label: t('Ergebnisse und Schützen löschen') },
       ],
       cancelValue: '',
     })
@@ -498,9 +502,11 @@ function Setup({
 
   async function remove() {
     const ok = await confirmDialog({
-      title: 'Wettbewerb löschen',
-      message: `„${comp.title}“ mit allen Startern, Ergebnissen und Stechen löschen?`,
-      confirmLabel: 'Löschen',
+      title: t('Wettbewerb löschen'),
+      message: t('„{title}“ mit allen Startern, Ergebnissen und Stechen löschen?', {
+        title: comp.title,
+      }),
+      confirmLabel: t('Löschen'),
     })
     if (!ok) return
     try {
@@ -515,20 +521,20 @@ function Setup({
     <>
       <div className="card card-wide">
         <div className="card-head">
-          <h2>Grunddaten</h2>
+          <h2>{t('Grunddaten')}</h2>
           {canManage && <SaveStatus auto={auto} />}
         </div>
         <fieldset disabled={!canManage}>
           <div className="grid-3">
             <Field
-              label="Titel"
+              label={t('Titel')}
               required
               value={v.title}
               error={errors.title}
               onChange={(e) => set('title', e.target.value)}
             />
             <Field
-              label="Datum"
+              label={t('Datum')}
               type="date"
               required
               value={v.date}
@@ -536,28 +542,28 @@ function Setup({
               onChange={(e) => set('date', e.target.value)}
             />
             <Field
-              label="Anlass"
-              placeholder="z. B. Schützenfest"
+              label={t('Anlass')}
+              placeholder={t('z. B. Schützenfest')}
               value={v.occasion}
               error={errors.occasion}
               onChange={(e) => set('occasion', e.target.value)}
             />
             <Field
-              label="Art"
-              placeholder="z. B. Luftgewehr"
+              label={t('Art')}
+              placeholder={t('z. B. Luftgewehr')}
               value={v.discipline}
               error={errors.discipline}
               onChange={(e) => set('discipline', e.target.value)}
             />
             <Field
-              label="Ort"
+              label={t('Ort')}
               value={v.location}
               error={errors.location}
               onChange={(e) => set('location', e.target.value)}
             />
             {!comp.own && (
               <Field
-                label="Ausrichter"
+                label={t('Ausrichter')}
                 value={v.organizer}
                 error={errors.organizer}
                 onChange={(e) => set('organizer', e.target.value)}
@@ -578,7 +584,7 @@ function Setup({
               />
             )}
             <SelectField
-              label="Auf der Webseite"
+              label={t('Auf der Webseite')}
               value={v.website}
               onChange={(e) => set('website', e.target.value as WebsiteMode)}
             >
@@ -615,33 +621,35 @@ function Setup({
           )}
           {comp.form === 'vogel' && (
             <>
-              <h3>Vogelschießen</h3>
+              <h3>{t('Vogelschießen')}</h3>
               <div className="grid-3">
                 <Checkbox
-                  label="Wer ein Pfand errungen hat, scheidet aus"
+                  label={t('Wer ein Pfand errungen hat, scheidet aus')}
                   checked={v.drop_out}
                   onChange={(on) => set('drop_out', on)}
                 />
                 <Checkbox
-                  label="Pfänder in fester Reihenfolge"
-                  hint="aus: jeder Schuss kann jedes noch hängende Teil treffen"
+                  label={t('Pfänder in fester Reihenfolge')}
+                  hint={t('aus: jeder Schuss kann jedes noch hängende Teil treffen')}
                   checked={v.fixed_order}
                   onChange={(on) => set('fixed_order', on)}
                 />
                 <Field
-                  label="Schüsse insgesamt"
+                  label={t('Schüsse insgesamt')}
                   type="number"
                   min={1}
-                  hint="nur, wenn auf Papier gezählt wurde; live zählt der Standmodus"
+                  hint={t('nur, wenn auf Papier gezählt wurde; live zählt der Standmodus')}
                   value={v.total_shots ?? ''}
                   error={errors.total_shots}
                   onChange={(e) => set('total_shots', numOrNull(e.target.value))}
                 />
                 <Field
-                  label="Lose im Hut"
+                  label={t('Lose im Hut')}
                   type="number"
                   min={1}
-                  hint="„Nummer ziehen“ zieht zufällig aus 1 bis zu dieser Zahl, z. B. 60; leer: bis zur Zahl der Schützen, dann bekommt ein Nachzügler meist die nächste Nummer"
+                  hint={t(
+                    '„Nummer ziehen“ zieht zufällig aus 1 bis zu dieser Zahl, z. B. 60; leer: bis zur Zahl der Schützen, dann bekommt ein Nachzügler meist die nächste Nummer',
+                  )}
                   value={v.lots ?? ''}
                   error={errors.lots}
                   onChange={(e) => set('lots', numOrNull(e.target.value))}
@@ -652,25 +660,25 @@ function Setup({
             </>
           )}
           <label className="field">
-            <span>Beschreibung</span>
+            <span>{t('Beschreibung')}</span>
             <textarea
               rows={3}
               value={v.description}
               onChange={(e) => set('description', e.target.value)}
             />
           </label>
-          <h3>Weitere Angaben</h3>
+          <h3>{t('Weitere Angaben')}</h3>
           {v.details.map((d, i) => (
             <div className="grid-3" key={i}>
               <Field
-                label="Angabe"
-                placeholder="z. B. Entfernung"
+                label={t('Angabe')}
+                placeholder={t('z. B. Entfernung')}
                 value={d.label}
                 onChange={(e) => setDetail(i, { label: e.target.value })}
               />
               <Field
-                label="Wert"
-                placeholder="z. B. 10 m"
+                label={t('Wert')}
+                placeholder={t('z. B. 10 m')}
                 value={d.value}
                 onChange={(e) => setDetail(i, { value: e.target.value })}
               />
@@ -685,7 +693,7 @@ function Setup({
                     )
                   }
                 >
-                  Entfernen
+                  {t('Entfernen')}
                 </button>
               </div>
             </div>
@@ -696,7 +704,7 @@ function Setup({
               className="button button-ghost"
               onClick={() => set('details', [...v.details, { label: '', value: '' }])}
             >
-              Angabe hinzufügen
+              {t('Angabe hinzufügen')}
             </button>
           </div>
         </fieldset>
@@ -714,7 +722,7 @@ function Setup({
         }}
       />
       {comp.form === 'vogel' && <PrizesCard org={org} comp={comp} onChanged={reload} />}
-      {comp.form !== 'vogel' && <h2>Wertungen</h2>}
+      {comp.form !== 'vogel' && <h2>{t('Wertungen')}</h2>}
       {comp.scorings.map((s) => (
         <ScoringCard
           key={s.id}
@@ -732,11 +740,11 @@ function Setup({
             className="button button-ghost"
             onClick={() =>
               void competitionsApi
-                .createScoring(org, comp.id, { name: 'Einzelwertung', kind: 'einzel' })
+                .createScoring(org, comp.id, { name: t('Einzelwertung'), kind: 'einzel' })
                 .then(reload)
             }
           >
-            Einzelwertung hinzufügen
+            {t('Einzelwertung hinzufügen')}
           </button>
           {!comp.own && (
             <button
@@ -744,11 +752,14 @@ function Setup({
               className="button button-ghost"
               onClick={() =>
                 void competitionsApi
-                  .createScoring(org, comp.id, { name: 'Mannschaftswertung', kind: 'mannschaft' })
+                  .createScoring(org, comp.id, {
+                    name: t('Mannschaftswertung'),
+                    kind: 'mannschaft',
+                  })
                   .then(reload)
               }
             >
-              Mannschaftswertung hinzufügen
+              {t('Mannschaftswertung hinzufügen')}
             </button>
           )}
           {comp.own && comp.scorings.some((s) => s.kind === 'einzel') && (
@@ -758,7 +769,7 @@ function Setup({
               onClick={() =>
                 void competitionsApi
                   .createScoring(org, comp.id, {
-                    name: 'Wertung der Untereinheiten',
+                    name: t('Wertung der Untereinheiten'),
                     kind: 'einheit',
                     team_mode: 'beste',
                     team_size: 5,
@@ -766,7 +777,7 @@ function Setup({
                   .then(reload)
               }
             >
-              Wertung der Untereinheiten hinzufügen
+              {t('Wertung der Untereinheiten hinzufügen')}
             </button>
           )}
         </div>
@@ -775,13 +786,13 @@ function Setup({
 
       {canManage && (
         <div className="card card-wide">
-          <h2>Zustand und Weiteres</h2>
+          <h2>{t('Zustand und Weiteres')}</h2>
           <p>
-            Zustand: <strong>{STATUS_LABELS[comp.status]}</strong>
+            {t('Zustand:')} <strong>{STATUS_LABELS[comp.status]}</strong>
             <span className="muted">
               {' '}
-              · erst <Term k="comp_provisional_term">vorläufig</Term>, nach dem Abschluss{' '}
-              <Term k="comp_final_term">endgültig</Term>
+              {t('· erst')} <Term k="comp_provisional_term">{t('vorläufig')}</Term>
+              {t(', nach dem Abschluss')} <Term k="comp_final_term">{t('endgültig')}</Term>
             </span>
           </p>
           {comp.own && comp.status !== 'endgueltig' && <FinishChecklist org={org} comp={comp} />}
@@ -792,7 +803,7 @@ function Setup({
                 className="button button-ghost"
                 onClick={() => void changeStatus('vorlaeufig')}
               >
-                Als vorläufig kennzeichnen
+                {t('Als vorläufig kennzeichnen')}
               </button>
             )}
             {comp.status !== 'endgueltig' ? (
@@ -801,7 +812,7 @@ function Setup({
                 className="button"
                 onClick={() => void changeStatus('endgueltig')}
               >
-                Endgültig abschließen
+                {t('Endgültig abschließen')}
               </button>
             ) : (
               <button
@@ -809,19 +820,19 @@ function Setup({
                 className="button button-ghost"
                 onClick={() => void changeStatus('vorlaeufig')}
               >
-                Wieder öffnen
+                {t('Wieder öffnen')}
               </button>
             )}
             <button type="button" className="button button-ghost" onClick={() => void copy()}>
-              Für das nächste Jahr kopieren
+              {t('Für das nächste Jahr kopieren')}
             </button>
             {comp.status !== 'endgueltig' && (
               <button type="button" className="button button-danger" onClick={() => void reset()}>
-                Zurücksetzen …
+                {t('Zurücksetzen …')}
               </button>
             )}
             <button type="button" className="button button-danger" onClick={() => void remove()}>
-              Löschen
+              {t('Löschen')}
             </button>
           </div>
           <Why k="comp_provisional" />
@@ -834,9 +845,9 @@ function Setup({
 }
 
 const TEAM_MODES = [
-  { value: 'beste', label: 'Summe der besten' },
-  { value: 'summe', label: 'Summe aller' },
-  { value: 'durchschnitt', label: 'Durchschnitt aller' },
+  { value: 'beste', label: t('Summe der besten') },
+  { value: 'summe', label: t('Summe aller') },
+  { value: 'durchschnitt', label: t('Durchschnitt aller') },
 ]
 
 function numOrNull(text: string): number | null {
@@ -907,9 +918,9 @@ function ScoringCard({
 
   async function remove() {
     const ok = await confirmDialog({
-      title: 'Wertung löschen',
-      message: `„${scoring.name}“ mit allen Ergebnissen und Stechen löschen?`,
-      confirmLabel: 'Löschen',
+      title: t('Wertung löschen'),
+      message: t('„{name}“ mit allen Ergebnissen und Stechen löschen?', { name: scoring.name }),
+      confirmLabel: t('Löschen'),
     })
     if (!ok) return
     await competitionsApi.removeScoring(org, comp.id, scoring.id)
@@ -921,11 +932,11 @@ function ScoringCard({
       <div className="card-head">
         <h3>
           {unit ? (
-            <Term k="comp_unit_scoring">Wertung der Untereinheiten</Term>
+            <Term k="comp_unit_scoring">{t('Wertung der Untereinheiten')}</Term>
           ) : scoring.kind === 'mannschaft' ? (
-            'Mannschaftswertung'
+            t('Mannschaftswertung')
           ) : (
-            'Einzelwertung'
+            t('Einzelwertung')
           )}
         </h3>
         {canManage && <SaveStatus auto={auto} />}
@@ -933,7 +944,7 @@ function ScoringCard({
       <fieldset disabled={!canManage}>
         <div className="grid-3">
           <Field
-            label="Bezeichnung"
+            label={t('Bezeichnung')}
             value={v.name}
             error={errors.name}
             onChange={(e) => set('name', e.target.value)}
@@ -941,22 +952,22 @@ function ScoringCard({
           {foreign ? (
             <>
               <Field
-                label="Teilnehmer insgesamt"
+                label={t('Teilnehmer insgesamt')}
                 type="number"
                 min={1}
-                hint="für „Platz 2 von 14“"
+                hint={t('für „Platz 2 von 14“')}
                 value={v.field_size ?? ''}
                 error={errors.field_size}
                 onChange={(e) => set('field_size', numOrNull(e.target.value))}
               />
               <Field
-                label="Einheit des Werts"
+                label={t('Einheit des Werts')}
                 value={v.unit_label}
                 error={errors.unit_label}
                 onChange={(e) => set('unit_label', e.target.value)}
               />
               <SelectField
-                label="Nachkommastellen"
+                label={t('Nachkommastellen')}
                 value={v.decimals}
                 onChange={(e) => set('decimals', Number(e.target.value))}
               >
@@ -970,7 +981,7 @@ function ScoringCard({
           ) : unit ? (
             <>
               <SelectField
-                label="Aus der Wertung"
+                label={t('Aus der Wertung')}
                 value={v.source ?? ''}
                 error={errors.source}
                 onChange={(e) => set('source', numOrNull(e.target.value))}
@@ -982,7 +993,7 @@ function ScoringCard({
                 ))}
               </SelectField>
               <SelectField
-                label="Rechenweise"
+                label={t('Rechenweise')}
                 value={v.team_mode}
                 error={errors.team_mode}
                 onChange={(e) => set('team_mode', e.target.value as Scoring['team_mode'])}
@@ -995,10 +1006,10 @@ function ScoringCard({
               </SelectField>
               {v.team_mode === 'beste' && (
                 <Field
-                  label="Anzahl der besten"
+                  label={t('Anzahl der besten')}
                   type="number"
                   min={1}
-                  hint="Weniger Schützen: die Einheit wird nicht gewertet."
+                  hint={t('Weniger Schützen: die Einheit wird nicht gewertet.')}
                   value={v.team_size ?? ''}
                   error={errors.team_size}
                   onChange={(e) => set('team_size', numOrNull(e.target.value))}
@@ -1008,7 +1019,7 @@ function ScoringCard({
           ) : (
             <>
               <Field
-                label="Schüsse je Schütze"
+                label={t('Schüsse je Schütze')}
                 type="number"
                 min={1}
                 value={v.shots ?? ''}
@@ -1016,7 +1027,7 @@ function ScoringCard({
                 onChange={(e) => set('shots', numOrNull(e.target.value))}
               />
               <Field
-                label="davon in der Wertung"
+                label={t('davon in der Wertung')}
                 type="number"
                 min={1}
                 value={v.counted_shots ?? ''}
@@ -1026,20 +1037,20 @@ function ScoringCard({
               {!fromHits && (
                 <>
                   <Field
-                    label="Höchstwert je Schuss"
+                    label={t('Höchstwert je Schuss')}
                     inputMode="decimal"
                     value={v.max_per_shot ?? ''}
                     error={errors.max_per_shot}
                     onChange={(e) => set('max_per_shot', e.target.value.replace(',', '.') || null)}
                   />
                   <Field
-                    label="Einheit des Werts"
+                    label={t('Einheit des Werts')}
                     value={v.unit_label}
                     error={errors.unit_label}
                     onChange={(e) => set('unit_label', e.target.value)}
                   />
                   <SelectField
-                    label="Nachkommastellen"
+                    label={t('Nachkommastellen')}
                     value={v.decimals}
                     onChange={(e) => set('decimals', Number(e.target.value))}
                   >
@@ -1050,8 +1061,8 @@ function ScoringCard({
                     ))}
                   </SelectField>
                   <Checkbox
-                    label="Größer ist besser"
-                    hint="aus bei Zeit oder Teiler"
+                    label={t('Größer ist besser')}
+                    hint={t('aus bei Zeit oder Teiler')}
                     checked={v.higher_better}
                     onChange={(on) => set('higher_better', on)}
                   />
@@ -1060,7 +1071,7 @@ function ScoringCard({
             </>
           )}
           <Field
-            label="Preisplätze"
+            label={t('Preisplätze')}
             type="number"
             min={0}
             value={v.prize_places}
@@ -1069,10 +1080,10 @@ function ScoringCard({
           />
           {!foreign && (
             <Field
-              label="Schüsse im Stechen (Vorschlag)"
+              label={t('Schüsse im Stechen (Vorschlag)')}
               type="number"
               min={1}
-              hint="beim Anlegen des Stechens vor Ort änderbar"
+              hint={t('beim Anlegen des Stechens vor Ort änderbar')}
               value={v.shootoff_shots ?? ''}
               error={errors.shootoff_shots}
               onChange={(e) => set('shootoff_shots', numOrNull(e.target.value))}
@@ -1080,7 +1091,7 @@ function ScoringCard({
           )}
           {!unit && !foreign && (
             <Field
-              label="davon gewertet (Vorschlag)"
+              label={t('davon gewertet (Vorschlag)')}
               type="number"
               min={1}
               value={v.shootoff_counted ?? ''}
@@ -1091,12 +1102,17 @@ function ScoringCard({
         </div>
         {!foreign && !unit && (
           <p className="muted small">
-            Mit <Term k="comp_counted">gewerteten Schüssen</Term> und Höchstwert prüft HUBIplan jede
-            Eingabe.
+            {t('Mit')} <Term k="comp_counted">{t('gewerteten Schüssen')}</Term>{' '}
+            {t('und Höchstwert prüft HUBIplan jede Eingabe.')}
             {fromHits &&
               (v.method === 'teiler'
-                ? ' Teiler: kleiner ist besser, es zählt der beste Teiler (bei mehreren gewerteten Schüssen ihre Summe).'
-                : ` Höchstwert je Schuss ${String(v.max_per_shot ?? '').replace('.', ',')}, ${v.decimals ? 'mit Zehnteln' : 'ganze Ringe'}.`)}
+                ? t(
+                    ' Teiler: kleiner ist besser, es zählt der beste Teiler (bei mehreren gewerteten Schüssen ihre Summe).',
+                  )
+                : t(' Höchstwert je Schuss {x}, {x2}.', {
+                    x: String(v.max_per_shot ?? '').replace('.', ','),
+                    x2: v.decimals ? t('mit Zehnteln') : t('ganze Ringe'),
+                  }))}
           </p>
         )}
         {single && catalog.data && (
@@ -1112,7 +1128,7 @@ function ScoringCard({
         {canManage && (
           <div className="button-row">
             <button type="button" className="button button-ghost" onClick={() => void remove()}>
-              Wertung löschen
+              {t('Wertung löschen')}
             </button>
           </div>
         )}
@@ -1127,7 +1143,7 @@ function FinishChecklist({ org, comp }: { org: number; comp: CompetitionDetail }
   if (!data) return null
   return (
     <Checklist
-      title="Vor dem endgültigen Abschluss"
+      title={t('Vor dem endgültigen Abschluss')}
       items={competitionFinishChecks({
         missing: data.scorings
           .filter((b) => b.kind === 'einzel')
