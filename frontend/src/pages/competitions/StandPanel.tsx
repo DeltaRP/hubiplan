@@ -17,6 +17,7 @@ import {
   type TargetInfo,
 } from '../../api/competitions.ts'
 import { confirmDialog } from '../../components/dialog.ts'
+import { Term, Why } from '../../learning/Aids.tsx'
 import { StandEnd } from './StandEnd.tsx'
 import { StandFinish } from './StandFinish.tsx'
 import { PhotoButton } from './PhotoButton.tsx'
@@ -492,8 +493,15 @@ export function StandPanel({
                         {photoNote.needsReview ? 'Bitte genau prüfen' : 'Bitte prüfen'}, falls nötig
                         verschieben, dann speichern.
                         {photoNote.note && <span className="small"> ({photoNote.note})</span>}
+                        {/ineinander|überlappend/.test(photoNote.note) && (
+                          <span className="small">
+                            {' '}
+                            <Term k="comp_hole_in_hole">Loch in Loch</Term>
+                          </span>
+                        )}
                       </div>
                     )}
+                    {photoNote && <Why k="comp_photo" />}
                     <TargetPad
                       target={target}
                       method={scoring.method}
@@ -564,6 +572,7 @@ export function StandPanel({
                         )}
                       </div>
                     )}
+                    {photoNote && <Why k="comp_photo_sum" />}
                     {target && scoring.method !== 'frei' && (
                       <button
                         type="button"
