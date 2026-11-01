@@ -77,6 +77,21 @@ class Call(models.Model):
         blank=True,
         related_name="+",
     )
+    # Schritt 3: Ausschreibung an die eigenen Untereinheiten (Veranstalter in HUBIplan)
+    internal = models.BooleanField("an eigene Untereinheiten", default=False)
+    # Angeschriebene Untereinheiten (Kennungen); leer: alle direkten Untereinheiten
+    units = models.JSONField("Untereinheiten", default=list, blank=True)
+    # Bedingungen sperren das Abgeben, statt nur zu warnen
+    strict = models.BooleanField("Bedingungen sperren", default=False)
+    # Eigener Wettbewerb, in den bestätigte Meldungen als Starter laufen
+    competition = models.ForeignKey(
+        "competitions.Competition",
+        verbose_name="Wettbewerb",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
     copied_from = models.ForeignKey(
         "self",
         verbose_name="kopiert aus",
@@ -137,12 +152,25 @@ class Entry(models.Model):
         DRAFT = "entwurf", "Entwurf"
         SUBMITTED = "abgegeben", "abgegeben"
         CONFIRMED = "bestaetigt", "bestätigt"
+        RETURNED = "rueckfrage", "Rückfrage"
         WITHDRAWN = "zurueckgezogen", "zurückgezogen"
 
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE, related_name="+"
     )
     call = models.ForeignKey(Call, on_delete=models.CASCADE, related_name="entries")
+    # Meldende Untereinheit bei Ausschreibungen von oben (Daten liegen beim Veranstalter)
+    department = models.ForeignKey(
+        "organizations.Organization",
+        verbose_name="Untereinheit",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    question = models.CharField("Rückfrage des Veranstalters", max_length=500, blank=True)
+    # Starter und Mannschaften, die diese Meldung im Wettbewerb angelegt hat
+    synced = models.JSONField("übertragen", default=dict, blank=True, editable=False)
     status = models.CharField(
         "Zustand", max_length=15, choices=Status.choices, default=Status.DRAFT
     )
@@ -165,7 +193,16 @@ class Entry(models.Model):
         verbose_name = "Meldung"
         verbose_name_plural = "Meldungen"
         constraints = [
-            models.UniqueConstraint(fields=["call", "organization"], name="meldung_je_einheit")
+            models.UniqueConstraint(
+                fields=["call", "organization"],
+                condition=models.Q(department__isnull=True),
+                name="meldung_je_einheit",
+            ),
+            models.UniqueConstraint(
+                fields=["call", "department"],
+                condition=models.Q(department__isnull=False),
+                name="meldung_je_untereinheit",
+            ),
         ]
 
     def __str__(self) -> str:
@@ -278,6 +315,7 @@ class EntryVersion(models.Model):
         EMAIL = "email", "E-Mail"
         TABLE = "tabelle", "Tabelle"
         OTHER = "sonstiges", "sonstiger Weg"
+        HUBIPLAN = "hubiplan", "in HUBIplan"
 
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE, related_name="+"

@@ -146,6 +146,15 @@ class TestZugriff:
 
 
 class TestAblauf:
+    def test_noch_keine_meldung_ist_json_null(self, club, board_a, api):
+        # Leerer Rumpf ließ die Seite im Browser abstürzen (Ralf, 01.11.)
+        c = api(board_a)
+        call = _call(c, club)
+        resp = c.get(url(club, f"calls/{call['id']}/entry/"))
+        assert resp.status_code == 200
+        assert resp["Content-Type"].startswith("application/json")
+        assert resp.content == b"null"
+
     def test_zwei_mannschaften_per_brief_mit_ersatz(self, club, schuetzen, board_a, api):
         c = api(board_a)
         call = _call(

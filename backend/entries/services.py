@@ -441,6 +441,22 @@ def _check_persons(entry: Entry, persons: list[EntryPerson]) -> list[Hint]:
         if cond.get("units") and info.unit not in cond["units"]:
             label = entry.organization.department_label or "Untereinheit"
             hints.append(Hint(f"{p.name}: {label} passt nicht.", person=p.pk))
+    if entry.department_id and seen_member:
+        # Ausschreibung von oben: dieselbe Person meldet schon eine andere Untereinheit
+        others = (
+            EntryPerson.objects.filter(entry__call=call, membership_id__in=list(seen_member))
+            .exclude(entry=entry)
+            .exclude(entry__status=Entry.Status.WITHDRAWN)
+            .select_related("entry__department")
+        )
+        for o in others:
+            unit = o.entry.department.name if o.entry.department else ""
+            hints.append(
+                Hint(
+                    f"{o.name} ist auch von {unit} gemeldet.",
+                    person=seen_member[o.membership_id],
+                )
+            )
     return hints
 
 
@@ -776,6 +792,111 @@ def sync_competition(entry: Entry) -> None:
     Team.objects.filter(competition=comp).exclude(pk__in=keep_teams).delete()
 
 
+def internal_competition(call: Call):
+    """Eigener Wettbewerb einer Ausschreibung an Untereinheiten (beim ersten Bestätigen
+    angelegt, mit Einzel-, Einheiten- und, bei Mannschaften, Mannschaftswertung)."""
+    from competitions.models import Competition, Scoring
+
+    if call.competition_id:
+        return call.competition
+    org = call.organization
+    if not call.create_competition or not competitions_enabled(org):
+        return None
+    if not call.blocks.filter(kind__in=[CallBlock.Kind.TEAMS, CallBlock.Kind.PERSONS]).exists():
+        return None
+    comp = Competition.objects.create(
+        organization=org,
+        title=call.title,
+        own=True,
+        location=call.location,
+        date=call.date or timezone.localdate(),
+        description=call.description,
+    )
+    kinds = [
+        ("Einzelwertung", Scoring.Kind.INDIVIDUAL),
+        ("Wertung der Untereinheiten", Scoring.Kind.UNIT),
+    ]
+    if call.blocks.filter(kind=CallBlock.Kind.TEAMS).exists():
+        kinds.append(("Mannschaftswertung", Scoring.Kind.TEAM))
+    for n, (name, kind) in enumerate(kinds, 1):
+        Scoring.objects.create(
+            organization=org, competition=comp, name=name, kind=kind, sort_order=n
+        )
+    call.competition = comp
+    call.save(update_fields=["competition", "updated_at"])
+    return comp
+
+
+def sync_internal(entry: Entry) -> None:
+    """Bestätigte Meldung einer Untereinheit: Personen werden Starter im eigenen Wettbewerb
+    (Untereinheit = meldende Einheit), Mannschaften werden Mannschaften. Nur, was diese
+    Meldung selbst angelegt hat, wird später geändert oder entfernt (``entry.synced``)."""
+    from competitions.models import Competition, Placing, Score, Starter, Team, TeamMember
+
+    if entry.status == Entry.Status.WITHDRAWN and not entry.synced:
+        return
+    comp = internal_competition(entry.call)
+    if comp is None or comp.status != Competition.Status.PREPARATION:
+        return
+    org = entry.organization
+    before = entry.synced or {}
+    own_starters = set(before.get("starters", []))
+    own_teams = set(before.get("teams", []))
+    keep_starters: set[int] = set()
+    # Zurückgezogen: alles, was die Meldung angelegt hat, fällt wieder heraus
+    withdrawn = entry.status == Entry.Status.WITHDRAWN
+    persons = [] if withdrawn else entry.persons.select_related("starter")
+    for p in persons:
+        s = p.starter if p.starter and p.starter.competition_id == comp.pk else None
+        if s is None and p.membership_id:
+            s = Starter.objects.filter(competition=comp, membership_id=p.membership_id).first()
+        if s is None:
+            s = Starter(organization=org, competition=comp)
+        s.membership_id = p.membership_id
+        s.name = p.name[:200]
+        s.club = p.club[:200]
+        s.unit_id = entry.department_id
+        s.save()
+        keep_starters.add(s.pk)
+        if p.starter_id != s.pk:
+            p.starter = s
+            p.save(update_fields=["starter"])
+    for s in Starter.objects.filter(pk__in=own_starters - keep_starters):
+        if (
+            not Score.objects.filter(starter=s).exists()
+            and not Placing.objects.filter(starter=s).exists()
+        ):
+            s.delete()
+    keep_teams: set[int] = set()
+    for t in [] if withdrawn else entry.teams.select_related("team"):
+        team = t.team if t.team and t.team.competition_id == comp.pk else None
+        if team is None:
+            team = Team(organization=org, competition=comp)
+        team.name = t.name[:100]
+        team.sort_order = t.sort_order
+        team.save()
+        keep_teams.add(team.pk)
+        if t.team_id != team.pk:
+            t.team = team
+            t.save(update_fields=["team"])
+        members = [
+            p.starter_id
+            for p in EntryPerson.objects.filter(team=t, substitute=False, starter__isnull=False)
+        ]
+        TeamMember.objects.filter(team=team).exclude(starter_id__in=members).delete()
+        have = set(TeamMember.objects.filter(team=team).values_list("starter_id", flat=True))
+        TeamMember.objects.bulk_create(
+            [
+                TeamMember(organization=org, team=team, starter_id=x)
+                for x in members
+                if x not in have
+            ]
+        )
+    Team.objects.filter(pk__in=own_teams - keep_teams).delete()
+    entry.synced = {"starters": sorted(keep_starters), "teams": sorted(keep_teams)}
+    entry.save(update_fields=["synced", "updated_at"])
+
+
 # --- Kopieren und Kürzen ---
 
 
@@ -797,6 +918,7 @@ def copy_call(call: Call, *, title: str = "") -> Call:
     new.id = None
     new.copied_from = call
     new.event = None
+    new.competition = None
     new.title = title or _next_title(call.title, call.date)
     new.date = next_year(call.date)
     new.deadline = next_year(call.deadline)
@@ -865,3 +987,96 @@ def clear_answers_for(block: CallBlock) -> None:
 
 def teams_of(entry: Entry, block: CallBlock) -> list[EntryTeam]:
     return list(entry.teams.filter(block=block))
+
+
+# --- Ausschreibung an Untereinheiten (Schritt 3) ---
+
+
+def unit_choices(org) -> list[Department]:
+    """Untereinheiten, die angeschrieben werden können (alle aktiven im Baum)."""
+    return list(
+        Department.objects.filter(organization=org, is_active=True).order_by("sort_order", "name")
+    )
+
+
+def clean_units(org, raw) -> list[int]:
+    if raw in (None, ""):
+        return []
+    if not isinstance(raw, list):
+        raise ValidationError({"units": "Ungültige Angabe."})
+    allowed = {d.pk for d in unit_choices(org)}
+    out = []
+    for v in raw:
+        try:
+            pk = int(v)
+        except (TypeError, ValueError):
+            raise ValidationError({"units": "Ungültige Angabe."}) from None
+        if pk not in allowed:
+            raise ValidationError({"units": "Unbekannte Untereinheit."})
+        if pk not in out:
+            out.append(pk)
+    return out
+
+
+def addressed_units(call: Call) -> list[int]:
+    """Angeschriebene Untereinheiten: ausgewählt oder alle direkt darunter."""
+    if not call.internal:
+        return []
+    active = {d.pk: d for d in unit_choices(call.organization)}
+    if call.units:
+        return [pk for pk in call.units if pk in active]
+    return [d.pk for d in active.values() if d.parent_id == call.organization_id]
+
+
+def unit_counts(call: Call) -> dict:
+    units = addressed_units(call)
+    done = Entry.objects.filter(
+        call=call,
+        department_id__in=units,
+        status__in=(Entry.Status.SUBMITTED, Entry.Status.CONFIRMED),
+    ).count()
+    return {"addressed": len(units), "submitted": done}
+
+
+def unit_contacts(org, department) -> list[str]:
+    """E-Mail-Adressen der Personen, die für die Untereinheit melden dürfen (Rolle der
+    Untereinheit oder einer darüber, mit Zugang zur Anmeldung)."""
+    from access.catalog import DEPT_ENTRIES_SUBMIT
+    from members.models import DepartmentRoleHolder
+    from organizations.tree import UnitTree
+    from portal.models import PortalAccess
+
+    line = UnitTree.of(org.pk).ancestors(department.pk) or [department.pk]
+    today = timezone.localdate()
+    holders = (
+        DepartmentRoleHolder.objects.filter(
+            role__department_id__in=line,
+            role__department__self_managed=True,
+            valid_from__lte=today,
+        )
+        .filter(Q(valid_until__isnull=True) | Q(valid_until__gte=today))
+        .select_related("role")
+    )
+    memberships = {
+        h.membership_id for h in holders if DEPT_ENTRIES_SUBMIT in (h.role.permissions or [])
+    }
+    emails = (
+        PortalAccess.objects.filter(organization=org, membership_id__in=memberships)
+        .select_related("user")
+        .values_list("user__email", flat=True)
+    )
+    return sorted({e for e in emails if e})
+
+
+def unit_member_ids(org, department, on: datetime.date):
+    """Mitgliedschaften der Untereinheit samt Teilbaum am Stichtag (für die Auswahl im
+    Bereich der Untereinheit)."""
+    from members.models import DepartmentMembership
+    from organizations.tree import UnitTree
+
+    ids = UnitTree.of(org.pk).subtree(department.pk)
+    return (
+        DepartmentMembership.objects.filter(department_id__in=ids, valid_from__lte=on)
+        .filter(Q(valid_until__isnull=True) | Q(valid_until__gte=on))
+        .values("membership_id")
+    )

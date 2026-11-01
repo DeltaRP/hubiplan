@@ -33,6 +33,7 @@ import {
 import { Term } from '../../learning/Aids.tsx'
 import { useActiveDept } from '../../org/OrgContext.tsx'
 import { DeptInvoices } from '../billing/MyInvoices.tsx'
+import { DeptEntries } from '../entries/UnitEntries.tsx'
 import { MovedCirculars } from '../circulars/CircularsPage.tsx'
 import { MemberDevelopment } from '../members/DevelopmentPage.tsx'
 import { statsApi } from '../../api/statistics.ts'
@@ -57,6 +58,7 @@ export function DepartmentArea() {
     ...(can(DEPT_PERM.rolesManage)
       ? [{ to: '/abteilung/rollen', label: 'Rollen und Rechte' }]
       : []),
+    ...(can(DEPT_PERM.entriesSubmit) ? [{ to: '/abteilung/meldungen', label: 'Meldungen' }] : []),
     ...(can(DEPT_PERM.export) ? [{ to: '/abteilung/export', label: 'Export' }] : []),
   ]
   return (
@@ -99,6 +101,9 @@ export function DepartmentArea() {
         )}
         {can(DEPT_PERM.export) && (
           <Route path="export" element={<ExportSection base={{ dept: dept.id }} />} />
+        )}
+        {can(DEPT_PERM.entriesSubmit) && (
+          <Route path="meldungen/*" element={<DeptEntries deptId={dept.id} />} />
         )}
         <Route path="rundschreiben/*" element={<MovedCirculars />} />
         <Route path="*" element={<SubpageUnavailable to="/abteilung" label="Zur Übersicht" />} />

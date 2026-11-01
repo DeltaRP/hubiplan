@@ -20,6 +20,7 @@ import {
   type EntryOptions,
   type EntryPerson,
   type EntryTeam,
+  type Scope,
 } from '../../api/entries.ts'
 import type { PickedMember } from '../../api/members.ts'
 import { DataTable } from '../../components/DataTable.tsx'
@@ -35,8 +36,10 @@ import {
   SelectField,
   Tabs,
 } from '../../components/ui.tsx'
+import { PERM } from '../../api/orgs.ts'
 import { useActiveOrg } from '../../org/OrgContext.tsx'
 import { CallEventCard, InterestCard } from './CallEvent.tsx'
+import { UnitEntryPage, UnitsPanel } from './UnitEntries.tsx'
 
 export function EntriesPage() {
   return (
@@ -48,6 +51,7 @@ export function EntriesPage() {
 }
 
 function statusText(c: Call): string {
+  if (c.unit_counts) return `${c.unit_counts.submitted} von ${c.unit_counts.addressed} gemeldet`
   if (!c.entry_status) return 'noch nicht gemeldet'
   const label = STATUS_LABELS[c.entry_status]
   return c.entry_changed && c.entry_status !== 'entwurf' ? `${label}, geändert` : label
@@ -126,12 +130,15 @@ function NewCall({
   onClose: () => void
   onCreated: (id: number) => void
 }) {
+  const active = useActiveOrg()
+  const canIssue = active.permissions.includes(PERM.entriesManage)
   const form = useForm({
     title: '',
     organizer: '',
     date: '',
     deadline: '',
     template: 'mannschaften',
+    internal: false,
   })
   const { values: v, set, errors } = form
 
@@ -140,7 +147,8 @@ function NewCall({
     const created = await form.submit(() =>
       entriesApi.create(org, {
         title: v.title,
-        organizer: v.organizer,
+        organizer: v.internal ? '' : v.organizer,
+        internal: v.internal,
         date: v.date || null,
         deadline: v.deadline || null,
         template: v.template,
@@ -158,9 +166,18 @@ function NewCall({
             Abbrechen
           </button>
         </div>
+        {canIssue && (
+          <Checkbox
+            label="Wir schreiben selbst aus, unsere Untereinheiten melden"
+            hint="z. B. ein Preisschießen, zu dem die Züge ihre Schützen melden"
+            checked={v.internal}
+            onChange={(on) => set('internal', on)}
+          />
+        )}
         <p className="muted">
-          Übertragt hier die Ausschreibung, die ihr per Brief oder Mail bekommen habt. Bei
-          jährlichen Anlässen könnt ihr später die Ausschreibung des Vorjahres kopieren.
+          {v.internal
+            ? 'Die Untereinheiten finden die Ausschreibung in ihrem Bereich unter „Meldungen“ und melden dort; ihr bestätigt im Eingang.'
+            : 'Übertragt hier die Ausschreibung, die ihr per Brief oder Mail bekommen habt. Bei jährlichen Anlässen könnt ihr später die Ausschreibung des Vorjahres kopieren.'}
         </p>
         <div className="grid-3">
           <Field
@@ -171,14 +188,16 @@ function NewCall({
             error={errors.title}
             onChange={(e) => set('title', e.target.value)}
           />
-          <Field
-            label="Veranstalter"
-            required
-            placeholder="z. B. Bürger-Schützenverein"
-            value={v.organizer}
-            error={errors.organizer}
-            onChange={(e) => set('organizer', e.target.value)}
-          />
+          {!v.internal && (
+            <Field
+              label="Veranstalter"
+              required
+              placeholder="z. B. Bürger-Schützenverein"
+              value={v.organizer}
+              error={errors.organizer}
+              onChange={(e) => set('organizer', e.target.value)}
+            />
+          )}
           <SelectField
             label="Vorlage"
             value={v.template}
@@ -247,27 +266,47 @@ function CallArea() {
         {c.location ? ` · ${c.location}` : ''}
         {c.deadline ? ` · Meldeschluss ${formatDate(c.deadline)}` : ''}
       </p>
-      <Tabs
-        items={[
-          { to: base, label: 'Meldung' },
-          { to: `${base}/ausschreibung`, label: 'Ausschreibung' },
-          { to: `${base}/fassungen`, label: 'Fassungen' },
-        ]}
-      />
+      {c.internal ? (
+        <Tabs
+          items={[
+            { to: base, label: 'Eingang' },
+            { to: `${base}/ausschreibung`, label: 'Ausschreibung' },
+          ]}
+        />
+      ) : (
+        <Tabs
+          items={[
+            { to: base, label: 'Meldung' },
+            { to: `${base}/ausschreibung`, label: 'Ausschreibung' },
+            { to: `${base}/fassungen`, label: 'Fassungen' },
+          ]}
+        />
+      )}
+      {c.internal && (
+        <Routes>
+          <Route index element={<UnitsPanel org={org.id} call={c} />} />
+          <Route
+            path="einheit/:unit"
+            element={<UnitEntryPage org={org.id} call={c} options={options.data} />}
+          />
+        </Routes>
+      )}
       <Routes>
         <Route
           index
           element={
-            <EntryPanel
-              org={org.id}
-              call={c}
-              entry={entry.data ?? null}
-              options={options.data}
-              setEntry={(e) => {
-                entry.setData(e)
-                void call.reload()
-              }}
-            />
+            c.internal ? null : (
+              <EntryPanel
+                org={org.id}
+                call={c}
+                entry={entry.data ?? null}
+                options={options.data}
+                setEntry={(e) => {
+                  entry.setData(e)
+                  void call.reload()
+                }}
+              />
+            )
           }
         />
         <Route
@@ -296,18 +335,21 @@ function CallArea() {
 
 // --- Meldung zusammenstellen ---
 
-function EntryPanel({
+export function EntryPanel({
   org,
   call,
   entry,
   options,
   setEntry,
+  organizer = false,
 }: {
-  org: number
+  org: Scope
   call: CallDetail
   entry: Entry | null
   options: EntryOptions
   setEntry: (e: Entry | null) => void
+  /** Veranstalter bearbeitet die Meldung einer Untereinheit (bestätigen, zurückgeben) */
+  organizer?: boolean
 }) {
   const [message, setMessage] = useState<string | null>(null)
   const run = useCallback(
@@ -361,6 +403,12 @@ function EntryPanel({
           </h2>
         </div>
         {entry.confirmed_note && <p className="muted">Bestätigung: {entry.confirmed_note}</p>}
+        {entry.question && (
+          <Alert kind="info">
+            Rückfrage {call.internal ? `von ${call.organizer}` : ''}: {entry.question}
+            {!organizer && ' Bitte prüfen und die Meldung erneut abgeben.'}
+          </Alert>
+        )}
         {entry.after_deadline && !withdrawn && (
           <Alert kind="info">
             Der Meldeschluss ist vorbei.{' '}
@@ -373,7 +421,8 @@ function EntryPanel({
         )}
         {entry.hints.length > 0 && (
           <div className="alert alert-info" role="status">
-            <strong>Bitte prüfen</strong> (Abgeben bleibt möglich):
+            <strong>Bitte prüfen</strong>
+            {call.strict ? ' (so lässt sich nicht abgeben):' : ' (Abgeben bleibt möglich):'}
             <ul>
               {entry.hints.map((h, i) => (
                 <li key={i}>{h.text}</li>
@@ -413,6 +462,7 @@ function EntryPanel({
           onDiscarded={() => setEntry(null)}
         />
       )}
+      {organizer && <OrganizerCard org={org} call={call} entry={entry} run={run} />}
     </>
   )
 }
@@ -427,7 +477,7 @@ function BlockEntry({
   locked,
   run,
 }: {
-  org: number
+  org: Scope
   call: CallDetail
   block: CallBlock
   entry: Entry
@@ -532,7 +582,7 @@ function TeamCard({
   locked,
   run,
 }: {
-  org: number
+  org: Scope
   call: CallDetail
   block: CallBlock
   team: EntryTeam
@@ -600,7 +650,7 @@ function PersonList({
   locked,
   run,
 }: {
-  org: number
+  org: Scope
   call: CallDetail
   block: CallBlock
   persons: EntryPerson[]
@@ -725,7 +775,7 @@ function MemberChooser({
   label,
   onPick,
 }: {
-  org: number
+  org: Scope
   call: CallDetail
   label: string
   onPick: (membership: number) => void
@@ -755,7 +805,7 @@ function MemberChooser({
   return (
     <div>
       <MemberPicker<PickedCandidate>
-        orgId={org}
+        orgId={typeof org === 'number' ? org : 0}
         label={label}
         value={null}
         search={search}
@@ -774,7 +824,7 @@ function PersonAdder({
   entry,
   run,
 }: {
-  org: number
+  org: Scope
   call: CallDetail
   block: CallBlock
   team: EntryTeam | null
@@ -836,7 +886,7 @@ function AnswerField({
   locked,
   run,
 }: {
-  org: number
+  org: Scope
   call: CallDetail
   block: CallBlock
   value: unknown
@@ -923,7 +973,7 @@ function NoteCard({
   entry,
   setEntry,
 }: {
-  org: number
+  org: Scope
   call: CallDetail
   entry: Entry
   setEntry: (e: Entry) => void
@@ -954,7 +1004,7 @@ function SubmitCard({
   run,
   onDiscarded,
 }: {
-  org: number
+  org: Scope
   call: CallDetail
   entry: Entry
   options: EntryOptions
@@ -1023,6 +1073,43 @@ function SubmitCard({
     })
     if (ok && (await run(() => entriesApi.discard(org, call.id)))) onDiscarded()
   }
+
+  if (call.internal)
+    return (
+      <div className="card card-wide">
+        <div className="card-head">
+          <h2>{first ? 'Meldung abgeben' : 'Änderung melden'}</h2>
+        </div>
+        <p className="muted">
+          Die Meldung geht in HUBIplan an {call.organizer}; dort wird sie bestätigt.
+        </p>
+        {nothingNew && entry.status !== 'rueckfrage' ? (
+          <p className="muted">Seit der letzten Fassung hat sich nichts geändert.</p>
+        ) : (
+          <div className="button-row">
+            <button type="button" className="button" disabled={busy} onClick={submit}>
+              {entry.status === 'rueckfrage' && nothingNew
+                ? 'Erneut abgeben'
+                : first
+                  ? 'Meldung abgeben'
+                  : 'Änderung melden'}
+            </button>
+          </div>
+        )}
+        <div className="button-row">
+          {!first && (
+            <button type="button" className="button button-ghost" onClick={withdraw}>
+              Meldung zurückziehen
+            </button>
+          )}
+          {first && (
+            <button type="button" className="button button-ghost" onClick={discard}>
+              Entwurf verwerfen
+            </button>
+          )}
+        </div>
+      </div>
+    )
 
   return (
     <div className="card card-wide">
@@ -1126,6 +1213,66 @@ function SubmitCard({
   )
 }
 
+/** Veranstalter: Meldung einer Untereinheit bestätigen oder mit Rückfrage zurückgeben. */
+function OrganizerCard({
+  org,
+  call,
+  entry,
+  run,
+}: {
+  org: Scope
+  call: CallDetail
+  entry: Entry
+  run: Run
+}) {
+  async function giveBack() {
+    const question = await promptDialog({
+      title: 'Mit Rückfrage zurückgeben',
+      label: 'Rückfrage',
+      message: 'Die Zugführung bekommt eine Mail und gibt danach erneut ab.',
+      confirmLabel: 'Zurückgeben',
+    })
+    if (question) await run(() => entriesApi.returnEntry(org, call.id, question))
+  }
+  return (
+    <div className="card card-wide">
+      <h2>Als Veranstalter</h2>
+      {entry.status === 'entwurf' && <p className="muted">Die Meldung ist noch nicht abgegeben.</p>}
+      <div className="button-row">
+        {entry.status === 'abgegeben' && (
+          <button
+            type="button"
+            className="button"
+            onClick={() => void run(() => entriesApi.confirm(org, call.id, ''))}
+          >
+            Meldung bestätigen
+          </button>
+        )}
+        {entry.status === 'bestaetigt' && (
+          <button
+            type="button"
+            className="button button-ghost"
+            onClick={() => void run(() => entriesApi.unconfirm(org, call.id))}
+          >
+            Bestätigung zurücknehmen
+          </button>
+        )}
+        {(entry.status === 'abgegeben' || entry.status === 'bestaetigt') && (
+          <button type="button" className="button button-ghost" onClick={giveBack}>
+            Mit Rückfrage zurückgeben
+          </button>
+        )}
+      </div>
+      {entry.competition && (
+        <p className="muted small">
+          Bestätigte Personen stehen als Starter im Wettbewerb{' '}
+          <Link to={`/wettbewerbe/${entry.competition}`}>{call.title}</Link>.
+        </p>
+      )}
+    </div>
+  )
+}
+
 // --- Fassungen ---
 
 function VersionsPanel({
@@ -1133,7 +1280,7 @@ function VersionsPanel({
   call,
   entry,
 }: {
-  org: number
+  org: Scope
   call: CallDetail
   entry: Entry | null
 }) {
@@ -1237,6 +1384,8 @@ function CallEditor({
     fee_per: call.fee_per,
     changes_after_deadline: call.changes_after_deadline,
     create_competition: call.create_competition,
+    units: call.units,
+    strict: call.strict,
   })
   const { values: v, set, errors } = form
   const auto = useAutoSave(
@@ -1329,36 +1478,53 @@ function CallEditor({
             onChange={(e) => set('reference_date', e.target.value)}
           />
         </div>
-        <h3>Veranstalter</h3>
-        <div className="grid-3">
-          <Field
-            label="Name"
-            value={v.organizer}
-            error={errors.organizer}
-            onChange={(e) => set('organizer', e.target.value)}
-          />
-          <label className="field">
-            <span>Anschrift (ohne Name)</span>
-            <textarea
-              rows={3}
-              value={v.organizer_address}
-              onChange={(e) => set('organizer_address', e.target.value)}
+        {call.internal && (
+          <fieldset>
+            <legend>
+              Angeschriebene {options.unit_label}-Einheiten (keine Auswahl: alle direkt darunter)
+            </legend>
+            {options.units.map((u) => (
+              <Checkbox
+                key={u.id}
+                label={u.name}
+                checked={v.units.includes(u.id)}
+                onChange={(on) => set('units', toggle(v.units, u.id, on))}
+              />
+            ))}
+          </fieldset>
+        )}
+        {!call.internal && <h3>Veranstalter</h3>}
+        {!call.internal && (
+          <div className="grid-3">
+            <Field
+              label="Name"
+              value={v.organizer}
+              error={errors.organizer}
+              onChange={(e) => set('organizer', e.target.value)}
             />
-          </label>
-          <Field
-            label="E-Mail"
-            type="email"
-            value={v.organizer_email}
-            error={errors.organizer_email}
-            onChange={(e) => set('organizer_email', e.target.value)}
-          />
-          <Field
-            label="Anrede im Brief"
-            value={v.salutation}
-            error={errors.salutation}
-            onChange={(e) => set('salutation', e.target.value)}
-          />
-        </div>
+            <label className="field">
+              <span>Anschrift (ohne Name)</span>
+              <textarea
+                rows={3}
+                value={v.organizer_address}
+                onChange={(e) => set('organizer_address', e.target.value)}
+              />
+            </label>
+            <Field
+              label="E-Mail"
+              type="email"
+              value={v.organizer_email}
+              error={errors.organizer_email}
+              onChange={(e) => set('organizer_email', e.target.value)}
+            />
+            <Field
+              label="Anrede im Brief"
+              value={v.salutation}
+              error={errors.salutation}
+              onChange={(e) => set('salutation', e.target.value)}
+            />
+          </div>
+        )}
         <label className="field">
           <span>Beschreibung (z. B. Auszug aus der Ausschreibung)</span>
           <textarea
@@ -1409,6 +1575,14 @@ function CallEditor({
         <p className="muted small">
           HUBIplan weist auf Verstöße hin; abgeben bleibt möglich, der Veranstalter entscheidet.
         </p>
+        {call.internal && (
+          <Checkbox
+            label="Verstöße sperren das Abgeben"
+            hint="sonst nur Hinweise; ihr entscheidet beim Bestätigen"
+            checked={v.strict}
+            onChange={(on) => set('strict', on)}
+          />
+        )}
         <div className="grid-3">
           <Checkbox
             label="nur aktive Mitglieder am Stichtag"
@@ -1470,8 +1644,16 @@ function CallEditor({
         )}
         {options.competitions_enabled && (
           <Checkbox
-            label="beim Abgeben einen fremden Wettbewerb mit den Mannschaften anlegen"
-            hint="dort tragt ihr später eure Plätze ein"
+            label={
+              call.internal
+                ? 'bestätigte Meldungen als Starter in einen eigenen Wettbewerb übernehmen'
+                : 'beim Abgeben einen fremden Wettbewerb mit den Mannschaften anlegen'
+            }
+            hint={
+              call.internal
+                ? 'der Wettbewerb entsteht beim ersten Bestätigen, mit Wertung der Untereinheiten'
+                : 'dort tragt ihr später eure Plätze ein'
+            }
             checked={v.create_competition}
             onChange={(on) => set('create_competition', on)}
           />

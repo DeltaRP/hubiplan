@@ -20,9 +20,17 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from access.catalog import ENTRIES_SUBMIT, EVENTS_MANAGE, MEMBERS_VIEW
+from access.catalog import (
+    DEPT_ENTRIES_SUBMIT,
+    DEPT_MEMBERS_VIEW,
+    ENTRIES_MANAGE,
+    ENTRIES_SUBMIT,
+    EVENTS_MANAGE,
+    MEMBERS_VIEW,
+)
 from audit.log import diff, record, snapshot
 from core.api_base import OrgScopedMixin
+from core.tenancy import scope_of, set_rls
 from members.models import Membership
 from organizations.models import Department, Organization
 
@@ -33,29 +41,110 @@ MODULE = "entries"
 
 
 class _Mixin(OrgScopedMixin):
+    """Grundlage aller Ansichten. Drei Zugänge (Schritt 3):
+
+    - ``/orgs/<org>/entries/…``: die Einheit meldet selbst oder schreibt aus.
+    - ``/orgs/<org>/entries/units/<unit>/…``: der Veranstalter bearbeitet die Meldung einer
+      seiner Untereinheiten (Recht ``entries.manage``).
+    - ``/depts/<dept>/entries/…``: die Untereinheit meldet in ihrem Bereich
+      (Abteilungsrecht ``dept.entries.submit``). Die Daten liegen beim Veranstalter.
+    """
+
     allowed_org_types = (Organization.Type.CLUB, Organization.Type.FEDERATION)
+    #: Untereinheit, deren Meldung bearbeitet wird (Ausschreibung von oben)
+    department: Department | None = None
+    #: Zugriff aus dem Bereich der Untereinheit
+    unit_side = False
+    _unit_id = None
+    _dept_id = None
+
+    def dispatch(self, request, *args, **kwargs):
+        self._unit_id = kwargs.pop("unit_id", None)
+        self._dept_id = kwargs.pop("dept_id", None)
+        if self._dept_id is not None:
+            kwargs["org_id"] = (
+                Organization.objects.filter(pk=self._dept_id)
+                .values_list("organization_id", flat=True)
+                .first()
+                or 0
+            )
+        return super().dispatch(request, *args, **kwargs)
 
     def initial(self, request, *args, **kwargs):
+        if self._dept_id is not None:
+            APIView.initial(self, request, *args, **kwargs)
+            self._init_unit_side(request)
+            return
         super().initial(request, *args, **kwargs)
         if MODULE not in (self.org.enabled_modules or []):
             raise NotFound("Das Modul Meldungen ist nicht freigeschaltet.")
-        if ENTRIES_SUBMIT not in self.org_permissions:
+        if not self.org_permissions & {ENTRIES_SUBMIT, ENTRIES_MANAGE}:
             raise PermissionDenied("Dafür fehlt dir die Berechtigung.")
+        if self._unit_id is not None:
+            if ENTRIES_MANAGE not in self.org_permissions:
+                raise PermissionDenied("Dafür fehlt dir die Berechtigung.")
+            self.department = get_object_or_404(Department, pk=self._unit_id, organization=self.org)
+
+    def _init_unit_side(self, request):
+        from portal.services import department_contexts
+
+        ctx = department_contexts(request.user).get(int(self._dept_id))
+        if ctx is None:
+            raise NotFound()
+        if MODULE not in (ctx.club.enabled_modules or []):
+            raise NotFound("Das Modul Meldungen ist nicht freigeschaltet.")
+        if DEPT_ENTRIES_SUBMIT not in ctx.permissions:
+            raise PermissionDenied("Dafür fehlt dir die Berechtigung.")
+        self.org = ctx.club
+        self.department = ctx.department
+        self.unit_side = True
+        # Mitglieder auswählen: nur aus der eigenen Untereinheit (Datenschutz)
+        self.org_permissions = {ENTRIES_SUBMIT} | (
+            {MEMBERS_VIEW} if DEPT_MEMBERS_VIEW in ctx.permissions else set()
+        )
+        set_rls(self.org.pk, request.user.pk, scope_id=scope_of(self.org.pk))
 
     @property
     def can_pick_members(self) -> bool:
         return MEMBERS_VIEW in self.org_permissions
 
+    def require_organizer(self, call: Call | None = None, *, internal: bool | None = None) -> None:
+        """Ausschreibung anlegen oder ändern: nicht aus einer Untereinheit heraus; eine
+        Ausschreibung an Untereinheiten braucht ``entries.manage``."""
+        if self.unit_side or self.department is not None:
+            raise PermissionDenied("Die Ausschreibung ändert nur der Veranstalter.")
+        if internal is None:
+            internal = call.internal if call else False
+        needed = ENTRIES_MANAGE if internal else ENTRIES_SUBMIT
+        if needed not in self.org_permissions:
+            raise PermissionDenied("Dafür fehlt dir die Berechtigung.")
+
     def call(self, pk) -> Call:
-        return get_object_or_404(Call, pk=pk, organization=self.org)
+        call = get_object_or_404(Call, pk=pk, organization=self.org)
+        if self.department is not None and (
+            not call.internal or self.department.pk not in services.addressed_units(call)
+        ):
+            raise NotFound()
+        if self.department is None and call.internal and ENTRIES_MANAGE not in self.org_permissions:
+            raise NotFound()
+        return call
+
+    def find_entry(self, call: Call) -> Entry | None:
+        return Entry.objects.filter(
+            call=call, organization=self.org, department=self.department
+        ).first()
 
     def entry(self, call_id, *, create: bool = False) -> Entry:
         call = self.call(call_id)
-        entry = Entry.objects.filter(call=call, organization=self.org).first()
+        entry = self.find_entry(call)
         if entry is None:
             if not create:
                 raise NotFound("Zu dieser Ausschreibung gibt es noch keine Meldung.")
-            entry = Entry.objects.create(organization=self.org, call=call)
+            if call.internal and self.department is None:
+                raise ValidationError("Zu dieser Ausschreibung melden die Untereinheiten.")
+            entry = Entry.objects.create(
+                organization=self.org, call=call, department=self.department
+            )
             record(self.org, self.request.user, "create", entry, diff({}, snapshot(entry)))
         return entry
 
@@ -114,8 +203,13 @@ def _call_data(call: Call, entry: Entry | None = None) -> dict:
         "create_competition": call.create_competition,
         "copied_from": call.copied_from_id,
         "event_id": call.event_id,
+        "internal": call.internal,
+        "units": call.units,
+        "strict": call.strict,
+        "competition": call.competition_id,
         "entry_status": entry.status if entry else None,
         "entry_changed": entry.changed if entry else False,
+        "entry_question": entry.question if entry else "",
     }
 
 
@@ -131,6 +225,9 @@ def _clean_call(org, data: dict, instance: Call | None) -> dict:
     if instance is None or "title" in out:
         if not out.get("title", instance.title if instance else ""):
             raise ValidationError({"title": "Bitte einen Titel angeben."})
+    internal = bool(data.get("internal")) if instance is None else instance.internal
+    if internal and not out.get("organizer", instance.organizer if instance else ""):
+        out["organizer"] = org.name[:200]
     if instance is None or "organizer" in out:
         if not out.get("organizer", instance.organizer if instance else ""):
             raise ValidationError({"organizer": "Bitte den Veranstalter angeben."})
@@ -178,6 +275,21 @@ def _clean_call(org, data: dict, instance: Call | None) -> dict:
         out["changes_after_deadline"] = data["changes_after_deadline"]
     if "create_competition" in data:
         out["create_competition"] = bool(data["create_competition"])
+    if "strict" in data:
+        out["strict"] = bool(data["strict"])
+    if "units" in data:
+        out["units"] = services.clean_units(org, data["units"])
+    if "competition" in data:
+        raw = data["competition"]
+        if raw in (None, ""):
+            out["competition"] = None
+        else:
+            from competitions.models import Competition
+
+            comp = Competition.objects.filter(pk=raw, organization=org, own=True).first()
+            if comp is None:
+                raise ValidationError({"competition": "Unbekannter Wettbewerb."})
+            out["competition"] = comp
     return out
 
 
@@ -186,14 +298,33 @@ class CallsView(_Mixin, APIView):
     (``template`` = „mannschaften“ legt einen Baustein Mannschaften an)."""
 
     def get(self, request, org_id: int):
-        entries = {e.call_id: e for e in Entry.objects.filter(organization=self.org)}
+        entries = {
+            e.call_id: e
+            for e in Entry.objects.filter(organization=self.org, department=self.department)
+        }
         calls = Call.objects.filter(organization=self.org)
-        return Response([_call_data(c, entries.get(c.pk)) for c in calls])
+        if self.department is not None:
+            calls = [
+                c
+                for c in calls.filter(internal=True)
+                if self.department.pk in services.addressed_units(c)
+            ]
+        elif ENTRIES_MANAGE not in self.org_permissions:
+            calls = calls.filter(internal=False)
+        out = []
+        for c in calls:
+            data = _call_data(c, entries.get(c.pk))
+            if c.internal and self.department is None:
+                data["unit_counts"] = services.unit_counts(c)
+            out.append(data)
+        return Response(out)
 
     @transaction.atomic
     def post(self, request, org_id: int):
+        internal = bool(request.data.get("internal"))
+        self.require_organizer(internal=internal)
         values = _clean_call(self.org, request.data, None)
-        call = Call.objects.create(organization=self.org, **values)
+        call = Call.objects.create(organization=self.org, internal=internal, **values)
         record(self.org, request.user, "create", call, diff({}, snapshot(call)))
         if request.data.get("template") == "mannschaften":
             b = CallBlock.objects.create(
@@ -210,7 +341,7 @@ class CallsView(_Mixin, APIView):
 
 
 def _call_detail(view: _Mixin, call: Call) -> dict:
-    entry = Entry.objects.filter(call=call, organization=view.org).first()
+    entry = view.find_entry(call)
     data = _call_data(call, entry)
     data["blocks"] = [_block_data(b) for b in call.blocks.all()]
     data["has_versions"] = bool(entry and entry.versions.exists())
@@ -234,6 +365,7 @@ class CallView(_Mixin, APIView):
     @transaction.atomic
     def patch(self, request, org_id: int, call_id: int):
         call = Call.objects.select_for_update().get(pk=self.call(call_id).pk)
+        self.require_organizer(call)
         before = snapshot(call)
         for k, v in _clean_call(self.org, request.data, call).items():
             setattr(call, k, v)
@@ -241,7 +373,7 @@ class CallView(_Mixin, APIView):
         changes = diff(before, snapshot(call))
         if changes:
             record(self.org, request.user, "update", call, changes)
-            entry = Entry.objects.filter(call=call, organization=self.org).first()
+            entry = self.find_entry(call)
             if entry:
                 services.mark_changed(entry)
         return Response(_call_detail(self, call))
@@ -249,6 +381,7 @@ class CallView(_Mixin, APIView):
     @transaction.atomic
     def delete(self, request, org_id: int, call_id: int):
         call = self.call(call_id)
+        self.require_organizer(call)
         if EntryVersion.objects.filter(entry__call=call).exists():
             raise ValidationError(
                 "Zu dieser Ausschreibung gibt es eine abgegebene Meldung; sie bleibt als Beleg."
@@ -264,6 +397,7 @@ class CallCopyView(_Mixin, APIView):
     @transaction.atomic
     def post(self, request, org_id: int, call_id: int):
         call = self.call(call_id)
+        self.require_organizer(call)
         title = str(request.data.get("title", "") or "").strip()[:200]
         new = services.copy_call(call, title=title)
         record(self.org, request.user, "create", new, diff({}, snapshot(new)))
@@ -304,6 +438,7 @@ class BlocksView(_Mixin, APIView):
     @transaction.atomic
     def post(self, request, org_id: int, call_id: int):
         call = self.call(call_id)
+        self.require_organizer(call)
         if call.blocks.count() >= services.MAX_BLOCKS:
             raise ValidationError(f"Höchstens {services.MAX_BLOCKS} Bausteine.")
         values = _clean_block(request.data, None)
@@ -318,7 +453,9 @@ class BlockView(_Mixin, APIView):
     die Meldung schon abgegeben ist und der Baustein Einträge hat)."""
 
     def _get(self, call_id, pk) -> CallBlock:
-        return get_object_or_404(CallBlock, pk=pk, call=self.call(call_id))
+        call = self.call(call_id)
+        self.require_organizer(call)
+        return get_object_or_404(CallBlock, pk=pk, call=call)
 
     @transaction.atomic
     def patch(self, request, org_id: int, call_id: int, pk: int):
@@ -395,7 +532,11 @@ def _entry_detail(view: _Mixin, entry: Entry) -> dict:
         "changed": entry.changed,
         "note": entry.note,
         "confirmed_note": entry.confirmed_note,
-        "competition": entry.competition_id,
+        "question": entry.question,
+        "unit": entry.department_id,
+        "unit_name": entry.department.name if entry.department_id else "",
+        "competition": entry.competition_id
+        or (entry.call.competition_id if entry.call.internal else None),
         "teams": [
             {"id": t.pk, "block": t.block_id, "name": t.name, "sort_order": t.sort_order}
             for t in entry.teams.all()
@@ -416,8 +557,11 @@ class EntryView(_Mixin, APIView):
 
     def get(self, request, org_id: int, call_id: int):
         call = self.call(call_id)
-        entry = Entry.objects.filter(call=call, organization=self.org).first()
-        return Response(_entry_detail(self, entry) if entry else None)
+        entry = self.find_entry(call)
+        if entry is None:
+            # DRF schreibt für None einen leeren Rumpf; der Browser braucht ein echtes JSON-null
+            return HttpResponse(b"null", content_type="application/json")
+        return Response(_entry_detail(self, entry))
 
     @transaction.atomic
     def post(self, request, org_id: int, call_id: int):
@@ -480,7 +624,8 @@ class TeamsView(_Mixin, APIView):
         name = str(request.data.get("name", "") or "").strip()[:100]
         existing = entry.teams.filter(block=block).count()
         if not name:
-            short = self.org.short_name or self.org.name
+            unit = self.department or self.org
+            short = unit.short_name or unit.name
             name = f"{short} {roman(existing + 1)}"[:100]
         last = entry.teams.aggregate(m=Max("sort_order"))["m"] or 0
         t = EntryTeam.objects.create(
@@ -556,10 +701,16 @@ class TeamView(_Mixin, APIView):
 def _membership(view: _Mixin, raw) -> Membership:
     if not view.can_pick_members:
         raise PermissionDenied("Mitglieder auswählen darf nur, wer die Mitglieder sehen darf.")
-    try:
-        return Membership.objects.select_related("person").get(
-            pk=int(raw), organization=view.org, purged_at__isnull=True
+    qs = Membership.objects.select_related("person").filter(
+        organization=view.org, purged_at__isnull=True
+    )
+    if view.unit_side:
+        # Aus dem Bereich der Untereinheit nur ihre eigenen Mitglieder
+        qs = qs.filter(
+            pk__in=services.unit_member_ids(view.org, view.department, timezone.localdate())
         )
+    try:
+        return qs.get(pk=int(raw))
     except (TypeError, ValueError, Membership.DoesNotExist):
         raise ValidationError({"membership": "Unbekanntes Mitglied."}) from None
 
@@ -746,6 +897,8 @@ class CandidatesView(_Mixin, APIView):
             return Response([])
         on = services.reference_date(call)
         qs = Membership.objects.filter(organization=self.org, purged_at__isnull=True)
+        if self.unit_side:
+            qs = qs.filter(pk__in=services.unit_member_ids(self.org, self.department, on))
         if request.query_params.get("alle") != "1":
             qs = (
                 qs.filter(periods__entry_date__lte=on)
@@ -761,7 +914,7 @@ class CandidatesView(_Mixin, APIView):
             qs.select_related("person").order_by("person__last_name", "person__first_name")[:15]
         )
         infos = services.person_infos(self.org, [m.pk for m in rows], on)
-        entry = Entry.objects.filter(call=call, organization=self.org).first()
+        entry = self.find_entry(call)
         taken = (
             set(entry.persons.filter(membership__in=rows).values_list("membership_id", flat=True))
             if entry
@@ -858,6 +1011,29 @@ class SubmitView(_Mixin, APIView):
             raise ValidationError("Die Meldung ist zurückgezogen.")
         d = request.data
         channel = d.get("channel")
+        call = entry.call
+        if call.internal:
+            # Von oben ausgeschrieben: die Meldung geht in HUBIplan an den Veranstalter
+            channel = EntryVersion.Channel.HUBIPLAN
+            withdraw = bool(d.get("withdraw", False))
+            if call.strict and not withdraw:
+                hints = services.check(entry)
+                if hints:
+                    raise ValidationError(
+                        {"hints": [h.text for h in hints]}
+                        | {"detail": "Die Ausschreibung lässt so keine Meldung zu."}
+                    )
+            if entry.status == Entry.Status.RETURNED and not entry.changed and not withdraw:
+                # Rückfrage ohne Änderung beantwortet
+                entry.status = Entry.Status.SUBMITTED
+                entry.question = ""
+                entry.save(update_fields=["status", "question", "updated_at"])
+                record(
+                    self.org, request.user, "update", entry, {"Zustand": ["Rückfrage", "abgegeben"]}
+                )
+                return Response(_entry_detail(self, entry), status=status.HTTP_201_CREATED)
+        elif channel == EntryVersion.Channel.HUBIPLAN:
+            raise ValidationError({"channel": "Bitte einen Meldeweg wählen."})
         if channel not in EntryVersion.Channel.values:
             raise ValidationError({"channel": "Bitte einen Meldeweg wählen."})
         withdraw = bool(d.get("withdraw", False))
@@ -901,7 +1077,13 @@ class SubmitView(_Mixin, APIView):
                 "Meldeweg": [None, version.get_channel_display()],
             },
         )
-        if not withdraw:
+        if entry.question:
+            entry.question = ""
+            entry.save(update_fields=["question", "updated_at"])
+        if call.internal:
+            if withdraw:
+                services.sync_internal(entry)
+        elif not withdraw:
             services.sync_competition(entry)
         if channel == EntryVersion.Channel.EMAIL:
             transaction.on_commit(lambda: _send_mail(version.pk, request.user.email))
@@ -949,22 +1131,31 @@ def _send_mail(version_id: int, copy_to: str) -> None:
 
 class ConfirmView(_Mixin, APIView):
     """POST {note?}: Bestätigung des Veranstalters vermerken (z. B. „per Mail am …“) ·
-    DELETE: Vermerk zurücknehmen."""
+    DELETE: Vermerk zurücknehmen. Bei Ausschreibungen an Untereinheiten bestätigt der
+    Veranstalter; die Personen werden dann Starter im eigenen Wettbewerb."""
+
+    def _entry(self, call_id) -> Entry:
+        entry = self.entry(call_id)
+        if entry.call.internal and self.unit_side:
+            raise PermissionDenied("Bestätigen kann nur der Veranstalter.")
+        return entry
 
     @transaction.atomic
     def post(self, request, org_id: int, call_id: int):
-        entry = self.entry(call_id)
+        entry = self._entry(call_id)
         if entry.status != Entry.Status.SUBMITTED:
             raise ValidationError("Bestätigen lässt sich nur eine abgegebene Meldung.")
         entry.status = Entry.Status.CONFIRMED
         entry.confirmed_note = str(request.data.get("note", "") or "").strip()[:300]
         entry.save(update_fields=["status", "confirmed_note", "updated_at"])
         record(self.org, request.user, "update", entry, {"Zustand": ["abgegeben", "bestätigt"]})
+        if entry.call.internal:
+            services.sync_internal(entry)
         return Response(_entry_detail(self, entry))
 
     @transaction.atomic
     def delete(self, request, org_id: int, call_id: int):
-        entry = self.entry(call_id)
+        entry = self._entry(call_id)
         if entry.status != Entry.Status.CONFIRMED:
             raise ValidationError("Die Meldung ist nicht als bestätigt vermerkt.")
         entry.status = Entry.Status.SUBMITTED
@@ -972,6 +1163,175 @@ class ConfirmView(_Mixin, APIView):
         entry.save(update_fields=["status", "confirmed_note", "updated_at"])
         record(self.org, request.user, "update", entry, {"Zustand": ["bestätigt", "abgegeben"]})
         return Response(_entry_detail(self, entry))
+
+
+class ReturnView(_Mixin, APIView):
+    """POST {question}: Veranstalter gibt die Meldung einer Untereinheit mit einer Rückfrage
+    zurück (z. B. „bitte Geburtsdatum nachtragen“). Die Untereinheit gibt danach erneut ab."""
+
+    @transaction.atomic
+    def post(self, request, org_id: int, call_id: int):
+        if self.unit_side or self.department is None:
+            raise PermissionDenied("Zurückgeben kann nur der Veranstalter.")
+        entry = self.entry(call_id)
+        if entry.status not in (Entry.Status.SUBMITTED, Entry.Status.CONFIRMED):
+            raise ValidationError("Zurückgeben lässt sich nur eine abgegebene Meldung.")
+        question = str(request.data.get("question", "") or "").strip()[:500]
+        if not question:
+            raise ValidationError({"question": "Bitte die Rückfrage angeben."})
+        before = entry.get_status_display()
+        entry.status = Entry.Status.RETURNED
+        entry.question = question
+        entry.save(update_fields=["status", "question", "updated_at"])
+        record(
+            self.org,
+            request.user,
+            "update",
+            entry,
+            {"Zustand": [before, "Rückfrage"], "Rückfrage": [None, question]},
+        )
+        to = services.unit_contacts(self.org, self.department)
+        call = entry.call
+        if to:
+            transaction.on_commit(
+                lambda: _notify(
+                    self.org,
+                    to,
+                    f"Rückfrage zur Meldung: {call.title}",
+                    f"zu eurer Meldung für „{call.title}“ gibt es eine Rückfrage:\n\n"
+                    f"{question}\n\nBitte die Meldung in HUBIplan prüfen und erneut abgeben.",
+                )
+            )
+        return Response(_entry_detail(self, entry))
+
+
+def _notify(org, to: list[str], subject: str, text: str) -> None:
+    from outbox import mail
+
+    for address in to:
+        mail.send(
+            address,
+            subject,
+            f"Guten Tag,\n\n{text}\n\nMit freundlichen Grüßen\n{org.name}\n",
+            organization=org,
+            kind="meldung",
+            fail_silently=True,
+            from_name=org.name,
+        )
+
+
+def _unit_row(call: Call, dept: Department, entry: Entry | None) -> dict:
+    last = entry.versions.order_by("-number").first() if entry else None
+    return {
+        "unit": dept.pk,
+        "name": dept.name,
+        "status": entry.status if entry else None,
+        "status_label": entry.get_status_display() if entry else "nichts angelegt",
+        "changed": entry.changed if entry else False,
+        "question": entry.question if entry else "",
+        "teams": entry.teams.count() if entry else 0,
+        "persons": entry.persons.count() if entry else 0,
+        "hints": len(services.check(entry)) if entry else 0,
+        "submitted_at": last.created_at if last else None,
+        "contacts": len(services.unit_contacts(call.organization, dept)),
+    }
+
+
+class UnitsOverviewView(_Mixin, APIView):
+    """GET: Übersicht des Veranstalters je angeschriebener Untereinheit."""
+
+    def get(self, request, org_id: int, call_id: int):
+        call = self.call(call_id)
+        self.require_organizer(call)
+        if not call.internal:
+            raise ValidationError("Die Ausschreibung geht nicht an Untereinheiten.")
+        ids = services.addressed_units(call)
+        depts = {d.pk: d for d in Department.objects.filter(pk__in=ids)}
+        entries = {
+            e.department_id: e for e in Entry.objects.filter(call=call, department_id__in=ids)
+        }
+        return Response([_unit_row(call, depts[pk], entries.get(pk)) for pk in ids if pk in depts])
+
+
+class RemindView(_Mixin, APIView):
+    """POST {units?}: Erinnerung per Mail an die Untereinheiten, die noch nicht abgegeben
+    haben (oder an die genannten)."""
+
+    def post(self, request, org_id: int, call_id: int):
+        call = self.call(call_id)
+        self.require_organizer(call)
+        if not call.internal:
+            raise ValidationError("Die Ausschreibung geht nicht an Untereinheiten.")
+        ids = services.addressed_units(call)
+        wanted = request.data.get("units")
+        if wanted:
+            ids = [pk for pk in services.clean_units(self.org, wanted) if pk in ids]
+        else:
+            done = set(
+                Entry.objects.filter(
+                    call=call,
+                    department_id__in=ids,
+                    status__in=(Entry.Status.SUBMITTED, Entry.Status.CONFIRMED),
+                ).values_list("department_id", flat=True)
+            )
+            ids = [pk for pk in ids if pk not in done]
+        deadline = f" Meldeschluss ist am {call.deadline:%d.%m.%Y}." if call.deadline else ""
+        reminded, without = [], []
+        for dept in Department.objects.filter(pk__in=ids).order_by("sort_order", "name"):
+            to = services.unit_contacts(self.org, dept)
+            if not to:
+                without.append(dept.name)
+                continue
+            reminded.append(dept.name)
+            transaction.on_commit(
+                lambda to=to, dept=dept: _notify(
+                    self.org,
+                    to,
+                    f"Erinnerung: Meldung zu {call.title}",
+                    f"für „{call.title}“ fehlt noch die Meldung von {dept.name}.{deadline}\n\n"
+                    "Die Ausschreibung steht in HUBIplan unter Meldungen.",
+                )
+            )
+        if reminded:
+            record(
+                self.org, request.user, "update", call, {"Erinnerung": [None, ", ".join(reminded)]}
+            )
+        return Response({"reminded": reminded, "without_contact": without})
+
+
+class UnitsListDownloadView(_Mixin, APIView):
+    """GET ?als=xlsx|csv: Meldeliste aller abgegebenen Meldungen der Untereinheiten (letzte
+    Fassung je Untereinheit)."""
+
+    def get(self, request, org_id: int, call_id: int):
+        call = self.call(call_id)
+        self.require_organizer(call)
+        fmt = request.query_params.get("als", "xlsx")
+        if fmt not in ("xlsx", "csv"):
+            raise ValidationError({"als": "Unbekanntes Format."})
+        entries = (
+            Entry.objects.filter(
+                call=call,
+                department__isnull=False,
+                status__in=(Entry.Status.SUBMITTED, Entry.Status.CONFIRMED, Entry.Status.RETURNED),
+            )
+            .select_related("department")
+            .order_by("department__sort_order", "department__name")
+        )
+        rows: list[list] = []
+        for e in entries:
+            last = e.versions.order_by("-number").first()
+            if last is None or last.kind == EntryVersion.Kind.WITHDRAWAL:
+                continue
+            table = documents.table_rows(last)
+            if not rows:
+                rows.append(["Untereinheit", *table[0]])
+            rows += [[e.department.name, *r] for r in table[1:]]
+        if not rows:
+            rows = [["Untereinheit"]]
+        data = documents.rows_xlsx(rows) if fmt == "xlsx" else documents.rows_csv(rows)
+        name = f"Meldeliste-{documents.safe_name(call.title)}.{fmt}"
+        return _download(data, name, fmt)
 
 
 class EntryDeleteView(_Mixin, APIView):
@@ -995,6 +1355,12 @@ FORMATS = {
     ),
     "csv": ("text/csv; charset=utf-8", documents.table_csv),
 }
+
+
+def _download(data: bytes, name: str, fmt: str) -> HttpResponse:
+    resp = HttpResponse(data, content_type=FORMATS[fmt][0])
+    resp["Content-Disposition"] = f'attachment; filename="{name}"'
+    return resp
 
 
 class VersionDownloadView(_Mixin, APIView):

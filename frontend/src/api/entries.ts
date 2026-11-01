@@ -3,8 +3,8 @@ import type { CalendarAccess, CompetitionEvent } from './competitions.ts'
 import { api } from './client.ts'
 
 export type BlockKind = 'mannschaften' | 'personen' | 'zahl' | 'auswahl' | 'text'
-export type EntryStatus = 'entwurf' | 'abgegeben' | 'bestaetigt' | 'zurueckgezogen'
-export type Channel = 'brief' | 'email' | 'tabelle' | 'sonstiges'
+export type EntryStatus = 'entwurf' | 'abgegeben' | 'bestaetigt' | 'rueckfrage' | 'zurueckgezogen'
+export type Channel = 'brief' | 'email' | 'tabelle' | 'sonstiges' | 'hubiplan'
 export type FeePer = 'mannschaft' | 'person' | 'pauschal'
 export type ChangesAfterDeadline = 'keine' | 'ersatz' | 'frei'
 
@@ -20,6 +20,7 @@ export const STATUS_LABELS: Record<EntryStatus, string> = {
   entwurf: 'Entwurf',
   abgegeben: 'abgegeben',
   bestaetigt: 'bestätigt',
+  rueckfrage: 'Rückfrage',
   zurueckgezogen: 'zurückgezogen',
 }
 
@@ -28,6 +29,7 @@ export const CHANNEL_LABELS: Record<Channel, string> = {
   email: 'E-Mail an den Veranstalter',
   tabelle: 'Tabelle (Excel/CSV, z. B. für ein Portal)',
   sonstiges: 'sonstiger Weg (nur vermerken)',
+  hubiplan: 'in HUBIplan',
 }
 
 export interface BlockSettings {
@@ -84,6 +86,13 @@ export interface Call {
   create_competition: boolean
   copied_from: number | null
   event_id: number | null
+  /** Ausschreibung an die eigenen Untereinheiten (Schritt 3) */
+  internal: boolean
+  units: number[]
+  strict: boolean
+  competition: number | null
+  entry_question: string
+  unit_counts?: { addressed: number; submitted: number }
   entry_status: EntryStatus | null
   entry_changed: boolean
 }
@@ -173,6 +182,9 @@ export interface Entry {
   changed: boolean
   note: string
   confirmed_note: string
+  question: string
+  unit: number | null
+  unit_name: string
   competition: number | null
   teams: EntryTeam[]
   persons: EntryPerson[]
@@ -197,6 +209,21 @@ export interface Candidate {
   response: 'yes' | 'no' | null
 }
 
+/** Übersicht des Veranstalters je angeschriebener Untereinheit */
+export interface UnitRow {
+  unit: number
+  name: string
+  status: EntryStatus | null
+  status_label: string
+  changed: boolean
+  question: string
+  teams: number
+  persons: number
+  hints: number
+  submitted_at: string | null
+  contacts: number
+}
+
 export interface EntryOptions {
   person_fields: { key: string; label: string }[]
   member_types: { id: number; name: string }[]
@@ -207,50 +234,60 @@ export interface EntryOptions {
   competitions_enabled: boolean
 }
 
-const base = (org: number) => `/api/orgs/${org}/entries/`
-const c = (org: number, id: number) => `${base(org)}calls/${id}/`
-const e = (org: number, id: number) => `${c(org, id)}entry/`
+/** Einheit (Nummer) oder fertige Adresse, z. B. Bereich einer Untereinheit
+ * (``/api/depts/5/entries/``) oder Meldung einer Untereinheit beim Veranstalter
+ * (``/api/orgs/7/entries/units/5/``). */
+export type Scope = number | string
+
+const base = (org: Scope) => (typeof org === 'string' ? org : `/api/orgs/${org}/entries/`)
+export const unitScope = (org: Scope, unit: number): Scope =>
+  `/api/orgs/${org}/entries/units/${unit}/`
+export const deptScope = (dept: number): Scope => `/api/depts/${dept}/entries/`
+const c = (org: Scope, id: number) => `${base(org)}calls/${id}/`
+const e = (org: Scope, id: number) => `${c(org, id)}entry/`
 
 export const entriesApi = {
-  options: (org: number) => api.get<EntryOptions>(`${base(org)}options/`),
-  list: (org: number) => api.get<Call[]>(`${base(org)}calls/`),
-  get: (org: number, id: number) => api.get<CallDetail>(c(org, id)),
-  create: (org: number, data: Partial<Call> & { template?: string }) =>
+  options: (org: Scope) => api.get<EntryOptions>(`${base(org)}options/`),
+  list: (org: Scope) => api.get<Call[]>(`${base(org)}calls/`),
+  get: (org: Scope, id: number) => api.get<CallDetail>(c(org, id)),
+  create: (org: Scope, data: Partial<Call> & { template?: string }) =>
     api.post<CallDetail>(`${base(org)}calls/`, data),
-  update: (org: number, id: number, data: Partial<Call>) => api.patch<CallDetail>(c(org, id), data),
-  remove: (org: number, id: number) => api.del(c(org, id)),
-  copy: (org: number, id: number) => api.post<CallDetail>(`${c(org, id)}copy/`, {}),
-  addBlock: (org: number, id: number, data: Partial<CallBlock>) =>
+  update: (org: Scope, id: number, data: Partial<Call>) => api.patch<CallDetail>(c(org, id), data),
+  remove: (org: Scope, id: number) => api.del(c(org, id)),
+  copy: (org: Scope, id: number) => api.post<CallDetail>(`${c(org, id)}copy/`, {}),
+  addBlock: (org: Scope, id: number, data: Partial<CallBlock>) =>
     api.post<CallBlock>(`${c(org, id)}blocks/`, data),
-  updateBlock: (org: number, id: number, block: number, data: Partial<CallBlock>) =>
+  updateBlock: (org: Scope, id: number, block: number, data: Partial<CallBlock>) =>
     api.patch<CallBlock>(`${c(org, id)}blocks/${block}/`, data),
-  removeBlock: (org: number, id: number, block: number) => api.del(`${c(org, id)}blocks/${block}/`),
-  eventCandidates: (org: number, id: number, search = '') =>
+  removeBlock: (org: Scope, id: number, block: number) => api.del(`${c(org, id)}blocks/${block}/`),
+  eventCandidates: (org: Scope, id: number, search = '') =>
     api.get<CalendarAccess & { events: CallEvent[] }>(
       `${c(org, id)}event-candidates/${search ? `?suche=${encodeURIComponent(search)}` : ''}`,
     ),
-  setEvent: (org: number, id: number, data: { event: number | null } | { create: true }) =>
+  setEvent: (org: Scope, id: number, data: { event: number | null } | { create: true }) =>
     api.post<CallDetail>(`${c(org, id)}event/`, data),
-  responses: (org: number, id: number) =>
+  responses: (org: Scope, id: number) =>
     api.get<{ yes: Interested[]; no_count: number }>(`${c(org, id)}responses/`),
   mine: (access: number) => api.get<MyEntry[]>(`/api/portal/${access}/entries/`),
-  candidates: (org: number, id: number, term: string, all = false) =>
+  candidates: (org: Scope, id: number, term: string, all = false) =>
     api.get<Candidate[]>(
       `${c(org, id)}candidates/?suche=${encodeURIComponent(term)}${all ? '&alle=1' : ''}`,
     ),
-  entry: (org: number, id: number) => api.get<Entry | null>(e(org, id)),
-  createEntry: (org: number, id: number) => api.post<Entry>(e(org, id), {}),
-  updateEntry: (org: number, id: number, data: { note: string }) =>
+  // Ohne Meldung kommt null; ein leerer Rumpf (ältere Server) wird ebenfalls zu null
+  entry: (org: Scope, id: number) =>
+    api.get<Entry | null>(e(org, id)).then((r) => (r && 'status' in r ? r : null)),
+  createEntry: (org: Scope, id: number) => api.post<Entry>(e(org, id), {}),
+  updateEntry: (org: Scope, id: number, data: { note: string }) =>
     api.patch<Entry>(e(org, id), data),
-  discard: (org: number, id: number) => api.del(`${e(org, id)}discard/`),
-  addTeam: (org: number, id: number, block: number, name = '') =>
+  discard: (org: Scope, id: number) => api.del(`${e(org, id)}discard/`),
+  addTeam: (org: Scope, id: number, block: number, name = '') =>
     api.post<Entry>(`${e(org, id)}teams/`, { block, name }),
-  updateTeam: (org: number, id: number, team: number, data: Partial<EntryTeam>) =>
+  updateTeam: (org: Scope, id: number, team: number, data: Partial<EntryTeam>) =>
     api.patch<Entry>(`${e(org, id)}teams/${team}/`, data),
-  removeTeam: (org: number, id: number, team: number) =>
+  removeTeam: (org: Scope, id: number, team: number) =>
     api.del(`${e(org, id)}teams/${team}/`) as Promise<Entry>,
   addPerson: (
-    org: number,
+    org: Scope,
     id: number,
     data: {
       block: number
@@ -263,17 +300,17 @@ export const entriesApi = {
     },
   ) => api.post<Entry>(`${e(org, id)}persons/`, data),
   updatePerson: (
-    org: number,
+    org: Scope,
     id: number,
     person: number,
     data: Partial<Omit<EntryPerson, 'membership'>> & { membership?: number },
   ) => api.patch<Entry>(`${e(org, id)}persons/${person}/`, data),
-  removePerson: (org: number, id: number, person: number) =>
+  removePerson: (org: Scope, id: number, person: number) =>
     api.del(`${e(org, id)}persons/${person}/`) as Promise<Entry>,
-  answer: (org: number, id: number, block: number, value: unknown) =>
+  answer: (org: Scope, id: number, block: number, value: unknown) =>
     api.put<Entry>(`${e(org, id)}answers/`, { block, value }),
   submit: (
-    org: number,
+    org: Scope,
     id: number,
     data: {
       channel: Channel
@@ -284,11 +321,19 @@ export const entriesApi = {
       reason?: string
     },
   ) => api.post<Entry>(`${e(org, id)}submit/`, data),
-  confirm: (org: number, id: number, note: string) =>
+  returnEntry: (org: Scope, id: number, question: string) =>
+    api.post<Entry>(`${e(org, id)}return/`, { question }),
+  units: (org: number, id: number) => api.get<UnitRow[]>(`${c(org, id)}units/`),
+  remind: (org: number, id: number, units?: number[]) =>
+    api.post<{ reminded: string[]; without_contact: string[] }>(`${c(org, id)}remind/`, {
+      units,
+    }),
+  unitsListUrl: (org: number, id: number, fmt: 'xlsx' | 'csv') => `${c(org, id)}list/?als=${fmt}`,
+  confirm: (org: Scope, id: number, note: string) =>
     api.post<Entry>(`${e(org, id)}confirm/`, { note }),
-  unconfirm: (org: number, id: number) => api.del(`${e(org, id)}confirm/`) as Promise<Entry>,
-  previewUrl: (org: number, id: number, fmt: 'pdf' | 'xlsx' | 'csv') =>
+  unconfirm: (org: Scope, id: number) => api.del(`${e(org, id)}confirm/`) as Promise<Entry>,
+  previewUrl: (org: Scope, id: number, fmt: 'pdf' | 'xlsx' | 'csv') =>
     `${e(org, id)}preview/?als=${fmt}`,
-  versionUrl: (org: number, id: number, number: number, fmt: 'pdf' | 'xlsx' | 'csv') =>
+  versionUrl: (org: Scope, id: number, number: number, fmt: 'pdf' | 'xlsx' | 'csv') =>
     `${e(org, id)}versions/${number}/?als=${fmt}`,
 }

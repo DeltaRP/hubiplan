@@ -229,11 +229,23 @@ def table_rows(version: EntryVersion) -> list[list]:
     return rows
 
 
+def safe_name(text: str) -> str:
+    return re.sub(r"[^A-Za-z0-9ÄÖÜäöüß_-]+", "-", text).strip("-")[:80]
+
+
 def table_xlsx(version: EntryVersion) -> bytes:
+    return rows_xlsx(table_rows(version))
+
+
+def table_csv(version: EntryVersion) -> bytes:
+    return rows_csv(table_rows(version))
+
+
+def rows_xlsx(rows: list[list]) -> bytes:
     wb = Workbook()
     ws = wb.active
     ws.title = "Meldung"
-    for row in table_rows(version):
+    for row in rows:
         ws.append([safe_cell(v) for v in row])
     for cell in ws[1]:
         cell.font = Font(bold=True)
@@ -246,10 +258,10 @@ def table_xlsx(version: EntryVersion) -> bytes:
     return buf.getvalue()
 
 
-def table_csv(version: EntryVersion) -> bytes:
+def rows_csv(rows: list[list]) -> bytes:
     buf = io.StringIO()
     writer = csv.writer(buf, delimiter=";")
-    for row in table_rows(version):
+    for row in rows:
         writer.writerow([safe_cell(v) for v in row])
     # BOM, damit Excel die Umlaute erkennt
     return ("﻿" + buf.getvalue()).encode("utf-8")

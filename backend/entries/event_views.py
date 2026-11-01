@@ -93,6 +93,7 @@ class CallEventCandidatesView(_Mixin, APIView):
 
     def get(self, request, org_id: int, call_id: int):
         call = self.call(call_id)
+        self.require_organizer(call)
         out = {**calendar(self), "events": []}
         if not out["on"]:
             return Response(out)
@@ -124,6 +125,7 @@ class CallEventView(_Mixin, APIView):
     @transaction.atomic
     def post(self, request, org_id: int, call_id: int):
         call = Call.objects.select_for_update().get(pk=self.call(call_id).pk)
+        self.require_organizer(call)
         if request.data.get("create"):
             if call.event_id:
                 raise ValidationError("Die Ausschreibung hat schon einen Termin.")
@@ -156,14 +158,20 @@ class ResponsesView(_Mixin, APIView):
         call = self.call(call_id)
         if call.event_id is None:
             return Response({"yes": [], "no_count": 0})
-        rows = list(
-            EventResponse.objects.filter(
-                event_id=call.event_id,
-                membership__organization=self.org,
-                membership__purged_at__isnull=True,
+        qs = EventResponse.objects.filter(
+            event_id=call.event_id,
+            membership__organization=self.org,
+            membership__purged_at__isnull=True,
+        )
+        if self.department is not None:
+            on = services.reference_date(call)
+            qs = qs.filter(
+                membership_id__in=services.unit_member_ids(self.org, self.department, on)
             )
-            .select_related("membership__person")
-            .order_by("membership__person__last_name", "membership__person__first_name")
+        rows = list(
+            qs.select_related("membership__person").order_by(
+                "membership__person__last_name", "membership__person__first_name"
+            )
         )
         yes = [r for r in rows if r.status == EventResponse.Status.YES]
         infos = services.person_infos(
