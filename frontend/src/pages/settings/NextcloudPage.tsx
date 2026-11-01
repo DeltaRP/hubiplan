@@ -145,6 +145,7 @@ function ClientCard({
           )}
         >
           <option value="board">{t('Vorstand und Rollen (auch Ämter in Untereinheiten)')}</option>
+          <option value="roles">{t('Nur Rollen dieser Einheit (ohne Ämter in Untereinheiten)')}</option>
           {isClub && <option value="members">{t('zusätzlich Mitglieder mit Zugang')}</option>}
         </SelectField>
         <Checkbox

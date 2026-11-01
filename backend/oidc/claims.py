@@ -98,6 +98,9 @@ def profile(client: Client, user) -> Profile:
             )
 
     is_member = membership is not None
+    if client.audience == Client.Audience.ROLES:
+        # Nur Rollen dieser Einheit: Ämter in Untereinheiten zählen nicht, auch nicht als Gruppe
+        unit_roles = []
     allowed = bool(roles) or bool(unit_roles)
     if client.audience == Client.Audience.MEMBERS:
         allowed = allowed or is_member
