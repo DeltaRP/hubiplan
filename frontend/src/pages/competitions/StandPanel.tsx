@@ -446,6 +446,9 @@ export function StandPanel({
           pending={pending}
           online={online}
           onStatus={(status) => setLocal((l) => ({ ...l, status }))}
+          local={local}
+          setLocal={setLocal}
+          push={(op) => push(op)}
         />
       ) : (
         !closed && (

@@ -192,6 +192,7 @@ describe('Wettbewerb und Termin', () => {
     }
     const tie = { keys: ['s1', 's2'], names: ['Max Muster', 'Erika Beispiel'], place: 2 }
     let created = false
+    let ended = false
     const calls = renderAt('/stand/7/3', {
       [`GET ${base}3/`]: () => ({
         status: 200,
@@ -219,17 +220,27 @@ describe('Wettbewerb und Termin', () => {
         },
       }),
       [`GET ${base}3/shootoffs/`]: () => ({ status: 200, body: [] }),
-      [`POST ${base}3/shootoffs/`]: () => {
-        created = true
+      // Stechen gehen durch die Warteschlange des Geräts (auch ohne Empfang)
+      [`POST ${base}3/sync/`]: (init) => {
+        const ops = (JSON.parse(String(init?.body ?? '{}')).ops ?? []) as { op: string }[]
+        if (ops.some((o) => o.op === 'shootoff')) created = true
         return {
-          status: 201,
-          body: { id: 1, scoring: 11, number: 1, shots: 1, counted_shots: null, entries: [] },
+          status: 200,
+          body: {
+            results: ops.map(() => ({ ok: true })),
+            conflicts: [],
+            keys: {},
+            starters: [],
+            status: ended ? 'vorlaeufig' : 'laeuft',
+            shootoffs: [],
+            shootoff_keys: {},
+          },
         }
       },
-      [`POST ${base}3/status/`]: () => ({
-        status: 200,
-        body: { status: 'vorlaeufig', status_label: 'vorläufig' },
-      }),
+      [`POST ${base}3/status/`]: () => {
+        ended = true
+        return { status: 200, body: { status: 'vorlaeufig', status_label: 'vorläufig' } }
+      },
     })
     const user = userEvent.setup()
     const end = await screen.findByRole('region', { name: 'Abschluss' })
@@ -249,8 +260,10 @@ describe('Wettbewerb und Termin', () => {
     await user.type(shots, '1')
     await user.click(within(stechen).getByRole('button', { name: 'Stechen anlegen' }))
     await waitFor(() => {
-      const post = calls.find((c) => c.key === `POST ${base}3/shootoffs/`)
-      expect(JSON.parse(String(post?.init?.body))).toMatchObject({
+      const ops = calls
+        .filter((c) => c.key === `POST ${base}3/sync/`)
+        .flatMap((c) => JSON.parse(String(c.init?.body)).ops as { op: string }[])
+      expect(ops.find((o) => o.op === 'shootoff')).toMatchObject({
         scoring: 11,
         keys: ['s1', 's2'],
         shots: 1,

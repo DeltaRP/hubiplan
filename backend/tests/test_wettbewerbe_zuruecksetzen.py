@@ -206,3 +206,78 @@ def test_stechen_ueber_den_standzugang(club, schuetzen, zuege, board_a, api):  #
         anon.patch(f"{base}shootoff-entries/999999/", {"value": "1"}, format="json").status_code
         == 404
     )
+
+
+@pytest.mark.django_db(transaction=True)
+def test_stechen_ohne_empfang_zwei_tablets(club, schuetzen, board_a, api):  # noqa: F811
+    """Ralf 2026-11-01: Stechen muss zur Not auch ohne Empfang gehen. Zwei Tablets legen
+    dasselbe Stechen an und tragen Werte nach; der Server führt zusammen."""
+    import datetime
+    import uuid
+
+    now = datetime.datetime.now(datetime.UTC)
+
+    def ago(seconds: int) -> str:
+        return (now - datetime.timedelta(seconds=seconds)).isoformat()
+
+    c = api(board_a)
+    resp = c.post(
+        url(club),
+        {"title": "Preisschießen 2027", "date": "2027-06-14", "template": "einfach"},
+        "application/json",
+    )
+    comp_id = resp.json()["id"]
+    scoring = c.get(url(club, f"{comp_id}/")).json()["scorings"][0]["id"]
+    for first in ("Max", "Erika"):
+        s = _starter(c, club, comp_id, membership=schuetzen[first].pk)
+        c.put(
+            url(club, f"{comp_id}/scores/"),
+            {"scoring": scoring, "starter": s["id"], "value": "27"},
+            "application/json",
+        )
+    sync = url(club, f"{comp_id}/sync/")
+    keys = c.get(url(club, f"{comp_id}/standings/")).json()["scorings"][0]["open"][0]["keys"]
+    a, b = str(uuid.uuid4()), str(uuid.uuid4())
+    # Tablet A: anlegen und gleich einen Wert, alles in einem Abgleich
+    ops = [
+        {"op": "shootoff", "client_key": a, "scoring": scoring, "keys": keys, "shots": 1},
+        {
+            "op": "shootoff_value",
+            "shootoff": a,
+            "key": keys[0],
+            "value": "9",
+            "at": ago(0),
+        },
+    ]
+    res = c.post(sync, {"ops": ops}, "application/json").json()
+    assert all(r["ok"] for r in res["results"]), res["results"]
+    so_id = res["shootoff_keys"][a]
+    assert res["shootoffs"][0]["id"] == so_id and res["shootoffs"][0]["shots"] == 1
+    # Tablet B war ohne Netz: dasselbe Stechen mit anderer Regel, älterer Wert für keys[0]
+    ops = [
+        {"op": "shootoff", "client_key": b, "scoring": scoring, "keys": keys, "shots": 3},
+        {
+            "op": "shootoff_value",
+            "shootoff": b,
+            "key": keys[0],
+            "value": "7",
+            "at": ago(60),
+        },
+        {
+            "op": "shootoff_value",
+            "shootoff": b,
+            "key": keys[1],
+            "value": "8",
+            "at": ago(30),
+        },
+    ]
+    res = c.post(sync, {"ops": ops}, "application/json").json()
+    assert all(r["ok"] for r in res["results"]), res["results"]
+    assert res["shootoff_keys"][b] == so_id and len(res["shootoffs"]) == 1
+    notes = " ".join(x.get("note", "") for x in res["conflicts"])
+    assert "zusammengeführt" in notes and "andere Regeln" in notes and "später" in notes
+    values = {e["key"]: e["value"] for e in res["shootoffs"][0]["entries"]}
+    assert values[keys[0]].startswith("9") and values[keys[1]].startswith("8")
+    # dieselben Eingaben noch einmal (Gerät hat die Antwort nicht bekommen): nichts doppelt
+    res = c.post(sync, {"ops": ops[:1]}, "application/json").json()
+    assert res["results"][0]["ok"] and len(res["shootoffs"]) == 1

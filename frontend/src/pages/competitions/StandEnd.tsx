@@ -1,20 +1,20 @@
 // Ende des Schießens im Standmodus (Ralf 2026-11-01): wer noch fehlt, „Schießen beenden“
 // (vorläufig), Stechen anlegen und erfassen, dann endgültig abschließen. Stechen auch per
 // Standzugang; Beenden und Abschluss nur angemeldet mit „Wettbewerbe verwalten“.
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   competitionsApi,
   type CompetitionDetail,
   type CompetitionStatus,
-  type ShootOff,
   type StandApi,
-  type Standings,
+  type SyncOp,
 } from '../../api/competitions.ts'
 import { confirmDialog } from '../../components/dialog.ts'
 import { errorMessage } from '../../components/forms.ts'
 import { ShootoffBlock } from './Shootoffs.tsx'
 import { StandFinish } from './StandFinish.tsx'
-import { useVersion } from './standStore.ts'
+import { mergeShootoffs, queuedShootoffApi, withLocalShootoffs } from './standShootoffs.ts'
+import { useVersion, type Local } from './standStore.ts'
 
 export function StandEnd({
   org,
@@ -24,6 +24,9 @@ export function StandEnd({
   pending,
   online,
   onStatus,
+  local,
+  setLocal,
+  push,
 }: {
   /** angemeldet; ohne (Standzugang) kein „Schießen beenden“ */
   org?: number
@@ -33,30 +36,50 @@ export function StandEnd({
   pending: number
   online: boolean
   onStatus: (status: CompetitionStatus) => void
+  /** Speicher des Standmodus: Stechen gehen durch die Warteschlange (auch ohne Empfang) */
+  local: Local
+  setLocal: (change: (l: Local) => Local) => void
+  push: (op: SyncOp) => void
 }) {
-  const [data, setData] = useState<{
-    standings: Pick<Standings, 'scorings' | 'open_shootoffs'>
-    shootoffs: ShootOff[]
-  } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [tick, setTick] = useState(0)
   useVersion(api, () => setTick((t) => t + 1))
+  const localRef = useRef(local)
+  const pushRef = useRef(push)
+  useEffect(() => {
+    localRef.current = local
+    pushRef.current = push
+  })
 
   useEffect(() => {
     let stop = false
-    Promise.all([api.standings(), api.shootoffs.list()])
-      .then(([standings, shootoffs]) => {
-        if (!stop) setData({ standings, shootoffs })
+    api
+      .standings()
+      .then((standings) => {
+        if (!stop) setLocal((l) => ({ ...l, standings }))
       })
-      .catch(() => undefined) // ohne Empfang bleibt der letzte Stand stehen
+      .catch(() => undefined) // ohne Empfang bleibt der letzte Stand auf dem Gerät
     return () => {
       stop = true
     }
-  }, [api, tick])
+  }, [api, tick, setLocal])
 
-  if (status === 'endgueltig' || !data) return null
+  const shootoffApi = useMemo(
+    () =>
+      queuedShootoffApi(
+        api,
+        () => localRef.current,
+        (op) => pushRef.current(op),
+        () => localRef.current.standings?.scorings ?? [],
+      ),
+    [api],
+  )
+  const standings = local.standings
+  if (status === 'endgueltig' || !standings) return null
+  const shootoffs = mergeShootoffs(local)
+  const data = { standings, shootoffs }
   const reload = () => setTick((t) => t + 1)
-  const blocks = data.standings.scorings
+  const blocks = standings.scorings.map((b) => withLocalShootoffs(b, shootoffs))
   const missing = [
     ...new Set(
       blocks.filter((b) => b.kind === 'einzel').flatMap((b) => b.without_value.map((w) => w.name)),
@@ -96,7 +119,7 @@ export function StandEnd({
             <div key={block.scoring} className="stand-shootoffs">
               <h3>{block.name}</h3>
               <ShootoffBlock
-                api={api.shootoffs}
+                api={shootoffApi}
                 comp={comp}
                 block={block}
                 shootoffs={data.shootoffs.filter((so) => so.scoring === block.scoring)}
