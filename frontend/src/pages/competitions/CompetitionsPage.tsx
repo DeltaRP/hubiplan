@@ -29,6 +29,7 @@ import {
 } from '../../components/ui.tsx'
 import { useActiveOrg } from '../../org/OrgContext.tsx'
 import { BirdStand } from './BirdStand.tsx'
+import { EventCard, EventPicker } from './CalendarLink.tsx'
 import { ManualPrizes, PrizesCard, StandAccessCard } from './BirdSetup.tsx'
 import { ForeignPanel } from './ForeignPanel.tsx'
 import { ResultsPanel } from './ResultsPanel.tsx'
@@ -132,16 +133,19 @@ function NewCompetition({
     date: todayIso(),
     template: 'schiessen',
     organizer: '',
+    event: '',
   })
   const { values: v, set, errors } = form
 
   async function save(e: FormEvent) {
     e.preventDefault()
+    const { event, ...rest } = v
     const created = await form.submit(() =>
       competitionsApi.create(org, {
-        ...v,
+        ...rest,
         form: v.template === 'vogel' ? 'vogel' : 'rangliste',
         own: v.template !== 'fremd',
+        ...(event === 'neu' ? { create_event: true } : event ? { event: Number(event) } : {}),
       }),
     )
     if (created) onCreated((created as Competition).id)
@@ -184,6 +188,17 @@ function NewCompetition({
             <option value="fremd">Fremder Wettbewerb (eigene Plätze eintragen)</option>
             <option value="">leer (Wertungen selbst anlegen)</option>
           </SelectField>
+          <EventPicker
+            org={org}
+            value={v.event}
+            onChange={(value, event) => {
+              set('event', value)
+              if (event) {
+                set('title', event.title)
+                set('date', event.date)
+              }
+            }}
+          />
           {v.template === 'fremd' && (
             <Field
               label="Ausrichter"
@@ -530,6 +545,16 @@ function Setup({
         {form.message && <Alert kind={form.message.kind}>{form.message.text}</Alert>}
       </div>
 
+      <EventCard
+        org={org}
+        comp={comp}
+        onChanged={(res) => {
+          // Ort und Beschreibung kommen aus dem Termin, wenn sie leer waren
+          if (res.location !== v.location) set('location', res.location)
+          if (res.description !== v.description) set('description', res.description)
+          reload()
+        }}
+      />
       {comp.form === 'vogel' && <PrizesCard org={org} comp={comp} onChanged={reload} />}
       {comp.form !== 'vogel' && <h2>Wertungen</h2>}
       {comp.scorings.map((s) => (

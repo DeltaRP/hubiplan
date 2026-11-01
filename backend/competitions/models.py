@@ -62,6 +62,15 @@ class Competition(models.Model):
     fixed_order = models.BooleanField("Pfänder in fester Reihenfolge", default=False)
     # Gesamtzahl der Schüsse, wenn nachträglich erfasst (live: Anzahl der Schüsse)
     total_shots = models.PositiveIntegerField("Schüsse insgesamt", null=True, blank=True)
+    # Termin im Kalender, zu dem der Wettbewerb gehört (Zusagen als Starter übernehmen)
+    event = models.ForeignKey(
+        "events.Event",
+        verbose_name="Termin",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="competitions",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
