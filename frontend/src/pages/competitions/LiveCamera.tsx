@@ -34,6 +34,18 @@ export function LiveCamera({
     fail.current = onFail
   }, [onCapture, onFail])
 
+  // Seite dahinter festhalten, solange die Kamera offen ist
+  useEffect(() => {
+    const root = document.documentElement
+    const before = [root.style.overflow, document.body.style.overflow]
+    root.style.overflow = 'hidden'
+    document.body.style.overflow = 'hidden'
+    return () => {
+      root.style.overflow = before[0]
+      document.body.style.overflow = before[1]
+    }
+  }, [])
+
   useEffect(() => {
     let stream: MediaStream | null = null
     let timer = 0
