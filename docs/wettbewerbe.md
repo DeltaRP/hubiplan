@@ -4,7 +4,8 @@ Eigene Schießen und andere Wettbewerbe mit Einzel- und Zugwertung, Stechen, Aus
 Druckvorlagen und einem Standmodus für Tablet und Handy; Vogelschießen mit Pfändern; fremde
 Wettbewerbe, bei denen die Einheit ihre Plätze einträgt. Konzept im Projektordner
 (`konzepte/wettbewerbe.md`); umgesetzt sind Schritt 1 (Preisschießen), Schritt 2
-(Vogelschießen), 2b (Standmodus) und von Schritt 3 der Teil ohne Meldungen.
+(Vogelschießen), 2b (Standmodus), Schritt 3 (fremde Wettbewerbe, Meldungen) und Schritt 4
+(Auszeichnungen und Geschichte).
 
 ## Einschalten und Rechte
 
@@ -261,6 +262,31 @@ Unter „Einrichten“ lässt sich die Verknüpfung ändern, lösen oder ein Ter
 im Kalender sieht, ohne Serien (`event-candidates/?suche=&datum=`). Mit Zu- und Absagen
 übernimmt „Zusagen als Starter übernehmen“ (`starters/from-event/`) alle Mitglieder mit
 Zusage, die noch nicht Starter sind. Wird der Termin gelöscht, bleibt der Wettbewerb.
+
+## Auszeichnungen und Geschichte (Schritt 4)
+
+- **Auszeichnungen** (`<id>/awards/`): je Wertung für Platz *a* bis *b* oder beim Vogelschießen
+  je Pfand: Titel ohne Jahr („Vereinsmeister“, angezeigt „Vereinsmeister 2027“), Preis (Pokal,
+  Medaille), Würde (Vorschlag), Wanderpokal. Kopie aus dem Vorjahr übernimmt sie mit.
+- **Vergabe** beim Setzen auf „endgültig“ (`AwardGrant`, mit Name als Text, Mitglied,
+  Untereinheit bei der Zugwertung, Platz, Wert). Geht der Wettbewerb zurück (Korrektur), fallen
+  die noch offenen Vergaben weg; „Neu vergeben“ (`<id>/grant/`) nach Änderungen.
+- **Würdenvorschlag:** Die Vergabe schlägt die Würde vor; erst „Würde eintragen“
+  (`grants/<pk>/dignity/` mit `decision=bestaetigen|ablehnen`) legt die Regentschaft an
+  (Jahr des Wettbewerbs, Herkunft = Untereinheit des Starters). Bestätigen braucht zusätzlich
+  „Mitglieder bearbeiten“. Entschiedene Vorschläge bleiben bei einer Korrektur stehen.
+- **Reihen** (`series/`): verbinden denselben Wettbewerb über die Jahre. `series/<id>/` liefert
+  das Archiv: Sieger (Plätze 1–3) je Jahr und Wertung, Titel, Bestenliste (nur Jahre mit
+  gleicher Bezeichnung, Einheit, Zahl gewerteter Schüsse, Wertungsart und Mannschaftsgröße),
+  Plätze der Untereinheiten über die Jahre.
+- **Wanderpokale** (`trophies/`): Inhaber über die Jahre, „in den Besitz nach *n* Siegen in
+  Folge“ (gleicher Träger mehrmals hintereinander).
+- **Frühere Jahre** (`grants/` POST, `manual`): Jahr, Titel oder Pokal, Mitglied oder Name,
+  optional Platz und Reihe; auch nur „Sieger je Jahr“.
+- **Mitgliedsakte**, Reiter „Wettbewerbe“ (`member/<membership>/`, Recht „Mitglieder
+  ansehen“): Starts mit Platz und Wert, Titel und Auszeichnungen. Mitglieder-Export: Spalte
+  „Wettbewerbstitel“ („Vereinsmeister: 2019, 2023“).
+- Seitenleiste: Wettbewerbe › Reihen, Wanderpokale, Titel und Würden.
 
 ## Ausgaben
 

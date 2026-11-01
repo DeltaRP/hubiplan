@@ -30,8 +30,9 @@ from core.api_base import AuditMixin, OrgScopedMixin
 from members.models import Membership
 from organizations.models import Department, Organization
 
-from . import bird, report, services
+from . import awards, bird, report, services
 from .models import (
+    Award,
     Competition,
     Hit,
     Placing,
@@ -102,6 +103,8 @@ class CompetitionSerializer(serializers.ModelSerializer):
             "status",
             "status_label",
             "website",
+            "website_depth",
+            "series",
             "drop_out",
             "fixed_order",
             "total_shots",
@@ -130,6 +133,12 @@ class CompetitionSerializer(serializers.ModelSerializer):
         value = value.strip()
         if not value:
             raise serializers.ValidationError(gettext("Bitte einen Titel angeben."))
+        return value
+
+    def validate_series(self, value):
+        org = self.context.get("org")
+        if value is not None and (org is None or value.organization_id != org.pk):
+            raise serializers.ValidationError(gettext("Bitte eine Reihe dieser Einheit wählen."))
         return value
 
     def validate_details(self, value):
@@ -336,6 +345,9 @@ class CompetitionViewSet(_Mixin, AuditMixin, viewsets.ModelViewSet):
     def get_create_kwargs(self) -> dict:
         return {"organization": self.org}
 
+    def get_serializer_context(self):
+        return {**super().get_serializer_context(), "org": getattr(self, "org", None)}
+
     @transaction.atomic
     def perform_create(self, serializer):
         super().perform_create(serializer)
@@ -425,6 +437,14 @@ class CompetitionViewSet(_Mixin, AuditMixin, viewsets.ModelViewSet):
             for p in comp.prizes.all()
         ]
         data["can_manage"] = self.can_manage
+        from .award_views import award_data
+
+        data["awards"] = [award_data(a) for a in comp.awards.select_related("dignity", "trophy")]
+        data["grants"] = [
+            awards.grant_data(g)
+            for g in comp.grants.select_related("competition", "trophy", "dignity")
+        ]
+        data["series_name"] = comp.series.name if comp.series_id else ""
         data["event_info"] = event_views.event_info(comp.event)
         on = event_views.calendar_on(self.org)
         data["calendar"] = {"on": on, "can_create": on and EVENTS_MANAGE in self.org_permissions}
@@ -1169,9 +1189,15 @@ class StatusView(_Mixin, APIView):
                     }
                 )
         before = snapshot(comp)
+        was_final = comp.status == Competition.Status.FINAL
         comp.status = new
         comp.save(update_fields=["status", "updated_at"])
         record(self.org, request.user, "update", comp, diff(before, snapshot(comp)))
+        # Auszeichnungen (Schritt 4): beim Abschluss vergeben, bei einer Korrektur zurück
+        if new == Competition.Status.FINAL:
+            awards.grant(comp)
+        elif was_final:
+            awards.withdraw(comp)
         return Response({"status": comp.status, "status_label": comp.get_status_display()})
 
 
@@ -1257,6 +1283,9 @@ class CopyView(_Mixin, APIView):
             date=date,
             description=src.description,
             details=src.details,
+            website=src.website,
+            website_depth=src.website_depth,
+            series=src.series,
         )
         mapping = {}
         for sc in src.scorings.order_by("sort_order", "pk"):
@@ -1279,6 +1308,23 @@ class CopyView(_Mixin, APIView):
         for t in src.teams.all():
             Team.objects.create(
                 organization=self.org, competition=comp, name=t.name, sort_order=t.sort_order
+            )
+        prize_map = {
+            old.pk: new.pk for old, new in zip(src.prizes.all(), comp.prizes.all(), strict=False)
+        }
+        for a in src.awards.all():
+            Award.objects.create(
+                organization=self.org,
+                competition=comp,
+                scoring_id=mapping.get(a.scoring_id),
+                prize_id=prize_map.get(a.prize_id),
+                place_from=a.place_from,
+                place_to=a.place_to,
+                title=a.title,
+                item=a.item,
+                dignity_id=a.dignity_id,
+                trophy_id=a.trophy_id,
+                sort_order=a.sort_order,
             )
         record(self.org, request.user, "create", comp, diff({}, snapshot(comp)))
         return Response({"id": comp.pk}, status=status.HTTP_201_CREATED)

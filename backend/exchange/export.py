@@ -105,6 +105,9 @@ def member_columns(org: Organization) -> list[Column]:
                 (lambda pk: lambda r: ", ".join(r.get("reigns", {}).get(pk, [])))(dignity.pk),
             )
         )
+    if "competitions" in (org.enabled_modules or []):
+        # Titel und Wanderpokale aus den Wettbewerben („Vereinsmeister: 2019, 2023“)
+        cols.append(Column("competition_titles", "Wettbewerbstitel", lambda r: r.get("titles", "")))
     return cols
 
 
@@ -225,9 +228,15 @@ def member_data(org: Organization, filters: dict) -> list[dict]:
     for fv in FieldValue.objects.filter(person_id__in=person_ids.values()):
         values.setdefault(fv.person_id, {})[fv.definition_id] = fv.value
     reigns = reigns_by_person(org, person_ids.values())
+    titles = {}
+    if "competitions" in (org.enabled_modules or []):
+        from competitions.awards import title_summary
+
+        titles = title_summary(org, list(person_ids.keys()))
     for row in rows:
         row["fields"] = values.get(person_ids[row["id"]], {})
         row["reigns"] = reigns.get(person_ids[row["id"]], {})
+        row["titles"] = titles.get(row["id"], "")
     from members.photo_models import MemberPhoto
 
     photos = {}

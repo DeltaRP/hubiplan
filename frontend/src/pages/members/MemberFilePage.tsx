@@ -34,14 +34,16 @@ import { cardApi, cardBase } from '../../api/cards.ts'
 import { confirmDialog } from '../../components/dialog.ts'
 import { Term } from '../../learning/Aids.tsx'
 import { t } from '../../i18n/index.ts'
+import { CompetitionsTab } from '../competitions/MemberTab.tsx'
 
-type Tab = 'stammdaten' | 'mitgliedschaft' | 'zusatzfelder' | 'rollen' | 'verlauf'
+type Tab = 'stammdaten' | 'mitgliedschaft' | 'zusatzfelder' | 'rollen' | 'wettbewerbe' | 'verlauf'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'stammdaten', label: t('Stammdaten') },
   { id: 'mitgliedschaft', label: t('Mitgliedschaft') },
   { id: 'zusatzfelder', label: t('Zusatzfelder') },
   { id: 'rollen', label: t('Rollen & Ehrungen') },
+  { id: 'wettbewerbe', label: t('Wettbewerbe') },
   { id: 'verlauf', label: t('Verlauf') },
 ]
 
@@ -51,7 +53,11 @@ export function MemberFilePage() {
   const { data, error, setData, reload } = useLoad(() => memberApi.detail(org.id, id), [org.id, id])
   // Bereich steht in der Adresse: Zurück, Neuladen und Links öffnen ihn wieder (NMF-07)
   const [params] = useSearchParams()
-  const tab: Tab = TABS.find((tmx) => tmx.id === params.get('bereich'))?.id ?? 'stammdaten'
+  // Reiter „Wettbewerbe“ nur mit freigeschaltetem Modul
+  const tabs = TABS.filter(
+    (tmx) => tmx.id !== 'wettbewerbe' || org.modules.includes('competitions'),
+  )
+  const tab: Tab = tabs.find((tmx) => tmx.id === params.get('bereich'))?.id ?? 'stammdaten'
   const canEdit = org.permissions.includes(PERM.membersEdit)
 
   if (error) return <LoadError message={error} onRetry={() => void reload()} />
@@ -79,7 +85,7 @@ export function MemberFilePage() {
         </div>
       </div>
       <nav className="tabs" aria-label={t('Bereiche der Mitgliedsakte')}>
-        {TABS.map((tmx) => (
+        {tabs.map((tmx) => (
           <Link
             key={tmx.id}
             to={tmx.id === 'stammdaten' ? '.' : `?bereich=${tmx.id}`}
@@ -158,6 +164,7 @@ export function MemberFilePage() {
       )}
       {tab === 'zusatzfelder' && <FieldsTab orgId={org.id} memberId={data.id} canEdit={canEdit} />}
       {tab === 'rollen' && <RolesTab org={org} member={data} canEdit={canEdit} reload={reload} />}
+      {tab === 'wettbewerbe' && <CompetitionsTab org={org.id} membership={data.id} />}
       {tab === 'verlauf' && <HistoryTab orgId={org.id} memberId={data.id} />}
     </section>
   )
