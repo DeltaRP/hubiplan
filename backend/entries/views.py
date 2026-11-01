@@ -20,7 +20,7 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from access.catalog import ENTRIES_SUBMIT, MEMBERS_VIEW
+from access.catalog import ENTRIES_SUBMIT, EVENTS_MANAGE, MEMBERS_VIEW
 from audit.log import diff, record, snapshot
 from core.api_base import OrgScopedMixin
 from members.models import Membership
@@ -113,6 +113,7 @@ def _call_data(call: Call, entry: Entry | None = None) -> dict:
         "changes_after_deadline": call.changes_after_deadline,
         "create_competition": call.create_competition,
         "copied_from": call.copied_from_id,
+        "event_id": call.event_id,
         "entry_status": entry.status if entry else None,
         "entry_changed": entry.changed if entry else False,
     }
@@ -213,6 +214,13 @@ def _call_detail(view: _Mixin, call: Call) -> dict:
     data = _call_data(call, entry)
     data["blocks"] = [_block_data(b) for b in call.blocks.all()]
     data["has_versions"] = bool(entry and entry.versions.exists())
+    # Termin für die Interessenabfrage (Schritt 2)
+    from competitions.event_views import event_info
+    from events import services as event_services
+
+    on = event_services.module_on(view.org)
+    data["event"] = event_info(call.event) if call.event_id else None
+    data["calendar"] = {"on": on, "can_create": on and EVENTS_MANAGE in view.org_permissions}
     return data
 
 
@@ -759,6 +767,9 @@ class CandidatesView(_Mixin, APIView):
             if entry
             else set()
         )
+        from .event_views import response_status
+
+        responded = response_status(call, [m.pk for m in rows])
         return Response(
             [
                 {
@@ -770,6 +781,7 @@ class CandidatesView(_Mixin, APIView):
                     "unit_name": infos[m.pk].unit_name if m.pk in infos else "",
                     "active": infos[m.pk].active_member if m.pk in infos else False,
                     "taken": m.pk in taken,
+                    "response": responded.get(m.pk),
                 }
                 for m in rows
             ]

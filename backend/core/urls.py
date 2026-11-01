@@ -714,6 +714,7 @@ urlpatterns = [
     path("orgs/<int:org_id>/", include(org_patterns)),
     path("depts/<int:dept_id>/", include(dept_patterns)),
     path("portal/<int:access_id>/", portal_views.PortalDetailView.as_view(), name="portal"),
+    *entry_urls.portal_patterns,
     path(
         "portal/<int:access_id>/invoices/",
         billing_portal_views.PortalInvoicesView.as_view(),

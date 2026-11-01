@@ -12,14 +12,14 @@ import { confirmDialog } from '../../components/dialog.ts'
 import { errorMessage, formatDate, useLoad } from '../../components/forms.ts'
 import { Alert, SelectField } from '../../components/ui.tsx'
 
-function eventLabel(e: CompetitionEvent): string {
+export function eventLabel(e: CompetitionEvent): string {
   const when = `${formatDate(e.date)}${e.time ? `, ${e.time} Uhr` : ''}`
   const unit = e.unit_name ? ` (${e.unit_name})` : ''
   const cancelled = e.is_cancelled ? ' – abgesagt' : ''
   return `${when} · ${e.title}${unit}${cancelled}`
 }
 
-function eventHref(e: CompetitionEvent): string {
+export function eventHref(e: CompetitionEvent): string {
   return `/termine?termin=${e.id}&datum=${e.date}`
 }
 

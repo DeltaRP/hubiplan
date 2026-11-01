@@ -1,4 +1,5 @@
 // Meldungen: Ausschreibungen erfassen, Mannschaften und Personen melden, Fassungen.
+import type { CalendarAccess, CompetitionEvent } from './competitions.ts'
 import { api } from './client.ts'
 
 export type BlockKind = 'mannschaften' | 'personen' | 'zahl' | 'auswahl' | 'text'
@@ -82,6 +83,7 @@ export interface Call {
   changes_after_deadline: ChangesAfterDeadline
   create_competition: boolean
   copied_from: number | null
+  event_id: number | null
   entry_status: EntryStatus | null
   entry_changed: boolean
 }
@@ -89,6 +91,35 @@ export interface Call {
 export interface CallDetail extends Call {
   blocks: CallBlock[]
   has_versions: boolean
+  /** Termin für die Interessenabfrage (Zusagen) */
+  event: CompetitionEvent | null
+  calendar: CalendarAccess
+}
+
+/** Termin zur Auswahl; ``call``: Titel einer anderen Ausschreibung mit diesem Termin */
+export type CallEvent = CompetitionEvent & { call?: string | null }
+
+export interface Interested {
+  membership: number
+  name: string
+  unit_name: string
+  birth_year: number | null
+  note: string
+  taken: boolean
+}
+
+/** Mitgliederbereich: wofür das Mitglied gemeldet ist */
+export interface MyEntry {
+  id: number
+  title: string
+  organizer: string
+  date: string | null
+  location: string
+  event: number | null
+  group: string
+  position: string
+  substitute: boolean
+  confirmed: boolean
 }
 
 export interface EntryTeam {
@@ -162,6 +193,8 @@ export interface Candidate {
   unit_name: string
   active: boolean
   taken: boolean
+  /** Rückmeldung zum Termin der Ausschreibung */
+  response: 'yes' | 'no' | null
 }
 
 export interface EntryOptions {
@@ -192,6 +225,15 @@ export const entriesApi = {
   updateBlock: (org: number, id: number, block: number, data: Partial<CallBlock>) =>
     api.patch<CallBlock>(`${c(org, id)}blocks/${block}/`, data),
   removeBlock: (org: number, id: number, block: number) => api.del(`${c(org, id)}blocks/${block}/`),
+  eventCandidates: (org: number, id: number, search = '') =>
+    api.get<CalendarAccess & { events: CallEvent[] }>(
+      `${c(org, id)}event-candidates/${search ? `?suche=${encodeURIComponent(search)}` : ''}`,
+    ),
+  setEvent: (org: number, id: number, data: { event: number | null } | { create: true }) =>
+    api.post<CallDetail>(`${c(org, id)}event/`, data),
+  responses: (org: number, id: number) =>
+    api.get<{ yes: Interested[]; no_count: number }>(`${c(org, id)}responses/`),
+  mine: (access: number) => api.get<MyEntry[]>(`/api/portal/${access}/entries/`),
   candidates: (org: number, id: number, term: string, all = false) =>
     api.get<Candidate[]>(
       `${c(org, id)}candidates/?suche=${encodeURIComponent(term)}${all ? '&alle=1' : ''}`,

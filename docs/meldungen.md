@@ -4,10 +4,10 @@ Eine Einheit meldet Mannschaften, Personen oder Angaben an einen Veranstalter, z
 Mannschaften mit je fünf Schützen zum Vergleichsschießen des Dachverbands. Konzept:
 `konzepte/meldungen.md` im Projektordner. App `backend/entries`, Oberfläche `/meldungen`.
 
-Stand: Schritt 1 (Veranstalter außerhalb von HUBIplan). Noch nicht umgesetzt: Interessenabfrage
-über Terminzusagen (Schritt 2), Ausschreibungen eines Veranstalters in HUBIplan mit Eingang und
-internen Meldungen der Untereinheiten (Schritt 3), Gebühren als Rechnung (Schritt 4), Verbund
-(Schritt 5).
+Stand: Schritt 1 (Veranstalter außerhalb von HUBIplan) und Schritt 2 (Interessenabfrage über
+Terminzusagen, „Wofür bin ich gemeldet?“). Noch nicht umgesetzt: Ausschreibungen eines
+Veranstalters in HUBIplan mit Eingang und internen Meldungen der Untereinheiten (Schritt 3),
+Gebühren als Rechnung (Schritt 4), Verbund (Schritt 5).
 
 ## Freischalten und Rechte
 
@@ -45,6 +45,27 @@ Meldeschluss noch geht (nichts, nur Ersatz, alles bis zum Anlass).
 - Mannschaften und Plätze behalten ihre Kennung; „ersetzen“ tauscht nur die Person.
 - **Zurückziehen** hält eine Fassung „Rückzug“ fest, danach ist die Meldung gesperrt.
 - **Bestätigung** des Veranstalters lässt sich vermerken (z. B. „per Mail am …“).
+
+## Interessenabfrage über den Kalender
+
+Unter „Ausschreibung“ lässt sich die Ausschreibung mit einem Termin im Kalender verknüpfen
+(Modul Termine). „Termin mit Zusagen anlegen“ legt einen ganztägigen Termin am Tag des Anlasses
+an, sichtbar für Mitglieder, mit Zu- und Absagen bis zum Abend vor dem Meldeschluss (das
+Anlegen braucht das Recht, Termine zu verwalten). Wer zusagt, möchte mitmachen; eine eigene
+Tabelle für das Interesse gibt es nicht.
+
+Unter „Meldung“ stehen die Zusagen als Vorauswahl („Zusagen zum Termin“), je Person mit
+Untereinheit, Geburtsjahr und Bemerkung; ein Klick ordnet sie einer Mannschaft oder Liste zu.
+Die Zusagen sind nur eine Vorauswahl: Gemeldet werden kann weiter jedes Mitglied aus der
+kompletten Mitgliederliste (Ralf 2026-11-01). Bei der Suche steht dabei, wer zu- oder abgesagt
+hat. Die Zusagen sieht nur, wer die Mitglieder sehen darf.
+
+## Mitgliederbereich: „Wofür bin ich gemeldet?“
+
+Im Mitgliederbereich zeigt die Kachel „Gemeldet“ die Anlässe, für die der Verein das Mitglied
+gemeldet hat, kommende zuerst, vergangene noch ein Jahr lang. Gezeigt wird nur, was in der
+letzten Fassung an den Veranstalter ging: kein Entwurf, keine noch nicht gemeldete Änderung,
+nichts nach einem Rückzug. Wird jemand ersetzt, erscheint der Ersatz mit der nächsten Fassung.
 
 ## Meldewege
 

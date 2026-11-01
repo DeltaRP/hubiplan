@@ -31,6 +31,9 @@ const call = {
   changes_after_deadline: 'ersatz',
   create_competition: true,
   copied_from: null,
+  event_id: null,
+  event: null,
+  calendar: { on: true, can_create: true },
   entry_status: 'entwurf',
   entry_changed: false,
   has_versions: false,
@@ -77,12 +80,15 @@ const options = {
   competitions_enabled: true,
 }
 
-function renderApp(routes: Record<string, () => { status: number; body?: unknown }>) {
+function renderApp(
+  routes: Record<string, () => { status: number; body?: unknown }>,
+  callBody: Record<string, unknown> = call,
+) {
   const org = testOrg({ permissions: ['entries.submit', 'members.view'], modules: ['entries'] })
   const calls = fakeApi({
     [SESSION]: loggedIn,
     'GET /api/me/organizations/': () => ({ status: 200, body: [org] }),
-    [`GET ${base}calls/4/`]: () => ({ status: 200, body: call }),
+    [`GET ${base}calls/4/`]: () => ({ status: 200, body: callBody }),
     [`GET ${base}calls/4/entry/`]: () => ({ status: 200, body: entry() }),
     [`GET ${base}options/`]: () => ({ status: 200, body: options }),
     ...routes,
@@ -174,5 +180,59 @@ describe('Meldungen', () => {
       function: '1. Vorsitzender',
     })
     expect(await screen.findByRole('heading', { name: /Meldung: abgegeben/ })).toBeVisible()
+  })
+
+  it('übernimmt eine Zusage zum Termin in die Mannschaft', async () => {
+    const event = {
+      id: 12,
+      title: 'Vergleichsschießen',
+      date: '2027-06-12',
+      time: null,
+      location: 'Musterstadt',
+      unit_name: '',
+      is_cancelled: false,
+      rsvp_enabled: true,
+      yes_count: 2,
+    }
+    const calls = renderApp(
+      {
+        [`GET ${base}calls/4/responses/`]: () => ({
+          status: 200,
+          body: {
+            yes: [
+              {
+                membership: 3,
+                name: 'Jürgen Müller',
+                unit_name: 'Zug 1',
+                birth_year: 1980,
+                note: 'nur vormittags',
+                taken: false,
+              },
+              {
+                membership: 5,
+                name: 'Erika Beispiel',
+                unit_name: '',
+                birth_year: null,
+                note: '',
+                taken: true,
+              },
+            ],
+            no_count: 1,
+          },
+        }),
+        [`POST ${base}calls/4/entry/persons/`]: () => ({ status: 201, body: entry() }),
+      },
+      { ...call, event_id: 12, event },
+    )
+    const user = userEvent.setup()
+    expect(await screen.findByRole('heading', { name: 'Zusagen zum Termin' })).toBeVisible()
+    expect(await screen.findByText(/2 Zusagen, davon 1 schon in der Meldung/)).toBeVisible()
+    expect(screen.getByText('schon gemeldet')).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'zu Hubertus I' }))
+    await waitFor(() =>
+      expect(calls.some((c) => c.key === `POST ${base}calls/4/entry/persons/`)).toBe(true),
+    )
+    const added = calls.find((c) => c.key === `POST ${base}calls/4/entry/persons/`)
+    expect(JSON.parse(String(added?.init?.body))).toEqual({ block: 9, team: 30, membership: 3 })
   })
 })
