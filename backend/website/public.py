@@ -317,6 +317,8 @@ class SiteView:
             for a in role.assignments.select_related(
                 "person", "user", "membership__person"
             ).order_by("valid_from"):
+                if a.needs_name_consent:
+                    continue
                 person, fallback = self.holder_person(a)
                 entry = self.person(person, fallback)
                 if entry:

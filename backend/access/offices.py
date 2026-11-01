@@ -85,6 +85,7 @@ def holder_entry(a: RoleAssignment) -> dict:
         "until_year": a.valid_until.year if a.valid_until else None,
         "current": a.valid_until is None or a.valid_until >= today(),
         "former_entry": a.is_former_entry,
+        "name_public": a.name_public,
     }
 
 
@@ -230,7 +231,9 @@ def preview(org, path, file_name: str) -> dict:
     return {"error": "", "rows": result, "new_roles": new_roles}
 
 
-def create_entry(role: Role, *, name: str, person, from_year: int, until_year: int):
+def create_entry(
+    role: Role, *, name: str, person, from_year: int, until_year: int, name_public: bool = False
+):
     if person is not None:
         name = f"{person.first_name} {person.last_name}".strip() or name
     return RoleAssignment.all_objects.create(
@@ -238,6 +241,7 @@ def create_entry(role: Role, *, name: str, person, from_year: int, until_year: i
         role=role,
         name=name.strip(),
         person=person,
+        name_public=name_public,
         valid_from=year_start(from_year),
         valid_until=year_start(until_year),
     )

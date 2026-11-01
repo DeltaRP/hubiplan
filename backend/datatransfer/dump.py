@@ -325,6 +325,7 @@ class Dumper:
                     "person": person_id,
                     # Früherer Inhaber ohne Konto (Mitglieder › Ämter)
                     "holder_name": a.name,
+                    "name_public": a.name_public,
                     **period(a),
                 }
             )
@@ -388,7 +389,7 @@ class Dumper:
                     "in_chronicle": r.in_chronicle,
                     # Frühere Inhaber ohne Mitgliedschaft (Mitglieder › Ämter), nur Name
                     "former_holders": [
-                        {"name": a.name, **period(a)}
+                        {"name": a.name, "name_public": a.name_public, **period(a)}
                         for a in r.assignments.filter(
                             membership__isnull=True, user__isnull=True
                         ).exclude(name="")

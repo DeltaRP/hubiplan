@@ -1052,6 +1052,7 @@ class Loader:
                 user=user,
                 person_id=person_id,
                 name=holder_name,
+                name_public=bool(a.get("name_public", False)),
                 valid_from=parse_date(a.get("valid_from")) or today(),
                 valid_until=parse_date(a.get("valid_until")),
             )
@@ -1095,6 +1096,7 @@ class Loader:
                         organization=club,
                         role=role,
                         name=name,
+                        name_public=bool(h.get("name_public", False)),
                         valid_from=start,
                         valid_until=parse_date(h.get("valid_until")),
                     )

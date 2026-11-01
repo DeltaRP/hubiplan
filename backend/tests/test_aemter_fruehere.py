@@ -74,6 +74,7 @@ class TestErfassen:
                 "until_year": 1972,
                 "current": False,
                 "former_entry": True,
+                "name_public": False,
             }
         ]
 
@@ -248,6 +249,7 @@ class TestWebseite:
             organization=orgs["a"],
             role=chair,
             name="Wilhelm Vorzeit",
+            name_public=True,
             valid_from=datetime.date(1955, 1, 1),
             valid_until=datetime.date(1972, 1, 1),
         )
@@ -256,3 +258,20 @@ class TestWebseite:
         assert chairs[0]["holders"][0]["current"] is False
         # Kein heutiger Vorstand
         assert not SiteView(site).board()
+
+    def test_freier_name_nur_mit_haekchen(self, orgs, chair, board_a, api):
+        """FQ-19 (Ralf 01.11.2026): freie Namen ohne Akte erst nach Häkchen veröffentlichen."""
+        from website.models import Website
+
+        site = Website.objects.create(organization=orgs["a"])
+        c = api(board_a)
+        body = {"role": chair.pk, "name": "Wilhelm Vorzeit", "from_year": 1955, "until_year": 1972}
+        resp = c.post(url(orgs["a"], ""), body, "application/json")
+        assert resp.status_code == 201 and resp.json()["name_public"] is False
+        assert SiteView(site).chairs() == []
+        entry_id = resp.json()["id"]
+        resp = c.put(
+            url(orgs["a"], f"{entry_id}/"), {**body, "name_public": True}, "application/json"
+        )
+        assert resp.status_code == 200 and resp.json()["name_public"] is True
+        assert SiteView(site).chairs()[0]["holders"][0]["name"] == "Wilhelm Vorzeit"

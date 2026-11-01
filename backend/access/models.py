@@ -210,6 +210,10 @@ class RoleAssignment(models.Model):
     # Früherer Amtsinhaber ohne Konto und ohne Mitgliedschaft (Ralf 2026-10-31): nur Name,
     # Zeitraum jahresgenau (1. 1. von bis 1. 1. bis), immer abgeschlossen. Siehe access/offices.py.
     name = models.CharField("Name (früherer Inhaber)", max_length=200, blank=True)
+    # Freie Namen ohne Akte erscheinen auf der Webseite nur mit Häkchen (FQ-19, Ralf 01.11.).
+    name_public = models.BooleanField(
+        "Name darf auf der Webseite erscheinen", default=False, db_default=False
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     all_objects = RoleAssignmentQuerySet.as_manager()
@@ -238,6 +242,11 @@ class RoleAssignment(models.Model):
     def is_former_entry(self) -> bool:
         """Freier Eintrag eines früheren Inhabers (kein Konto, keine Mitgliedschaft)."""
         return bool(self.name) and self.user_id is None and self.membership_id is None
+
+    @property
+    def needs_name_consent(self) -> bool:
+        """Freier Name ohne Akte, der ohne Häkchen nicht veröffentlicht wird."""
+        return self.is_former_entry and self.person_id is None and not self.name_public
 
     @property
     def is_active(self) -> bool:

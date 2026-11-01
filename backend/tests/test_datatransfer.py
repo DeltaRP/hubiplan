@@ -288,6 +288,7 @@ class TestImportDachverband:
                     organization=club,
                     role=role,
                     name=name,
+                    name_public=name == "Karl Alt",
                     valid_from=datetime.date(1955, 1, 1),
                     valid_until=datetime.date(1972, 1, 1),
                 )
@@ -304,9 +305,11 @@ class TestImportDachverband:
         with rls_bypass():
             new_club = Organization.objects.get(pk=job["result_organization"]["id"])
             entries = RoleAssignment.all_objects.filter(organization=new_club).exclude(name="")
-            assert sorted((e.name, e.role.name, e.valid_until.year) for e in entries) == [
-                ("Karl Alt", "Oberleutnant", 1972),
-                ("Wilhelm Vorzeit", "Vorstand", 1972),
+            assert sorted(
+                (e.name, e.role.name, e.valid_until.year, e.name_public) for e in entries
+            ) == [
+                ("Karl Alt", "Oberleutnant", 1972, True),
+                ("Wilhelm Vorzeit", "Vorstand", 1972, False),
             ]
             assert Role.all_objects.get(organization=new_club, name="Oberleutnant").in_chronicle
 

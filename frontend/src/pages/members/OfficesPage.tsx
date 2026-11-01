@@ -146,7 +146,11 @@ function HoldersPanel() {
                       <td>
                         {h.name}
                         {h.former_entry && h.person === null && (
-                          <span className="muted small"> (kein Mitglied)</span>
+                          <span className="muted small">
+                            {h.name_public
+                              ? ' (kein Mitglied)'
+                              : ' (kein Mitglied, nicht auf der Webseite)'}
+                          </span>
                         )}
                       </td>
                       {canEdit && (
@@ -198,6 +202,7 @@ function EntryForm({
     person: entry?.person ?? null,
     from_year: entry?.from_year ?? null,
     until_year: entry?.until_year ?? null,
+    name_public: entry?.name_public ?? false,
   })
   const { values: v, set, errors } = form
   // Bestehende Einträge speichern automatisch, neue erst mit „Anlegen“
@@ -257,6 +262,14 @@ function EntryForm({
       />
       {errors.name && <Alert kind="error">{errors.name}</Alert>}
       {errors.person && <Alert kind="error">{errors.person}</Alert>}
+      {v.person === null && (
+        <Checkbox
+          label="Name darf auf der Webseite erscheinen"
+          hint="Ohne Häkchen erscheint der Name nicht unter „Ämter“ auf der Webseite."
+          checked={v.name_public}
+          onChange={(checked) => set('name_public', checked)}
+        />
+      )}
       <div className="grid-2">
         <Field
           label="von (Jahr)"
