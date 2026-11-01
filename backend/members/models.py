@@ -20,6 +20,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from access.models import RoleAssignment, RoleAssignmentQuerySet
+from core.encfields import EncryptedCharField, EncryptedEmailField
 
 
 def today() -> datetime.date:
@@ -79,9 +80,10 @@ class ContactDetails(models.Model):
         blank=True,
         related_name="+",
     )
-    email = models.EmailField("E-Mail-Adresse", blank=True)
-    phone = models.CharField("Telefon", max_length=50, blank=True)
-    street = models.CharField("Straße und Hausnummer", max_length=200)
+    # Verschlüsselt mit dem Schlüssel des Verbandsbereichs bzw. Vereins (core/encfields.py)
+    email = EncryptedEmailField("E-Mail-Adresse", blank=True)
+    phone = EncryptedCharField("Telefon", max_length=50, blank=True)
+    street = EncryptedCharField("Straße und Hausnummer", max_length=200)
     postal_code = models.CharField("PLZ", max_length=10)
     city = models.CharField("Ort", max_length=100)
     country = models.CharField("Land", max_length=100, default="Deutschland")

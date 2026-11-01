@@ -14,6 +14,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
+from core.encfields import EncryptedCharField
 from core.privatefiles import PrivateFileField
 from exchange.models import private_storage
 
@@ -872,7 +873,7 @@ class BankLine(models.Model):
     amount = models.DecimalField("Betrag", max_digits=12, decimal_places=2)
     credit = models.BooleanField("Gutschrift")
     name = models.CharField("Gegenseite", max_length=200, blank=True)
-    iban = models.CharField("IBAN der Gegenseite", max_length=34, blank=True)
+    iban = EncryptedCharField("IBAN der Gegenseite", max_length=34, blank=True)
     purpose = models.CharField("Verwendungszweck", max_length=500, blank=True)
     end_to_end = models.CharField("End-to-End-Referenz", max_length=35, blank=True)
     bank_ref = models.CharField("Bankreferenz", max_length=100, blank=True)

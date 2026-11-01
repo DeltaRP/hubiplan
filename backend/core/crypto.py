@@ -222,7 +222,8 @@ def reset() -> None:
 # Datenschlüssel je Verein
 # ---------------------------------------------------------------------------
 
-# Nur bestätigte (committete) Schlüssel kommen hierher, siehe _remember
+# Schlüssel nach Nummer (Nummern werden nie wieder vergeben); Zuordnung Verein →
+# Nummer erst nach dem Commit, siehe _remember
 _keys_by_id: dict[int, tuple[bytes, float]] = {}
 _key_ids_by_owner: dict[int, int] = {}
 # Organisation → Schlüsselinhaber (ändert sich nicht: Untereinheiten bleiben in ihrem Verein)
@@ -255,12 +256,15 @@ def key_owner_id(org_id: int) -> int:
 
 
 def _remember(key_id: int, owner_id: int, key: bytes) -> None:
+    # Zum Entschlüsseln sofort merken: Wer die Nummer kennt, hat Daten damit gelesen
+    # oder geschrieben, und eine zurückgerollte Nummer kommt nie wieder vor.
+    _keys_by_id[key_id] = (key, time.monotonic())
+
     def _store():
-        _keys_by_id[key_id] = (key, time.monotonic())
         _key_ids_by_owner[owner_id] = key_id
 
-    # Erst nach dem Commit merken: Rollt die Transaktion zurück, gibt es den Schlüssel
-    # nicht, und nichts darf ihn weiter benutzen.
+    # Zum Verschlüsseln erst nach dem Commit: Rollt die Transaktion zurück, gibt es den
+    # Schlüssel nicht, und nichts Neues darf ihn benutzen.
     transaction.on_commit(_store)
 
 
