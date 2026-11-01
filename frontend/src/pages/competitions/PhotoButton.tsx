@@ -12,17 +12,22 @@ export function PhotoButton({
   onResult,
   disabled,
   blackShare,
+  autoLive,
 }: {
   detect: (photo: Blob) => Promise<PhotoResult>
   onResult: (s: PhotoSuggestion) => void
   disabled?: boolean
   /** Spiegel / äußerster Ring; mit Wert gibt es die Live-Kamera (Schritt 5) */
   blackShare?: number | null
+  /** Live-Kamera gleich öffnen, wenn es eine gibt (Ralf 01.11.: Schütze wählen → Live-Kamera) */
+  autoLive?: boolean
 }) {
   const input = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [live, setLive] = useState(false)
+  const [live, setLive] = useState(
+    () => !!autoLive && !disabled && !!blackShare && cameraAvailable(),
+  )
 
   async function onFile(file: Blob | undefined) {
     if (!file) return
@@ -79,6 +84,10 @@ export function PhotoButton({
             void onFile(photo)
           }}
           onClose={() => setLive(false)}
+          onFail={(message) => {
+            setLive(false)
+            setError(message)
+          }}
         />
       ) : null}
       {error && (

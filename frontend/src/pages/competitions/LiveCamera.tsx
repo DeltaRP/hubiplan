@@ -4,6 +4,7 @@
 // davon in voller Auflösung. Von Hand auslösen geht immer.
 import { useEffect, useRef, useState } from 'react'
 import { analyze, judge, toGray, type Aim, type Frame } from './aim.ts'
+import { cameraError } from './cameraError.ts'
 
 const PROBE_W = 160
 const STEADY = 6 // so viele gute Bilder hintereinander, bevor ausgelöst wird
@@ -12,22 +13,26 @@ export function LiveCamera({
   blackShare,
   onCapture,
   onClose,
+  onFail,
 }: {
   /** Spiegel / äußerster Ring (Durchmesser), aus den Maßen der Scheibe */
   blackShare: number
   onCapture: (photo: Blob) => void
   onClose: () => void
+  /** Kamera lässt sich nicht öffnen: Grund als verständlicher Satz */
+  onFail: (message: string) => void
 }) {
   const video = useRef<HTMLVideoElement>(null)
   const [aim, setAim] = useState<Aim>({ ok: false, hint: 'Kamera wird gestartet …' })
-  const [error, setError] = useState('')
   const [steady, setSteady] = useState(0)
   const done = useRef(false)
   // neueste Rückmeldung, ohne die Kamera bei jedem Neuzeichnen neu zu starten
   const capture = useRef(onCapture)
+  const fail = useRef(onFail)
   useEffect(() => {
     capture.current = onCapture
-  }, [onCapture])
+    fail.current = onFail
+  }, [onCapture, onFail])
 
   useEffect(() => {
     let stream: MediaStream | null = null
@@ -86,6 +91,10 @@ export function LiveCamera({
       timer = window.setTimeout(tick, 120)
     }
 
+    if (!navigator.mediaDevices?.getUserMedia) {
+      fail.current(cameraError(null))
+      return
+    }
     navigator.mediaDevices
       .getUserMedia({
         video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1440 } },
@@ -99,11 +108,7 @@ export function LiveCamera({
         void v.play().catch(() => {})
         timer = window.setTimeout(tick, 300)
       })
-      .catch(() =>
-        setError(
-          'Die Kamera lässt sich nicht öffnen (keine Freigabe oder keine Kamera). Bitte „Foto der Scheibe“ nutzen.',
-        ),
-      )
+      .catch((err: unknown) => fail.current(cameraError(err)))
     return () => {
       window.clearTimeout(timer)
       stream?.getTracks().forEach((t) => t.stop())
@@ -129,15 +134,15 @@ export function LiveCamera({
         <div className="live-guide" aria-hidden="true" />
       </div>
       <p className="live-hint" role="status" aria-live="polite">
-        {error || aim.hint}
-        {aim.ok && !error ? ` (${Math.min(steady, STEADY)}/${STEADY})` : ''}
+        {aim.hint}
+        {aim.ok ? ` (${Math.min(steady, STEADY)}/${STEADY})` : ''}
       </p>
       <p className="muted small">
         Scheibe auf eine helle Unterlage legen, Handy gerade darüber halten. Das Foto wird nur
         ausgewertet, nicht gespeichert.
       </p>
       <div className="button-row">
-        <button type="button" className="button" onClick={manual} disabled={!!error}>
+        <button type="button" className="button" onClick={manual}>
           Jetzt auslösen
         </button>
         <button type="button" className="button button-ghost" onClick={onClose}>

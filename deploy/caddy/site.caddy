@@ -42,7 +42,8 @@ handle {
 
 header {
 	Strict-Transport-Security "max-age=15552000"
-	Permissions-Policy "camera=(), microphone=(), geolocation=()"
+	# Kamera nur für HUBIplan selbst (Live-Kamera im Standmodus), nie für fremde Rahmen
+	Permissions-Policy "camera=(self), microphone=(), geolocation=()"
 	X-Content-Type-Options "nosniff"
 	Referrer-Policy "strict-origin-when-cross-origin"
 	-Server

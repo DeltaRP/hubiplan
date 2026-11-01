@@ -466,7 +466,9 @@ export function StandPanel({
                     </p>
                     {target.photo && (
                       <PhotoButton
+                        key={hitKey(chosen)}
                         disabled={!online}
+                        autoLive={padHits.length === 0}
                         blackShare={blackShare(target)}
                         detect={(photo) => api.photo(scoring.id, photo)}
                         onResult={(sug) => {
