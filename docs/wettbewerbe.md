@@ -78,6 +78,14 @@ Laufende Scheibe, LP 10 m, KK 50 m und 100 m, Pistole 25 m) oder eine **eigene S
 Ergebnisse sind vereinsintern, nicht amtlich. Die mit „prüfen“ markierten Maße in der Recherche
 sind vor ernsthafter Nutzung gegen die aktuelle Sportordnung zu lesen.
 
+**Prüfdaten** (Schritt 3, `competitions/vision/synth.py`): künstliche Scheibenfotos aus den
+  Maßen, Löcher an bekannten Stellen (Streuung, eng/überlappend, Loch in Loch, weit), dazu
+  Schräge, Drehung, Unschärfe, Lichtverlauf, Schatten, Rauschen, JPEG; gleicher Startwert,
+  gleiches Bild. `python manage.py scheiben_pruefdaten <ordner> --anzahl 200` schreibt Bilder
+  und Lösungen (`loesungen.jsonl`). Die Messlatte (`vision/benchmark.py`) zählt Schusszahl
+  richtig, Ringe richtig, Summe richtig, „bitte prüfen“ (und ob zu Recht) und vor allem
+  „unbemerkt falsch“. Nur erfundene Daten; echte Probefotos bleiben auf Ralfs PC.
+
 ## Erfassen und Standmodus
 
 - Suchfeld immer aktiv: Name (auch „muel“ für „Müller“) oder Startnummer, Enter, Punkte,
