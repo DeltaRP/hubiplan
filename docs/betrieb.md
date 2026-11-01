@@ -69,8 +69,12 @@ Exporte, Bilder der Webseite) liegen verschlüsselt im Volume `private-data`
 
 Dazu kommen einzelne Felder in der Datenbank (`core/encfields.py`): E-Mail-Adresse,
 Telefon und Straße der Mitglieder, SEPA-Mandate (Kontoinhaber, IBAN, BIC), die IBAN der
-Gegenseite in Kontoauszügen und die Werte der Zusatzfelder. In der Spalte steht
-`enc1:…`. Die Datenbank kann darin nicht suchen; die Suche nach E-Mail-Adressen und
+Gegenseite in Kontoauszügen, die Werte der Zusatzfelder, die Inhalte des
+Änderungsprotokolls und der Rückgängig-Daten sowie der Text von Mails im Postausgang
+(Anhänge liegen als Dateien verschlüsselt). Empfänger und Betreff bleiben lesbar, damit
+die Suche geht. In der Spalte steht `enc1:…`; leere Werte bleiben leer. Die Prüfsummen
+des Änderungsprotokolls gelten für den Klartext, die Kette bleibt beim Verschlüsseln
+gültig. Die Datenbank kann darin nicht suchen; die Suche nach E-Mail-Adressen und
 Kontoinhabern läuft deshalb in HUBIplan selbst.
 
 - **Schlüssel je Verein:** Jeder Verein (bzw. Dachverband, Plattform) hat einen eigenen

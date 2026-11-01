@@ -12,7 +12,7 @@ from customfields.models import FieldDefinition, FieldValue
 from exchange.models import ImportJob
 from members.models import Membership, MemberType, Person
 
-from .factories import give_role, make_user
+from .factories import audit_with, give_role, make_user
 from .test_m2_members import admit, make_types
 
 pytestmark = pytest.mark.django_db
@@ -203,7 +203,7 @@ class TestImport:
         errors = c.get(f"/api/orgs/{org.pk}/imports/{job['id']}/errors/")
         wb = load_workbook(io.BytesIO(b"".join(errors.streaming_content)))
         assert wb.active["B2"].value == "Fehler"
-        assert AuditEntry.objects.filter(changes__has_key="Import").count() == 2
+        assert len(audit_with("Import")) == 2
 
     def test_rueckgaengig(self, api, orgs, types, board_a, awards):
         c = api(board_a)

@@ -83,9 +83,19 @@ def _owner_or_fail(instance, field) -> int:
 
 
 class EncryptedMixin:
-    """Gemeinsamer Teil für Text- und JSON-Felder."""
+    """Gemeinsamer Teil für Text- und JSON-Felder.
+
+    ``plain_values``: feste Werte, die im Klartext bleiben dürfen (z. B. „geleert“),
+    damit die Datenbank danach filtern kann. Sie verraten nichts über den Inhalt."""
 
     empty_values_db = ("", None)
+
+    def __init__(self, *args, plain_values=(), **kwargs):
+        self.plain_values = tuple(plain_values)
+        super().__init__(*args, **kwargs)
+
+    def _stays_plain(self, value) -> bool:
+        return value in self.empty_values_db or value in self.plain_values
 
     def _plain_to_text(self, value) -> str:
         return value
@@ -98,7 +108,7 @@ class EncryptedMixin:
 
     def pre_save(self, model_instance, add):
         value = getattr(model_instance, self.attname)
-        if value in self.empty_values_db or is_encrypted(value):
+        if self._stays_plain(value) or is_encrypted(value):
             return value
         text = self._plain_to_text(value)
         return encrypt_text(text, _owner_or_fail(model_instance, self), self)
@@ -142,7 +152,7 @@ class EncryptedCharField(EncryptedMixin, models.CharField):
 
     def get_prep_value(self, value):
         value = super().get_prep_value(value)
-        if value in ("", None) or is_encrypted(value):
+        if self._stays_plain(value) or is_encrypted(value):
             return value
         raise FieldError(
             f"{self.model._meta.label}.{self.name} ist verschlüsselt: nur über save() "
@@ -154,11 +164,21 @@ class EncryptedEmailField(EncryptedCharField, models.EmailField):
     pass
 
 
+class EncryptedTextField(EncryptedCharField, models.TextField):
+    """TextField, verschlüsselt gespeichert. Die Spalte bleibt ``text`` (keine Migration)."""
+
+    def deconstruct(self):
+        name, _path, args, kwargs = super().deconstruct()
+        return name, "django.db.models.TextField", args, kwargs
+
+
 class EncryptedJSONField(EncryptedMixin, models.JSONField):
     """JSONField, verschlüsselt gespeichert als ``{"enc1": "<Chiffrat>"}`` (die Spalte
     bleibt jsonb; daher keine Migration). Für Migrationen ein gewöhnliches JSONField."""
 
     KEY = "enc1"
+    # Leere Werte bleiben lesbar (verraten nichts, z. B. ein geleertes Protokoll)
+    empty_values_db = (None, {}, [], "")
 
     def deconstruct(self):
         name, _path, args, kwargs = super().deconstruct()
@@ -175,7 +195,7 @@ class EncryptedJSONField(EncryptedMixin, models.JSONField):
 
     def pre_save(self, model_instance, add):
         value = getattr(model_instance, self.attname)
-        if value is None or self._wrapped(value):
+        if self._stays_plain(value) or self._wrapped(value):
             return value
         text = self._plain_to_text(value)
         return {self.KEY: encrypt_text(text, _owner_or_fail(model_instance, self), self)}
@@ -192,7 +212,7 @@ class EncryptedJSONField(EncryptedMixin, models.JSONField):
         return value
 
     def get_db_prep_value(self, value, connection, prepared=False):
-        if value is not None and not self._wrapped(value) and not prepared:
+        if not prepared and not self._stays_plain(value) and not self._wrapped(value):
             raise FieldError(
                 f"{self.model._meta.label}.{self.name} ist verschlüsselt: nur über save() "
                 "schreiben, nicht über update(), bulk_update() oder eine Abfrage."

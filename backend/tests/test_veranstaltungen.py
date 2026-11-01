@@ -8,12 +8,11 @@ import pytest
 from django.utils import timezone
 from openpyxl import load_workbook
 
-from audit.models import AuditEntry
 from core.tenancy import tenant_context
 from events.models import Event
 from finance.models import Booking, Project
 
-from .factories import give_role, make_member, make_user
+from .factories import audit_with, give_role, make_member, make_user
 
 pytestmark = pytest.mark.django_db
 JSON = "application/json"
@@ -181,7 +180,7 @@ class TestVeranstaltung:
         )
         assert resp.json() == {"changed": 1}
         assert Booking.objects.get(pk=old["id"]).project_id == project["id"]
-        assert AuditEntry.objects.filter(changes__has_key="Veranstaltung").exists()
+        assert audit_with("Veranstaltung")
 
     def test_zeitraum_filter_im_kassenbuch(self, c, fin, kasse):
         book(c, fin, kasse, None, date="2025-08-01")
