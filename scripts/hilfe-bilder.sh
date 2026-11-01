@@ -73,8 +73,14 @@ for o in Organization.objects.filter(type='club'):
     o.save(update_fields=['enabled_modules', 'cash_counts_enabled'])
 # Lastschrift (Beispiel-Gläubiger-ID der Bundesbank) und eine Mahnstufe
 from billing.models import BillingSettings, DunningLevel
+from finance.models import Account
 for o in Organization.objects.filter(type='club'):
-    BillingSettings.objects.update_or_create(organization=o, defaults={'sepa_enabled': True, 'creditor_id': 'DE98ZZZ09999999999'})
+    # Bankkonto mit einer bekannten Test-IBAN, sonst fehlt der Lastschrift das Konto
+    bank = Account.objects.filter(organization=o, kind='bank').order_by('pk').first()
+    if bank and not bank.iban:
+        bank.iban = 'DE02120300000000202051'
+        bank.save(update_fields=['iban'])
+    BillingSettings.objects.update_or_create(organization=o, defaults={'sepa_enabled': True, 'creditor_id': 'DE98ZZZ09999999999', 'account': bank})
     DunningLevel.objects.get_or_create(organization=o, level=1, defaults={'name': 'Zahlungserinnerung', 'days': 14})
 # Erfundener Mitgliedszugang mit Mitgliederbereich (Meine Daten, App verbinden)
 from django.contrib.auth import get_user_model
