@@ -16,6 +16,7 @@ from django.core.files.base import ContentFile
 from django.db import transaction
 
 from circulars.models import MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS
+from core import virenscan
 
 from .models import Coupling, RemoteCircular, RemoteState
 from .packets import DOWN, Packet, register
@@ -186,8 +187,10 @@ def receive_forward(coupling: Coupling, data: dict) -> None:
             continue
         if total + len(content) > 2 * MAX_ATTACHMENT_BYTES:
             break
-        total += len(content)
         name = _file_name(item.get("name"))
+        if not virenscan.inbound_ok(content, name, "Rundschreiben aus dem Verbund"):
+            continue
+        total += len(content)
         CircularAttachment.objects.create(
             organization=club,
             circular=circular,

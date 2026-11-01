@@ -150,10 +150,38 @@ class SiteView:
         return data
 
     def photo_membership(self, token: str) -> Membership | None:
-        for m in self.memberships.values():
-            if m.pk in self.photos and hmac.compare_digest(self.token("photo", m.pk), token):
-                if self.allowed(m, Category.PHOTO) and self.allowed(m, Category.NAME):
-                    return m
+        """Mitgliedschaft zum Foto-Kennzeichen, ohne alle Mitglieder zu laden (GA-P02).
+
+        Kandidaten sind nur Mitgliedschaften mit freigegebenem Foto; für den Treffer
+        gelten dieselben Regeln wie bei ``memberships``/``consents``."""
+        candidates = (
+            Membership.objects.filter(
+                organization=self.area,
+                photo_consent_at__isnull=False,
+                photos__status=MemberPhoto.Status.APPROVED,
+            )
+            .order_by()
+            .values_list("pk", flat=True)
+            .distinct()
+        )
+        hit = next(
+            (pk for pk in candidates if hmac.compare_digest(self.token("photo", pk), token)),
+            None,
+        )
+        if hit is None:
+            return None
+        m = Membership.objects.get(pk=hit)
+        if m.purged_at and (
+            Membership.objects.filter(
+                organization=self.area, person_id=m.person_id, purged_at__isnull=True
+            ).exists()
+        ):
+            return None  # die laufende Mitgliedschaft der Person gilt
+        active = services.active_entries([m.pk]).get(m.pk, set())
+        if m.purged_at:
+            active &= set(PublicationConsent.OBJECTION_CATEGORIES)
+        if services.allowed(Category.PHOTO, active) and services.allowed(Category.NAME, active):
+            return m
         return None
 
     # --- Vorstand ---
@@ -608,13 +636,22 @@ class SiteView:
             "image": self.image(text.published_image) if text else None,
         }
 
-    def unit_text(self, u: Department) -> WebsiteText | None:
-        return (
-            WebsiteText.objects.filter(website=self.site, kind=WebsiteText.Kind.UNIT, department=u)
+    @cached_property
+    def unit_texts(self) -> dict[int, WebsiteText]:
+        """Veröffentlichte Texte aller Untereinheiten mit einer Abfrage (GA-P01)."""
+        result: dict[int, WebsiteText] = {}
+        for text in (
+            WebsiteText.objects.filter(website=self.site, kind=WebsiteText.Kind.UNIT)
             .exclude(published_at=None)
+            .exclude(department=None)
             .select_related("published_image")
-            .first()
-        )
+            .order_by("pk")
+        ):
+            result.setdefault(text.department_id, text)
+        return result
+
+    def unit_text(self, u: Department) -> WebsiteText | None:
+        return self.unit_texts.get(u.pk)
 
     def unit_detail(self, u: Department) -> dict:
         text = self.unit_text(u)

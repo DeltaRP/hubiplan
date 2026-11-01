@@ -57,6 +57,9 @@ export interface DocOverview {
   can_manage: boolean
   visibilities?: { value: Visibility; label: string }[]
   used_bytes?: number
+  /** Ganzer Verein (alle Ablagen) und sein Speicherbudget */
+  total_bytes?: number
+  budget_bytes?: number
   trash_count?: number
   shared?: DocFolder[]
   /** von unten freigegebene Ordner (Abteilungen bzw. Vereine), nur lesen */

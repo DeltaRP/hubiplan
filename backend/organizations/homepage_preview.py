@@ -156,18 +156,33 @@ def refresh(unit) -> str:
     if unit.website_image_custom:
         return ""
     data, reason = None, ""
-    if unit.website:
+    website = unit.website
+    if website:
         try:
-            data = fetch_preview(unit.website)
+            data = fetch_preview(website)
         except NoPreview as exc:
             reason = str(exc)
-            log.info("Vorschaubild für %s nicht geholt: %s", unit.website, reason)
-    if unit.website_image:
-        unit.website_image.delete(save=False)
-    if data:
-        unit.website_image.save("vorschau.jpg", ContentFile(data), save=False)
-    unit.website_image_for = unit.website
-    unit.save(update_fields=["website_image", "website_image_for"])
+            log.info("Vorschaubild für %s nicht geholt: %s", website, reason)
+    # Der Abruf dauert: Danach frisch und gesperrt lesen. Hat inzwischen jemand ein eigenes
+    # Bild hochgeladen oder die Adresse geändert, gilt das Ergebnis nicht mehr
+    # (Gesamtaudit 01.11., GA-F10).
+    from django.db import transaction
+
+    from core.files import delete_on_commit
+
+    with transaction.atomic():
+        current = type(unit).objects.select_for_update().filter(pk=unit.pk).first()
+        if current is None or current.website_image_custom or current.website != website:
+            return reason
+        delete_on_commit(current.website_image)
+        if data:
+            current.website_image.save("vorschau.jpg", ContentFile(data), save=False)
+        else:
+            current.website_image = None
+        current.website_image_for = website
+        current.save(update_fields=["website_image", "website_image_for"])
+    unit.website_image = current.website_image
+    unit.website_image_for = website
     return reason
 
 

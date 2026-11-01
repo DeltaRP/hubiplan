@@ -329,6 +329,8 @@ MAIL_RATE_PER_HOUR = int(os.environ.get("MAIL_RATE_PER_HOUR", "0"))
 INBOUND_DOMAINS = [d.lower() for d in env_list("INBOUND_DOMAINS")]
 # Sammelpostfach, in dem alle Mails an die Verteiler landen (IMAP über TLS)
 INBOUND_IMAP_HOST = os.environ.get("INBOUND_IMAP_HOST", "")
+# Speicherbudget der Dokumentablage je Verein (GB), ändern je Verein im Plattform-Admin
+DOCUMENT_BUDGET_GB = int(os.environ.get("DOCUMENT_BUDGET_GB", "5"))
 # Kennung des eigenen Mailservers in Authentication-Results (leer: oberster Eintrag zählt)
 MAIL_AUTHSERV_ID = os.environ.get("MAIL_AUTHSERV_ID", "")
 INBOUND_IMAP_PORT = int(os.environ.get("INBOUND_IMAP_PORT", "993"))

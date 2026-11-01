@@ -267,6 +267,17 @@ def _shared(person, placeholder) -> bool:
         )
 
 
+def _transferred(person, placeholder) -> bool:
+    """Hat der Dachverband den Wechsel dieser Person zu diesem Verein bestätigt?"""
+    from core.tenancy import rls_bypass
+    from members.models import TransferRequest
+
+    with rls_bypass():
+        return TransferRequest.objects.filter(
+            person=person, to_org_id=placeholder.pk, status=TransferRequest.Status.ACCEPTED
+        ).exists()
+
+
 def _candidates(federation, row):
     from members.models import Person
 
@@ -289,7 +300,9 @@ def _import(coupling, federation, row, rm=None, person=None):
         # Eine Verbandsnummer allein beweist nicht, dass der Partner für diese Person
         # spricht: Ist sie schon Mitglied eines anderen Vereins, entscheidet der
         # Dachverband im Klärfall (Gesamtaudit 01.11., GA-S02).
-        if found is not None and not _shared(found, coupling.remote_unit):
+        if found is not None and (
+            not _shared(found, coupling.remote_unit) or _transferred(found, coupling.remote_unit)
+        ):
             person = found
     if person is None:
         candidates = _candidates(federation, row)

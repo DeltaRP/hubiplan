@@ -95,9 +95,13 @@ chmod 700 "$BACKUP_DIR"
 # Selbst gebaute Images (nicht die per Digest festgelegten Postgres/Redis)
 EIGENE=$($COMPOSE config --images | grep -v '@sha256:' | sort -u)
 
+ALTE_IDS=""
 images_sichern() {
     # Laufende Fassung als „:vorher“ merken (vor dem Bauen, das die Namen neu vergibt)
     for img in $EIGENE; do
+        # Die bisherige „:vorher“-Fassung wird gleich namenlos: am Ende gezielt löschen
+        alt=$(docker image inspect -f '{{.Id}}' "${img%%:*}:vorher" 2>/dev/null || true)
+        [ -n "$alt" ] && ALTE_IDS="$ALTE_IDS $alt"
         if docker image inspect "$img" > /dev/null 2>&1; then
             docker tag "$img" "${img%%:*}:vorher"
         fi
@@ -245,7 +249,13 @@ if ! starten; then
     exit 1
 fi
 
-# Unbenannte alte Images löschen; die „:vorher“-Fassung bleibt für den Rückweg
-docker image prune -f > /dev/null
+# Nur eigene alte Images löschen, die jetzt keinen Namen mehr haben; die „:vorher“-Fassung
+# bleibt für den Rückweg. Kein „docker image prune“: Der Docker-Dienst kann mit anderen
+# Projekten geteilt sein (Gesamtaudit 01.11., GA-I03).
+for id in $ALTE_IDS; do
+    if [ -z "$(docker image inspect -f '{{join .RepoTags ""}}' "$id" 2>/dev/null)" ]; then
+        docker image rm "$id" > /dev/null 2>&1 || true
+    fi
+done
 rm -rf "$ZIEL.fehler"
 $COMPOSE ps

@@ -7,7 +7,7 @@
 // Entwürfe werden bewusst nicht im Browser abgelegt (Mitgliederdaten auf geteilten
 // Vereins-PCs).
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { choiceDialog } from './dialog.ts'
 
 export type LeaveEntry = {
@@ -27,6 +27,10 @@ export type LeaveEntry = {
 
 const entries = new Set<LeaveEntry>()
 let asking: Promise<boolean> | null = null
+// Browser-Zurück/Vorwärts: wohin die App gerade zeigt und ob der nächste popstate von uns
+// selbst kommt (Rücksprung bzw. bestätigtes Verlassen)
+let shownIndex: number | null = null
+let popMode: 'restore' | 'pass' | null = null
 
 export function registerLeave(entry: LeaveEntry): () => void {
   entries.add(entry)
@@ -130,9 +134,55 @@ function internalTarget(e: MouseEvent): string | null {
   return url.pathname + url.search + url.hash
 }
 
-/** Fängt Klicks auf interne Links ab, solange ein Formular Ungespeichertes hat. */
+function historyIndex(): number | null {
+  const idx = (window.history.state as { idx?: unknown } | null)?.idx
+  return typeof idx === 'number' ? idx : null
+}
+
+/**
+ * Fängt Klicks auf interne Links und Browser-Zurück/Vorwärts ab, solange ein Formular
+ * Ungespeichertes hat (Gesamtaudit 01.11., GA-F02).
+ */
 export function LeaveGuard() {
   const navigate = useNavigate()
+  const location = useLocation()
+
+  // Stelle im Verlauf, auf der die App gerade steht (React-Router merkt sie in state.idx)
+  useEffect(() => {
+    shownIndex = historyIndex()
+  }, [location])
+
+  useEffect(() => {
+    const onPop = (e: PopStateEvent) => {
+      if (popMode === 'restore') {
+        // Rücksprung auf die Formularseite: React-Router bekommt davon nichts mit
+        popMode = null
+        e.stopImmediatePropagation()
+        return
+      }
+      if (popMode === 'pass') {
+        popMode = null
+        return
+      }
+      if (!hasUnsaved()) return
+      const to = historyIndex()
+      const from = shownIndex
+      if (to === null || from === null || to === from) return
+      e.stopImmediatePropagation()
+      const delta = from - to
+      popMode = 'restore'
+      window.history.go(delta)
+      void confirmLeave().then((ok) => {
+        if (!ok) return
+        popMode = 'pass'
+        window.history.go(-delta)
+      })
+    }
+    // Erfassungsphase am Fenster: kommt vor dem popstate-Handler von React-Router
+    window.addEventListener('popstate', onPop, true)
+    return () => window.removeEventListener('popstate', onPop, true)
+  }, [])
+
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
       if (!hasUnsaved()) return

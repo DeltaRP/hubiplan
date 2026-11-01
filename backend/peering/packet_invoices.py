@@ -23,6 +23,8 @@ from django.core.files.base import ContentFile
 from django.db import transaction
 from django.utils import timezone
 
+from core import virenscan
+
 from .models import Coupling, RemoteInvoice
 from .packets import DOWN, Packet, register
 
@@ -229,6 +231,8 @@ def _receive_issue(coupling: Coupling, uid: str, data: dict) -> None:
         except (ValueError, TypeError):
             content = b""
     if not (content.startswith(b"%PDF") and len(content) <= PDF_LIMIT):
+        content = b""
+    if content and not virenscan.inbound_ok(content, f"{uid}.pdf", "Rechnung aus dem Verbund"):
         content = b""
 
     # Eine empfangene Rechnung bleibt, wie sie ist (Gesamtaudit 01.11., GA-F01): Dieselbe

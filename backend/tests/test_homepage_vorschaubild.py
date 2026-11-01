@@ -213,3 +213,28 @@ def test_webseite_bekommt_bild_nur_mit_link(unit):
     assert data["homepage"] == "https://jaeger.example/"
     assert data["homepage_image"].startswith("http")
     assert data["homepage_image"].endswith(".jpg")
+
+
+def test_eigenes_bild_waehrend_des_abrufs_bleibt(monkeypatch, unit):
+    """Gesamtaudit 01.11., GA-F10: Ein langsamer Abruf überschreibt kein neues eigenes Bild."""
+    from django.core.files.base import ContentFile
+
+    from organizations import homepage_preview
+    from organizations.models import Department
+
+    saved = {}
+
+    def langsam(url):
+        # Während des Abrufs lädt jemand ein eigenes Bild hoch
+        other = Department.objects.get(pk=unit.pk)
+        other.website_image.save("eigen.png", ContentFile(png()), save=False)
+        other.website_image_custom = True
+        other.save()
+        saved["name"] = other.website_image.name
+        return png()
+
+    monkeypatch.setattr(homepage_preview, "fetch_preview", langsam)
+    homepage_preview.refresh(Department.objects.get(pk=unit.pk))
+    unit.refresh_from_db()
+    assert unit.website_image_custom is True
+    assert unit.website_image.name == saved["name"]

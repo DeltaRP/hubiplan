@@ -10,6 +10,7 @@ import { DataTable } from '../../components/DataTable.tsx'
 import type { Column } from '../../components/DataTable.tsx'
 import { confirmDialog } from '../../components/dialog.ts'
 import { errorMessage, useAutoSave, useForm, useLoad } from '../../components/forms.ts'
+import { useChangesGuard } from '../../components/leaveGuard.ts'
 import { DeleteIcon, EditIcon, IconButton } from '../../components/icons.tsx'
 import { Alert, Checkbox, Field, SaveStatus, SelectField } from '../../components/ui.tsx'
 import { useActiveOrg } from '../../org/OrgContext.tsx'
@@ -208,6 +209,9 @@ function EntryForm({
     },
   )
 
+  // Neue Einträge vor dem Anlegen: beim Verlassen nachfragen (Gesamtaudit 01.11.)
+  const { markSaved } = useChangesGuard(v, entry === null)
+
   function year(value: string) {
     return value ? Number(value) : null
   }
@@ -224,7 +228,10 @@ function EntryForm({
         void form
           .submit(() => officesApi.create(org.id, v))
           .then((result) => {
-            if (result) onDone()
+            if (result) {
+              markSaved()
+              onDone()
+            }
           })
       }}
     >

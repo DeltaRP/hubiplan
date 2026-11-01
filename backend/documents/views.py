@@ -250,6 +250,8 @@ class _Overview(APIView):
             ]
             data["share_up_label"] = viewer.share_up_label()
             data["used_bytes"] = services.used_bytes(viewer.org, self.department)
+            data["total_bytes"] = services.total_bytes(viewer.org)
+            data["budget_bytes"] = services.budget_bytes(viewer.org)
             data["trash_count"] = (
                 services.documents_in([f.pk for f in folders], trash=True).count() if manage else 0
             )
@@ -352,6 +354,7 @@ class _FolderDetail(APIView):
 def _save_version(viewer, document: Document, upload, user) -> DocumentVersion:
     try:
         ctype = services.check_upload(upload)
+        services.check_budget(viewer.org, upload.size)
     except DjangoValidationError as exc:
         raise serializers.ValidationError(exc.message_dict) from exc
     version = DocumentVersion(

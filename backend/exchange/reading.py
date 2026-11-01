@@ -81,7 +81,8 @@ def _read_xlsx(path) -> list[list]:
         ws = wb.worksheets[0]
         rows = []
         kept = 0
-        for row in ws.iter_rows(values_only=True):
+        # max_col: übergroße angegebene Tabellenbreite nicht erst aufbauen (GA-H02)
+        for row in ws.iter_rows(values_only=True, max_col=MAX_COLUMNS):
             values = [_cell(v) for v in row[:MAX_COLUMNS]]
             rows.append(values)
             if any(v not in (None, "") for v in values):

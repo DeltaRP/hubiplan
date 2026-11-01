@@ -212,10 +212,19 @@ function Library({
         {data.used_bytes !== undefined && (
           <p className="muted small">
             Belegter Platz: {formatSize(data.used_bytes)}
+            {data.budget_bytes
+              ? ` (Verein gesamt ${formatSize(data.total_bytes ?? 0)} von ${formatSize(data.budget_bytes)})`
+              : ''}
             {data.trash_count ? ` · ${data.trash_count} im Papierkorb` : ''}
           </p>
         )}
       </div>
+      {data.budget_bytes && (data.total_bytes ?? 0) >= data.budget_bytes * 0.8 ? (
+        <Alert kind="info">
+          Der Speicherplatz der Ablage ist zu über 80 % belegt. Bitte alte Fassungen oder den
+          Papierkorb leeren; mehr Platz gibt die Plattform-Verwaltung frei.
+        </Alert>
+      ) : null}
       {message && <Alert kind={message.kind}>{message.text}</Alert>}
 
       {query && (

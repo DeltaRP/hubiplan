@@ -43,6 +43,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from access.catalog import CIRCULARS_SEND, DEPT_CIRCULARS_SEND
+from core import virenscan
 from core.tenancy import rls_bypass
 from outbox import mail
 from outbox.backend import ORG_HEADER
@@ -367,6 +368,14 @@ def extract(msg: EmailMessage) -> Extracted:
             continue
         if len(result.pdfs) >= MAX_ATTACHMENTS:
             result.skipped.append(f"{name} (höchstens {MAX_ATTACHMENTS} Anhänge)")
+            continue
+        try:
+            clean = virenscan.inbound_ok(data, name, "Mail an Verteiler")
+        except virenscan.ScanUnavailable:
+            result.error = "Die Virenprüfung ist gerade nicht erreichbar."
+            return result
+        if not clean:
+            result.skipped.append(f"{name} (Schadsoftware gefunden)")
             continue
         total += len(data)
         result.pdfs.append((name, data))

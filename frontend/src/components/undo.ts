@@ -250,11 +250,29 @@ export function dismissNotice() {
   update({ notice: null })
 }
 
+// Gemerkte Listenzustände mit Suchbegriffen (Namen, E-Mails)
+const LIST_PREFIXES = ['hubiplan.mitgliederliste.', 'hubiplan.abteilungsliste.']
+
+/** Gemerkte Suchen und Seiten der Listen löschen (Gesamtaudit 01.11., GA-S07). */
+export function clearListStates() {
+  try {
+    const keys: string[] = []
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i)
+      if (key && LIST_PREFIXES.some((p) => key.startsWith(p))) keys.push(key)
+    }
+    for (const key of keys) sessionStorage.removeItem(key)
+  } catch {
+    // ohne Speicher geht es auch
+  }
+}
+
 /** Beim Abmelden: Schritte (mit Namen aus den Daten) nicht für den nächsten Benutzer stehen lassen. */
 export function clearUndo() {
   // Noch laufende Anfragen des alten Benutzers legen danach keine Schritte mehr an
   nextAuthGeneration()
   resetUndo()
+  clearListStates()
   try {
     sessionStorage.removeItem(STORAGE_KEY)
     sessionStorage.removeItem(OWNER_KEY)
@@ -271,6 +289,7 @@ export function bindUndoToUser(userId: number | null) {
     if (owner !== String(userId)) {
       // Auch Schritte ohne Besitzer verwerfen: Sie können vom vorherigen Benutzer stammen
       resetUndo()
+      clearListStates()
       sessionStorage.setItem(OWNER_KEY, String(userId))
     }
   } catch {
