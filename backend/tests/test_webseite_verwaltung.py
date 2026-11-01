@@ -304,3 +304,24 @@ def test_feste_adresse_auf_dem_testserver(orgs, board_a, api, site, settings):
     settings.WEBSITE_PUBLIC_URL = "https://test.example/webseite"
     data = api(board_a).get(url(orgs["a"])).json()
     assert data["website"]["url"] == "https://test.example/webseite/"
+
+
+class TestSprache:
+    """Sprache der Webseite (konzepte/englisch.md, W1): nur freigeschaltete Sprachen."""
+
+    def test_standard_deutsch_und_in_der_schnittstelle(self, orgs, board_a, api, site):
+        assert site.language == "de"
+        assert api(board_a).get(url(orgs["a"])).json()["website"]["language"] == "de"
+
+    def test_englisch_nur_wenn_freigeschaltet(self, orgs, board_a, api, site, settings):
+        c = api(board_a)
+        settings.HUBIPLAN_LANGUAGES = ["de"]
+        assert c.put(url(orgs["a"]), {"language": "en"}, "application/json").status_code == 400
+        settings.HUBIPLAN_LANGUAGES = ["de", "en"]
+        assert c.put(url(orgs["a"]), {"language": "en"}, "application/json").status_code == 200
+        site.refresh_from_db()
+        assert site.language == "en"
+        # Bleibt speicherbar, auch wenn Englisch wieder abgeschaltet wird
+        settings.HUBIPLAN_LANGUAGES = ["de"]
+        assert c.put(url(orgs["a"]), {"language": "en"}, "application/json").status_code == 200
+        assert c.put(url(orgs["a"]), {"language": "fr"}, "application/json").status_code == 400

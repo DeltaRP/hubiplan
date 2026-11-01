@@ -129,3 +129,12 @@ public_patterns = [
         f"{S}unit-members/", stand_views.StandUnitMembersView.as_view(), name="stand-unit-members"
     ),
 ]
+
+# Mitgliederbereich und App: „Meine Ergebnisse“ (Schritt 5)
+portal_patterns = [
+    path(
+        "portal/<int:access_id>/results/",
+        award_views.PortalResultsView.as_view(),
+        name="portal-results",
+    ),
+]

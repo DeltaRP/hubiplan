@@ -76,6 +76,7 @@ wirkt, hält die App zwei Schlüsselpaare im Android-Keystore (P-256, nicht expo
 | `GET /api/portal/<Zugang>/events/?from=&to=` | Termine (wie Mitgliederbereich) |
 | `PUT/DELETE /api/portal/<Zugang>/events/<id>/response/` | Zu-/Absage |
 | `GET /api/portal/<Zugang>/circulars/` | Rundschreiben |
+| `GET /api/portal/<Zugang>/results/` | Meine Ergebnisse: Starts mit Platz und Wert, Titel und Auszeichnungen (Wettbewerbe; leer ohne Modul, `competitions_enabled` im Zugang) |
 | `GET /api/portal/<Zugang>/` | eigenes Profil |
 | `GET /api/app/v1/send/` | Einheiten, an deren Mitglieder dieses Konto Kurzmitteilungen senden darf (`circulars.send` im Verein, `dept.circulars.send` im Zug) |
 | `POST /api/app/v1/send/<org|dept>/<id>/` | Kurzmitteilung an alle Mitglieder der Einheit: `subject`, `body`, `confirm` (false: nur Empfängerzahl, true: senden) |

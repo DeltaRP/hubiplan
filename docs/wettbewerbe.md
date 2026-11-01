@@ -288,6 +288,28 @@ Zusage, die noch nicht Starter sind. Wird der Termin gelöscht, bleibt der Wettb
   „Wettbewerbstitel“ („Vereinsmeister: 2019, 2023“).
 - Seitenleiste: Wettbewerbe › Reihen, Wanderpokale, Titel und Würden.
 
+## Webseite und Mitgliederbereich (Schritt 5)
+
+- Je Wettbewerb **Auf der Webseite**: nicht, live während des Wettbewerbs (ab „läuft“, mit
+  Vermerk live bzw. vorläufig) oder nach Abschluss (erst „endgültig“), dazu der **Umfang**: nur
+  Wertung der Untereinheiten und Mannschaften, Plätze 1 bis 3 mit Namen, ganze Rangliste.
+- Baustein **„Ergebnisse“** (Webseite › Menü und Bereiche, nur mit Modul Wettbewerbe) und Block
+  **„Aktuelle Ergebnisse“** auf der Startseite (die drei neuesten mit Plätzen 1 bis 3; aus,
+  bis die Einheit ihn unter Menü und Bereiche › Startseite einschaltet).
+- Öffentliche Schnittstelle (`website/results.py`): `results/` (Wettbewerbe, Reihen mit
+  „Archiv auf der Webseite“, Wanderpokale mit „Inhaber auf der Webseite“), `results/?start=1`
+  (Startseite), `results/<Kennung>/` (Rangliste), `results/<Kennung>/version/` (kleiner Stand),
+  `results/series/<Kennung>/` (Sieger je Jahr, Titel). Laufende Wettbewerbe mit
+  `Cache-Control: max-age=5`; die Seite fragt live alle 15 Sekunden den Stand ab (Ralf
+  2026-11-01) und lädt die Tabelle nur bei einer Änderung.
+- **Namen** im Namensformat der Webseite. Einwilligungen: „Wettbewerbsergebnisse“
+  (Widerspruch, wie Würden) und „Wettbewerbsergebnisse unter 18“ (Einwilligung; maßgeblich ist
+  das Alter am Wettbewerbstag). Ohne Erlaubnis steht „ohne Namen“, der Platz bleibt. Gäste
+  erscheinen mit Namen und Verein. Der Datenschutztext der Webseite nennt Ergebnisse, sobald der
+  Baustein an ist.
+- **Mitgliederbereich** „Meine Ergebnisse“ (`/api/portal/<Zugang>/results/`, auch für die
+  App): eigene Starts (ohne Vorbereitung) mit Platz und Wert, Titel und Auszeichnungen.
+
 ## Ausgaben
 
 `export/?als=`: `pdf` (Ergebnisliste mit Kennzahlen, beim Vogelschießen die Pfänderliste),

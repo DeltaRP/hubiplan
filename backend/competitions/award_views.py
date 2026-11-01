@@ -365,3 +365,30 @@ class MemberHistoryView(OrgScopedMixin, APIView):
         data = awards.member_history(self.org, ids)
         data["can_open"] = bool({COMPETITIONS_MANAGE, COMPETITIONS_RESULTS} & self.org_permissions)
         return Response(data)
+
+
+class PortalResultsView(APIView):
+    """Mitgliederbereich und App: „Meine Ergebnisse“ – eigene Starts mit Platz und Wert,
+    Titel und Auszeichnungen über alle Jahre (nur eigene, keine fremden Namen)."""
+
+    def get(self, request, access_id: int):
+        from core.tenancy import tenant_context
+        from portal.views import _portal_access
+
+        access = _portal_access(request.user, access_id)
+        club = access.organization
+        if MODULE not in (club.enabled_modules or []):
+            return Response({"starts": [], "grants": []})
+        with tenant_context(club.pk, request.user.pk):
+            ids = list(
+                Membership.objects.filter(
+                    organization=club, person_id=access.membership.person_id
+                ).values_list("pk", flat=True)
+            )
+            data = awards.member_history(club, ids)
+        # Nur Abgeschlossenes und Laufendes; Vorbereitung bleibt intern
+        data["starts"] = [s for s in data["starts"] if s["status"] != "vorbereitung"]
+        for g in data["grants"]:
+            g.pop("membership", None)
+            g.pop("reign", None)
+        return Response(data)
