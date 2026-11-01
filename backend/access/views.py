@@ -6,6 +6,7 @@ from django.db import transaction
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import generics, serializers, viewsets
 from rest_framework.decorators import action, api_view
+from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.request import Request
 from rest_framework.response import Response
 
@@ -15,13 +16,20 @@ from audit.models import AuditEntry
 from core.api_base import AuditMixin, OrgScopedMixin
 from core.listing import ListPagination, search
 from core.reorder import reorder_response
+from core.tenancy import tenant_context
 from organizations import theme
 from organizations.models import Organization
 from organizations.terms import department_terms, rename_word
 
-from .catalog import AUDIT_VIEW, ROLES_MANAGE, catalog_for
+from . import preview
+from .catalog import AUDIT_VIEW, ROLES_MANAGE, ROLES_PREVIEW, catalog_for
 from .models import Role, RoleAssignment
-from .permissions import inherited_permissions, organizations_for, permissions_in
+from .permissions import (
+    inherited_permissions,
+    organizations_for,
+    own_permissions_in,
+    permissions_in,
+)
 from .serializers import AssignmentSerializer, RoleSerializer
 
 
@@ -435,10 +443,36 @@ def _sepa_enabled(org: Organization) -> bool:
 
 @api_view(["GET"])
 def my_organizations(request: Request) -> Response:
-    """Organisationen, in denen der angemeldete Benutzer eine Rolle hat."""
-    return Response(
-        [organization_summary(org, perms) for org, perms in organizations_for(request.user)]
-    )
+    """Organisationen, in denen der angemeldete Benutzer eine Rolle hat.
+
+    ``role_preview``: Darf hier die Ansicht als Rolle gewählt werden, und welche Rolle
+    ist gerade gewählt? ``permissions`` sind während der Ansicht die der Ansicht.
+    """
+    current = preview.current()
+    if current:
+        org = Organization.objects.filter(pk=current.org_id).first()
+        own = own_permissions_in(request.user, org) if org else set()
+        if ROLES_PREVIEW not in own or preview.role_permissions(org, current.role_id) is None:
+            # Recht entzogen oder Rolle gelöscht: Ansicht endet
+            preview.stop(request)
+            current = None
+    entries = organizations_for(request.user)
+    if current and all(org.pk != current.org_id for org, _ in entries):
+        # Rolle ohne Rechte in einer Untereinheit: Einheit bleibt wählbar, um zu beenden
+        org = Organization.objects.get(pk=current.org_id)
+        entries.append((org, permissions_in(request.user, org)))
+    result = []
+    for org, perms in entries:
+        summary = organization_summary(org, perms)
+        own = perms
+        active = None
+        if current and current.org_id == org.pk:
+            own = own_permissions_in(request.user, org)
+            with tenant_context(org.pk):
+                active = Role.objects.filter(pk=current.role_id).values("id", "name").first()
+        summary["role_preview"] = {"available": ROLES_PREVIEW in own, "active": active}
+        result.append(summary)
+    return Response(result)
 
 
 class AuditChainView(OrgScopedMixin, generics.GenericAPIView):
@@ -472,3 +506,84 @@ class AuditChainView(OrgScopedMixin, generics.GenericAPIView):
 
         seal(self.org.pk)
         return Response({"check": self._data(verify(self.org.pk))})
+
+
+class RolePreviewView(generics.GenericAPIView):
+    """Ansicht als Rolle (access/preview.py): Rollen zur Wahl, beginnen, beenden.
+
+    Geprüft wird mit den eigenen Rechten, nicht mit denen der gerade gewählten Rolle,
+    sonst ließe sich die Ansicht in einer Rolle ohne dieses Recht nicht mehr wechseln.
+    """
+
+    serializer_class = None
+
+    def _org(self, org_id: int) -> tuple[Organization, set[str]]:
+        org = Organization.objects.filter(pk=org_id).first()
+        perms = own_permissions_in(self.request.user, org) if org else set()
+        if not perms:
+            raise NotFound()
+        return org, perms
+
+    @staticmethod
+    def _roles(org: Organization):
+        with tenant_context(org.pk):
+            return list(
+                Role.objects.filter(organization=org)
+                .order_by("position", "name")
+                .values("id", "name")
+            )
+
+    def _state(self, org: Organization, perms: set[str]) -> dict:
+        current = preview.current()
+        active = None
+        if current and current.org_id == org.pk:
+            active = next((r for r in self._roles(org) if r["id"] == current.role_id), None)
+        return {
+            "available": ROLES_PREVIEW in perms,
+            "roles": self._roles(org) if ROLES_PREVIEW in perms else [],
+            "active": active,
+        }
+
+    def _log(self, org_id: int, role_id: int, before: str, after: str) -> None:
+        org = Organization.objects.filter(pk=org_id).first()
+        if org is None:
+            return
+        with tenant_context(org.pk):
+            role = Role.objects.filter(pk=role_id, organization=org).first()
+        if role is not None:
+            record(org, self.request.user, "view", role, {"Ansicht als Rolle": [before, after]})
+
+    def get(self, request, org_id: int):
+        org, perms = self._org(org_id)
+        return Response(self._state(org, perms))
+
+    @transaction.atomic
+    def post(self, request, org_id: int):
+        org, perms = self._org(org_id)
+        if ROLES_PREVIEW not in perms:
+            raise PermissionDenied("Dafür fehlt dir die Berechtigung.")
+        role_id = request.data.get("role") if isinstance(request.data, dict) else None
+        if not isinstance(role_id, int) or isinstance(role_id, bool):
+            raise serializers.ValidationError({"role": "Bitte eine Rolle wählen."})
+        with tenant_context(org.pk):
+            role = Role.objects.filter(pk=role_id, organization=org).first()
+        if role is None:
+            raise serializers.ValidationError({"role": "Diese Rolle gibt es hier nicht."})
+        previous = preview.current()
+        if previous:
+            self._log(previous.org_id, previous.role_id, "begonnen", "beendet")
+        preview.start(request, org, role)
+        record(org, request.user, "view", role, {"Ansicht als Rolle": ["", "begonnen"]})
+        return Response(self._state(org, perms))
+
+    @transaction.atomic
+    def delete(self, request, org_id: int):
+        previous = preview.current()
+        if previous:
+            self._log(previous.org_id, previous.role_id, "begonnen", "beendet")
+        preview.stop(request)
+        org = Organization.objects.filter(pk=org_id).first()
+        perms = own_permissions_in(request.user, org) if org else set()
+        if not perms:
+            return Response({"available": False, "roles": [], "active": None})
+        return Response(self._state(org, perms))

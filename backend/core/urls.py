@@ -157,6 +157,7 @@ org_patterns = [
         org_views.DepartmentHomepageImageView.as_view(),
         name="department-homepage-image",
     ),
+    path("ansicht/", access_views.RolePreviewView.as_view(), name="org-role-preview"),
     path("audit/", access_views.AuditListView.as_view(), name="org-audit"),
     path("audit/kette/", access_views.AuditChainView.as_view(), name="org-audit-chain"),
     path("changes/<uuid:set_id>/undo/", change_views.UndoView.as_view(), name="org-change-undo"),

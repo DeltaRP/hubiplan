@@ -21,6 +21,8 @@ import { PageErrorBoundary } from './PageErrorBoundary.tsx'
 import { LearningProvider } from '../learning/LearningContext.tsx'
 import { ACCOUNT_PATH, accountSectionLabel } from '../pages/settings/accountNav.ts'
 import { AccountMenu } from './AccountMenu.tsx'
+import { RolePreviewBanner, RolePreviewSelect } from './RolePreview.tsx'
+import { rolePreviewApi } from '../api/orgs.ts'
 
 // Seiten außerhalb der Bereiche in der Seitenleiste
 const OTHER_PAGES: Record<string, string> = {
@@ -41,6 +43,7 @@ export function Layout() {
     activePortal,
     select,
     loading,
+    refresh,
   } = useOrg()
   const navigate = useNavigate()
   const { pathname } = useLocation()
@@ -165,6 +168,14 @@ export function Layout() {
       : null
   const { version } = useUndo(undoBase)
 
+  // Ansicht als Rolle: nach dem Wechsel Rechte neu laden und die Seite neu aufbauen
+  const [previewVersion, setPreviewVersion] = useState(0)
+  const previewOrg = orgs.find((o) => o.role_preview?.active) ?? null
+  const previewChanged = useCallback(async () => {
+    await refresh()
+    setPreviewVersion((v) => v + 1)
+  }, [refresh])
+
   async function handleLogout() {
     try {
       await logout()
@@ -187,6 +198,15 @@ export function Layout() {
       // Einheit auf einer anderen Instanz: dort gleich über diese Instanz angemeldet
       leaveTo.go(remote.url)
       return
+    }
+    // Die Ansicht als Rolle gilt nur in ihrer Einheit: beim Wechsel endet sie
+    if (previewOrg && key !== String(previewOrg.id)) {
+      try {
+        await rolePreviewApi.stop(previewOrg.id)
+        await refresh()
+      } catch {
+        // Ohne Antwort bleibt die Ansicht bestehen; der Hinweis zeigt sie weiter
+      }
     }
     select(key)
     setNavOpen(false)
@@ -274,7 +294,8 @@ export function Layout() {
               <Logo name={brandName} logoUrl={brandLogo} />
             </NavLink>
             <div className="topbar-user">
-              {undoBase && <UndoControls base={undoBase} />}
+              {undoBase && !previewOrg && <UndoControls base={undoBase} />}
+              {active && <RolePreviewSelect org={active} onChanged={previewChanged} />}
               {contextCount > 1 && (
                 <label className="org-switch">
                   <span className="sr-only">Organisation wechseln</span>
@@ -370,6 +391,7 @@ export function Layout() {
           <div className="sidebar-backdrop" aria-hidden="true" onClick={closeNav} />
 
           <main className="content" id="inhalt" tabIndex={-1} inert={navOpen || undefined}>
+            {previewOrg && <RolePreviewBanner org={previewOrg} onChanged={previewChanged} />}
             {user?.mfa_required_by && (
               <MfaNotice by={user.mfa_required_by} overdue={!!user.mfa_overdue} />
             )}
@@ -386,7 +408,7 @@ export function Layout() {
                     </p>
                   }
                 >
-                  <Outlet key={version} />
+                  <Outlet key={`${version}-${previewVersion}`} />
                 </Suspense>
               </PageErrorBoundary>
             )}
