@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiError } from '../api/client.ts'
 import { registerLeave } from './leaveGuard.ts'
+import { locale } from '../i18n/index.ts'
 
 export function errorMessage(err: unknown): string {
   if (err instanceof ApiError) return err.message
@@ -258,11 +259,11 @@ export function useAutoSave<T extends object>(
 export function formatDate(value: string | null): string {
   if (!value) return '–'
   const d = new Date(value)
-  return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString('de-DE')
+  return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString(locale())
 }
 
 export function formatDateTime(value: string): string {
-  return new Date(value).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })
+  return new Date(value).toLocaleString(locale(), { dateStyle: 'short', timeStyle: 'short' })
 }
 
 // Genauigkeit für Mitgliedschaften und Jubiläen, je Organisation bzw. Abteilung.
@@ -297,7 +298,7 @@ export function jubileeWhen(value: string, precision: DatePrecision | undefined)
   const m = /^(\d{4})-(\d{2})/.exec(value)
   if (m && precision === 'year') return `im Jahr ${m[1]}`
   if (m && precision === 'month') {
-    const month = new Date(Number(m[1]), Number(m[2]) - 1, 1).toLocaleDateString('de-DE', {
+    const month = new Date(Number(m[1]), Number(m[2]) - 1, 1).toLocaleDateString(locale(), {
       month: 'long',
     })
     return `im ${month} ${m[1]}`

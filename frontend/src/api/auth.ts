@@ -13,6 +13,8 @@ export interface User {
   // Pflicht-2FA: bis dahin einrichten, danach ruhen Rollenverwaltung, Exporte und Kasse
   mfa_required_by?: string
   mfa_overdue?: boolean
+  // Sprache des Kontos (konzepte/englisch.md)
+  language?: string
 }
 
 interface Flow {

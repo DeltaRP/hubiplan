@@ -96,7 +96,8 @@ fe_run() {
 }
 fe_checks() {
     fe_run "npm ci --no-audit --no-fund --loglevel=error > /dev/null \
-        && npm run -s typecheck && npm run -s lint > /dev/null && npm run -s format:check > /dev/null"
+        && npm run -s typecheck && npm run -s lint > /dev/null && npm run -s format:check > /dev/null \
+        && npm run -s i18n:check"
     echo "Frontend: Typprüfung, Lint, Format ok"
 }
 if [ "${TEST_PARALLEL:-1}" = 1 ]; then
@@ -121,6 +122,9 @@ docker exec "$ID-db" psql -q -U test -d test -c \
 docker run --rm "$CPUS" --entrypoint sh "$BACKEND_IMG" \
     -c "ruff check . && ruff format --check . > /dev/null"
 echo "Backend: ruff ok"
+# Übersetzung (konzepte/englisch.md): bis zur Abnahme nur Bericht, danach --streng
+docker run --rm "$CPUS" -e DJANGO_DEBUG=true -e DJANGO_SECRET_KEY=nur-test --entrypoint sh \
+    "$BACKEND_IMG" -c "python manage.py uebersetzung_pruefen"
 
 # Webserver-Konfiguration (Caddy, nginx-Vorlagen für HestiaCP), aus dem geprüften Stand
 if git cat-file -e "$REF:scripts/pruefe-proxy.sh" 2> /dev/null; then

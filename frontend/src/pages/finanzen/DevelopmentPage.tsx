@@ -17,12 +17,13 @@ import { useRange } from '../../components/charts/range.ts'
 import { formatDate, useLoad } from '../../components/forms.ts'
 import { Alert } from '../../components/ui.tsx'
 import { useActiveOrg } from '../../org/OrgContext.tsx'
+import { locale } from '../../i18n/index.ts'
 
 const num = (v: string | null) => (v === null ? null : Number(v))
 const money = (n: number) => euro(n)
 /** Kurz für Achsen: 12.500 € statt 12.500,00 € */
 const axisMoney = (n: number) =>
-  `${n.toLocaleString('de-DE', { maximumFractionDigits: Math.abs(n) < 10 ? 2 : 0 })} €`
+  `${n.toLocaleString(locale(), { maximumFractionDigits: Math.abs(n) < 10 ? 2 : 0 })} €`
 
 function Compare({ now, before }: { now: string; before: string }) {
   const a = Number(now)

@@ -27,3 +27,6 @@ backend/media/
 backend/private/
 dump.rdb
 frontend/public/lizenzen/
+
+# Übersetzungen: .mo entsteht beim Bauen aus der .po
+*.mo

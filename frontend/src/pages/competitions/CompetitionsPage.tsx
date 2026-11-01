@@ -39,6 +39,7 @@ import { TargetSettings } from './TargetSettings.tsx'
 import { Term, Why } from '../../learning/Aids.tsx'
 import { Checklist } from '../../learning/Checklist.tsx'
 import { competitionFinishChecks } from '../../learning/checks.ts'
+import { locale } from '../../i18n/index.ts'
 
 export function CompetitionsPage() {
   return (
@@ -90,7 +91,7 @@ function CompetitionList() {
               key: 'date',
               label: 'Datum',
               value: (c) => c.date,
-              render: (c) => new Date(c.date).toLocaleDateString('de-DE'),
+              render: (c) => new Date(c.date).toLocaleDateString(locale()),
             },
             {
               key: 'title',
@@ -246,7 +247,7 @@ function CompetitionArea() {
       </p>
       <h1>{data.title}</h1>
       <p className="muted">
-        {new Date(data.date).toLocaleDateString('de-DE')}
+        {new Date(data.date).toLocaleDateString(locale())}
         {data.occasion ? ` · ${data.occasion}` : ''}
         {data.discipline ? ` · ${data.discipline}` : ''}
         {!data.own && data.organizer ? (

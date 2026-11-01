@@ -2,6 +2,7 @@
 import { api } from './client.ts'
 import type { Page } from './members.ts'
 import type { ClosingInput } from '../learning/checks.ts'
+import { locale } from '../i18n/index.ts'
 
 export type AccountKind = 'bank' | 'cash' | 'savings'
 export type BookingKind = 'income' | 'expense' | 'transfer'
@@ -561,7 +562,7 @@ export const signatureApi = {
   remove: () => api.del('/api/me/signature/'),
 }
 
-const EUR = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' })
+const EUR = new Intl.NumberFormat(locale(), { style: 'currency', currency: 'EUR' })
 
 export function euro(value: string | number | null | undefined): string {
   const n = typeof value === 'number' ? value : Number(value ?? 0)

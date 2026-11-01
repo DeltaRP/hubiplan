@@ -23,6 +23,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from accounts.language import MyLanguageView
+from core.i18n import available, user_language
 from core.ratelimit import client_ip, too_many
 from core.tenancy import set_rls
 from portal import services as portal_services
@@ -333,11 +335,24 @@ class MeView(APIView):
         user = request.user
         return Response(
             {
-                "user": {"email": user.email, "display": user.get_full_name() or user.email},
+                "user": {
+                    "email": user.email,
+                    "display": user.get_full_name() or user.email,
+                    # Nutzersprache: die App zeigt sich in dieser Sprache (konzepte/englisch.md)
+                    "language": user_language(user),
+                    "languages": available(),
+                },
                 "device": device_data(request.auth, request.auth),
                 "portal": [portal_summary(a) for a in portal_services.portal_accesses(user)],
             }
         )
+
+
+class AppLanguageView(MyLanguageView):
+    """App: Sprache des Kontos lesen und ändern (gilt auch im Browser)."""
+
+    authentication_classes = [DeviceTokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
 
 class PushSerializer(serializers.Serializer):

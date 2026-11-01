@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import * as api from '../api/auth.ts'
 import type { User } from '../api/auth.ts'
 import { bindUndoToUser, clearUndo } from '../components/undo.ts'
+import { lang, switchLanguage } from '../i18n/index.ts'
 
 interface AuthState {
   user: User | null
@@ -40,6 +41,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (user) bindUndoToUser(user.id)
+    // Konto in anderer Sprache als die Anzeige (z. B. nach der Anmeldung): umschalten
+    if (user?.language && (user.language === 'de' || user.language === 'en')) {
+      if (user.language !== lang()) switchLanguage(user.language)
+    }
   }, [user])
 
   const value = useMemo(

@@ -356,6 +356,14 @@ code {
   margin-bottom: 1.25rem;
 }
 
+/* Sprachumschalter vor der Anmeldung (i18n/LanguageControls.tsx) */
+.language-switch {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  margin: 0;
+}
+
 /* --- Einstellungen --- */
 
 .totp-setup {

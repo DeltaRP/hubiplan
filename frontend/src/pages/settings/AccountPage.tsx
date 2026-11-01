@@ -6,6 +6,7 @@ import * as api from '../../api/auth.ts'
 import type { ChangeResult, TotpState } from '../../api/auth.ts'
 import { LoginSections, NameSection } from './ProfileCards.tsx'
 import { LearningCard } from '../../learning/LearningCard.tsx'
+import { LanguageCard } from '../../i18n/LanguageControls.tsx'
 import { AppDevicesCard } from './AppDevicesCard.tsx'
 import { RemoteLoginCard } from './RemoteLoginCard.tsx'
 import { SignatureCard } from './SignatureCard.tsx'
@@ -20,6 +21,7 @@ export function AccountPage() {
       <h1>Profil</h1>
       <div className="stack">
         <NameSection />
+        <LanguageCard />
         <LearningCard />
       </div>
     </section>

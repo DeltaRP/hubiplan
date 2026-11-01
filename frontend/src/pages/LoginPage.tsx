@@ -1,3 +1,4 @@
+import { LanguageSwitch } from '../i18n/LanguageControls.tsx'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
@@ -141,6 +142,7 @@ export function LoginPage() {
           </form>
         )}
       </div>
+      <LanguageSwitch />
     </main>
   )
 }

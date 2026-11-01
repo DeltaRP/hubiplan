@@ -3,7 +3,7 @@ from rest_framework.routers import SimpleRouter
 
 from access import office_views
 from access import views as access_views
-from accounts import learning, self_service
+from accounts import language, learning, self_service
 from billing import portal_views as billing_portal_views
 from billing import views as billing_views
 from cards import views as card_views
@@ -701,6 +701,8 @@ urlpatterns = [
     ),
     path("me/password/", self_service.PasswordView.as_view(), name="my-password"),
     path("me/email/", self_service.EmailChangeView.as_view(), name="my-email"),
+    path("me/language/", language.MyLanguageView.as_view(), name="my-language"),
+    path("public/languages/", language.PublicLanguagesView.as_view(), name="public-languages"),
     path("me/learning/", learning.LearningView.as_view(), name="my-learning"),
     path("me/learning/<slug:key>/hide/", learning.LearningHideView.as_view(), name="learning-hide"),
     path("me/learning/<slug:key>/show/", learning.LearningShowView.as_view(), name="learning-show"),

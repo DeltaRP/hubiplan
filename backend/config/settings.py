@@ -86,6 +86,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
+    "core.i18n.LanguageMiddleware",
     "core.tenancy.TenantMiddleware",
     "access.preview.RolePreviewMiddleware",
     "changes.middleware.ChangeSetMiddleware",
@@ -361,7 +362,12 @@ INBOUND_IMAP_FOLDER = os.environ.get("INBOUND_IMAP_FOLDER", "INBOX")
 # Ohne Sammelpostfach (Testserver): Probe-Eingang aus der Oberfläche erlaubt
 INBOUND_SIMULATION = env_bool("INBOUND_SIMULATION", not INBOUND_IMAP_HOST)
 
-LANGUAGE_CODE = "de-de"
+# Sprache (konzepte/englisch.md): Deutsch ist Standard und Quellsprache. Englisch wird erst
+# wählbar, wenn es in HUBIPLAN_LANGUAGES steht (bis zur Abnahme nur zum Testen).
+LANGUAGE_CODE = "de"
+LANGUAGES = [("de", "Deutsch"), ("en", "English")]
+HUBIPLAN_LANGUAGES = env_list("HUBIPLAN_LANGUAGES", "de")
+LOCALE_PATHS = [BASE_DIR / "locale"]
 TIME_ZONE = "Europe/Berlin"
 USE_I18N = True
 USE_TZ = True

@@ -20,6 +20,13 @@ COPY . .
 # DRF (Bootstrap, jQuery, Font Awesome): Die HTML-Ansicht der API ist aus, und so
 # gehen keine fremden Dateien ohne Lizenzhinweis an den Browser (Lizenzaudit 31.10., L06).
 RUN DJANGO_DEBUG=true DJANGO_SECRET_KEY=nur-zum-bauen python manage.py collectstatic --noinput -v0 --ignore rest_framework
+# Übersetzungen (konzepte/englisch.md): .po → .mo beim Bauen. GNU gettext bleibt nur im
+# Testabbild (scripts/test.sh prüft damit den Katalog), im Betrieb wird es wieder entfernt.
+RUN apt-get update -q && apt-get install -y -q --no-install-recommends gettext > /dev/null \
+    && DJANGO_DEBUG=true DJANGO_SECRET_KEY=nur-zum-bauen python manage.py compilemessages -v0 \
+    && if [ "$REQUIREMENTS" = requirements.txt ]; then \
+           apt-get purge -y -q gettext > /dev/null && apt-get autoremove -y -q > /dev/null; fi \
+    && rm -rf /var/lib/apt/lists/*
 RUN useradd --create-home --uid 1000 app && mkdir -p /app/media /app/private /app/loeschliste && chown -R app /app
 USER app
 

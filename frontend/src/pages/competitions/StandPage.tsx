@@ -17,6 +17,7 @@ import { StandAccessCard } from './BirdSetup.tsx'
 import { BirdStand } from './BirdStand.tsx'
 import { LiveTables } from './LiveTables.tsx'
 import { StandPanel } from './StandPanel.tsx'
+import { locale } from '../../i18n/index.ts'
 
 export function StandPage() {
   const params = useParams()
@@ -70,7 +71,7 @@ function StandShell({ api, exit, org }: { api: StandApi; exit: ReactNode; org?: 
         {data?.stand_access && (
           <span className="muted small">
             Standzugang{data.stand_access.label ? ` ${data.stand_access.label}` : ''} bis{' '}
-            {new Date(data.stand_access.expires_at).toLocaleTimeString('de-DE', {
+            {new Date(data.stand_access.expires_at).toLocaleTimeString(locale(), {
               hour: '2-digit',
               minute: '2-digit',
             })}
