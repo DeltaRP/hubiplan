@@ -74,3 +74,29 @@ export async function removeImage(orgId: number, image: WebsiteImage): Promise<b
     return true
   }
 }
+
+export type ImageOrder = 'newest' | 'oldest' | 'name' | 'changed'
+
+export const IMAGE_ORDERS: { value: ImageOrder; label: string }[] = [
+  { value: 'newest', label: 'neueste zuerst' },
+  { value: 'oldest', label: 'älteste zuerst' },
+  { value: 'name', label: 'nach Name' },
+  { value: 'changed', label: 'zuletzt bearbeitet' },
+]
+
+const byName = new Intl.Collator('de', { sensitivity: 'base', numeric: true })
+
+/** Bilder sortiert (Hochladedatum, Name oder letzte Änderung); bei Gleichstand neueste zuerst. */
+export function sortImages(images: WebsiteImage[], order: ImageOrder): WebsiteImage[] {
+  const time = (value?: string) => (value ? Date.parse(value) || 0 : 0)
+  const newest = (a: WebsiteImage, b: WebsiteImage) =>
+    time(b.uploaded_at) - time(a.uploaded_at) || b.id - a.id
+  const compare: Record<ImageOrder, (a: WebsiteImage, b: WebsiteImage) => number> = {
+    newest,
+    oldest: (a, b) => -newest(a, b),
+    name: (a, b) => byName.compare(imageLabel(a), imageLabel(b)) || newest(a, b),
+    changed: (a, b) =>
+      time(b.updated_at ?? b.uploaded_at) - time(a.updated_at ?? a.uploaded_at) || newest(a, b),
+  }
+  return [...images].sort(compare[order])
+}

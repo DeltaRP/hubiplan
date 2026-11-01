@@ -21,7 +21,15 @@ import { RightsHint } from '../../components/RightsHint.tsx'
 import { Alert, Checkbox, Field, LoadError, SaveStatus, SelectField } from '../../components/ui.tsx'
 import { Why } from '../../learning/Aids.tsx'
 import { useActiveOrg } from '../../org/OrgContext.tsx'
-import { imageLabel, needsAlt, removeImage, useImageUpload } from './imageTools.ts'
+import {
+  IMAGE_ORDERS,
+  imageLabel,
+  needsAlt,
+  removeImage,
+  sortImages,
+  useImageUpload,
+} from './imageTools.ts'
+import type { ImageOrder } from './imageTools.ts'
 
 export interface Unit {
   id: number
@@ -99,6 +107,28 @@ function matches(i: WebsiteImage, q: string, scope: Scope, state: State): boolea
   return true
 }
 
+function OrderField({
+  value,
+  onChange,
+}: {
+  value: ImageOrder
+  onChange: (order: ImageOrder) => void
+}) {
+  return (
+    <SelectField
+      label="Sortieren"
+      value={value}
+      onChange={(e) => onChange(e.target.value as ImageOrder)}
+    >
+      {IMAGE_ORDERS.map((o) => (
+        <option key={o.value} value={o.value}>
+          {o.label}
+        </option>
+      ))}
+    </SelectField>
+  )
+}
+
 /** Kachelraster; mit ``selected`` zum Ankreuzen, sonst zum Öffnen */
 function ImageTiles({
   images,
@@ -150,6 +180,7 @@ export function ImagesPage() {
   const [q, setQ] = useState('')
   const [scope, setScope] = useState<Scope>('all')
   const [state, setState] = useState<State>('all')
+  const [order, setOrder] = useState<ImageOrder>('newest')
   const [shown, setShown] = useState(PAGE_SIZE)
   const [open, setOpen] = useState<number | null>(null)
   const [dragging, setDragging] = useState(false)
@@ -164,7 +195,10 @@ export function ImagesPage() {
   }
 
   const all = data ?? []
-  const filtered = all.filter((i) => matches(i, q, scope, state))
+  const filtered = sortImages(
+    all.filter((i) => matches(i, q, scope, state)),
+    order,
+  )
   const scopeValue = typeof scope === 'number' ? String(scope) : scope
 
   return (
@@ -236,6 +270,7 @@ export function ImagesPage() {
           <option value="unused">nicht verwendet</option>
           <option value="no_alt">ohne Beschreibung</option>
         </SelectField>
+        <OrderField value={order} onChange={setOrder} />
         <div className="button-row">
           <UploadButton disabled={uploader.busy} onFiles={(files) => void add(files)} />
         </div>
@@ -586,7 +621,8 @@ export function ImagePicker({
   onCancel: () => void
 }) {
   const [q, setQ] = useState('')
-  const [scope, setScope] = useState<'suggested' | 'all'>('suggested')
+  const [scope, setScope] = useState<'unit' | 'suggested' | 'all'>('suggested')
+  const [order, setOrder] = useState<ImageOrder>('newest')
   const [chosen, setChosen] = useState<number[]>(initial)
   const [extra, setExtra] = useState<WebsiteImage[]>([])
   const [shown, setShown] = useState(PAGE_SIZE)
@@ -594,8 +630,18 @@ export function ImagePicker({
   const all = [...extra.filter((e) => !images.some((i) => i.id === e.id)), ...images]
   const suggested = (i: WebsiteImage) => !i.department || (unit ? i.department === unit.id : false)
   const anyOther = all.some((i) => !suggested(i))
-  const filtered = all.filter(
-    (i) => (scope === 'all' || suggested(i)) && matches(i, q, 'all', 'all'),
+  // Gerade hochgeladene Bilder bleiben vorn, der Rest nach der gewählten Sortierung
+  const fresh = new Set(extra.map((e) => e.id))
+  const filtered = [
+    ...all.filter((i) => fresh.has(i.id)),
+    ...sortImages(
+      all.filter((i) => !fresh.has(i.id)),
+      order,
+    ),
+  ].filter(
+    (i) =>
+      (scope === 'all' || (scope === 'unit' ? !!unit && i.department === unit.id : suggested(i))) &&
+      matches(i, q, 'all', 'all'),
   )
   const full = max !== undefined && chosen.length >= max
 
@@ -625,9 +671,21 @@ export function ImagePicker({
     <Modal title={title} onClose={onCancel}>
       <div className="image-filters">
         <Field label="Suchen" type="search" value={q} onChange={(e) => setQ(e.target.value)} />
-        {anyOther && (
+        <OrderField value={order} onChange={setOrder} />
+        {(anyOther || unit) && (
           <fieldset className="image-scope">
             <legend className="sr-only">Welche Bilder</legend>
+            {unit && (
+              <label>
+                <input
+                  type="radio"
+                  name="bildumfang"
+                  checked={scope === 'unit'}
+                  onChange={() => setScope('unit')}
+                />{' '}
+                nur {unit.name}
+              </label>
+            )}
             <label>
               <input
                 type="radio"
