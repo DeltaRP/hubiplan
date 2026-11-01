@@ -15,6 +15,11 @@ if [ "${RUN_MIGRATIONS:-0}" = "1" ]; then
     fi
     unset OWNER_URL
 fi
+# Schlüsseldateien älterer Fassungen (0600) für die Gruppe lesbar machen, damit das
+# Backup sie mitsichern kann (siehe peering/identity.py, KEY_FILE_MODE)
+if [ -d /app/private ]; then
+    find /app/private -type f -user "$(id -u)" -perm 0600 -exec chmod 0640 {} + 2> /dev/null || true
+fi
 # Der Zugang des Tabelleneigentümers gelangt nicht in den laufenden Prozess
 unset MIGRATE_DATABASE_URL APP_DB_PASSWORD
 

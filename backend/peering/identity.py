@@ -42,6 +42,11 @@ from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 from django.conf import settings
 from django.utils import timezone
 
+# Nur für die App (Eigentümer) und die Gruppe lesbar: Der Backup-Container gehört zur
+# Gruppe der App (group_add in docker-compose.server.yml) und muss die Datei mitsichern.
+# Mit 0600 brach die Dateiliste des Backups ab (Testserver 31.10.2026).
+KEY_FILE_MODE = 0o640
+
 FORMAT = "hubiplan-instance"
 # So lange gelten die alten Schlüssel nach einem geplanten Wechsel weiter
 TRANSITION = datetime.timedelta(days=30)
@@ -211,7 +216,7 @@ def _load(path: Path) -> Identity:
 def _write(path: Path, data: dict) -> None:
     """Datei ersetzen (erst vollständig schreiben, dann umbenennen)."""
     tmp = path.with_name(f".{path.name}.{os.getpid()}.{uuid.uuid4().hex}")
-    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, KEY_FILE_MODE)
     with os.fdopen(fd, "w") as fh:
         json.dump(data, fh)
         fh.flush()
@@ -222,7 +227,7 @@ def _write(path: Path, data: dict) -> None:
 @contextlib.contextmanager
 def _locked(path: Path):
     lock = path.with_name(f".{path.name}.lock")
-    fd = os.open(lock, os.O_WRONLY | os.O_CREAT, 0o600)
+    fd = os.open(lock, os.O_WRONLY | os.O_CREAT, KEY_FILE_MODE)
     try:
         fcntl.flock(fd, fcntl.LOCK_EX)
         yield
@@ -252,7 +257,7 @@ def _create(path: Path) -> None:
         "created": timezone.now().isoformat(),
     }
     tmp = path.with_name(f".{path.name}.{os.getpid()}.{uuid.uuid4().hex}")
-    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, KEY_FILE_MODE)
     with os.fdopen(fd, "w") as fh:
         json.dump(data, fh)
     try:

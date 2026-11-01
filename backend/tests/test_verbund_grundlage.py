@@ -95,7 +95,7 @@ class TestIdentitaet:
         assert first.public_key == second.public_key
         path = identity.key_path()
         assert path.exists()
-        assert oct(path.stat().st_mode & 0o777) == "0o600"
+        assert oct(path.stat().st_mode & 0o777) == "0o640"
 
     def test_gleichzeitiges_anlegen_behaelt_erste_datei(self):
         path = identity.key_path()
