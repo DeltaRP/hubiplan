@@ -16,6 +16,7 @@ from events import views as event_views
 from exchange import views as exchange_views
 from finance import bank_views, cash_count_views, donation_views, quittung_views, reserve_views
 from finance import views as finance_views
+from competitions import urls as competition_urls
 from honors import urls as honors_urls
 from letterhead import views as letterhead_views
 from members import (
@@ -456,6 +457,7 @@ org_patterns = [
     *circular_urls.org_patterns,
     *website_urls.org_patterns,
     *honors_urls.org_patterns,
+    *competition_urls.org_patterns,
     path("offices/", office_views.OfficesView.as_view(), name="offices"),
     path("offices/<int:pk>/", office_views.OfficeEntryView.as_view(), name="office-entry"),
     path(

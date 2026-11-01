@@ -49,6 +49,8 @@ CIRCULARS_SEND = "circulars.send"
 WEBSITE_MANAGE = "website.manage"
 WEBSITE_CONTENT = "website.content"
 PEERING_MANAGE = "peering.manage"
+COMPETITIONS_MANAGE = "competitions.manage"
+COMPETITIONS_RESULTS = "competitions.results"
 
 # Rechte in einer Abteilung (Abteilungsrollen, ab Phase 2). Sie gelten nur für
 # die Mitglieder dieser Abteilung.
@@ -167,6 +169,21 @@ MODULES: tuple[Module, ...] = (
         switchable=True,
     ),
     Module(
+        "competitions",
+        "Wettbewerbe",
+        (
+            Permission(
+                COMPETITIONS_MANAGE,
+                "Wettbewerbe verwalten: anlegen, Wertungen, abschließen, Auswertung",
+            ),
+            Permission(
+                COMPETITIONS_RESULTS,
+                "Ergebnisse erfassen: Starter, Werte und Stechen eintragen (z. B. Schießmeister)",
+            ),
+        ),
+        switchable=True,
+    ),
+    Module(
         "export",
         "Export",
         (
@@ -241,7 +258,7 @@ ALL_CODES: frozenset[str] = frozenset(p.code for m in MODULES for p in m.permiss
 SWITCHABLE_MODULES: tuple[str, ...] = tuple(m.id for m in MODULES if m.switchable)
 # Module, die eine neue Einheit nicht automatisch bekommt (die Plattform schaltet
 # sie gezielt frei, z. B. die Webseite nur für Einheiten, die eine haben sollen)
-OPT_IN_MODULES: frozenset[str] = frozenset({"website"})
+OPT_IN_MODULES: frozenset[str] = frozenset({"website", "competitions"})
 DEFAULT_MODULES: tuple[str, ...] = tuple(m for m in SWITCHABLE_MODULES if m not in OPT_IN_MODULES)
 
 

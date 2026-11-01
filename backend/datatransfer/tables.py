@@ -58,6 +58,12 @@ MODULE_MODELS = (
     "honors.Reign",
     "honors.Companion",
     "honors.ReignPhoto",
+    "competitions.Competition",
+    "competitions.Scoring",
+    "competitions.Starter",
+    "competitions.Score",
+    "competitions.ShootOff",
+    "competitions.ShootOffEntry",
     "events.EventCategory",
     "events.Event",
     "events.EventException",
@@ -98,6 +104,13 @@ MEMBER_MODELS = {
     "honors.reign",
     "honors.companion",
     "honors.reignphoto",
+    # Wettbewerbe verweisen auf Mitgliedschaften (Starter, Schützen im Stechen)
+    "competitions.competition",
+    "competitions.scoring",
+    "competitions.starter",
+    "competitions.score",
+    "competitions.shootoff",
+    "competitions.shootoffentry",
 }
 # Ein Abteilungsimport legt eine neue Untereinheit im bestehenden Verein an. Er darf nur
 # die Tabellen schreiben, die auch der Export einer Abteilung enthält, nie Kasse oder
