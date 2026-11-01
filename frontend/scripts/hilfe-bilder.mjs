@@ -14,6 +14,7 @@ const spec = JSON.parse(readFileSync(new URL('../src/help/bilder.json', import.m
 const only = new Set(process.argv.slice(2))
 const images = spec.bilder.filter((b) => !only.size || only.has(b.name))
 
+const MAX_HOEHE = 900
 const browser = await chromium.launch()
 let failed = 0
 for (const language of ['de', 'en']) {
@@ -55,7 +56,28 @@ for (const language of ['de', 'en']) {
           .catch(() => {})
         const target = page.locator(b.ausschnitt ? `main ${b.ausschnitt}` : 'main').first()
         await target.waitFor({ state: 'visible', timeout: 15000 })
-        await target.screenshot({ path: file, animations: 'disabled', caret: 'hide' })
+        // Hinweise mit Datum (z. B. Frist für die Zwei-Faktor-Anmeldung) veralten im Bild
+        await page.addStyleTag({ content: 'main.content > .alert[role="status"] { display: none !important; }' })
+        // Ausschnitt aus der ganzen Seite: so liegt die feste Kopfleiste nicht über dem
+        // Bild, lange Seiten werden nach MAX_HOEHE abgeschnitten, leerer Rand unten fehlt
+        const clip = await target.evaluate((el, maxHeight) => {
+          window.scrollTo(0, 0)
+          const box = el.getBoundingClientRect()
+          let bottom = box.top
+          for (const child of el.children) {
+            const r = child.getBoundingClientRect()
+            if (r.height) bottom = Math.max(bottom, r.bottom)
+          }
+          const padding = el.tagName === 'MAIN' ? 24 : 0
+          bottom = el.tagName === 'MAIN' ? bottom + padding : box.bottom
+          return {
+            x: Math.max(0, box.left),
+            y: Math.max(0, box.top),
+            width: box.width,
+            height: Math.min(bottom - box.top, maxHeight),
+          }
+        }, MAX_HOEHE)
+        await page.screenshot({ path: file, clip, fullPage: true, animations: 'disabled', caret: 'hide' })
         console.log(`${language}/${b.name}.png`)
       } catch (err) {
         failed++
