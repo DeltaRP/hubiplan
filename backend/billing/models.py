@@ -17,6 +17,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 
+from core.encfields import EncryptedCharField
 from core.privatefiles import PrivateFileField
 from exchange.models import private_storage
 
@@ -500,9 +501,10 @@ class Mandate(models.Model):
         verbose_name="Verein (Dachverband zieht ein)",
     )
     reference = models.CharField("Mandatsreferenz", max_length=35)
-    holder = models.CharField("Kontoinhaber", max_length=70)
-    iban = models.CharField("IBAN", max_length=34)
-    bic = models.CharField("BIC", max_length=11, blank=True)
+    # Verschlüsselt (core/encfields.py)
+    holder = EncryptedCharField("Kontoinhaber", max_length=70)
+    iban = EncryptedCharField("IBAN", max_length=34)
+    bic = EncryptedCharField("BIC", max_length=11, blank=True)
     signed_on = models.DateField("Datum der Unterschrift")
     source = models.CharField("Erteilt", max_length=10, choices=Source.choices)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.ACTIVE)

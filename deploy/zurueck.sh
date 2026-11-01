@@ -34,6 +34,17 @@ if [ ! -f "$ZIEL.vorher/backend/core/privatefiles.py" ] && [ -f backend/core/pri
     $COMPOSE run -T --rm --no-deps backend python manage.py dateien_verschluesseln --entschluesseln
 fi
 
+# Verschlüsselte Datenbankfelder: Verschlüsselt die vorige Fassung andere Felder (oder
+# keine), erst alle Felder wieder im Klartext ablegen. Klartext liest jede Fassung;
+# nach dem nächsten Ausrollen verschlüsselt `daten_verschluesseln` wieder.
+felder() {
+    grep -rhE '= Encrypted[A-Za-z]+Field\(' "$1/backend" --include='*.py' 2> /dev/null | sed 's/^ *//' | sort
+}
+if [ -f backend/core/encfields.py ] && [ "$(felder .)" != "$(felder "$ZIEL.vorher")" ]; then
+    echo "Die vorige Fassung verschlüsselt andere Felder: entschlüssele sie …"
+    $COMPOSE run -T --rm --no-deps backend python manage.py daten_verschluesseln --entschluesseln
+fi
+
 # Images tauschen: aktuelle <-> :vorher
 for img in $EIGENE; do
     basis="${img%%:*}"

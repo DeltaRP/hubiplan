@@ -186,6 +186,16 @@ def member_queryset(org: Organization):
     )
 
 
+def _persons_by_email(qs, word: str) -> set[int]:
+    """Personen, deren E-Mail-Adresse ``word`` enthält. Die Adressen sind verschlüsselt
+    (core/encfields.py); die Datenbank kann darin nicht suchen, also hier im Speicher."""
+    word = word.lower()
+    contacts = ContactDetails.objects.filter(person_id__in=qs.values("person_id")).values_list(
+        "person_id", "email"
+    )
+    return {pid for pid, email in contacts if email and word in email.lower()}
+
+
 def filter_members(qs, params, org: Organization):
     search = (params.get("suche") or "").strip()
     if search:
@@ -195,9 +205,7 @@ def filter_members(qs, params, org: Organization):
                 Q(person__last_name__icontains=word)
                 | Q(person__first_name__icontains=word)
                 | Q(club_number__iexact=word)
-                | Exists(
-                    ContactDetails.objects.filter(person=OuterRef("person"), email__icontains=word)
-                )
+                | Q(person_id__in=_persons_by_email(qs, word))
             )
             if word.isdigit():
                 word_q |= Q(person__federation__member_number=int(word))
