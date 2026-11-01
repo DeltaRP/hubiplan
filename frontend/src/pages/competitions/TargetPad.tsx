@@ -11,6 +11,8 @@ export interface PadHit {
   x: number
   y: number
   spot?: number | null
+  /** „foto“: Vorschlag der Fotoerkennung, bis jemand den Treffer verschiebt */
+  source?: 'tippen' | 'foto' | 'hand'
 }
 
 const ZOOMS = [
@@ -117,7 +119,7 @@ export function TargetPad({
   }
 
   function update(index: number, p: { x: number; y: number }) {
-    onChange(hits.map((h, i) => (i === index ? { ...h, x: p.x, y: p.y } : h)))
+    onChange(hits.map((h, i) => (i === index ? { ...h, x: p.x, y: p.y, source: 'tippen' } : h)))
   }
 
   function onPointerDown(e: PointerEvent<SVGSVGElement>) {
@@ -137,7 +139,7 @@ export function TargetPad({
     })
     if (index < 0) {
       if (full) return
-      onChange([...hits, { x: p.x, y: p.y, spot: multi ? spot : null }])
+      onChange([...hits, { x: p.x, y: p.y, spot: multi ? spot : null, source: 'tippen' }])
       index = hits.length
     }
     setSelected(index)
@@ -304,6 +306,7 @@ export function TargetPad({
                   {i + 1}. {shotLabel(method, s)}
                   {s.inner ? ' (Innenzehner)' : ''}
                 </button>
+                {h.source === 'foto' && <span className="muted small"> aus Foto</span>}
                 {!keep.has(i) && <span className="muted small"> zählt nicht</span>}
                 {multi && <span className="muted small"> · Spiegel {h.spot ?? 1}</span>}{' '}
                 <button

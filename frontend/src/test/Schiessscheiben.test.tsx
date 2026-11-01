@@ -309,4 +309,85 @@ describe('Treffer am Stand antippen', () => {
     await waitFor(() => expect(op()).toBeDefined())
     expect(op()).toMatchObject({ starter: 21, scoring: 11, hits: [{ x: 0, y: 0, spot: null }] })
   })
+
+  it('übernimmt Treffer aus einem Foto als Vorschlag zum Prüfen', async () => {
+    const photoScoring = {
+      ...scoring,
+      target: 'lg10_kyf',
+      method: 'ringe',
+      unit_label: 'Ringe',
+      shots: 2,
+      counted_shots: null,
+      target_info: { ...kyf, photo: true, rings: [{ ring: 1, diameter: 83 }] },
+    }
+    const otto = {
+      id: 21,
+      name: 'Otto Erfunden',
+      club: '',
+      guest: false,
+      membership: 2,
+      unit: null,
+      unit_name: '',
+      number: '',
+      out_of_competition: false,
+      presence: '',
+      drawn_how: '',
+      values: {},
+      hits: {},
+    }
+    const calls = renderAt('/wettbewerbe/3', {
+      [`GET ${base}3/`]: () => ({
+        status: 200,
+        body: { ...detail, status: 'laeuft', scorings: [photoScoring] },
+      }),
+      [`GET ${base}3/starters/`]: () => ({ status: 200, body: [otto] }),
+      [`GET ${base}3/members/`]: () => ({ status: 200, body: [] }),
+      [`POST ${base}3/photo/`]: () => ({
+        status: 200,
+        body: {
+          scoring: 11,
+          hits: [
+            { x: '0.000', y: '0.000', source: 'foto' },
+            { x: '0.000', y: '-10.000', source: 'foto' },
+          ],
+          needs_review: true,
+          note: 'Schuss 2 nah an einer Ringlinie',
+        },
+      }),
+      [`POST ${base}3/sync/`]: () => ({
+        status: 200,
+        body: { results: [{ ok: true }], conflicts: [], keys: {}, starters: [otto] },
+      }),
+    })
+    const user = userEvent.setup()
+    await user.type(await screen.findByLabelText('Schütze (Name oder Startnummer)'), 'otto')
+    expect(await screen.findByRole('option', { name: /Otto Erfunden/ })).toBeVisible()
+    await user.keyboard('{Enter}')
+    const file = new File([new Uint8Array([1, 2, 3])], 'scheibe.jpg', { type: 'image/jpeg' })
+    fireEvent.change(await screen.findByLabelText('Foto der Scheibe'), {
+      target: { files: [file] },
+    })
+    expect(await screen.findByText('Vorschlag aus dem Foto: 2 Treffer.')).toBeVisible()
+    expect(screen.getByText(/Bitte genau prüfen/)).toBeVisible()
+    expect(screen.getByText(/Schuss 2 nah an einer Ringlinie/)).toBeVisible()
+    expect(screen.getAllByText('aus Foto')).toHaveLength(2)
+    expect(screen.getByText(/2 von 2 Treffer · Summe 18/)).toBeVisible()
+    const upload = calls.find((c) => c.key === `POST ${base}3/photo/`)
+    expect(upload?.init?.body).toBeInstanceOf(FormData)
+    // zweiten Treffer korrigieren: per Tastatur 1 mm nach oben, dann ist er angetippt
+    screen.getByRole('button', { name: /^Schuss 2:/ }).focus()
+    await user.keyboard('{Shift>}{ArrowUp}{/Shift}')
+    expect(screen.getAllByText('aus Foto')).toHaveLength(1)
+    await user.click(screen.getByRole('button', { name: 'Speichern' }))
+    const op = () =>
+      calls
+        .filter((c) => c.key === `POST ${base}3/sync/`)
+        .flatMap((c) => JSON.parse(String(c.init?.body)).ops)
+        .find((o: { op: string }) => o.op === 'hits')
+    await waitFor(() => expect(op()).toBeDefined())
+    expect(op().hits).toEqual([
+      { x: 0, y: 0, spot: null, source: 'foto' },
+      { x: 0, y: -9, spot: null, source: 'tippen' },
+    ])
+  })
 })

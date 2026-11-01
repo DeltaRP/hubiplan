@@ -62,7 +62,17 @@ class Target:
             for r in range(self.lowest, self.top + 1)
         ]
         data["max_decimal"] = str(max_decimal(self))
+        data["photo"] = not photo_problem(self)
         return data
+
+
+def photo_problem(t: Target) -> str:
+    """Warum die Fotoerkennung (Schritt 4) diese Scheibe noch nicht kann; sonst leer."""
+    if not t.black_diameter:
+        return "Für Scheiben ohne schwarzen Spiegel gibt es noch keine Fotoerkennung."
+    if t.spots > 1:
+        return "Für Scheiben mit mehreren Spiegeln gibt es noch keine Fotoerkennung."
+    return ""
 
 
 CATALOG: tuple[Target, ...] = (

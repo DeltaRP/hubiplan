@@ -14,6 +14,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
+from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -23,6 +24,7 @@ from core.tenancy import rls_bypass, unit_context
 
 from . import services
 from .models import Competition, StandAccess, hash_token
+from .target_views import detect_photo, photo_rate
 from .views import (
     MODULE,
     CompetitionSerializer,
@@ -310,3 +312,17 @@ class StandUnitMembersView(_StandWrite):
     def get(self, request, token: str):
         unit = request.query_params.get("unit")
         return self.finish(self.run(token, lambda org, comp: unit_members(org, comp, unit)))
+
+
+class StandPhotoView(_StandPublic):
+    """POST (multipart) photo, scoring: Treffer auf dem Foto vorschlagen (nichts gespeichert)."""
+
+    parser_classes = [MultiPartParser]
+
+    def post(self, request, token: str):
+        access = self.resolve(token)
+        photo_rate(f"s{access.pk}")
+        with unit_context(access.organization_id):
+            comp = Competition.objects.get(pk=access.competition_id)
+            data = detect_photo(comp, request.data, request.FILES)
+        return self.finish(data)

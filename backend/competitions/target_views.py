@@ -5,15 +5,20 @@
 - ``GET/PUT competitions/<id>/hits/``: Treffer eines Starters in einer Einzelwertung lesen
   bzw. ersetzen. Mit Wertungsart Ringe, Zehntel oder Teiler rechnet HUBIplan daraus den
   Wert des Starters; bei „frei“ bleiben die Treffer nur Angabe.
+- ``POST competitions/<id>/photo/`` (und über den Standzugang): Treffer auf einem Foto der
+  Scheibe vorschlagen (Schritt 4). Das Foto wird nur im Speicher ausgewertet, nie
+  gespeichert; gespeichert wird erst, was jemand im Antipp-Bild bestätigt.
 """
 
 from __future__ import annotations
 
 from decimal import Decimal, InvalidOperation
 
+from django.core.cache import cache
 from django.db import transaction
 from django.shortcuts import get_object_or_404
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import Throttled, ValidationError
+from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -26,6 +31,8 @@ from .views import _Mixin, _open_for_entries, set_score
 # Treffer weiter draußen sind sicher Tippfehler (größte Scheibe: 50 cm)
 MAX_MM = Decimal(1000)
 MAX_HITS = 200
+MAX_PHOTO_BYTES = 15 * 1024 * 1024
+PHOTO_RATE = (60, 600)  # Fotos je 10 Minuten (je Konto bzw. Standzugang)
 
 
 class TargetCatalogView(_Mixin, APIView):
@@ -217,3 +224,60 @@ class HitsView(_Mixin, APIView):
                 request.data.get("source"),
             )
         )
+
+
+# --- Foto (Schritt 4) ---
+
+
+def photo_rate(key: str) -> None:
+    """Fotos kosten Rechenzeit: höchstens ``PHOTO_RATE`` je Konto bzw. Standzugang."""
+    key = f"scheibenfoto:{key}"
+    count = cache.get(key, 0)
+    if count >= PHOTO_RATE[0]:
+        raise Throttled(detail="Zu viele Fotos in kurzer Zeit. Bitte kurz warten.")
+    cache.set(key, count + 1, PHOTO_RATE[1])
+
+
+def detect_photo(comp, data, files) -> dict:
+    """Treffer auf dem Foto vorschlagen (nichts wird gespeichert)."""
+    scoring = get_object_or_404(
+        Scoring, pk=data.get("scoring"), competition=comp, kind=Scoring.Kind.INDIVIDUAL
+    )
+    target = services.target_of(scoring)
+    if target is None:
+        raise ValidationError("Für diese Wertung ist keine Scheibe eingestellt.")
+    upload = files.get("photo")
+    if upload is None:
+        raise ValidationError({"photo": "Bitte ein Foto der Scheibe senden."})
+    if upload.size > MAX_PHOTO_BYTES:
+        raise ValidationError({"photo": "Das Foto ist zu groß (höchstens 15 MB)."})
+    # erst hier laden: OpenCV braucht Speicher, den nicht jeder Aufruf braucht
+    from .vision import detect
+
+    reason = detect.unsupported(target)
+    if reason:
+        raise ValidationError({"photo": reason})
+    try:
+        found = detect.detect(upload.read(), target, scoring.shots or None)
+    except detect.DetectError as exc:
+        raise ValidationError({"photo": str(exc)}) from exc
+    return {
+        "scoring": scoring.pk,
+        "hits": [
+            {"x": f"{x:.3f}", "y": f"{y:.3f}", "source": Hit.Source.PHOTO} for x, y in found.hits
+        ],
+        "needs_review": found.needs_review,
+        "note": found.note,
+    }
+
+
+class PhotoView(_Mixin, APIView):
+    """POST (multipart) photo, scoring: Vorschlag ``{hits, needs_review, note}``."""
+
+    manage_only = False
+    parser_classes = [MultiPartParser]
+
+    def post(self, request, org_id: int, competition_id: int):
+        comp = self.competition(competition_id)
+        photo_rate(f"u{request.user.pk}")
+        return Response(detect_photo(comp, request.data, request.FILES))

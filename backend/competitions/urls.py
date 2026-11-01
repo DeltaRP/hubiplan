@@ -27,6 +27,7 @@ org_patterns = [
         name="competition-targets",
     ),
     path(f"{C}hits/", target_views.HitsView.as_view(), name="competition-hits"),
+    path(f"{C}photo/", target_views.PhotoView.as_view(), name="competition-photo"),
     path(f"{C}event/", event_views.EventLinkView.as_view(), name="competition-event"),
     path(
         f"{C}starters/from-event/",
@@ -88,6 +89,7 @@ public_patterns = [
     path(f"{S}standings/", stand_views.StandStandingsView.as_view(), name="stand-standings"),
     path(f"{S}version/", stand_views.StandVersionView.as_view(), name="stand-version"),
     path(f"{S}sync/", stand_views.StandSyncView.as_view(), name="stand-sync"),
+    path(f"{S}photo/", stand_views.StandPhotoView.as_view(), name="stand-photo"),
     path(f"{S}shootoffs/", stand_views.StandShootoffsView.as_view(), name="stand-shootoffs"),
     path(f"{S}shootoffs/<int:pk>/", stand_views.StandShootoffView.as_view(), name="stand-shootoff"),
     path(

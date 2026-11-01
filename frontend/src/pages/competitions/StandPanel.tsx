@@ -18,6 +18,8 @@ import {
 import { confirmDialog } from '../../components/dialog.ts'
 import { StandEnd } from './StandEnd.tsx'
 import { StandFinish } from './StandFinish.tsx'
+import { PhotoButton } from './PhotoButton.tsx'
+import type { PhotoSuggestion } from './photo.ts'
 import { TargetPad, type PadHit } from './TargetPad.tsx'
 import { scoreShot, totalText } from './targetMath.ts'
 import { describe, guestOrigin, useStandStore } from './standStore.ts'
@@ -72,6 +74,8 @@ export function StandPanel({
   // Antippen auf dem Scheibenbild (Schießscheiben Schritt 2); „nur Summe“ schaltet zurück
   const [padHits, setPadHits] = useState<PadHit[]>([])
   const [sumOnly, setSumOnly] = useState(false)
+  // Vorschlag aus dem Foto (Schritt 4): Hinweis, bis gespeichert oder abgebrochen
+  const [photoNote, setPhotoNote] = useState<PhotoSuggestion | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
   const pointsRef = useRef<HTMLInputElement>(null)
   const closed = (local.status ?? comp.status) === 'endgueltig'
@@ -105,6 +109,7 @@ export function StandPanel({
       x: Number(h.x),
       y: Number(h.y),
       spot: h.spot,
+      source: h.source,
     }))
   }
 
@@ -113,6 +118,7 @@ export function StandPanel({
     setPoints('')
     setGuestClub('')
     setPadHits(storedHits(hit.kind === 'starter' ? hit.starter : null))
+    setPhotoNote(null)
     setTimeout(() => pointsRef.current?.focus(), 0)
   }
 
@@ -245,7 +251,12 @@ export function StandPanel({
       setNotice(`${name}: unverändert.`)
     } else {
       const at = new Date().toISOString()
-      const hits = padHits.map((h) => ({ x: h.x, y: h.y, spot: h.spot ?? null }))
+      const hits = padHits.map((h) => ({
+        x: h.x,
+        y: h.y,
+        spot: h.spot ?? null,
+        source: h.source ?? ('tippen' as const),
+      }))
       push({ op: 'hits', starter: ref, scoring: scoring.id, hits, at }, (l) => ({
         ...l,
         starters: l.starters.map((s) =>
@@ -266,6 +277,7 @@ export function StandPanel({
       )
     }
     setPadHits([])
+    setPhotoNote(null)
     backToSearch()
   }
 
@@ -424,6 +436,36 @@ export function StandPanel({
                         ? ` (${scoring.counted_shots} von ${scoring.shots ?? '?'} zählen)`
                         : ''}
                     </p>
+                    {target.photo && (
+                      <PhotoButton
+                        disabled={!online}
+                        detect={(photo) => api.photo(scoring.id, photo)}
+                        onResult={(sug) => {
+                          setPadHits(sug.hits)
+                          setPhotoNote(sug)
+                        }}
+                      />
+                    )}
+                    {target.photo && !online && (
+                      <p className="muted small">
+                        Ohne Empfang geht die Fotoerkennung nicht; Antippen geht immer.
+                      </p>
+                    )}
+                    {photoNote && (
+                      <div
+                        className={`pad-photo-note${photoNote.needsReview ? ' pad-photo-review' : ''}`}
+                        role="status"
+                      >
+                        <strong>
+                          {photoNote.hits.length
+                            ? `Vorschlag aus dem Foto: ${photoNote.hits.length} Treffer.`
+                            : 'Auf dem Foto wurden keine Treffer gefunden.'}
+                        </strong>{' '}
+                        {photoNote.needsReview ? 'Bitte genau prüfen' : 'Bitte prüfen'}, falls nötig
+                        verschieben, dann speichern.
+                        {photoNote.note && <span className="small"> ({photoNote.note})</span>}
+                      </div>
+                    )}
                     <TargetPad
                       target={target}
                       method={scoring.method}
