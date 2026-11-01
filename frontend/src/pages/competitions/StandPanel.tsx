@@ -14,6 +14,7 @@ import {
   type StandApi,
   type Starter,
   type SyncOp,
+  type TargetInfo,
 } from '../../api/competitions.ts'
 import { confirmDialog } from '../../components/dialog.ts'
 import { StandEnd } from './StandEnd.tsx'
@@ -102,6 +103,22 @@ export function StandPanel({
 
   const target = scoring?.target_info ?? null
   const tapping = !!target && !!scoring && scoring.method !== 'frei' && !sumOnly
+  // Plausibilität (Schritt 6): Summe der erkannten Treffer neben der Handeingabe
+  const photoSum = useMemo(
+    () =>
+      photoNote && target && scoring && photoNote.hits.length
+        ? totalText(
+            scoring.method,
+            photoNote.hits.map((h) => scoreShot(target, h.x, h.y)),
+            scoring.counted_shots,
+          )
+        : '',
+    [photoNote, target, scoring],
+  )
+  const photoDiffers =
+    photoSum !== '' &&
+    points.trim() !== '' &&
+    Number(points.trim().replace(',', '.')) !== Number(photoSum)
 
   function storedHits(s: Starter | null): PadHit[] {
     if (!s || !scoring) return []
@@ -153,6 +170,15 @@ export function StandPanel({
     if (value !== '' && max && Number(value) > max) {
       setNotice(`Höchstens ${showValue(String(max), 0)}.`)
       return
+    }
+    if (value !== '' && photoSum !== '' && Number(value) !== Number(photoSum)) {
+      const ok = await confirmDialog({
+        title: 'Weicht vom Foto ab',
+        message: `Eingegeben: ${showValue(value, scoring.decimals)} ${scoring.unit_label}. Das Foto ergibt ${showValue(photoSum, scoring.decimals)}. Bitte die Scheibe prüfen. Die Eingabe trotzdem speichern?`,
+        confirmLabel: 'Eingabe speichern',
+        danger: false,
+      })
+      if (!ok) return
     }
     let ref: number | string
     let name: string
@@ -257,7 +283,8 @@ export function StandPanel({
         spot: h.spot ?? null,
         source: h.source ?? ('tippen' as const),
       }))
-      push({ op: 'hits', starter: ref, scoring: scoring.id, hits, at }, (l) => ({
+      const samples = photoNote?.samples.length ? photoNote.samples : undefined
+      push({ op: 'hits', starter: ref, scoring: scoring.id, hits, at, samples }, (l) => ({
         ...l,
         starters: l.starters.map((s) =>
           (s.key ?? s.id) === ref
@@ -439,11 +466,7 @@ export function StandPanel({
                     {target.photo && (
                       <PhotoButton
                         disabled={!online}
-                        blackShare={
-                          target.black_diameter && target.rings[0] && target.spots === 1
-                            ? target.black_diameter / target.rings[0].diameter
-                            : null
-                        }
+                        blackShare={blackShare(target)}
                         detect={(photo) => api.photo(scoring.id, photo)}
                         onResult={(sug) => {
                           setPadHits(sug.hits)
@@ -504,6 +527,43 @@ export function StandPanel({
                         }
                       }}
                     />
+                    {target?.photo && scoring.method !== 'frei' && online && (
+                      <PhotoButton
+                        blackShare={blackShare(target)}
+                        detect={(photo) => api.photo(scoring.id, photo)}
+                        onResult={(sug) => {
+                          setPadHits(sug.hits)
+                          setPhotoNote(sug)
+                        }}
+                      />
+                    )}
+                    {photoNote && (
+                      <div
+                        className={`pad-photo-note${photoDiffers ? ' pad-photo-review' : ''}`}
+                        role="status"
+                      >
+                        {photoSum ? (
+                          <>
+                            <strong>
+                              Foto zum Vergleich: {showValue(photoSum, scoring.decimals)}{' '}
+                              {scoring.unit_label} ({photoNote.hits.length} Treffer).
+                            </strong>{' '}
+                            {photoDiffers &&
+                              'Weicht von der Eingabe ab, bitte die Scheibe prüfen. '}
+                            {photoNote.needsReview && 'Erkennung unsicher. '}
+                            <button
+                              type="button"
+                              className="link-button"
+                              onClick={() => setSumOnly(false)}
+                            >
+                              Treffer ansehen
+                            </button>
+                          </>
+                        ) : (
+                          <strong>Auf dem Foto wurden keine Treffer gefunden.</strong>
+                        )}
+                      </div>
+                    )}
                     {target && scoring.method !== 'frei' && (
                       <button
                         type="button"
@@ -665,4 +725,11 @@ function hitLabel(h: Hit, scoring: Scoring) {
       Neu: <strong>„{h.name}“</strong> als Gast hinzufügen
     </>
   )
+}
+
+/** Spiegel / äußerster Ring für die Live-Kamera; nur bei Karten mit einem Spiegel. */
+function blackShare(t: TargetInfo): number | null {
+  return t.black_diameter && t.rings[0] && t.spots === 1
+    ? t.black_diameter / t.rings[0].diameter
+    : null
 }

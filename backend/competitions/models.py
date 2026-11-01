@@ -586,3 +586,49 @@ class StandAccess(models.Model):
             created_by=user,
         )
         return access, token
+
+
+class PhotoSampleConsent(models.Model):
+    """Einwilligung des Vereins, bestätigte Spiegelausschnitte zu sammeln (Schießscheiben
+    Schritt 6, Ralf 01.11.2026). Standardmäßig aus; der Verein schaltet es selbst ein."""
+
+    organization = models.OneToOneField(
+        "organizations.Organization", on_delete=models.CASCADE, related_name="+"
+    )
+    enabled = models.BooleanField("Spiegelausschnitte sammeln", default=False)
+    changed_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Einwilligung Spiegelausschnitte"
+        verbose_name_plural = "Einwilligungen Spiegelausschnitte"
+
+    def __str__(self) -> str:
+        return "Spiegelausschnitte sammeln: " + ("ja" if self.enabled else "nein")
+
+
+class PhotoSample(models.Model):
+    """Bestätigter Spiegelausschnitt zum Verbessern der Fotoerkennung.
+
+    Nur mit Einwilligung des Vereins (``PhotoSampleConsent``). Gespeichert wird nur der
+    entzerrte Ausschnitt eines Spiegels (Graubild) mit den bestätigten und den erkannten
+    Treffern, ohne Verweis auf Starter, Wettbewerb oder Uhrzeit, also ohne Namen."""
+
+    organization = models.ForeignKey(
+        "organizations.Organization", on_delete=models.CASCADE, related_name="+"
+    )
+    target = models.CharField("Scheibe", max_length=30)
+    # Maße der Scheibe (bei eigener Scheibe sonst nicht mehr bekannt)
+    target_data = models.JSONField("Maße der Scheibe", default=dict)
+    image = models.BinaryField("Ausschnitt (JPEG)")
+    px_per_mm = models.DecimalField("Bildpunkte je mm", max_digits=6, decimal_places=2)
+    hits = models.JSONField("bestätigte Treffer (mm)", default=list)
+    detected = models.JSONField("erkannte Treffer (mm)", default=list)
+    created_on = models.DateField("gesammelt am", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Spiegelausschnitt"
+        verbose_name_plural = "Spiegelausschnitte"
+        ordering = ["-id"]
+
+    def __str__(self) -> str:
+        return f"Spiegelausschnitt {self.target}"

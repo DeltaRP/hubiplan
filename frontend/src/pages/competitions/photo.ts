@@ -30,6 +30,8 @@ export interface PhotoSuggestion {
   hits: PadHit[]
   needsReview: boolean
   note: string
+  /** Schlüssel der bereitgelegten Spiegelausschnitte (nur mit Einwilligung des Vereins) */
+  samples: string[]
 }
 
 export function toSuggestion(r: PhotoResult): PhotoSuggestion {
@@ -42,6 +44,7 @@ export function toSuggestion(r: PhotoResult): PhotoSuggestion {
     })),
     needsReview: r.needs_review,
     note: r.note,
+    samples: (r.samples ?? []).map((s) => s.key),
   }
 }
 

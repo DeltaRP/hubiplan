@@ -8,6 +8,8 @@
 - ``POST competitions/<id>/photo/`` (und über den Standzugang): Treffer auf einem Foto der
   Scheibe vorschlagen (Schritt 4). Das Foto wird nur im Speicher ausgewertet, nie
   gespeichert; gespeichert wird erst, was jemand im Antipp-Bild bestätigt.
+- ``GET/PATCH/DELETE competitions/photo-samples/``: Einwilligung des Vereins, bestätigte
+  Spiegelausschnitte zu sammeln, und Löschen aller gesammelten (Schritt 6, ``samples.py``).
 """
 
 from __future__ import annotations
@@ -24,8 +26,8 @@ from rest_framework.views import APIView
 
 from audit.log import diff, record, snapshot
 
-from . import services, targets, tiebreak
-from .models import Hit, Scoring, Starter
+from . import samples, services, targets, tiebreak
+from .models import Hit, PhotoSample, PhotoSampleConsent, Scoring, Starter
 from .views import _Mixin, _open_for_entries, set_score
 
 # Treffer weiter draußen sind sicher Tippfehler (größte Scheibe: 50 cm)
@@ -98,13 +100,22 @@ def hits_data(scoring: Scoring, starter: Starter) -> dict:
 
 @transaction.atomic
 def set_hits(
-    org, user, comp, scoring: Scoring, starter: Starter, raw, source=None, at=None
+    org,
+    user,
+    comp,
+    scoring: Scoring,
+    starter: Starter,
+    raw,
+    source=None,
+    at=None,
+    sample_keys=None,
 ) -> dict:
     """Treffer eines Starters ersetzen; Wert neu rechnen (außer bei „frei“).
 
     ``at``: Zeitpunkt der Eingabe auf dem Gerät (Standmodus offline). Wurden die Treffer
     auf dem Server danach geändert, gilt die spätere Eingabe; zurück kommt dann der
-    gültige Stand mit ``conflict``."""
+    gültige Stand mit ``conflict``. ``sample_keys``: bereitgelegte Spiegelausschnitte vom
+    Foto, die mit diesen bestätigten Treffern gesammelt werden (nur mit Einwilligung)."""
     _open_for_entries(comp)
     if scoring.kind != Scoring.Kind.INDIVIDUAL:
         raise ValidationError("Treffer gibt es nur in Einzelwertungen.")
@@ -170,6 +181,7 @@ def set_hits(
         record(org, user, "delete", h, diff(snapshot(h), {}))
         h.delete()
     recompute(org, user, comp, scoring, starter)
+    samples.store(org, scoring, sample_keys, wanted)
     return hits_data(scoring, starter)
 
 
@@ -222,6 +234,7 @@ class HitsView(_Mixin, APIView):
                 starter,
                 request.data.get("hits"),
                 request.data.get("source"),
+                sample_keys=request.data.get("samples"),
             )
         )
 
@@ -257,8 +270,9 @@ def detect_photo(comp, data, files) -> dict:
     reason = detect.unsupported(target)
     if reason:
         raise ValidationError({"photo": reason})
+    collect = samples.enabled(comp.organization)
     try:
-        found = detect.detect(upload.read(), target, scoring.shots or None)
+        found = detect.detect(upload.read(), target, scoring.shots or None, crops=collect)
     except detect.DetectError as exc:
         raise ValidationError({"photo": str(exc)}) from exc
     return {
@@ -274,6 +288,12 @@ def detect_photo(comp, data, files) -> dict:
         ],
         "needs_review": found.needs_review,
         "note": found.note,
+        # nur mit Einwilligung des Vereins: Schlüssel der bereitgelegten Spiegelausschnitte
+        "samples": (
+            samples.keep(comp.organization, scoring, target, found, detect.PX_PER_MM)
+            if collect
+            else []
+        ),
     }
 
 
@@ -287,3 +307,58 @@ class PhotoView(_Mixin, APIView):
         comp = self.competition(competition_id)
         photo_rate(f"u{request.user.pk}")
         return Response(detect_photo(comp, request.data, request.FILES))
+
+
+class PhotoSamplesView(_Mixin, APIView):
+    """Bestätigte Spiegelausschnitte sammeln (Schritt 6): GET Stand, PATCH {enabled},
+    DELETE löscht alle gesammelten Ausschnitte des Vereins."""
+
+    def data(self) -> dict:
+        consent = PhotoSampleConsent.objects.filter(organization=self.org).first()
+        return {
+            "enabled": bool(consent and consent.enabled),
+            "changed_at": consent.changed_at if consent else None,
+            "count": PhotoSample.objects.filter(organization=self.org).count(),
+            "can_manage": self.can_manage,
+        }
+
+    def get(self, request, org_id: int):
+        return Response(self.data())
+
+    @transaction.atomic
+    def patch(self, request, org_id: int):
+        value = request.data.get("enabled")
+        if not isinstance(value, bool):
+            raise ValidationError({"enabled": "Bitte ja oder nein angeben."})
+        consent, _ = PhotoSampleConsent.objects.select_for_update().get_or_create(
+            organization=self.org
+        )
+        if consent.enabled != value:
+            record(
+                self.org,
+                request.user,
+                "update",
+                consent,
+                {
+                    "Spiegelausschnitte sammeln": [
+                        "nein" if value else "ja",
+                        "ja" if value else "nein",
+                    ]
+                },
+            )
+            consent.enabled = value
+            consent.save()
+        return Response(self.data())
+
+    @transaction.atomic
+    def delete(self, request, org_id: int):
+        count, _ = PhotoSample.objects.filter(organization=self.org).delete()
+        if count:
+            record(
+                self.org,
+                request.user,
+                "delete",
+                PhotoSampleConsent.objects.get_or_create(organization=self.org)[0],
+                {"Spiegelausschnitte gelöscht": [str(count), "0"]},
+            )
+        return Response(self.data())

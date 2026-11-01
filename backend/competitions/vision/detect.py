@@ -421,9 +421,15 @@ def unsupported(t: targets.Target) -> str:
     return targets.photo_problem(t)
 
 
-def detect(image: bytes, target: targets.Target | str, expected: int | None = None) -> Detection:
+def detect(
+    image: bytes,
+    target: targets.Target | str,
+    expected: int | None = None,
+    crops: bool = False,
+) -> Detection:
     """Treffer auf dem Foto; ``expected``: Schusszahl insgesamt (bei mehreren Spiegeln über
-    alle zusammen, gleich verteilt)."""
+    alle zusammen, gleich verteilt). ``crops``: entzerrte Spiegelausschnitte mitgeben
+    (JPEG, ``PX_PER_MM``), zum Sammeln mit Einwilligung des Vereins."""
     t = targets.BY_KEY.get(target) if isinstance(target, str) else target
     if t is None:
         raise DetectError("Unbekannte Scheibe.")
@@ -432,8 +438,13 @@ def detect(image: bytes, target: targets.Target | str, expected: int | None = No
         raise DetectError(reason)
     img = _decode(image)
     if t.spots <= 1:
-        hits, notes = _detect_spot(img, t, None, expected)
-        return Detection(hits=hits, needs_review=bool(notes), note="; ".join(notes))
+        hits, notes, norm = _detect_spot(img, t, None, expected)
+        return Detection(
+            hits=hits,
+            needs_review=bool(notes),
+            note="; ".join(notes),
+            crops=[encode_crop(norm)] if crops else [],
+        )
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     ellipses = find_blacks(gray, t.spots)
@@ -441,19 +452,24 @@ def detect(image: bytes, target: targets.Target | str, expected: int | None = No
     hits: list[tuple[float, float]] = []
     spots: list[int] = []
     notes: list[str] = []
+    pieces: list[bytes] = []
     if len(ellipses) < t.spots:
         notes.append(f"nur {len(ellipses)} von {t.spots} Spiegeln gefunden")
     # außerhalb des äußersten Rings liegt schon der Nachbarspiegel
     reach = t.outer_diameter / 2 + t.caliber / 2
     for n, ellipse in enumerate(ellipses, start=1):
-        found, spot_notes = _detect_spot(img, t, ellipse, per_spot, first=len(hits) + 1)
+        found, spot_notes, norm = _detect_spot(img, t, ellipse, per_spot, first=len(hits) + 1)
+        if crops:
+            pieces.append(encode_crop(norm))
         found = [h for h in found if math.hypot(*h) <= reach]
         hits += found
         spots += [n] * len(found)
         notes += [f"Spiegel {n}: {x}" for x in spot_notes]
     if expected is not None and len(hits) != expected and per_spot is None:
         notes.append(f"{len(hits)} statt {expected} Treffer gefunden")
-    return Detection(hits=hits, needs_review=bool(notes), note="; ".join(notes), spots=spots)
+    return Detection(
+        hits=hits, needs_review=bool(notes), note="; ".join(notes), spots=spots, crops=pieces
+    )
 
 
 def _detect_spot(
@@ -462,8 +478,9 @@ def _detect_spot(
     ellipse: Ellipse | None,
     expected: int | None,
     first: int = 1,
-) -> tuple[list[tuple[float, float]], list[str]]:
-    """Ein Spiegel: Treffer (mm um seine Mitte, von innen nach außen) und Prüfhinweise;
+) -> tuple[list[tuple[float, float]], list[str], np.ndarray]:
+    """Ein Spiegel: Treffer (mm um seine Mitte, von innen nach außen), Prüfhinweise und
+    das entzerrte Graubild;
     ``first``: Nummer des ersten Schusses in den Hinweisen."""
     norm, quality, black_r, _ = _normalize(img, t, ellipse)
     mask = hole_mask(norm, t, black_r)
@@ -514,7 +531,15 @@ def _detect_spot(
     if edge:
         numbers = ", ".join(str(i + first - 1) for i in edge)
         notes.append(f"Schuss {numbers} nah an einer Ringlinie")
-    return hits, notes
+    return hits, notes, norm
+
+
+def encode_crop(norm: np.ndarray) -> bytes:
+    """Entzerrten Spiegel als JPEG (Graubild, Mitte in der Bildmitte, ``PX_PER_MM``)."""
+    ok, buf = cv2.imencode(".jpg", norm, [cv2.IMWRITE_JPEG_QUALITY, 90])
+    if not ok:
+        raise DetectError("Ausschnitt ließ sich nicht speichern.")
+    return buf.tobytes()
 
 
 def _near_ring_line(t: targets.Target, hits, tolerance_mm: float = 0.1) -> list[int]:

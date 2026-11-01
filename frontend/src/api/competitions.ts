@@ -162,6 +162,16 @@ export interface PhotoResult {
   hits: { x: string; y: string; spot?: number | null; source: 'foto' }[]
   needs_review: boolean
   note: string
+  /** nur mit Einwilligung des Vereins: bereitgelegte Spiegelausschnitte (Schritt 6) */
+  samples?: { key: string; spot: number | null }[]
+}
+
+/** Sammeln bestätigter Spiegelausschnitte (Einwilligung je Verein) */
+export interface PhotoSamples {
+  enabled: boolean
+  changed_at: string | null
+  count: number
+  can_manage: boolean
 }
 
 export interface HitValue {
@@ -437,6 +447,8 @@ export type SyncOp =
       scoring: number
       hits: { x: number; y: number; spot?: number | null; source?: HitValue['source'] }[]
       at: string
+      /** Schlüssel bereitgelegter Spiegelausschnitte vom Foto (nur mit Einwilligung) */
+      samples?: string[]
     }
   | { op: 'shot'; starter: number | string; hits: number[]; client_key: string; at: string }
   | { op: 'undo'; client_key: string | null }
@@ -557,6 +569,11 @@ export const competitionsApi = {
   ) => api.put<StarterHits>(`${c(org, id)}hits/`, data),
   photo: (org: number, id: number, scoring: number, photo: Blob) =>
     api.post<PhotoResult>(`${c(org, id)}photo/`, photoForm(scoring, photo)),
+  photoSamples: (org: number) => api.get<PhotoSamples>(`${base(org)}photo-samples/`),
+  setPhotoSamples: (org: number, enabled: boolean) =>
+    api.patch<PhotoSamples>(`${base(org)}photo-samples/`, { enabled }),
+  deletePhotoSamples: (org: number) =>
+    api.del(`${base(org)}photo-samples/`) as Promise<PhotoSamples>,
   starters: (org: number, id: number) => api.get<Starter[]>(`${c(org, id)}starters/`),
   addStarter: (
     org: number,
