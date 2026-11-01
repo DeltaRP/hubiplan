@@ -5,7 +5,7 @@ willkommen. Contributions in English are welcome as well.
 
 ## Bevor du loslegst
 
-- **Fehler und Ideen** als [Issue](https://github.com/DeltaRP/hubiplan/issues) melden. Für
+- **Fehler und Ideen** als [Issue](https://github.com/hubiplan/hubiplan/issues) melden. Für
   größere Änderungen bitte zuerst ein Issue eröffnen und den Weg absprechen, damit keine
   Arbeit umsonst ist.
 - **Sicherheitslücken** nie öffentlich, sondern wie in [SECURITY.md](SECURITY.md) beschrieben.

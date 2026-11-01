@@ -19,8 +19,8 @@ Zu HUBIplan gehören drei Repositories:
 | Repository | Inhalt |
 | --- | --- |
 | **hubiplan** (dieses) | die Vereinsverwaltung: Backend, Oberfläche, Betrieb |
-| [hubiplan-website](https://github.com/DeltaRP/hubiplan-website) | öffentliche Vereinswebseiten aus den Daten von HUBIplan |
-| [hubiplan-android](https://github.com/DeltaRP/hubiplan-android) | Android-App für Mitglieder, Vorstand und Kasse |
+| [hubiplan-website](https://github.com/hubiplan/hubiplan-website) | öffentliche Vereinswebseiten aus den Daten von HUBIplan |
+| [hubiplan-android](https://github.com/hubiplan/hubiplan-android) | Android-App für Mitglieder, Vorstand und Kasse |
 
 ## Inhalt
 
@@ -86,8 +86,8 @@ Zu HUBIplan gehören drei Repositories:
 - Inhalte der Vereinswebseite (Startseite aus Bausteinen, Texte, Bilder, Chronik, eigene
   Beiträge von Instagram und Facebook) mit Entwurf, Vorschau und Veröffentlichen
 - öffentliche, versionierte Schnittstelle für
-  [hubiplan-website](https://github.com/DeltaRP/hubiplan-website)
-- Schnittstelle für die [Android-App](https://github.com/DeltaRP/hubiplan-android):
+  [hubiplan-website](https://github.com/hubiplan/hubiplan-website)
+- Schnittstelle für die [Android-App](https://github.com/hubiplan/hubiplan-android):
   Verbinden per QR-Code, Geräteschlüssel je Gerät, Push über Web-Push/UnifiedPush
 
 **Barrierearm und mit Lernhilfen**: Erklärungen und Glossar direkt in der Oberfläche,
@@ -139,7 +139,7 @@ Die Oberfläche spricht ausschließlich über die REST-API mit dem Backend.
 Voraussetzung: Docker mit Compose-Plugin (z. B. [Docker Desktop](https://www.docker.com/products/docker-desktop/)).
 
 ```bash
-git clone https://github.com/DeltaRP/hubiplan.git
+git clone https://github.com/hubiplan/hubiplan.git
 cd hubiplan
 docker compose up --build
 ```
@@ -324,7 +324,7 @@ Mitgliederdaten.
 ## Sicherheit
 
 Sicherheitslücken bitte **nicht** als öffentliches Issue melden, sondern vertraulich über
-[GitHub](https://github.com/DeltaRP/hubiplan/security/advisories/new). Einzelheiten:
+[GitHub](https://github.com/hubiplan/hubiplan/security/advisories/new). Einzelheiten:
 [SECURITY.md](SECURITY.md).
 
 ## Lizenz
