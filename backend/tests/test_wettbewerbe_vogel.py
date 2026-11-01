@@ -169,6 +169,22 @@ class TestVogelschiessen:
         resp = c.post(url(club, f"{comp_id}/shots/"), {"starter": by_number[5]}, "application/json")
         assert resp.status_code == 400
 
+    def test_lose_im_hut(self, club, board_a, api):  # noqa: F811
+        """Ralf 2026-11-01: einzeln gezogen kam immer die nächste Nummer. Mit „Lose im Hut“
+        zieht „Nummer ziehen“ aus allen freien Nummern bis zu dieser Zahl."""
+        c = api(board_a)
+        comp_id, _ = _vogel(c, club)
+        resp = c.patch(url(club, f"{comp_id}/"), {"lots": 40}, "application/json")
+        assert resp.status_code == 200 and resp.json()["lots"] == 40
+        drawn = []
+        for i in range(12):
+            st = _starter(c, club, comp_id, name=f"Gast {i}")
+            resp = c.post(url(club, f"{comp_id}/draw/"), {"starter": st["id"]}, "application/json")
+            drawn.append(resp.json()["number"])
+        assert len(set(drawn)) == 12 and all(1 <= n <= 40 for n in drawn)
+        assert drawn != list(range(1, 13))  # Zufall: nicht der Reihe nach (p ≈ 1e-17)
+        assert _state(c, club, comp_id)["draw"]["gaps"] == []  # Lücken sind hier normal
+
     def test_nachtraeglich_und_feste_reihenfolge(self, club, schuetzen, board_a, api):  # noqa: F811
         c = api(board_a)
         comp_id, detail = _vogel(c, club)

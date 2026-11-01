@@ -97,7 +97,7 @@ class StandAccessView(_Mixin, APIView):
 
 # --- Öffentlich mit Schlüssel (ohne Anmeldung) ---
 
-RATE = (600, 600)  # 600 Aufrufe je 10 Minuten und Zugang (Abgleich alle 15 s und Laden)
+RATE = (1500, 600)  # 1500 Aufrufe je 10 Minuten und Zugang (Stand alle 3 s, Abgleich, Laden)
 
 
 class _StandPublic(APIView):
@@ -166,6 +166,25 @@ class StandStartersView(_StandPublic):
         return self.finish(data)
 
 
+class StandStandingsView(_StandPublic):
+    """GET: Ranglisten aller Wertungen für die Live-Tabellen (ohne Kennzahlen)."""
+
+    def get(self, request, token: str):
+        access = self.resolve(token)
+        with unit_context(access.organization_id):
+            comp = Competition.objects.get(pk=access.competition_id)
+            data = services.standings(comp)
+        return self.finish({"scorings": data["scorings"], "open_shootoffs": data["open_shootoffs"]})
+
+
+class StandVersionView(_StandPublic):
+    def get(self, request, token: str):
+        access = self.resolve(token)
+        with unit_context(access.organization_id):
+            comp = Competition.objects.get(pk=access.competition_id)
+            return self.finish({"version": services.version(comp)})
+
+
 class StandMembersView(_StandPublic):
     """GET: Mitglieder am Wettbewerbstag, nur Name und Untereinheit (Suche ohne Netz)."""
 
@@ -218,7 +237,13 @@ class StandSyncView(_StandPublic):
                 comp = Competition.objects.select_related("organization").get(
                     pk=access.competition_id
                 )
-                data = sync(comp.organization, None, comp, request.data.get("ops"))
+                data = sync(
+                    comp.organization,
+                    None,
+                    comp,
+                    request.data.get("ops"),
+                    request.data.get("generation"),
+                )
         finally:
             current_via.reset(via)
         return self.finish(data)

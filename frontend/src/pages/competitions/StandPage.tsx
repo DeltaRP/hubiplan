@@ -15,6 +15,7 @@ import { useLoad } from '../../components/forms.ts'
 import { LoadError } from '../../components/ui.tsx'
 import { StandAccessCard } from './BirdSetup.tsx'
 import { BirdStand } from './BirdStand.tsx'
+import { LiveTables } from './LiveTables.tsx'
 import { StandPanel } from './StandPanel.tsx'
 
 export function StandPage() {
@@ -92,7 +93,10 @@ function StandShell({ api, exit, org }: { api: StandApi; exit: ReactNode; org?: 
         ) : data.form === 'vogel' ? (
           <BirdStand api={api} comp={data} fullscreen />
         ) : (
-          <StandPanel api={api} comp={data} fullscreen />
+          <div className="stand-layout">
+            <StandPanel api={api} comp={data} fullscreen />
+            <LiveTables api={api} />
+          </div>
         ))}
     </main>
   )

@@ -53,10 +53,20 @@ export function BirdStand({
     ref === null || ref === undefined ? undefined : local.starters.find((s) => sameStarter(s, ref))
   const current = starter(view.upcoming[0])
   const hanging = view.prizes.filter((p) => !p.fallen)
-  const allowed = comp.fixed_order ? hanging.slice(0, 1) : hanging
+  const allowed = hanging
+  const fixed = comp.fixed_order
+  // alle Pfänder gefallen: kein Weiterschießen, nur noch Rückgängig und Abschluss
+  const done = view.prizes.length > 0 && hanging.length === 0
+  // feste Reihenfolge: ein Klick auf eine Nummer wählt dieses und alle davor
+  const pick = (c: number[] | null, id: number): number[] => {
+    if (!fixed) return c?.includes(id) ? c.filter((x) => x !== id) : [...(c ?? []), id]
+    const upto = hanging.findIndex((p) => p.id === id)
+    const ids = hanging.slice(0, upto + 1).map((p) => p.id)
+    return c && c.length === ids.length && c.includes(id) ? ids.slice(0, -1) : ids
+  }
 
   function shot(hits: number[] = []) {
-    if (closed || !current) return
+    if (closed || !current || done) return
     const ref = refOf(current)
     const at = new Date().toISOString()
     push({ op: 'shot', starter: ref, hits, client_key: newRequestKey(), at })
@@ -109,7 +119,7 @@ export function BirdStand({
         const p = allowed[Number(e.key) - 1]
         if (p) {
           e.preventDefault()
-          setChoosing((c) => (c ? (c.includes(p.id) ? c : [...c, p.id]) : [p.id]))
+          setChoosing((c) => (c?.includes(p.id) ? c : pick(c, p.id)))
         }
       } else if (e.key === 'Enter' && choosing?.length) {
         e.preventDefault()
@@ -198,7 +208,10 @@ export function BirdStand({
 
       {!closed && choosing && (
         <div className="stand-choose" role="group" aria-label="Gefallene Pfänder wählen">
-          <p className="stand-label">Welche Pfänder sind gefallen? ({current?.name})</p>
+          <p className="stand-label">
+            Welche Pfänder sind gefallen? ({current?.name})
+            {fixed && <span className="muted small"> Feste Reihenfolge: bis wohin?</span>}
+          </p>
           <div className="stand-prize-buttons">
             {allowed.map((p, i) => (
               <button
@@ -206,11 +219,7 @@ export function BirdStand({
                 type="button"
                 aria-pressed={choosing.includes(p.id)}
                 className={`button stand-prize${choosing.includes(p.id) ? '' : ' button-ghost'}`}
-                onClick={() =>
-                  setChoosing((c) =>
-                    c?.includes(p.id) ? c.filter((x) => x !== p.id) : [...(c ?? []), p.id],
-                  )
-                }
+                onClick={() => setChoosing((c) => pick(c, p.id))}
               >
                 {i < 9 ? `${i + 1} · ` : ''}
                 {p.name}
@@ -233,7 +242,33 @@ export function BirdStand({
         </div>
       )}
 
-      {!closed && !choosing && (
+      {!closed && done && (
+        <div className="stand-done" role="status">
+          <p className="alert alert-success">
+            Alle Pfänder sind gefallen. Jetzt den Wettbewerb abschließen oder, falls nötig, den
+            letzten Schuss zurücknehmen.
+          </p>
+          <StandFinish
+            api={api}
+            comp={comp}
+            pending={store.pending}
+            online={online}
+            onFinished={() => setLocal((l) => ({ ...l, status: 'endgueltig' }))}
+          />
+          <div className="button-row">
+            <button
+              type="button"
+              className="button button-ghost"
+              disabled={!view.last}
+              onClick={undo}
+            >
+              Rückgängig
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!closed && !choosing && !done && (
         <div className="button-row stand-buttons stand-bird-buttons">
           <button
             type="button"
@@ -243,14 +278,38 @@ export function BirdStand({
           >
             Schuss
           </button>
-          <button
-            type="button"
-            className="button"
-            disabled={!current || !allowed.length}
-            onClick={() => setChoosing([])}
-          >
-            Pfand gefallen
-          </button>
+          {fixed && hanging[0] ? (
+            <>
+              {/* feste Reihenfolge: das nächste Pfand mit einem Klick */}
+              <button
+                type="button"
+                className="button"
+                disabled={!current}
+                onClick={() => shot([hanging[0].id])}
+              >
+                {hanging[0].name} gefallen
+              </button>
+              {hanging.length > 1 && (
+                <button
+                  type="button"
+                  className="button button-ghost"
+                  disabled={!current}
+                  onClick={() => setChoosing([hanging[0].id, hanging[1].id])}
+                >
+                  mehrere auf einmal
+                </button>
+              )}
+            </>
+          ) : (
+            <button
+              type="button"
+              className="button"
+              disabled={!current || !allowed.length}
+              onClick={() => setChoosing([])}
+            >
+              Pfand gefallen
+            </button>
+          )}
           <button
             type="button"
             className="button button-ghost"
@@ -294,6 +353,7 @@ export function BirdStand({
         {!closed && (
           <AddShooter
             starters={local.starters}
+            lots={comp.lots}
             members={local.members}
             onAdd={(s, op, number, how) => {
               setLocal((l) => ({ ...l, starters: [...l.starters, s] }))
@@ -310,7 +370,7 @@ export function BirdStand({
             }}
           />
         )}
-        <DrawReport starters={local.starters} />
+        <DrawReport starters={local.starters} gaps={!comp.lots} />
         {onDrawAll && !closed && local.starters.some((s) => lot(s.number) === null) && (
           <div className="button-row">
             <button
@@ -338,7 +398,7 @@ export function BirdStand({
                   (p) => p.winnerRef !== null && sameStarter(s, p.winnerRef),
                 )}
                 onDraw={(number, how) => {
-                  const n = number ?? drawFree(local.starters, refOf(s))
+                  const n = number ?? drawFree(local.starters, refOf(s), Math.random, comp.lots)
                   push({ op: 'draw', starter: refOf(s), number: n, how }, (l) => ({
                     ...l,
                     starters: l.starters.map((x) =>
@@ -355,7 +415,7 @@ export function BirdStand({
             ))}
         </ul>
       </details>
-      {!closed && (
+      {!closed && !done && (
         <StandFinish
           api={api}
           comp={comp}
@@ -368,13 +428,14 @@ export function BirdStand({
   )
 }
 
-function DrawReport({ starters }: { starters: LocalStarter[] }) {
+function DrawReport({ starters, gaps: showGaps }: { starters: LocalStarter[]; gaps: boolean }) {
   const active = starters.filter((s) => s.presence !== 'zurueckgezogen')
   const missing = active.filter((s) => lot(s.number) === null)
   const numbers = active.map((s) => lot(s.number)).filter((n): n is number => n !== null)
   const top = Math.max(0, ...numbers)
   const gaps: number[] = []
-  for (let n = 1; n <= top; n += 1) if (!numbers.includes(n)) gaps.push(n)
+  // mit Losen im Hut sind Lücken normal
+  if (showGaps) for (let n = 1; n <= top; n += 1) if (!numbers.includes(n)) gaps.push(n)
   if (!missing.length && !gaps.length) return null
   return (
     <p className="muted">
@@ -471,10 +532,12 @@ type Pick = { kind: 'member'; member: MemberChoice } | { kind: 'guest'; name: st
 
 function AddShooter({
   starters,
+  lots,
   members,
   onAdd,
 }: {
   starters: LocalStarter[]
+  lots: number | null
   members: MemberChoice[]
   onAdd: (
     s: LocalStarter,
@@ -537,7 +600,7 @@ function AddShooter({
       chosen.kind === 'member'
         ? { op: 'starter' as const, client_key: key, membership: chosen.member.membership }
         : { op: 'starter' as const, client_key: key, name, club: club.trim() }
-    if (how === 'digital') number = drawFree([...starters, s])
+    if (how === 'digital') number = drawFree([...starters, s], undefined, Math.random, lots)
     onAdd(s, op, number, how ?? 'hut')
     setChosen(null)
     setQuery('')

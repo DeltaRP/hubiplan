@@ -77,8 +77,9 @@ def rounds(numbers: list[int | None]) -> int:
     return count
 
 
-def draw_report(starters) -> dict:
-    """Doppelte Nummern, Lücken und Starter ohne Nummer."""
+def draw_report(starters, gaps: bool = True) -> dict:
+    """Doppelte Nummern, Lücken und Starter ohne Nummer. Mit Losen im Hut sind Lücken
+    normal und werden nicht gemeldet."""
     seen: dict[int, list[str]] = {}
     missing = []
     for s in starters:
@@ -95,7 +96,7 @@ def draw_report(starters) -> dict:
         "duplicates": [
             {"number": n, "names": names} for n, names in sorted(seen.items()) if len(names) > 1
         ],
-        "gaps": [n for n in range(1, top + 1) if n not in seen],
+        "gaps": [n for n in range(1, top + 1) if n not in seen] if gaps else [],
     }
 
 
@@ -181,7 +182,7 @@ def state(comp: Competition) -> dict:
             }
             for x in shots[-50:]
         ],
-        "draw": draw_report(starters),
+        "draw": draw_report(starters, gaps=not comp.lots),
         "stats": {
             "shots": count,
             "starters": len([s for s in starters if s.presence != Presence.WITHDRAWN]),
@@ -233,6 +234,11 @@ def fire(org, user, comp: Competition, starter: Starter, hits: list, at=None, cl
         if same:
             return same
     hit_ids = {int(h) for h in (hits or [])}
+    # Ralf 2026-11-01: nach dem letzten Pfand zählt kein Schuss mehr, auch nicht von einem
+    # zweiten Gerät oder aus einer nachgereichten Offline-Eingabe.
+    all_prizes = list(comp.prizes.all())
+    if all_prizes and all(p.fallen for p in all_prizes):
+        raise ValidationError("Alle Pfänder sind gefallen, der Schuss zählt nicht mehr.")
     prizes = list(comp.prizes.select_for_update().filter(pk__in=hit_ids))
     if len(prizes) != len(hit_ids):
         raise ValidationError({"hits": "Unbekanntes Pfand."})
@@ -372,7 +378,7 @@ def _taken(comp: Competition, exclude: int | None = None) -> dict[int, Starter]:
 
 def _free(comp: Competition, taken: dict[int, Starter]) -> list[int]:
     count = comp.starters.exclude(presence=Presence.WITHDRAWN).count()
-    top = max([count, *taken.keys()]) if taken else count
+    top = max([count, comp.lots or 0, *taken.keys()])
     free = [n for n in range(1, top + 1) if n not in taken]
     return free or [top + 1]
 

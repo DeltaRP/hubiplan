@@ -38,12 +38,25 @@ export function StandPanel({
   const { local, setLocal, push, online, syncError, pending, statusText } = useStandStore(
     api,
     describe,
-    (conflicts) =>
+    (conflicts) => {
+      const values = conflicts.filter((c) => c.value !== undefined)
+      const notes = conflicts.filter((c) => c.value === undefined && c.note)
       setNotice(
-        `Auf einem anderen Gerät später geändert, dieser Wert gilt: ${conflicts
-          .map((c) => `${c.name} ${showValue(c.value, scoring?.decimals ?? 0)}`)
-          .join(', ')}`,
-      ),
+        [
+          values.length
+            ? `Auf einem anderen Gerät später geändert, dieser Wert gilt: ${values
+                .map((c) => `${c.name} ${showValue(c.value, scoring?.decimals ?? 0)}`)
+                .join(', ')}`
+            : '',
+          ...notes.map((c) => `${c.name} ${c.note}.`),
+        ]
+          .filter(Boolean)
+          .join(' '),
+      )
+    },
+    // auch ohne eigene Eingaben regelmäßig den Stand holen: Eingaben anderer Geräte
+    // (Standmodus, Standzugang) erscheinen so ohne Neuladen
+    true,
   )
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
@@ -219,6 +232,25 @@ export function StandPanel({
   if (!scoring) return <p className="muted">Zuerst eine Einzelwertung anlegen.</p>
 
   const open = local.starters.filter((s) => !s.values[String(scoring.id)])
+  // Zuletzt erfasst über alle Geräte: Zeitpunkt vom Server, dazu eigene noch nicht
+  // abgeglichene Eingaben; je Schütze nur die letzte mit seinem aktuellen Wert
+  const latest = new Map<number | string, { ref: number | string; name: string; at: string }>()
+  for (const s of local.starters)
+    if (s.scored_at && s.values[String(scoring.id)])
+      latest.set(s.key ?? s.id, { ref: s.key ?? s.id, name: s.name, at: s.scored_at })
+  for (const r of local.recent) {
+    const known = latest.get(r.ref)
+    if (!known || Date.parse(r.at) > Date.parse(known.at))
+      latest.set(r.ref, { ref: r.ref, name: r.name, at: r.at })
+  }
+  const recent = [...latest.values()]
+    .map((r) => {
+      const s = local.starters.find((x) => (x.key ?? x.id) === r.ref)
+      return { ...r, value: s?.values[String(scoring.id)] ?? '' }
+    })
+    .filter((r) => r.value !== '')
+    .sort((a, b) => Date.parse(b.at) - Date.parse(a.at))
+    .slice(0, 10)
 
   return (
     <div className={`stand${fullscreen ? ' stand-full' : ''}`}>
@@ -355,9 +387,9 @@ export function StandPanel({
         </p>
       )}
       <details className="stand-section" open={!fullscreen || undefined}>
-        <summary>Zuletzt erfasst ({local.recent.length})</summary>
+        <summary>Zuletzt erfasst ({recent.length})</summary>
         <ul className="stand-list">
-          {local.recent.map((r) => (
+          {recent.map((r) => (
             <li key={`${r.ref}-${r.at}`}>
               <button
                 type="button"

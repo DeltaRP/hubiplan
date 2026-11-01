@@ -24,6 +24,8 @@ export interface Local {
   savedAt: string | null
   bird?: BirdState | null
   status?: CompetitionStatus
+  /** Zähler fürs Zurücksetzen, wie ihn der Server zuletzt gemeldet hat */
+  generation?: number
 }
 
 const storageKey = (key: string) => `hubiplan.stand.${key}`
@@ -112,13 +114,20 @@ export function useStandStore(
   function apply(res: SyncResult, sent: number) {
     setLocal((l) => {
       // Was während des Abgleichs dazukam, bleibt in der Warteschlange
-      const rest = l.ops.slice(sent)
+      // Zurückgesetzt: alles von vorher auf dem Gerät verwerfen
+      const reset =
+        res.generation !== undefined &&
+        l.generation !== undefined &&
+        res.generation !== l.generation
+      const rest = reset ? [] : l.ops.slice(sent)
       return {
         ...l,
         ops: rest,
+        recent: reset ? [] : l.recent,
         starters: mergePending(res.starters, { ...l, ops: rest }),
         bird: res.bird ?? l.bird,
         status: res.status ?? l.status,
+        generation: res.generation ?? l.generation,
         savedAt: new Date().toISOString(),
       }
     })
@@ -130,7 +139,18 @@ export function useStandStore(
     syncing.current = true
     const before = pushed.current
     try {
-      const res = await api.sync(ops)
+      const known = localRef.current.generation
+      const res = await api.sync(ops, known)
+      if (known !== undefined && res.generation !== undefined && res.generation !== known) {
+        apply(res, ops.length)
+        setOnline(true)
+        setSyncError(
+          ops.length
+            ? 'Der Wettbewerb wurde zurückgesetzt, die Eingaben dieses Geräts von vorher sind verworfen.'
+            : null,
+        )
+        return
+      }
       const failed = res.results
         .map((r, i) => (r.ok ? null : `${describe(ops[i], localRef.current)}: ${r.error}`))
         .filter(Boolean)
@@ -171,7 +191,8 @@ export function useStandStore(
     const down = () => setOnline(false)
     window.addEventListener('online', up)
     window.addEventListener('offline', down)
-    const timer = setInterval(() => void sync(refresh), 15000)
+    // Warteschlange regelmäßig nachreichen; Neues von anderen Geräten meldet useVersion
+    const timer = setInterval(() => void sync(), 15000)
     return () => {
       stop = true
       window.removeEventListener('online', up)
@@ -193,12 +214,49 @@ export function useStandStore(
     setTimeout(() => void sync(), 0)
   }
 
+  // Eingaben anderer Geräte sofort holen, sobald sich der Stand ändert
+  useVersion(api, () => void sync(true), refresh)
+
   const pending = local.ops.length
   const statusText = pending
     ? `${pending} ${pending === 1 ? 'Eingabe wartet' : 'Eingaben warten'} auf ${online ? 'Abgleich' : 'Empfang'}`
     : 'Alles gespeichert'
 
   return { local, setLocal, push, sync, online, syncError, pending, statusText }
+}
+
+/** Alle 3 s (nur bei sichtbarer Seite) den kleinen Stand des Wettbewerbs abfragen und bei
+ * einer Änderung ``onChange`` rufen. Ersetzt einen Push über dauerhaft offene Verbindungen:
+ * der Server antwortet fast immer nur „nichts Neues“. */
+export function useVersion(api: StandApi, onChange: () => void, enabled = true) {
+  const changeRef = useRef(onChange)
+  useEffect(() => {
+    changeRef.current = onChange
+  })
+  useEffect(() => {
+    if (!enabled) return
+    let last: string | null = null
+    let stop = false
+    async function check() {
+      if (document.visibilityState === 'hidden') return
+      try {
+        const { version } = await api.version()
+        if (stop) return
+        if (last !== null && version !== last) changeRef.current()
+        last = version
+      } catch {
+        // ohne Empfang: beim nächsten Mal wieder
+      }
+    }
+    void check()
+    const timer = setInterval(() => void check(), 3000)
+    document.addEventListener('visibilitychange', check)
+    return () => {
+      stop = true
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', check)
+    }
+  }, [api, enabled])
 }
 
 /** Eine Eingabe für Fehlermeldungen benennen. */

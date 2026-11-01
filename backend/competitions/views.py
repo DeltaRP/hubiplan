@@ -30,6 +30,7 @@ from organizations.models import Department, Organization
 from . import bird, report, services
 from .models import (
     Competition,
+    Placing,
     Presence,
     Prize,
     Score,
@@ -100,6 +101,7 @@ class CompetitionSerializer(serializers.ModelSerializer):
             "drop_out",
             "fixed_order",
             "total_shots",
+            "lots",
             "event",
             "starter_count",
         ]
@@ -391,16 +393,21 @@ def _open_for_entries(comp: Competition) -> None:
 
 
 @transaction.atomic
-def create_starter(org, user, comp: Competition, data) -> Starter:
+def create_starter(org, user, comp: Competition, data, merged: list | None = None) -> Starter:
     """Mitglied (``membership``) oder Gast (``name``, ``club``) als Starter anlegen.
     ``client_key``: Kennung vom Gerät (Offline-Betrieb); ein zweites Senden liefert
-    denselben Starter zurück."""
+    denselben Starter zurück. Mit ``merged`` (Abgleich mehrerer Tablets): hat ein anderes
+    Gerät das Mitglied schon angelegt, gilt die Kennung als zweiter Name dieses Starters,
+    und die folgenden Eingaben des Geräts landen dort (Ralf 2026-11-01)."""
     _open_for_entries(comp)
     key = _uuid(data.get("client_key"))
     if key:
         same = Starter.objects.filter(competition=comp, client_key=key).select_related("unit")
         if same.exists():
             return same.get()
+        alias = comp.starters.filter(aliases__contains=[str(key)]).first()
+        if alias:
+            return alias
     unit = _unit_or_none(org, data.get("unit"))
     if data.get("membership"):
         m = (
@@ -412,7 +419,13 @@ def create_starter(org, user, comp: Competition, data) -> Starter:
         )
         if m is None:
             raise ValidationError({"membership": "Unbekanntes Mitglied."})
-        if comp.starters.filter(membership=m).exists():
+        existing = comp.starters.filter(membership=m).first()
+        if existing and key and merged is not None:
+            existing.aliases = [*existing.aliases, str(key)]
+            existing.save(update_fields=["aliases", "updated_at"])
+            merged.append(existing)
+            return existing
+        if existing:
             raise ValidationError({"membership": f"{_person_name(m)} ist schon eingetragen."})
         s = Starter(
             organization=org,
@@ -628,16 +641,26 @@ class SyncView(_Mixin, APIView):
 
     def post(self, request, org_id: int, competition_id: int):
         comp = self.competition(competition_id)
-        return Response(sync(self.org, request.user, comp, request.data.get("ops")))
+        data = request.data
+        return Response(sync(self.org, request.user, comp, data.get("ops"), data.get("generation")))
 
 
-def sync(org, user, comp: Competition, ops) -> dict:
-    """Eingaben aus dem Standmodus nachreichen (auch für den Standzugang)."""
+RESET_NOTE = "Der Wettbewerb wurde zurückgesetzt, die Eingabe ist verworfen."
+
+
+def sync(org, user, comp: Competition, ops, generation=None) -> dict:
+    """Eingaben aus dem Standmodus nachreichen (auch für den Standzugang). ``generation``:
+    der Stand des Zurücksetzens, den das Gerät kennt; passt er nicht, stammen die Eingaben
+    von vor dem Zurücksetzen und werden verworfen."""
     ops = ops or []
     if not isinstance(ops, list) or len(ops) > 2000:
         raise ValidationError("Höchstens 2000 Eingaben auf einmal.")
     results, conflicts = [], []
+    stale = generation is not None and str(generation) != str(comp.generation)
     for op in ops:
+        if stale:
+            results.append({"ok": False, "error": RESET_NOTE})
+            continue
         try:
             if not isinstance(op, dict):
                 raise TypeError
@@ -658,12 +681,15 @@ def sync(org, user, comp: Competition, ops) -> dict:
         str(k): pk
         for pk, k in comp.starters.filter(client_key__isnull=False).values_list("pk", "client_key")
     }
+    for pk, aliases in comp.starters.exclude(aliases=[]).values_list("pk", "aliases"):
+        keys.update({str(a): pk for a in aliases})
     out = {
         "results": results,
         "conflicts": conflicts,
         "keys": keys,
         "starters": _starters_with_values(comp),
         "status": comp.status,
+        "generation": comp.generation,
     }
     if comp.form == Competition.Form.BIRD:
         out["bird"] = _jsonable(bird.state(comp))
@@ -676,13 +702,23 @@ def _starter_ref(comp, ref) -> Starter:
     key = _uuid(ref)
     if key is None:  # sonst träfe client_key=None jeden Starter ohne Gerätekennung
         raise Starter.DoesNotExist
-    return Starter.objects.get(client_key=key, competition=comp)
+    found = Starter.objects.filter(client_key=key, competition=comp).first()
+    return found or Starter.objects.get(competition=comp, aliases__contains=[str(key)])
 
 
 def _apply_op(org, user, comp, op, conflicts) -> dict:
     kind = op.get("op")
     if kind == "starter":
-        s = create_starter(org, user, comp, op)
+        merged: list = []
+        s = create_starter(org, user, comp, op, merged)
+        if merged:
+            conflicts.append(
+                {
+                    "starter": s.pk,
+                    "name": s.name,
+                    "note": "war schon von einem anderen Gerät eingetragen, zusammengeführt",
+                }
+            )
         return {"ok": True, "starter": s.pk}
     if kind == "starter_update":
         s = _starter_ref(comp, op.get("starter"))
@@ -746,12 +782,18 @@ def _message(exc) -> str:
 
 def _starters_with_values(comp) -> list[dict]:
     values: dict[int, dict] = {}
+    latest: dict[int, datetime.datetime] = {}
     for sc in Score.objects.filter(scoring__competition=comp):
         values.setdefault(sc.starter_id, {})[str(sc.scoring_id)] = str(sc.value)
-    return [
-        _starter_data(s, values.get(s.pk))
-        for s in comp.starters.select_related("unit").order_by("name", "pk")
-    ]
+        if sc.starter_id not in latest or sc.updated_at > latest[sc.starter_id]:
+            latest[sc.starter_id] = sc.updated_at
+    out = []
+    for s in comp.starters.select_related("unit").order_by("name", "pk"):
+        data = _starter_data(s, values.get(s.pk))
+        # Zuletzt erfasst über alle Geräte (Standmodus, Standzugang, Verwaltung)
+        data["scored_at"] = latest[s.pk].isoformat() if s.pk in latest else None
+        out.append(data)
+    return out
 
 
 class MemberListView(_Mixin, APIView):
@@ -849,6 +891,13 @@ class StandingsView(_Mixin, APIView):
         return Response(_jsonable(data))
 
 
+class VersionView(_Mixin, APIView):
+    """GET: kleiner Stand des Wettbewerbs; die Ansichten laden nur bei einer Änderung neu."""
+
+    def get(self, request, org_id: int, competition_id: int):
+        return Response({"version": services.version(self.competition(competition_id))})
+
+
 def _jsonable(obj):
     if isinstance(obj, Decimal):
         return str(obj)
@@ -881,6 +930,53 @@ class StatusView(_Mixin, APIView):
         return Response({"status": comp.status, "status_label": comp.get_status_display()})
 
 
+class ResetView(_Mixin, APIView):
+    """POST {keep_starters}: Ergebnisse löschen (Werte, Stechen, Plätze, Schüsse, gefallene
+    Pfänder), ohne ``keep_starters`` auch alle Starter (Ralf 2026-11-01). Regeln, Pfänder,
+    Mannschaften, Standzugang und Termin bleiben; der Zustand geht auf „Vorbereitung“."""
+
+    @transaction.atomic
+    def post(self, request, org_id: int, competition_id: int):
+        comp = self.competition(competition_id)
+        Competition.objects.select_for_update().filter(pk=comp.pk).first()
+        if comp.status == Competition.Status.FINAL:
+            raise ValidationError("Ein endgültiger Wettbewerb lässt sich nicht zurücksetzen.")
+        keep = bool(request.data.get("keep_starters"))
+        before = snapshot(comp)
+        counts = {
+            "Werte": Score.objects.filter(scoring__competition=comp).count(),
+            "Schüsse": comp.shots.count(),
+            "Starter": 0 if keep else comp.starters.count(),
+        }
+        Score.objects.filter(scoring__competition=comp).delete()
+        ShootOff.objects.filter(scoring__competition=comp).delete()
+        Placing.objects.filter(scoring__competition=comp).delete()
+        comp.prizes.update(
+            winner=None,
+            winner_name="",
+            shot_number=None,
+            shots_for=None,
+            shot=None,
+            fallen_at=None,
+        )
+        comp.shots.all().delete()
+        if keep:
+            comp.starters.exclude(presence="").update(presence="")
+        else:
+            comp.starters.all().delete()
+        comp.status = Competition.Status.PREPARATION
+        comp.total_shots = None
+        comp.generation += 1
+        comp.save(update_fields=["status", "total_shots", "generation", "updated_at"])
+        changes = diff(before, snapshot(comp))
+        changes["zurückgesetzt"] = [
+            ", ".join(f"{n} {k}" for k, n in counts.items() if n) or "nichts",
+            "Starter behalten" if keep else "Starter gelöscht",
+        ]
+        record(self.org, request.user, "update", comp, changes)
+        return Response({"deleted": counts, "status": comp.status, "generation": comp.generation})
+
+
 class CopyView(_Mixin, APIView):
     """POST {date?, title?}: Wettbewerb mit Wertungen kopieren (z. B. aus dem Vorjahr)."""
 
@@ -906,6 +1002,7 @@ class CopyView(_Mixin, APIView):
             organizer=src.organizer,
             drop_out=src.drop_out,
             fixed_order=src.fixed_order,
+            lots=src.lots,
             occasion=src.occasion,
             discipline=src.discipline,
             location=src.location,

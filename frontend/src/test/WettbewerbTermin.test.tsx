@@ -1,6 +1,6 @@
 // Wettbewerb und Termin im Kalender: beim Anlegen einen Termin wählen, unter „Einrichten“
 // die Zusagen als Starter übernehmen (Ralf 2026-11-01). Alles erfunden.
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
@@ -131,5 +131,41 @@ describe('Wettbewerb und Termin', () => {
     expect(
       await screen.findByRole('heading', { name: 'Standzugang für ein geliehenes Gerät' }),
     ).toBeVisible()
+  })
+
+  it('zeigt im Standmodus die Tabellen aller Wertungen mit allen Plätzen', async () => {
+    renderAt('/stand/7/3', {
+      [`GET ${base}3/`]: () => ({ status: 200, body: { ...detail, status: 'laeuft' } }),
+      [`GET ${base}3/starters/`]: () => ({ status: 200, body: [] }),
+      [`GET ${base}3/members/`]: () => ({ status: 200, body: [] }),
+      [`GET ${base}3/version/`]: () => ({ status: 200, body: { version: 'a' } }),
+      [`GET ${base}3/standings/`]: () => ({
+        status: 200,
+        body: {
+          open_shootoffs: 0,
+          scorings: [
+            {
+              scoring: 11,
+              name: 'Einzelwertung',
+              kind: 'einzel',
+              open: [],
+              without_value: [],
+              rows: [1, 2, 3, 4, 5, 6].map((i) => ({
+                key: `s${i}`,
+                place: i,
+                name: `Schütze ${i}`,
+                unit_name: 'Zug 1',
+                value: String(30 - i),
+                value_text: String(30 - i),
+                prize: i <= 3,
+              })),
+            },
+          ],
+        },
+      }),
+    })
+    const live = await screen.findByRole('complementary', { name: 'Aktuelle Tabellen' })
+    expect(within(live).getByRole('heading', { name: 'Einzelwertung' })).toBeVisible()
+    expect(within(live).getByText('Schütze 6')).toBeVisible()
   })
 })

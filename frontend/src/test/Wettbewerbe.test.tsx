@@ -125,8 +125,12 @@ describe('Wettbewerbe erfassen', () => {
     const points = await screen.findByLabelText(/Punkte/)
     expect(points).toHaveFocus()
     await user.type(points, '27{Enter}')
-    await waitFor(() => expect(calls.some((c) => c.key === `POST ${base}3/sync/`)).toBe(true))
-    const sync = calls.find((c) => c.key === `POST ${base}3/sync/`)
+    const withOps = () =>
+      calls.find(
+        (c) => c.key === `POST ${base}3/sync/` && JSON.parse(String(c.init?.body)).ops.length > 0,
+      )
+    await waitFor(() => expect(withOps()).toBeDefined())
+    const sync = withOps()
     const ops = JSON.parse(String(sync?.init?.body)).ops
     expect(ops[0]).toMatchObject({ op: 'starter', membership: 1 })
     expect(ops[1]).toMatchObject({
@@ -140,7 +144,12 @@ describe('Wettbewerbe erfassen', () => {
   })
 
   it('warnt, wenn der Schütze schon Punkte hat', async () => {
-    renderApp({})
+    renderApp({
+      [`POST ${base}3/sync/`]: () => ({
+        status: 200,
+        body: { results: [], conflicts: [], keys: {}, starters: [otto] },
+      }),
+    })
     const user = userEvent.setup()
     const search = await screen.findByLabelText('Schütze (Name oder Startnummer)')
     await user.type(search, 'otto')
@@ -189,6 +198,10 @@ describe('Wettbewerbe erfassen', () => {
 
   it('schließt endgültig ab, wenn alles abgeglichen ist', async () => {
     const calls = renderApp({
+      [`POST ${base}3/sync/`]: () => ({
+        status: 200,
+        body: { results: [], conflicts: [], keys: {}, starters: [otto] },
+      }),
       [`POST ${base}3/status/`]: () => ({
         status: 200,
         body: { status: 'endgueltig', status_label: 'endgültig' },
@@ -204,5 +217,24 @@ describe('Wettbewerbe erfassen', () => {
       String(calls.find((c) => c.key === `POST ${base}3/status/`)?.init?.body),
     )
     expect(body).toEqual({ status: 'endgueltig' })
+  })
+
+  it('zeigt Eingaben anderer Geräte und lädt bei neuem Stand nach', async () => {
+    let version = 'a'
+    let starters = [otto]
+    const calls = renderApp({
+      [`GET ${base}3/version/`]: () => ({ status: 200, body: { version } }),
+      [`POST ${base}3/sync/`]: () => ({
+        status: 200,
+        body: { results: [], conflicts: [], keys: {}, starters },
+      }),
+    })
+    // Otto kam von einem anderen Gerät (Zeitpunkt vom Server)
+    starters = [{ ...otto, scored_at: '2027-06-14T10:00:00+00:00' } as typeof otto]
+    expect(await screen.findByText('Zuletzt erfasst (1)')).toBeVisible()
+    const syncs = () => calls.filter((c) => c.key === `POST ${base}3/sync/`).length
+    const before = syncs()
+    version = 'b'
+    await waitFor(() => expect(syncs()).toBeGreaterThan(before), { timeout: 5000 })
   })
 })

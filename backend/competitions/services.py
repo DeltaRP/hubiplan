@@ -354,3 +354,35 @@ def _placing(p, sc: Scoring) -> dict:
         "note": p.note,
         "prize": bool(p.place and p.place <= sc.prize_places),
     }
+
+
+def version(competition: Competition) -> str:
+    """Kleiner Stand des Wettbewerbs: ändert sich mit jeder Eingabe (Starter, Wert, Schuss,
+    Pfand, Stechen, Zustand). Die Ansichten fragen ihn alle paar Sekunden ab und laden nur
+    bei einer Änderung neu (statt eines Push über eine dauerhaft offene Verbindung)."""
+    from django.db.models import Count, Max
+
+    from .models import Prize, Score, ShootOffEntry, Shot
+
+    parts = [competition.status, competition.updated_at.isoformat()]
+    for qs in (
+        Starter.objects.filter(competition=competition),
+        Score.objects.filter(scoring__competition=competition),
+        Shot.objects.filter(competition=competition),
+    ):
+        agg = qs.aggregate(n=Count("pk"), m=Max("pk"))
+        parts += [str(agg["n"]), str(agg["m"])]
+    for qs in (
+        Score.objects.filter(scoring__competition=competition),
+        Starter.objects.filter(competition=competition),
+    ):
+        parts.append(str(qs.aggregate(t=Max("updated_at"))["t"]))
+    prize = Prize.objects.filter(competition=competition).aggregate(
+        n=Count("winner"), s=Max("fallen_at")
+    )
+    parts += [str(prize["n"]), str(prize["s"])]
+    entries = ShootOffEntry.objects.filter(shootoff__scoring__competition=competition)
+    parts.append(str(entries.aggregate(n=Count("pk"), t=Max("updated_at"))))
+    import hashlib
+
+    return hashlib.sha256("|".join(parts).encode()).hexdigest()[:16]

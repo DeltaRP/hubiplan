@@ -129,6 +129,8 @@ describe('Reihenfolge auf dem Gerät', () => {
     const s = [starter(1, 'A', '1'), starter(2, 'B', ''), starter(3, 'C', '3')]
     expect(drawFree(s, 2, () => 0)).toBe(2)
     expect(drawFree([starter(1, 'A', '1')], undefined, () => 0)).toBe(2)
+    // Lose im Hut: aus allen freien Nummern bis 60, nicht nur die nächste
+    expect(drawFree([starter(1, 'A', '1')], undefined, () => 0.999, 60)).toBe(60)
   })
 })
 
@@ -150,6 +152,7 @@ const detail = {
   drop_out: true,
   fixed_order: false,
   total_shots: null,
+  lots: null,
   starter_count: 3,
   can_manage: true,
   units: [{ id: 5, name: 'Zug 1' }],
@@ -223,6 +226,57 @@ describe('Vogelschießen am Stand', () => {
       .filter((o) => o.op === 'shot')
     expect(ops[0]).toMatchObject({ starter: 22, hits: [] })
     expect(ops[1]).toMatchObject({ starter: 21, hits: [1] })
+  })
+
+  function standRoutes(d: object, state: BirdState) {
+    const org = testOrg({ permissions: ['competitions.results'], modules: ['competitions'] })
+    return fakeApi({
+      [SESSION]: () => ({ status: 200, body: { status: 200, data: { user: testUser } } }),
+      'GET /api/me/organizations/': () => ({ status: 200, body: [org] }),
+      [`GET ${base}4/`]: () => ({ status: 200, body: d }),
+      [`GET ${base}4/starters/`]: () => ({ status: 200, body: starters }),
+      [`GET ${base}4/members/`]: () => ({ status: 200, body: [] }),
+      [`GET ${base}4/bird/`]: () => ({ status: 200, body: state }),
+      [`POST ${base}4/sync/`]: () => syncBody(state),
+    })
+  }
+
+  function renderStand() {
+    render(
+      <MemoryRouter initialEntries={['/stand/7/4']}>
+        <AuthProvider>
+          <OrgProvider>
+            <App />
+          </OrgProvider>
+        </AuthProvider>
+      </MemoryRouter>,
+    )
+  }
+
+  it('feste Reihenfolge: das nächste Pfand mit einem Klick', async () => {
+    const calls = standRoutes({ ...detail, fixed_order: true }, bird())
+    renderStand()
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: 'Kopf gefallen' }))
+    await waitFor(() => {
+      const ops = calls
+        .filter((c) => c.key === `POST ${base}4/sync/`)
+        .flatMap((c) => JSON.parse(String(c.init?.body)).ops as SyncOp[])
+      expect(ops.find((o) => o.op === 'shot')).toMatchObject({ starter: 22, hits: [1] })
+    })
+    expect(screen.queryByRole('button', { name: 'Pfand gefallen' })).toBeNull()
+  })
+
+  it('nach dem letzten Pfand kein Schuss mehr, sondern der Abschluss', async () => {
+    const fallen = (id: number, name: string) => ({ ...prize(id, name), fallen: true })
+    standRoutes(
+      detail,
+      bird({ prizes: [fallen(1, 'Kopf'), fallen(2, 'linker Flügel'), fallen(3, 'Schweif')] }),
+    )
+    renderStand()
+    expect(await screen.findByText(/Alle Pfänder sind gefallen/)).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Schuss' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Pfand gefallen' })).toBeNull()
   })
 
   it('Standzugang öffnet den Wettbewerb ohne Anmeldung', async () => {
