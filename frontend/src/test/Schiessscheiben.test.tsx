@@ -1,6 +1,6 @@
 // Schießscheiben Schritt 1: Scheibe, Wertungsart und Gleichstandsregeln je Einzelwertung,
 // entschiedener Gleichstand in der Auswertung. Alles erfunden.
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
@@ -8,6 +8,8 @@ import App from '../App.tsx'
 import { AuthProvider } from '../auth/AuthContext.tsx'
 import { OrgProvider } from '../org/OrgContext.tsx'
 import { fakeApi, testOrg, testUser } from './fakeApi.ts'
+import type { TargetInfo } from '../api/competitions.ts'
+import { countedIndexes, scoreShot, totalText } from '../pages/competitions/targetMath.ts'
 
 const SESSION = 'GET /_allauth/browser/v1/auth/session'
 const base = '/api/orgs/7/competitions/'
@@ -198,5 +200,113 @@ describe('Scheibe und Wertung', () => {
     })
     expect(await screen.findByText('Berta Erfunden')).toBeVisible()
     expect(screen.getAllByText(/mehr Zehner, dann Neuner/)).toHaveLength(2)
+  })
+})
+
+const lgDsb: TargetInfo = {
+  ...kyf,
+  key: 'lg10_dsb',
+  name: 'Luftgewehr 10 m (DSB/ISSF)',
+  top_diameter: 0.5,
+  ring_width: 2.5,
+  inner_diameter: 0.5,
+  inner_mode: 'wegschiessen',
+  black_diameter: 30.5,
+  max_decimal: '10.9',
+} as TargetInfo
+
+describe('Wertung im Browser wie auf dem Server', () => {
+  const at = (t: TargetInfo, d: number) => scoreShot(t, d, 0)
+  const k = kyf as TargetInfo
+
+  it('rechnet Ringe, Zehntel und Innenzehner wie targets.py', () => {
+    expect(at(lgDsb, 0)).toMatchObject({ ring: 10, tenths: 109, inner: true, teilerTenths: 0 })
+    expect(at(lgDsb, 1.0).tenths).toBe(106)
+    expect(at(lgDsb, 2.0).inner).toBe(true)
+    expect(at(lgDsb, 2.01).inner).toBe(false)
+    expect(at(lgDsb, 2.5)).toMatchObject({ ring: 10, tenths: 100 })
+    expect(at(lgDsb, 2.51)).toMatchObject({ ring: 9, tenths: 99 })
+    expect(at(lgDsb, 25.1)).toMatchObject({ ring: 0, tenths: 0 })
+    expect(at(lgDsb, 1.234).teilerTenths).toBe(1234)
+    expect(at(k, 0).tenths).toBe(107)
+    expect(at(k, 3.25).ring).toBe(10)
+    expect(at(k, 3.26).ring).toBe(9)
+  })
+
+  it('zählt die besten Schüsse wie der Server', () => {
+    const shots = [0.5, 30, 10, 3.5, 1.0].map((d) => at(k, d))
+    expect(shots.map((s) => s.ring)).toEqual([10, 4, 8, 9, 10])
+    expect(totalText('ringe', shots, 3)).toBe('29')
+    expect([...countedIndexes('ringe', shots, 3)].sort()).toEqual([0, 3, 4])
+    expect(totalText('zehntel', shots, 3)).toBe('31.0')
+    expect(totalText('teiler', shots, null)).toBe('50.0')
+    expect(totalText('ringe', [], 3)).toBe('')
+  })
+})
+
+describe('Treffer am Stand antippen', () => {
+  it('setzt Treffer auf der Scheibe und schickt sie mit Summe zum Abgleich', async () => {
+    const tapScoring = {
+      ...scoring,
+      target: 'lg10_kyf',
+      method: 'ringe',
+      unit_label: 'Ringe',
+      shots: 3,
+      counted_shots: null,
+      target_info: { ...kyf, rings: [{ ring: 1, diameter: 83 }] },
+    }
+    const otto = {
+      id: 21,
+      name: 'Otto Erfunden',
+      club: '',
+      guest: false,
+      membership: 2,
+      unit: null,
+      unit_name: '',
+      number: '',
+      out_of_competition: false,
+      presence: '',
+      drawn_how: '',
+      values: {},
+      hits: {},
+    }
+    const calls = renderAt('/wettbewerbe/3', {
+      [`GET ${base}3/`]: () => ({
+        status: 200,
+        body: { ...detail, status: 'laeuft', scorings: [tapScoring] },
+      }),
+      [`GET ${base}3/starters/`]: () => ({ status: 200, body: [otto] }),
+      [`GET ${base}3/members/`]: () => ({ status: 200, body: [] }),
+      [`POST ${base}3/sync/`]: () => ({
+        status: 200,
+        body: { results: [{ ok: true }], conflicts: [], keys: {}, starters: [otto] },
+      }),
+    })
+    const user = userEvent.setup()
+    await user.type(await screen.findByLabelText('Schütze (Name oder Startnummer)'), 'otto')
+    expect(await screen.findByRole('option', { name: /Otto Erfunden/ })).toBeVisible()
+    await user.keyboard('{Enter}')
+    const pad = await screen.findByRole('img', { name: /0 Treffer/ })
+    // Ansicht „Ganze Scheibe“: 83 mm · 1,08 Rand; 400 px Kantenlänge
+    pad.getBoundingClientRect = () =>
+      ({ left: 0, top: 0, width: 400, height: 400, right: 400, bottom: 400 }) as DOMRect
+    // Mitte: 10
+    fireEvent.pointerDown(pad, { clientX: 200, clientY: 200, pointerId: 1 })
+    fireEvent.pointerUp(pad, { pointerId: 1 })
+    // ganz außen links oben: kein Ring
+    fireEvent.pointerDown(pad, { clientX: 2, clientY: 2, pointerId: 1 })
+    fireEvent.pointerUp(pad, { pointerId: 1 })
+    expect(screen.getByText(/2 von 3 Treffer · Summe 10/)).toBeVisible()
+    // zweiten Treffer wieder entfernen
+    await user.click(screen.getByRole('button', { name: 'Schuss 2 entfernen' }))
+    expect(screen.getByText(/1 von 3 Treffer · Summe 10/)).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'Speichern' }))
+    const op = () =>
+      calls
+        .filter((c) => c.key === `POST ${base}3/sync/`)
+        .flatMap((c) => JSON.parse(String(c.init?.body)).ops)
+        .find((o: { op: string }) => o.op === 'hits')
+    await waitFor(() => expect(op()).toBeDefined())
+    expect(op()).toMatchObject({ starter: 21, scoring: 11, hits: [{ x: 0, y: 0, spot: null }] })
   })
 })

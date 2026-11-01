@@ -302,3 +302,82 @@ class TestTrefferUndWertung:
         assert resp.status_code == 200, resp.content
         assert D(resp.json()["max_per_shot"]) == 12
         assert resp.json()["custom_target"]["ring_width"] == 4.5
+
+
+@pytest.mark.django_db(transaction=True)
+class TestAntippenAmStand:
+    """Schritt 2: Treffer kommen über den Abgleich des Standmodus (auch offline)."""
+
+    def _setup(self, c, verein):
+        comp_id, sc = TestTrefferUndWertung()._wettbewerb(c, verein)
+        c.patch(
+            url(verein, f"{comp_id}/scorings/{sc}/"),
+            {"target": "lg10_kyf", "method": "ringe", "shots": 3},
+            "application/json",
+        )
+        return comp_id, sc
+
+    def test_scheibe_fuer_das_zeichnen(self, verein, board_a, api):
+        c = api(board_a)
+        comp_id, sc = self._setup(c, verein)
+        info = c.get(url(verein, f"{comp_id}/")).json()["scorings"][0]["target_info"]
+        assert info["key"] == "lg10_kyf" and info["rings"][0] == {"ring": 1, "diameter": 83.0}
+
+    def test_treffer_ueber_den_abgleich(self, verein, board_a, api):
+        c = api(board_a)
+        comp_id, sc = self._setup(c, verein)
+        key = "6f1c1b7e-5a43-4c0e-9d7e-1b2c3d4e5f60"
+        resp = c.post(
+            url(verein, f"{comp_id}/sync/"),
+            {
+                "ops": [
+                    {"op": "starter", "client_key": key, "name": "Gerda Gast"},
+                    {
+                        "op": "hits",
+                        "starter": key,
+                        "scoring": sc,
+                        "hits": [{"x": 0, "y": 0}, {"x": 4, "y": 0}],
+                        "at": "2027-05-01T10:00:00+02:00",
+                    },
+                ]
+            },
+            "application/json",
+        )
+        assert resp.status_code == 200, resp.content
+        body = resp.json()
+        assert all(r["ok"] for r in body["results"]), body["results"]
+        gerda = next(s for s in body["starters"] if s["name"] == "Gerda Gast")
+        assert gerda["values"][str(sc)] == "19.000"
+        assert gerda["hits"][str(sc)] == [
+            {"x": "0.000", "y": "0.000", "spot": None},
+            {"x": "4.000", "y": "0.000", "spot": None},
+        ]
+
+    def test_spaetere_aenderung_gilt(self, verein, board_a, api):
+        c = api(board_a)
+        comp_id, sc = self._setup(c, verein)
+        anna = _starter(c, verein, comp_id, name="Anna Probe")["id"]
+        c.put(
+            url(verein, f"{comp_id}/hits/"),
+            {"scoring": sc, "starter": anna, "hits": [{"x": 0, "y": 0}]},
+            "application/json",
+        )
+        # alte Offline-Eingabe von gestern kommt später an
+        resp = c.post(
+            url(verein, f"{comp_id}/sync/"),
+            {
+                "ops": [
+                    {
+                        "op": "hits",
+                        "starter": anna,
+                        "scoring": sc,
+                        "hits": [{"x": 10, "y": 0}],
+                        "at": "2020-01-01T10:00:00+01:00",
+                    }
+                ]
+            },
+            "application/json",
+        ).json()
+        assert resp["conflicts"] and resp["conflicts"][0]["name"] == "Anna Probe"
+        assert Score.objects.get(starter_id=anna).value == 10
+        assert Hit.objects.get(starter_id=anna).x == 0

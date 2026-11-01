@@ -3911,3 +3911,104 @@ label:has(> .file-input:focus-visible) {
 .stand-page .stand-live-block .table th:first-child {
   text-align: left;
 }
+
+/* Scheibe zum Antippen (Schießscheiben Schritt 2): Papier und Spiegel wie die echte
+   Scheibe, auch im dunklen Modus */
+.pad {
+  display: grid;
+  gap: 0.5rem;
+}
+.pad-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+.pad-toolbar .active {
+  border-color: var(--color-focus);
+  font-weight: 600;
+}
+.pad-stage {
+  position: relative;
+  width: min(100%, 32rem);
+}
+.pad-svg {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  touch-action: none;
+  background: #e9e5da;
+  border-radius: 0.5rem;
+  user-select: none;
+}
+.pad-paper {
+  fill: #fbf8ef;
+}
+.pad-black {
+  fill: #1c1c1c;
+}
+.pad-line {
+  fill: none;
+  stroke: #1c1c1c;
+}
+.pad-line-dark {
+  stroke: #f3f0e6;
+}
+.pad-number {
+  fill: #1c1c1c;
+  font-family: system-ui, sans-serif;
+}
+.pad-number-dark {
+  fill: #f3f0e6;
+}
+.pad-hit circle {
+  fill: rgb(230 90 20 / 0.75);
+  stroke: #fff;
+  stroke-width: 0.15;
+}
+.pad-hit text {
+  fill: #fff;
+  font-weight: 700;
+  font-family: system-ui, sans-serif;
+  pointer-events: none;
+}
+.pad-hit-selected circle {
+  fill: rgb(20 110 220 / 0.85);
+}
+.pad-lens {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  width: 38%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 3px solid var(--color-focus);
+  background: #e9e5da;
+  pointer-events: none;
+}
+.pad-hit-lens {
+  fill: rgb(230 90 20 / 0.6);
+}
+.pad-cross {
+  stroke: rgb(20 110 220);
+  stroke-width: 0.05;
+}
+.pad-total {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+.pad-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.pad-list .active {
+  font-weight: 700;
+}
+.pad-lens-right {
+  left: auto;
+  right: 0.5rem;
+}

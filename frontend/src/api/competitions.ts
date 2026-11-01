@@ -99,6 +99,8 @@ export interface Scoring {
   method: ScoringMethod
   tie_breaks: string[]
   series_size: number
+  /** aufgelöste Scheibe (Katalog oder eigene), leer ohne Scheibe */
+  target_info?: TargetInfo | null
 }
 
 export type ScoringMethod = 'frei' | 'ringe' | 'zehntel' | 'teiler'
@@ -218,6 +220,8 @@ export interface Starter {
   key?: string | null
   /** Werte je Wertung (Nummer der Wertung → Wert als Text) */
   values: Record<string, string>
+  /** Trefferpunkte je Wertung (mm, Text mit Punkt) */
+  hits?: Record<string, { x: string | number; y: string | number; spot: number | null }[]>
 }
 
 export interface MemberChoice {
@@ -412,6 +416,14 @@ export type SyncOp =
     }
   | { op: 'starter_delete'; starter: number | string }
   | { op: 'score'; starter: number | string; scoring: number; value: string | null; at: string }
+  // Trefferpunkte (Antippen); der Server rechnet daraus den Wert
+  | {
+      op: 'hits'
+      starter: number | string
+      scoring: number
+      hits: { x: number; y: number; spot?: number | null }[]
+      at: string
+    }
   | { op: 'shot'; starter: number | string; hits: number[]; client_key: string; at: string }
   | { op: 'undo'; client_key: string | null }
   | { op: 'draw'; starter: number | string; number: number | null; how: 'hut' | 'digital' }
