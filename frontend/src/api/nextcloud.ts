@@ -1,7 +1,7 @@
 // Anmeldung an der Nextcloud mit dem HUBIplan-Konto (Backend: App oidc).
 import { api } from './client.ts'
 
-export type NextcloudAudience = 'board' | 'members'
+export type NextcloudAudience = 'board' | 'roles' | 'members'
 
 export interface NextcloudClient {
   id: number

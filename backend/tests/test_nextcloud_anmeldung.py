@@ -271,6 +271,25 @@ def test_amt_einer_untereinheit_reicht(api, orgs, zug, mitglied):
     assert claims["groups"] == ["Zugführer (Jäger)", "Mitglieder"]
 
 
+def test_nur_rollen_ohne_aemter_in_untereinheiten(api, orgs, zug, mitglied, board_a):
+    client, secret = make_client(orgs["a"], audience=Client.Audience.ROLES)
+    with tenant_context(orgs["a"].pk):
+        role = DepartmentRole.objects.create(department=zug, name="Zugführer")
+        RoleAssignment.all_objects.create(
+            organization=orgs["a"],
+            role=role,
+            membership=mitglied["membership"],
+            valid_from=datetime.date(2020, 1, 1),
+        )
+    # Amt nur in der Untereinheit: kein Zugang
+    assert start(api(mitglied["user"]), client).status_code == 400
+    # Rolle des Vereins: Zugang wie gewohnt
+    claims = verify_jwt(
+        redeem(client, secret, code_of(start(api(board_a), client))).json()["id_token"]
+    )
+    assert claims["groups"] == ["Vorstand"]
+
+
 def test_zwei_faktor_pflicht(api, orgs, board_a):
     client, _ = make_client(orgs["a"], require_mfa=True)
     resp = start(api(board_a), client)

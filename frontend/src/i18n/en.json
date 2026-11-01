@@ -3801,6 +3801,7 @@
   "Wer darf sich anmelden?": "Who may sign in?",
   "Zählt nur, was bei dieser Einheit gilt: aktive Rollen, Ämter in Untereinheiten und, falls gewählt, Mitglieder mit Zugang und laufender Mitgliedschaft. Wer austritt oder seine Rolle abgibt, kommt nicht mehr hinein.": "Only what applies to this unit counts: active roles, offices in sub-units and, if selected, members with access and a current membership. Anyone who leaves or gives up their role can no longer sign in.",
   "Vorstand und Rollen (auch Ämter in Untereinheiten)": "Board and roles (including offices in sub-units)",
+  "Nur Rollen dieser Einheit (ohne Ämter in Untereinheiten)": "Only roles of this unit (without offices in sub-units)",
   "zusätzlich Mitglieder mit Zugang": "also members with access",
   "Nur mit Zwei-Faktor-Anmeldung": "Only with two-factor authentication",
   "empfohlen, wenn in der Nextcloud Vorstandsunterlagen liegen": "recommended if board documents are stored in Nextcloud",

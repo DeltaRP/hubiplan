@@ -55,6 +55,7 @@ def parse_usernames(text: str) -> list[tuple[str, str, str]]:
 class Client(models.Model):
     class Audience(models.TextChoices):
         BOARD = "board", "Vorstand und Rollen"
+        ROLES = "roles", "nur Rollen dieser Einheit"
         MEMBERS = "members", "zusätzlich Mitglieder mit Zugang"
 
     organization = models.ForeignKey(

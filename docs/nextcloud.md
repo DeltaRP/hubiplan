@@ -17,6 +17,8 @@ Nur, was bei der eintragenden Einheit gilt (Rechte höherer Einheiten zählen ni
 
 - aktive Rollen der Einheit am Benutzerkonto (Vorstand, Kassierer, …),
 - Ämter in Untereinheiten (z. B. Zugführer) über die eigene Mitgliedschaft,
+- bei „Nur Rollen dieser Einheit“ zählen Ämter in Untereinheiten nicht (weder für den
+  Zugang noch als Gruppe),
 - bei „zusätzlich Mitglieder mit Zugang“ (nur Vereine): jedes Konto mit
   Mitgliederzugang und laufender Mitgliedschaft.
 
