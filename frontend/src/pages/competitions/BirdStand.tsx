@@ -139,125 +139,192 @@ export function BirdStand({
 
   return (
     <div className={`stand stand-bird${fullscreen ? ' stand-full' : ''}`}>
-      <p
-        className={`stand-sync ${store.pending ? 'stand-sync-wait' : 'stand-sync-ok'}`}
-        role="status"
-      >
-        {online ? '' : 'Kein Empfang · '}
-        {statusText}
-      </p>
-      {syncError && <p className="alert alert-error">{syncError}</p>}
-      {closed && (
-        <p className="alert alert-info">Der Wettbewerb ist endgültig, Eingaben sind gesperrt.</p>
-      )}
-      {big && (
-        <div className="stand-draw-big" role="status">
-          <span>{big.name}</span>
-          <strong>{big.number}</strong>
-          <button type="button" className="button" onClick={() => setBig(null)}>
-            Weiter
-          </button>
-        </div>
-      )}
-
-      <div className="stand-current" aria-live="polite">
-        {current ? (
-          <>
-            <span className="stand-lot">{current.number}</span>
-            <span className="stand-current-name">
-              <strong>{current.name}</strong>
-              <span className="muted"> {current.unit_name || current.club}</span>
-            </span>
-          </>
-        ) : (
-          <span className="muted">
-            {local.starters.length
-              ? 'Niemand in der Reihenfolge: Losnummern fehlen oder alle sind ausgeschieden.'
-              : 'Noch keine Schützen. Unten unter „Schützen und Losnummern“ hinzufügen.'}
-          </span>
-        )}
-      </div>
-      {view.upcoming.length > 1 && (
-        <ol className="stand-next">
-          {view.upcoming.slice(1).map((ref) => {
-            const s = starter(ref)
-            return s ? (
-              <li key={String(ref)}>
-                <span className="stand-lot-small">{s.number}</span> {s.name}
-                <span className="muted"> {s.unit_name || s.club}</span>
-              </li>
-            ) : null
-          })}
-        </ol>
-      )}
-      <HowTo k="how_comp_bird_order" />
-      <p className="stand-counter">
-        Schuss Nr. <strong>{view.total}</strong> · für dieses Pfand{' '}
-        <strong>{view.sinceLast}</strong>
-        {view.round ? (
-          <>
-            {' '}
-            · Runde <strong>{view.round}</strong>
-          </>
-        ) : null}
-      </p>
-
-      {notice && (
-        <p className="stand-notice" role="status">
-          {notice}
+      <section className="stand-block" aria-label="Schießen">
+        <p
+          className={`stand-sync ${store.pending ? 'stand-sync-wait' : 'stand-sync-ok'}`}
+          role="status"
+        >
+          {online ? '' : 'Kein Empfang · '}
+          {statusText}
         </p>
-      )}
-
-      {!closed && choosing && (
-        <div className="stand-choose" role="group" aria-label="Gefallene Pfänder wählen">
-          <p className="stand-label">
-            Welche Pfänder sind gefallen? ({current?.name})
-            {fixed && <span className="muted small"> Feste Reihenfolge: bis wohin?</span>}
-          </p>
-          <div className="stand-prize-buttons">
-            {allowed.map((p, i) => (
-              <button
-                key={p.id}
-                type="button"
-                aria-pressed={choosing.includes(p.id)}
-                className={`button stand-prize${choosing.includes(p.id) ? '' : ' button-ghost'}`}
-                onClick={() => setChoosing((c) => pick(c, p.id))}
-              >
-                {i < 9 ? `${i + 1} · ` : ''}
-                {p.name}
-              </button>
-            ))}
+        {syncError && <p className="alert alert-error">{syncError}</p>}
+        {closed && (
+          <p className="alert alert-info">Der Wettbewerb ist endgültig, Eingaben sind gesperrt.</p>
+        )}
+        {big && (
+          <div className="stand-draw-big" role="status">
+            <span>{big.name}</span>
+            <strong>{big.number}</strong>
+            <button type="button" className="button" onClick={() => setBig(null)}>
+              Weiter
+            </button>
           </div>
-          <div className="button-row">
+        )}
+
+        <div className="stand-current" aria-live="polite">
+          {current ? (
+            <>
+              <span className="stand-lot">{current.number}</span>
+              <span className="stand-current-name">
+                <strong>{current.name}</strong>
+                <span className="muted"> {current.unit_name || current.club}</span>
+              </span>
+            </>
+          ) : (
+            <span className="muted">
+              {local.starters.length
+                ? 'Niemand in der Reihenfolge: Losnummern fehlen oder alle sind ausgeschieden.'
+                : 'Noch keine Schützen. Unten unter „Schützen und Losnummern“ hinzufügen.'}
+            </span>
+          )}
+        </div>
+        {view.upcoming.length > 1 && (
+          <ol className="stand-next">
+            {view.upcoming.slice(1).map((ref) => {
+              const s = starter(ref)
+              return s ? (
+                <li key={String(ref)}>
+                  <span className="stand-lot-small">{s.number}</span> {s.name}
+                  <span className="muted"> {s.unit_name || s.club}</span>
+                </li>
+              ) : null
+            })}
+          </ol>
+        )}
+        <HowTo k="how_comp_bird_order" />
+        <p className="stand-counter">
+          Schuss Nr. <strong>{view.total}</strong> · für dieses Pfand{' '}
+          <strong>{view.sinceLast}</strong>
+          {view.round ? (
+            <>
+              {' '}
+              · Runde <strong>{view.round}</strong>
+            </>
+          ) : null}
+        </p>
+
+        {notice && (
+          <p className="stand-notice" role="status">
+            {notice}
+          </p>
+        )}
+
+        {!closed && choosing && (
+          <div className="stand-choose" role="group" aria-label="Gefallene Pfänder wählen">
+            <p className="stand-label">
+              Welche Pfänder sind gefallen? ({current?.name})
+              {fixed && <span className="muted small"> Feste Reihenfolge: bis wohin?</span>}
+            </p>
+            <div className="stand-prize-buttons">
+              {allowed.map((p, i) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  aria-pressed={choosing.includes(p.id)}
+                  className={`button stand-prize${choosing.includes(p.id) ? '' : ' button-ghost'}`}
+                  onClick={() => setChoosing((c) => pick(c, p.id))}
+                >
+                  {i < 9 ? `${i + 1} · ` : ''}
+                  {p.name}
+                </button>
+              ))}
+            </div>
+            <div className="button-row">
+              <button
+                type="button"
+                className="button"
+                disabled={!choosing.length}
+                onClick={() => shot(choosing)}
+              >
+                Speichern
+              </button>
+              <button
+                type="button"
+                className="button button-ghost"
+                onClick={() => setChoosing(null)}
+              >
+                Abbrechen
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!closed && done && (
+          <div className="stand-done" role="status">
+            <p className="alert alert-success">
+              Alle Pfänder sind gefallen. Jetzt den Wettbewerb abschließen oder, falls nötig, den
+              letzten Schuss zurücknehmen.
+            </p>
+            <StandFinish
+              api={api}
+              comp={comp}
+              pending={store.pending}
+              online={online}
+              onFinished={() => setLocal((l) => ({ ...l, status: 'endgueltig' }))}
+            />
+            <div className="button-row">
+              <button
+                type="button"
+                className="button button-ghost"
+                disabled={!view.last}
+                onClick={undo}
+              >
+                Rückgängig
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!closed && !choosing && !done && (
+          <div className="button-row stand-buttons stand-bird-buttons">
             <button
               type="button"
-              className="button"
-              disabled={!choosing.length}
-              onClick={() => shot(choosing)}
+              className="button stand-shot"
+              disabled={!current}
+              onClick={() => shot()}
             >
-              Speichern
+              Schuss
             </button>
-            <button type="button" className="button button-ghost" onClick={() => setChoosing(null)}>
-              Abbrechen
+            {fixed && hanging[0] ? (
+              <>
+                {/* feste Reihenfolge: das nächste Pfand mit einem Klick */}
+                <button
+                  type="button"
+                  className="button"
+                  disabled={!current}
+                  onClick={() => shot([hanging[0].id])}
+                >
+                  {hanging[0].name} gefallen
+                </button>
+                {hanging.length > 1 && (
+                  <button
+                    type="button"
+                    className="button button-ghost"
+                    disabled={!current}
+                    onClick={() => setChoosing([hanging[0].id, hanging[1].id])}
+                  >
+                    mehrere auf einmal
+                  </button>
+                )}
+              </>
+            ) : (
+              <button
+                type="button"
+                className="button"
+                disabled={!current || !allowed.length}
+                onClick={() => setChoosing([])}
+              >
+                Pfand gefallen
+              </button>
+            )}
+            <button
+              type="button"
+              className="button button-ghost"
+              disabled={!current}
+              onClick={() => current && setPresence(current, 'fehlt')}
+            >
+              Schütze fehlt
             </button>
-          </div>
-        </div>
-      )}
-
-      {!closed && done && (
-        <div className="stand-done" role="status">
-          <p className="alert alert-success">
-            Alle Pfänder sind gefallen. Jetzt den Wettbewerb abschließen oder, falls nötig, den
-            letzten Schuss zurücknehmen.
-          </p>
-          <StandFinish
-            api={api}
-            comp={comp}
-            pending={store.pending}
-            online={online}
-            onFinished={() => setLocal((l) => ({ ...l, status: 'endgueltig' }))}
-          />
-          <div className="button-row">
             <button
               type="button"
               className="button button-ghost"
@@ -267,157 +334,102 @@ export function BirdStand({
               Rückgängig
             </button>
           </div>
-        </div>
-      )}
+        )}
+      </section>
 
-      {!closed && !choosing && !done && (
-        <div className="button-row stand-buttons stand-bird-buttons">
-          <button
-            type="button"
-            className="button stand-shot"
-            disabled={!current}
-            onClick={() => shot()}
-          >
-            Schuss
-          </button>
-          {fixed && hanging[0] ? (
-            <>
-              {/* feste Reihenfolge: das nächste Pfand mit einem Klick */}
-              <button
-                type="button"
-                className="button"
-                disabled={!current}
-                onClick={() => shot([hanging[0].id])}
-              >
-                {hanging[0].name} gefallen
-              </button>
-              {hanging.length > 1 && (
-                <button
-                  type="button"
-                  className="button button-ghost"
-                  disabled={!current}
-                  onClick={() => setChoosing([hanging[0].id, hanging[1].id])}
-                >
-                  mehrere auf einmal
-                </button>
+      <section className="stand-block" aria-label="Pfänder">
+        <h2 className="stand-h">Pfänder</h2>
+        <ul className="stand-prizes">
+          {view.prizes.map((p) => (
+            <li key={p.id} className={p.fallen ? 'fallen' : ''}>
+              <strong>{p.name}</strong>
+              {p.fallen ? (
+                <span>
+                  {' '}
+                  {p.winner_name}
+                  {p.unit_name || p.club ? ` (${p.unit_name || p.club})` : ''} · Schuss{' '}
+                  {p.shot_number}, {p.shots_for} für das Pfand
+                </span>
+              ) : (
+                <span className="muted"> hängt noch</span>
               )}
-            </>
-          ) : (
-            <button
-              type="button"
-              className="button"
-              disabled={!current || !allowed.length}
-              onClick={() => setChoosing([])}
-            >
-              Pfand gefallen
-            </button>
-          )}
-          <button
-            type="button"
-            className="button button-ghost"
-            disabled={!current}
-            onClick={() => current && setPresence(current, 'fehlt')}
-          >
-            Schütze fehlt
-          </button>
-          <button
-            type="button"
-            className="button button-ghost"
-            disabled={!view.last}
-            onClick={undo}
-          >
-            Rückgängig
-          </button>
-        </div>
-      )}
-
-      <h2 className="stand-h">Pfänder</h2>
-      <ul className="stand-prizes">
-        {view.prizes.map((p) => (
-          <li key={p.id} className={p.fallen ? 'fallen' : ''}>
-            <strong>{p.name}</strong>
-            {p.fallen ? (
-              <span>
-                {' '}
-                {p.winner_name}
-                {p.unit_name || p.club ? ` (${p.unit_name || p.club})` : ''} · Schuss{' '}
-                {p.shot_number}, {p.shots_for} für das Pfand
-              </span>
-            ) : (
-              <span className="muted"> hängt noch</span>
-            )}
-          </li>
-        ))}
-      </ul>
-
-      <details className="stand-section" open={!fullscreen || !local.starters.length || undefined}>
-        <summary>Schützen und Losnummern ({local.starters.length})</summary>
-        {!closed && (
-          <AddShooter
-            starters={local.starters}
-            lots={comp.lots}
-            units={comp.units}
-            members={local.members}
-            onAdd={(s, op, number, how) => {
-              setLocal((l) => ({ ...l, starters: [...l.starters, s] }))
-              push(op)
-              if (number !== null) {
-                push({ op: 'draw', starter: s.key as string, number, how }, (l) => ({
-                  ...l,
-                  starters: l.starters.map((x) =>
-                    x.key === s.key ? { ...x, number: String(number) } : x,
-                  ),
-                }))
-                if (how === 'digital') setBig({ name: s.name, number })
-              }
-            }}
-          />
-        )}
-        <DrawReport starters={local.starters} gaps={!comp.lots} />
-        {onDrawAll && !closed && local.starters.some((s) => lot(s.number) === null) && (
-          <div className="button-row">
-            <button
-              type="button"
-              className="button button-ghost"
-              disabled={!online}
-              onClick={() => void onDrawAll().then(() => store.sync(true))}
-            >
-              Alle ohne Nummer auslosen
-            </button>
-          </div>
-        )}
-        <ul className="stand-list">
-          {[...local.starters]
-            .sort(
-              (a, b) =>
-                (lot(a.number) ?? 1e9) - (lot(b.number) ?? 1e9) || a.name.localeCompare(b.name),
-            )
-            .map((s) => (
-              <ShooterRow
-                key={String(refOf(s))}
-                s={s}
-                closed={closed}
-                winner={view.prizes.some(
-                  (p) => p.winnerRef !== null && sameStarter(s, p.winnerRef),
-                )}
-                onDraw={(number, how) => {
-                  const n = number ?? drawFree(local.starters, refOf(s), Math.random, comp.lots)
-                  push({ op: 'draw', starter: refOf(s), number: n, how }, (l) => ({
+            </li>
+          ))}
+        </ul>
+      </section>
+      <section className="stand-block" aria-label="Schützen">
+        <details
+          className="stand-section"
+          open={!fullscreen || !local.starters.length || undefined}
+        >
+          <summary>Schützen und Losnummern ({local.starters.length})</summary>
+          {!closed && (
+            <AddShooter
+              starters={local.starters}
+              lots={comp.lots}
+              units={comp.units}
+              members={local.members}
+              onAdd={(s, op, number, how) => {
+                setLocal((l) => ({ ...l, starters: [...l.starters, s] }))
+                push(op)
+                if (number !== null) {
+                  push({ op: 'draw', starter: s.key as string, number, how }, (l) => ({
                     ...l,
                     starters: l.starters.map((x) =>
-                      sameStarter(x, refOf(s)) ? { ...x, number: String(n) } : x,
+                      x.key === s.key ? { ...x, number: String(number) } : x,
                     ),
                   }))
-                  if (how === 'digital') setBig({ name: s.name, number: n })
-                }}
-                onPresence={(p) => setPresence(s, p)}
-                taken={(n) =>
-                  local.starters.find((x) => !sameStarter(x, refOf(s)) && lot(x.number) === n)
+                  if (how === 'digital') setBig({ name: s.name, number })
                 }
-              />
-            ))}
-        </ul>
-      </details>
+              }}
+            />
+          )}
+          <DrawReport starters={local.starters} gaps={!comp.lots} />
+          {onDrawAll && !closed && local.starters.some((s) => lot(s.number) === null) && (
+            <div className="button-row">
+              <button
+                type="button"
+                className="button button-ghost"
+                disabled={!online}
+                onClick={() => void onDrawAll().then(() => store.sync(true))}
+              >
+                Alle ohne Nummer auslosen
+              </button>
+            </div>
+          )}
+          <ul className="stand-list">
+            {[...local.starters]
+              .sort(
+                (a, b) =>
+                  (lot(a.number) ?? 1e9) - (lot(b.number) ?? 1e9) || a.name.localeCompare(b.name),
+              )
+              .map((s) => (
+                <ShooterRow
+                  key={String(refOf(s))}
+                  s={s}
+                  closed={closed}
+                  winner={view.prizes.some(
+                    (p) => p.winnerRef !== null && sameStarter(s, p.winnerRef),
+                  )}
+                  onDraw={(number, how) => {
+                    const n = number ?? drawFree(local.starters, refOf(s), Math.random, comp.lots)
+                    push({ op: 'draw', starter: refOf(s), number: n, how }, (l) => ({
+                      ...l,
+                      starters: l.starters.map((x) =>
+                        sameStarter(x, refOf(s)) ? { ...x, number: String(n) } : x,
+                      ),
+                    }))
+                    if (how === 'digital') setBig({ name: s.name, number: n })
+                  }}
+                  onPresence={(p) => setPresence(s, p)}
+                  taken={(n) =>
+                    local.starters.find((x) => !sameStarter(x, refOf(s)) && lot(x.number) === n)
+                  }
+                />
+              ))}
+          </ul>
+        </details>
+      </section>
       {!closed && !done && (
         <StandFinish
           api={api}

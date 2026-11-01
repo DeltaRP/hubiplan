@@ -33,7 +33,7 @@ export function LiveTables({ api }: { api: StandApi }) {
     <aside className="stand-live" aria-label="Aktuelle Tabellen">
       {stale && <p className="muted small">Ohne Empfang: Stand der letzten Abfrage.</p>}
       {blocks.map((b) => (
-        <section key={b.scoring} className="stand-live-block">
+        <section key={b.scoring} className="stand-live-block stand-block">
           <h2>{b.name}</h2>
           {b.rows.length === 0 ? (
             <p className="muted small">Noch keine Werte.</p>

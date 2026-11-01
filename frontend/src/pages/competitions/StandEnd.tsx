@@ -88,45 +88,57 @@ export function StandEnd({
   }
 
   return (
-    <section className="stand-end" aria-label="Abschluss">
-      <h2 className="stand-h">Abschluss</h2>
-      <p className="muted">
-        {missing.length
-          ? `Noch ohne Ergebnis: ${missing.length} (${missing.join(', ')})`
-          : 'Alle Schützen haben ein Ergebnis.'}
-        {ended ? ' · Schießen beendet, Ergebnisse vorläufig.' : ''}
-      </p>
-      {error && <p className="alert alert-error">{error}</p>}
-      {org !== undefined && comp.can_manage && !ended && (
-        <div className="button-row">
-          <button type="button" className="button" onClick={() => void endShooting()}>
-            Schießen beenden
-          </button>
-        </div>
+    <>
+      {ties.length > 0 && (
+        <section className="stand-block stand-end" aria-label="Stechen">
+          <h2 className="stand-h">Stechen</h2>
+          {ties.map((block) => (
+            <div key={block.scoring} className="stand-shootoffs">
+              <h3>{block.name}</h3>
+              <ShootoffBlock
+                api={api.shootoffs}
+                comp={comp}
+                block={block}
+                shootoffs={data.shootoffs.filter((so) => so.scoring === block.scoring)}
+                closed={false}
+                onChanged={reload}
+              />
+            </div>
+          ))}
+        </section>
       )}
-      {ties.map((block) => (
-        <div key={block.scoring} className="stand-shootoffs">
-          <h3>{block.name}</h3>
-          <ShootoffBlock
-            api={api.shootoffs}
-            comp={comp}
-            block={block}
-            shootoffs={data.shootoffs.filter((so) => so.scoring === block.scoring)}
-            closed={false}
-            onChanged={reload}
-          />
-        </div>
-      ))}
-      {data.standings.open_shootoffs > 0 && (
-        <p className="muted small">Erst die offenen Stechen entscheiden, dann abschließen.</p>
-      )}
-      <StandFinish
-        api={api}
-        comp={comp}
-        pending={pending}
-        online={online}
-        onFinished={() => onStatus('endgueltig')}
-      />
-    </section>
+      <section className="stand-block stand-end" aria-label="Abschluss">
+        <h2 className="stand-h">Abschluss</h2>
+        <p className="muted">
+          {missing.length
+            ? `Noch ohne Ergebnis: ${missing.length} (${missing.join(', ')})`
+            : 'Alle Schützen haben ein Ergebnis.'}
+          {ended ? ' · Schießen beendet, Ergebnisse vorläufig.' : ''}
+        </p>
+        {error && <p className="alert alert-error">{error}</p>}
+        {org !== undefined && comp.can_manage && !ended && (
+          <div className="button-row">
+            <button type="button" className="button" onClick={() => void endShooting()}>
+              Schießen beenden
+            </button>
+          </div>
+        )}
+        {/* Schritt 2 erst nach „Schießen beenden“; über den Standzugang gibt es kein Beenden */}
+        {(ended || org === undefined) && (
+          <>
+            {data.standings.open_shootoffs > 0 && (
+              <p className="muted small">Erst die offenen Stechen entscheiden, dann abschließen.</p>
+            )}
+            <StandFinish
+              api={api}
+              comp={comp}
+              pending={pending}
+              online={online}
+              onFinished={() => onStatus('endgueltig')}
+            />
+          </>
+        )}
+      </section>
+    </>
   )
 }
