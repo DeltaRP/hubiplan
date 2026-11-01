@@ -34,6 +34,7 @@ export interface PortalEntry {
   date_precision?: DatePrecision
   theme: EffectiveTheme
   events_enabled?: boolean
+  entries_enabled?: boolean
   terms?: DeptTerms
   imprint_key?: string
 }

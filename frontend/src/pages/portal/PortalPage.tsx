@@ -18,6 +18,7 @@ import { GENDERS } from '../../api/members.ts'
 import { OwnCardPanel } from '../../components/CardPanel.tsx'
 import { useOrg } from '../../org/OrgContext.tsx'
 import { PortalInvoices, PortalMandate } from '../billing/MyInvoices.tsx'
+import { PortalEntries } from './PortalEntries.tsx'
 import { useTerms } from '../../org/terms.ts'
 import { NotFoundPage } from '../NoticePages.tsx'
 
@@ -108,6 +109,14 @@ export function PortalPage() {
           </PortalSection>
         }
       />
+      <Route
+        path="gemeldet"
+        element={
+          <PortalSection title="Wofür bin ich gemeldet?">
+            <PortalEntries key={activePortal.id} accessId={activePortal.id} />
+          </PortalSection>
+        }
+      />
       <Route path="daten" element={<PortalData key={activePortal.id} entry={activePortal} />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
@@ -136,6 +145,15 @@ export function PortalTasks({ entry }: { entry: PortalEntry }) {
     },
     ...(entry.events_enabled
       ? [{ to: '/termine', title: 'Meine Termine', text: 'Termine ansehen, zu- oder absagen' }]
+      : []),
+    ...(entry.entries_enabled
+      ? [
+          {
+            to: '/mein-bereich/gemeldet',
+            title: 'Gemeldet',
+            text: 'Wettbewerbe, für die der Verein dich gemeldet hat',
+          },
+        ]
       : []),
     {
       to: '/mein-bereich/rechnungen',
@@ -261,7 +279,7 @@ function PortalData({ entry }: { entry: PortalEntry }) {
 
       {data.change_requests.length > 0 && (
         <div className="card card-wide">
-          <h2>Meine Meldungen</h2>
+          <h2>Meine Änderungsmeldungen</h2>
           <ul className="audit-list">
             {data.change_requests.map((c) => (
               <ChangeRequestItem key={c.id} request={c} />

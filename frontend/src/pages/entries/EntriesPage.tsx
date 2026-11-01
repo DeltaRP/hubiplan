@@ -36,6 +36,7 @@ import {
   Tabs,
 } from '../../components/ui.tsx'
 import { useActiveOrg } from '../../org/OrgContext.tsx'
+import { CallEventCard, InterestCard } from './CallEvent.tsx'
 
 export function EntriesPage() {
   return (
@@ -389,6 +390,7 @@ function EntryPanel({
         )}
         {message && <Alert kind="error">{message}</Alert>}
       </div>
+      <InterestCard org={org} call={call} entry={entry} locked={locked} run={run} />
       {call.blocks.map((b) => (
         <BlockEntry
           key={b.id}
@@ -741,6 +743,7 @@ function MemberChooser({
             r.birth_year ? `geb. ${r.birth_year}` : '',
             r.active ? '' : 'nicht aktiv',
             r.taken ? 'schon gemeldet' : '',
+            r.response === 'yes' ? 'hat zugesagt' : r.response === 'no' ? 'hat abgesagt' : '',
           ]
             .filter(Boolean)
             .join(' · '),
@@ -1485,6 +1488,7 @@ function CallEditor({
           )}
         </div>
       </div>
+      <CallEventCard org={org} call={call} onChanged={onChanged} />
       <BlocksEditor org={org} call={call} reload={reload} />
     </>
   )

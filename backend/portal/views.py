@@ -701,6 +701,7 @@ def portal_summary(access: PortalAccess) -> dict:
             "date_precision": club.date_precision,
             "theme": effective_theme(club.ancestors()),
             "events_enabled": "events" in (club.enabled_modules or []),
+            "entries_enabled": "entries" in (club.enabled_modules or []),
             "terms": department_terms(club),
             "imprint_key": ensure_imprint(club).public_key,
         }
