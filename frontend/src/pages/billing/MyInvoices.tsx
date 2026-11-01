@@ -9,15 +9,16 @@ import { Alert, Checkbox, Field } from '../../components/ui.tsx'
 import { StatusBadge } from './InvoicesPage.tsx'
 import { confirmDialog } from '../../components/dialog.ts'
 import { useTerms } from '../../org/terms.ts'
+import { t } from '../../i18n/index.ts'
 
 export function DeptInvoices({ deptId }: { deptId: number }) {
   const { data, error } = useLoad(() => portalBillingApi.deptInvoices(deptId), [deptId])
   if (error) return <Alert kind="error">{error}</Alert>
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
   if (data.length === 0)
     return (
       <div className="card empty-state">
-        <p>Noch keine Sammelrechnungen.</p>
+        <p>{t('Noch keine Sammelrechnungen.')}</p>
       </div>
     )
   return (
@@ -38,14 +39,15 @@ export function DeptInvoices({ deptId }: { deptId: number }) {
             </a>
           </div>
           <p>
-            {inv.subject} · vom {formatDate(inv.date)} · fällig {formatDate(inv.due_date)}
+            {inv.subject} {t('· vom {x} · fällig', { x: formatDate(inv.date) })}{' '}
+            {formatDate(inv.due_date)}
           </p>
           <table className="table">
             <thead>
               <tr>
-                <th>Mitglied</th>
+                <th>{t('Mitglied')}</th>
                 <th />
-                <th className="num">Beitrag</th>
+                <th className="num">{t('Beitrag')}</th>
               </tr>
             </thead>
             <tbody>
@@ -59,7 +61,7 @@ export function DeptInvoices({ deptId }: { deptId: number }) {
             </tbody>
             <tfoot>
               <tr>
-                <th>Gesamt</th>
+                <th>{t('Gesamt')}</th>
                 <th />
                 <th className="num">{euro(inv.total)}</th>
               </tr>
@@ -86,7 +88,7 @@ export function PortalInvoices({ accessId, empty }: { accessId: number; empty?: 
   if (data.invoices.length === 0 && data.collective.length === 0) return empty ?? null
   return (
     <div className="card card-wide">
-      <h2>Meine Rechnungen</h2>
+      <h2>{t('Meine Rechnungen')}</h2>
       {data.invoices.length > 0 && (
         <table className="table">
           <tbody>
@@ -101,8 +103,8 @@ export function PortalInvoices({ accessId, empty }: { accessId: number; empty?: 
                     {inv.number}
                   </a>
                   <div className="muted small">
-                    {inv.issuer_name && `${inv.issuer_name} · `}
-                    {inv.subject} · fällig {formatDate(inv.due_date)}
+                    {inv.issuer_name && t('{issuer_name} · ', { issuer_name: inv.issuer_name })}
+                    {inv.subject} {t('· fällig')} {formatDate(inv.due_date)}
                   </div>
                 </td>
                 <td>
@@ -121,7 +123,9 @@ export function PortalInvoices({ accessId, empty }: { accessId: number; empty?: 
       )}
       {data.collective.length > 0 && (
         <>
-          <p className="muted small">Diese Beiträge laufen über die Sammelrechnung {tm.deines}:</p>
+          <p className="muted small">
+            {t('Diese Beiträge laufen über die Sammelrechnung {deines}:', { deines: tm.deines })}
+          </p>
           <ul>
             {data.collective.map((c) => (
               <li key={c.id}>
@@ -158,7 +162,7 @@ export function PortalMandate({ accessId }: { accessId: number }) {
       setData(await portalBillingApi.grantMandate(accessId, { holder, iban, bic, consent }))
       setNotice({
         kind: 'success',
-        text: 'Danke, das Mandat ist erteilt. Du bekommst eine Bestätigung per E-Mail.',
+        text: t('Danke, das Mandat ist erteilt. Du bekommst eine Bestätigung per E-Mail.'),
       })
     } catch (err) {
       if (err instanceof ApiError) setFieldErrors(err.fieldErrors)
@@ -171,9 +175,9 @@ export function PortalMandate({ accessId }: { accessId: number }) {
   async function revoke() {
     if (
       !(await confirmDialog({
-        title: 'Lastschriftmandat widerrufen?',
-        message: 'Beiträge musst du dann überweisen.',
-        confirmLabel: 'Widerrufen',
+        title: t('Lastschriftmandat widerrufen?'),
+        message: t('Beiträge musst du dann überweisen.'),
+        confirmLabel: t('Widerrufen'),
       }))
     )
       return
@@ -181,7 +185,7 @@ export function PortalMandate({ accessId }: { accessId: number }) {
     try {
       await portalBillingApi.revokeMandate(accessId)
       setData(await portalBillingApi.mandate(accessId))
-      setNotice({ kind: 'success', text: 'Das Mandat ist widerrufen.' })
+      setNotice({ kind: 'success', text: t('Das Mandat ist widerrufen.') })
     } catch (err) {
       setNotice({ kind: 'error', text: errorMessage(err) })
     } finally {
@@ -191,19 +195,21 @@ export function PortalMandate({ accessId }: { accessId: number }) {
 
   return (
     <div className="card card-wide">
-      <h2>SEPA-Lastschrift</h2>
+      <h2>{t('SEPA-Lastschrift')}</h2>
       {notice && <Alert kind={notice.kind}>{notice.text}</Alert>}
       {m ? (
         <>
-          <p>{data.club_name} zieht deine Beiträge per Lastschrift von deinem Konto ein.</p>
+          <p>
+            {data.club_name} {t('zieht deine Beiträge per Lastschrift von deinem Konto ein.')}
+          </p>
           <dl className="facts">
-            <dt>Kontoinhaber</dt>
+            <dt>{t('Kontoinhaber')}</dt>
             <dd>{m.holder}</dd>
             <dt>IBAN</dt>
             <dd>{m.iban_masked}</dd>
-            <dt>Mandatsreferenz</dt>
+            <dt>{t('Mandatsreferenz')}</dt>
             <dd>{m.reference}</dd>
-            <dt>erteilt am</dt>
+            <dt>{t('erteilt am')}</dt>
             <dd>{formatDate(m.signed_on)}</dd>
           </dl>
           <button
@@ -212,18 +218,20 @@ export function PortalMandate({ accessId }: { accessId: number }) {
             disabled={busy}
             onClick={() => void revoke()}
           >
-            Mandat widerrufen
+            {t('Mandat widerrufen')}
           </button>
         </>
       ) : (
         <form onSubmit={grant}>
           <p className="muted small">
-            Statt zu überweisen kannst du {data.club_name} erlauben, deine Beiträge einzuziehen. Vor
-            jedem Einzug bekommst du eine Ankündigung.
+            {t(
+              'Statt zu überweisen kannst du {club_name} erlauben, deine Beiträge einzuziehen. Vor jedem Einzug bekommst du eine Ankündigung.',
+              { club_name: data.club_name },
+            )}
           </p>
           <div className="grid-3">
             <Field
-              label="Kontoinhaber"
+              label={t('Kontoinhaber')}
               required
               value={holder}
               error={fieldErrors.holder}
@@ -237,7 +245,7 @@ export function PortalMandate({ accessId }: { accessId: number }) {
               onChange={(e) => setIban(e.target.value)}
             />
             <Field
-              label="BIC (optional)"
+              label={t('BIC (optional)')}
               value={bic}
               error={fieldErrors.bic}
               onChange={(e) => setBic(e.target.value)}
@@ -245,12 +253,12 @@ export function PortalMandate({ accessId }: { accessId: number }) {
           </div>
           <p className="small">{data.text}</p>
           <Checkbox
-            label="Ich erteile dieses SEPA-Lastschriftmandat."
+            label={t('Ich erteile dieses SEPA-Lastschriftmandat.')}
             checked={consent}
             onChange={setConsent}
           />
           <button type="submit" className="button button-primary" disabled={busy || !consent}>
-            Mandat erteilen
+            {t('Mandat erteilen')}
           </button>
         </form>
       )}

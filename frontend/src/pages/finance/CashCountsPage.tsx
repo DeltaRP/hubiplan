@@ -9,6 +9,7 @@ import { errorMessage, formatDate, useLoad } from '../../components/forms.ts'
 import { Alert, Field, SelectField } from '../../components/ui.tsx'
 import { useActiveOrg } from '../../org/OrgContext.tsx'
 import { HowTo, Term, Why } from '../../learning/Aids.tsx'
+import { t } from '../../i18n/index.ts'
 
 function todayIso(): string {
   const d = new Date()
@@ -16,7 +17,7 @@ function todayIso(): string {
 }
 
 function coinLabel(cents: number): string {
-  return cents >= 100 ? `${cents / 100} €` : `${cents} ct`
+  return cents >= 100 ? t('{x} €', { x: cents / 100 }) : t('{cents} ct', { cents })
 }
 
 function cents(value: string): number {
@@ -31,30 +32,34 @@ export function CashCountsPage({ canEdit }: { canEdit: boolean }) {
   const [notice, setNotice] = useState<string | null>(null)
 
   if (error) return <Alert kind="error">{error}</Alert>
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
 
   return (
     <div className="card card-wide">
       <div className="card-head">
-        <h2>Kassenzählung</h2>
+        <h2>{t('Kassenzählung')}</h2>
         {canEdit && form === null && (
           <span className="push-right">
             <button type="button" className="button button-ghost" onClick={() => setForm('count')}>
-              Kasse zählen
+              {t('Kasse zählen')}
             </button>{' '}
             <button type="button" className="button button-ghost" onClick={() => setForm('event')}>
-              Kassenbericht Fest
+              {t('Kassenbericht Fest')}
             </button>
           </span>
         )}
       </div>
       <p className="muted small">
-        Das <strong>Zählprotokoll</strong> (<Term k="cash_count_term">Kassensturz</Term>) vergleicht
-        das gezählte Bargeld mit dem Kassenbuch; eine Differenz wird mit Grund gebucht. Der{' '}
-        <strong>Kassenbericht</strong> ermittelt die Tageseinnahme einer{' '}
-        <Term k="open_till">offenen Ladenkasse</Term>, etwa am Getränkestand: Endbestand minus
-        Wechselgeld plus bar bezahlte Ausgaben und Entnahmen. Gespeicherte Protokolle lassen sich
-        nicht mehr ändern.
+        {t('Das')} <strong>{t('Zählprotokoll')}</strong> (
+        <Term k="cash_count_term">{t('Kassensturz')}</Term>
+        {t(
+          ') vergleicht das gezählte Bargeld mit dem Kassenbuch; eine Differenz wird mit Grund gebucht. Der',
+        )}{' '}
+        <strong>{t('Kassenbericht')}</strong> {t('ermittelt die Tageseinnahme einer')}{' '}
+        <Term k="open_till">{t('offenen Ladenkasse')}</Term>
+        {t(
+          ', etwa am Getränkestand: Endbestand minus Wechselgeld plus bar bezahlte Ausgaben und Entnahmen. Gespeicherte Protokolle lassen sich nicht mehr ändern.',
+        )}
       </p>
       <Why k="cash_count" />
       <Why k="event_cash" />
@@ -66,9 +71,12 @@ export function CashCountsPage({ canEdit }: { canEdit: boolean }) {
           onSaved={async (saved) => {
             setForm(null)
             setNotice(
-              `${saved.kind_label} vom ${formatDate(saved.date)} gespeichert` +
+              t('{kind_label} vom {x} gespeichert', {
+                kind_label: saved.kind_label,
+                x: formatDate(saved.date),
+              }) +
                 (saved.bookings.length
-                  ? `, gebucht als ${saved.bookings.map((b) => b.number).join(', ')}.`
+                  ? t(', gebucht als {x}.', { x: saved.bookings.map((b) => b.number).join(', ') })
                   : '.'),
             )
             await reload()
@@ -76,15 +84,15 @@ export function CashCountsPage({ canEdit }: { canEdit: boolean }) {
         />
       )}
       {data.results.length === 0 ? (
-        <p className="muted">Noch keine Zählungen.</p>
+        <p className="muted">{t('Noch keine Zählungen.')}</p>
       ) : (
         <table className="table">
           <thead>
             <tr>
-              <th>Datum</th>
-              <th>Art</th>
-              <th className="num">gezählt</th>
-              <th className="num">Ergebnis</th>
+              <th>{t('Datum')}</th>
+              <th>{t('Art')}</th>
+              <th className="num">{t('gezählt')}</th>
+              <th className="num">{t('Ergebnis')}</th>
               <th />
             </tr>
           </thead>
@@ -95,17 +103,17 @@ export function CashCountsPage({ canEdit }: { canEdit: boolean }) {
                 <td>
                   <strong>{c.title || c.kind_label}</strong>
                   <div className="muted small">
-                    {c.title ? `${c.kind_label} · ` : ''}
-                    {c.account_name} · gezählt von {c.counted_by}
+                    {c.title ? t('{kind_label} · ', { kind_label: c.kind_label }) : ''}
+                    {c.account_name} {t('· gezählt von')} {c.counted_by}
                     {c.bookings.length > 0 &&
-                      ` · gebucht als ${c.bookings.map((b) => b.number).join(', ')}`}
+                      t(' · gebucht als {x}', { x: c.bookings.map((b) => b.number).join(', ') })}
                   </div>
                 </td>
                 <td className="num">{euro(c.counted)}</td>
                 <td className="num">
                   {c.kind === 'count'
-                    ? `Differenz ${euro(c.difference)}`
-                    : `Einnahme ${euro(c.takings)}`}
+                    ? t('Differenz {x}', { x: euro(c.difference) })
+                    : t('Einnahme {x}', { x: euro(c.takings) })}
                 </td>
                 <td className="actions">
                   <a
@@ -202,18 +210,18 @@ function CashCountForm({
 
   return (
     <form className="subcard" onSubmit={(e) => void submit(e)}>
-      <h3>{kind === 'count' ? 'Zählprotokoll' : 'Kassenbericht für ein Fest'}</h3>
+      <h3>{kind === 'count' ? t('Zählprotokoll') : t('Kassenbericht für ein Fest')}</h3>
       {accounts.data && cashAccounts.length === 0 && (
-        <Alert kind="info">Bitte zuerst unter Konten eine Barkasse anlegen.</Alert>
+        <Alert kind="info">{t('Bitte zuerst unter Konten eine Barkasse anlegen.')}</Alert>
       )}
       <div className="grid-2">
         <SelectField
-          label="Barkasse"
+          label={t('Barkasse')}
           value={chosen}
           onChange={(e) => setAccount(e.target.value)}
           required
         >
-          <option value="">bitte wählen</option>
+          <option value="">{t('bitte wählen')}</option>
           {cashAccounts.map((a) => (
             <option key={a.id} value={a.id}>
               {a.name}
@@ -221,7 +229,7 @@ function CashCountForm({
           ))}
         </SelectField>
         <Field
-          label="Datum"
+          label={t('Datum')}
           type="date"
           value={date}
           max={todayIso()}
@@ -231,15 +239,15 @@ function CashCountForm({
       </div>
       {kind === 'event' && (
         <Field
-          label="Fest bzw. Verkaufsstand"
+          label={t('Fest bzw. Verkaufsstand')}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="z. B. Schützenfest Getränkezelt"
+          placeholder={t('z. B. Schützenfest Getränkezelt')}
           required
         />
       )}
       <fieldset>
-        <legend>{kind === 'count' ? 'Gezähltes Bargeld' : 'Endbestand nach dem Fest'}</legend>
+        <legend>{kind === 'count' ? t('Gezähltes Bargeld') : t('Endbestand nach dem Fest')}</legend>
         <div className="grid-4">
           {DENOMINATIONS.map((c) => (
             <Field
@@ -255,23 +263,25 @@ function CashCountForm({
           ))}
         </div>
         <p>
-          <strong>Summe: {euro(counted / 100)}</strong>
+          <strong>
+            {t('Summe:')} {euro(counted / 100)}
+          </strong>
         </p>
       </fieldset>
       {kind === 'count' ? (
         <>
           <Field
-            label="Grund bei einer Differenz"
+            label={t('Grund bei einer Differenz')}
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            hint="Nur nötig, wenn das gezählte Geld nicht zum Kassenbuch passt."
+            hint={t('Nur nötig, wenn das gezählte Geld nicht zum Kassenbuch passt.')}
           />
           <SelectField
-            label="Kategorie für eine Differenz"
+            label={t('Kategorie für eine Differenz')}
             value={category}
             onChange={(e) => setCategory(e.target.value)}
           >
-            <option value="">keine Differenz</option>
+            <option value="">{t('keine Differenz')}</option>
             {allCats.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -283,36 +293,38 @@ function CashCountForm({
         <>
           <div className="grid-3">
             <Field
-              label="Anfangsbestand (Wechselgeld) in €"
+              label={t('Anfangsbestand (Wechselgeld) in €')}
               inputMode="decimal"
               value={opening}
               onChange={(e) => setOpening(e.target.value)}
             />
             <Field
-              label="bar bezahlte Ausgaben in €"
+              label={t('bar bezahlte Ausgaben in €')}
               inputMode="decimal"
               value={expenses}
               onChange={(e) => setExpenses(e.target.value)}
-              hint="Mit Beleg getrennt als Ausgabe buchen."
+              hint={t('Mit Beleg getrennt als Ausgabe buchen.')}
             />
             <Field
-              label="Entnahmen in €"
+              label={t('Entnahmen in €')}
               inputMode="decimal"
               value={withdrawals}
               onChange={(e) => setWithdrawals(e.target.value)}
-              hint="Zwischendurch abgeschöpftes Geld, z. B. zur Bank gebracht."
+              hint={t('Zwischendurch abgeschöpftes Geld, z. B. zur Bank gebracht.')}
             />
           </div>
           <p>
-            <strong>Tageseinnahme: {euro(takings / 100)}</strong>
+            <strong>
+              {t('Tageseinnahme:')} {euro(takings / 100)}
+            </strong>
           </p>
           <HowTo k="calc_takings" />
           <fieldset>
-            <legend>Aufteilung der Einnahme</legend>
+            <legend>{t('Aufteilung der Einnahme')}</legend>
             {lines.map((l, i) => (
               <div className="grid-2" key={i}>
                 <SelectField
-                  label="Kategorie"
+                  label={t('Kategorie')}
                   value={l.category}
                   onChange={(e) =>
                     setLines(
@@ -320,7 +332,7 @@ function CashCountForm({
                     )
                   }
                 >
-                  <option value="">bitte wählen</option>
+                  <option value="">{t('bitte wählen')}</option>
                   {incomeCats.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
@@ -328,7 +340,7 @@ function CashCountForm({
                   ))}
                 </SelectField>
                 <Field
-                  label="Betrag in €"
+                  label={t('Betrag in €')}
                   inputMode="decimal"
                   value={l.amount}
                   onChange={(e) =>
@@ -342,24 +354,26 @@ function CashCountForm({
               className="link-button"
               onClick={() => setLines([...lines, { category: '', amount: '' }])}
             >
-              weitere Kategorie
+              {t('weitere Kategorie')}
             </button>
             {split !== takings && (
-              <p className="muted small">Noch aufzuteilen: {euro((takings - split) / 100)}</p>
+              <p className="muted small">
+                {t('Noch aufzuteilen:')} {euro((takings - split) / 100)}
+              </p>
             )}
           </fieldset>
-          <Field label="Bemerkung" value={note} onChange={(e) => setNote(e.target.value)} />
+          <Field label={t('Bemerkung')} value={note} onChange={(e) => setNote(e.target.value)} />
         </>
       )}
       <div className="grid-2">
         <Field
-          label="Gezählt von"
+          label={t('Gezählt von')}
           value={countedBy}
           onChange={(e) => setCountedBy(e.target.value)}
           required
         />
         <Field
-          label="Zweite Person (empfohlen)"
+          label={t('Zweite Person (empfohlen)')}
           value={witness}
           onChange={(e) => setWitness(e.target.value)}
         />
@@ -367,10 +381,10 @@ function CashCountForm({
       {error && <Alert kind="error">{error}</Alert>}
       <div className="button-row">
         <button type="submit" className="button button-primary" disabled={busy || !chosen}>
-          Speichern und buchen
+          {t('Speichern und buchen')}
         </button>
         <button type="button" className="button button-ghost" onClick={onCancel}>
-          Abbrechen
+          {t('Abbrechen')}
         </button>
       </div>
     </form>

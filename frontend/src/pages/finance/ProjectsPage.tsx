@@ -26,6 +26,7 @@ import { Alert, Field, LoadError, SaveStatus, SelectField } from '../../componen
 import { useActiveOrg } from '../../org/OrgContext.tsx'
 import { useTerms } from '../../org/terms.ts'
 import { berlin } from '../../components/calendar/time.ts'
+import { t } from '../../i18n/index.ts'
 
 const STATUS: { value: ProjectStatus; label: string }[] = [
   { value: 'planned', label: 'geplant' },
@@ -35,7 +36,7 @@ const STATUS: { value: ProjectStatus; label: string }[] = [
 
 function period(starts: string, ends: string | null): string {
   return ends && ends !== starts
-    ? `${formatDate(starts)} bis ${formatDate(ends)}`
+    ? t('{x} bis {x2}', { x: formatDate(starts), x2: formatDate(ends) })
     : formatDate(starts)
 }
 
@@ -75,7 +76,7 @@ function ProjectList() {
       {canEdit && !creating && (
         <div className="button-row">
           <button type="button" className="button button-primary" onClick={() => setCreating(true)}>
-            Neue Veranstaltung
+            {t('Neue Veranstaltung')}
           </button>
         </div>
       )}
@@ -89,8 +90,8 @@ function ProjectList() {
         />
       )}
       <div className="card card-wide filters">
-        <select aria-label="Status" value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="">alle Status</option>
+        <select aria-label={t('Status')} value={status} onChange={(e) => setStatus(e.target.value)}>
+          <option value="">{t('alle Status')}</option>
           {STATUS.map((s) => (
             <option key={s.value} value={s.value}>
               {s.label}
@@ -98,8 +99,8 @@ function ProjectList() {
           ))}
         </select>
         {(series.data?.length ?? 0) > 0 && (
-          <select aria-label="Reihe" value={reihe} onChange={(e) => setReihe(e.target.value)}>
-            <option value="">alle Reihen</option>
+          <select aria-label={t('Reihe')} value={reihe} onChange={(e) => setReihe(e.target.value)}>
+            <option value="">{t('alle Reihen')}</option>
             {series.data!.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
@@ -110,13 +111,14 @@ function ProjectList() {
       </div>
       <div className="card card-wide">
         {!list.data ? (
-          <p className="muted">Lädt …</p>
+          <p className="muted">{t('Lädt …')}</p>
         ) : list.data.length === 0 ? (
           <div className="empty-state">
-            <p>Noch keine Veranstaltung.</p>
+            <p>{t('Noch keine Veranstaltung.')}</p>
             <p className="muted small">
-              Lege zum Beispiel das Schützenfest als Veranstaltung an und ordne ihm im Kassenbuch
-              Einnahmen und Ausgaben zu. Die Buchungen bleiben ganz normal im Kassenbuch.
+              {t(
+                'Lege zum Beispiel das Schützenfest als Veranstaltung an und ordne ihm im Kassenbuch Einnahmen und Ausgaben zu. Die Buchungen bleiben ganz normal im Kassenbuch.',
+              )}
             </p>
           </div>
         ) : (
@@ -124,11 +126,11 @@ function ProjectList() {
             <table className="table">
               <thead>
                 <tr>
-                  <th>Veranstaltung</th>
-                  <th>Zeitraum</th>
-                  <th className="num">Einnahmen</th>
-                  <th className="num">Ausgaben</th>
-                  <th className="num">Ergebnis</th>
+                  <th>{t('Veranstaltung')}</th>
+                  <th>{t('Zeitraum')}</th>
+                  <th className="num">{t('Einnahmen')}</th>
+                  <th className="num">{t('Ausgaben')}</th>
+                  <th className="num">{t('Ergebnis')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -195,10 +197,10 @@ function ProjectForm({
 
   async function addSeries() {
     const name = await promptDialog({
-      title: 'Neue Reihe',
-      message: 'Eine Reihe fasst wiederkehrende Veranstaltungen zusammen, z. B. „Schützenfest“.',
-      label: 'Name der Reihe',
-      confirmLabel: 'Anlegen',
+      title: t('Neue Reihe'),
+      message: t('Eine Reihe fasst wiederkehrende Veranstaltungen zusammen, z. B. „Schützenfest“.'),
+      label: t('Name der Reihe'),
+      confirmLabel: t('Anlegen'),
       danger: false,
     })
     if (!name?.trim()) return
@@ -246,7 +248,7 @@ function ProjectForm({
     <div className="card card-wide">
       <form onSubmit={save}>
         <div className="card-head">
-          <h2>{project ? 'Veranstaltung bearbeiten' : 'Neue Veranstaltung'}</h2>
+          <h2>{project ? t('Veranstaltung bearbeiten') : t('Neue Veranstaltung')}</h2>
           {project && <SaveStatus auto={auto} />}
           <button
             type="button"
@@ -255,21 +257,21 @@ function ProjectForm({
               void (project ? auto.flush() : Promise.resolve(true)).then((ok) => ok && onClose())
             }
           >
-            {project ? 'Schließen' : 'Abbrechen'}
+            {project ? t('Schließen') : t('Abbrechen')}
           </button>
         </div>
         <fieldset disabled={!project && form.busy}>
           <div className="grid-3">
             <Field
-              label="Name"
+              label={t('Name')}
               required
-              placeholder="z. B. Schützenfest 2026"
+              placeholder={t('z. B. Schützenfest 2026')}
               value={v.name}
               error={errors.name}
               onChange={(e) => set('name', e.target.value)}
             />
             <Field
-              label="Beginn"
+              label={t('Beginn')}
               type="date"
               required
               value={v.starts_on}
@@ -277,14 +279,14 @@ function ProjectForm({
               onChange={(e) => set('starts_on', e.target.value)}
             />
             <Field
-              label="Ende (optional)"
+              label={t('Ende (optional)')}
               type="date"
               value={v.ends_on}
               error={errors.ends_on}
               onChange={(e) => set('ends_on', e.target.value)}
             />
             <SelectField
-              label="Status"
+              label={t('Status')}
               value={v.status}
               error={errors.status}
               onChange={(e) => set('status', e.target.value as ProjectStatus)}
@@ -296,10 +298,10 @@ function ProjectForm({
               ))}
             </SelectField>
             <SelectField
-              label="Reihe (optional)"
+              label={t('Reihe (optional)')}
               value={v.series}
               error={errors.series}
-              hint="Für den Vergleich über die Jahre"
+              hint={t('Für den Vergleich über die Jahre')}
               onChange={(e) => {
                 if (e.target.value === '+') void addSeries()
                 else set('series', e.target.value)
@@ -311,11 +313,11 @@ function ProjectForm({
                   {s.name}
                 </option>
               ))}
-              <option value="+">+ neue Reihe …</option>
+              <option value="+">{t('+ neue Reihe …')}</option>
             </SelectField>
             {(departments.data?.length ?? 0) > 0 && (
               <SelectField
-                label={`${tm.sg} (optional)`}
+                label={t('{sg} (optional)', { sg: tm.sg })}
                 value={v.department}
                 error={errors.department}
                 onChange={(e) => set('department', e.target.value)}
@@ -330,7 +332,7 @@ function ProjectForm({
             )}
           </div>
           <label className="field">
-            <span>Beschreibung (optional)</span>
+            <span>{t('Beschreibung (optional)')}</span>
             <textarea
               rows={3}
               value={v.description}
@@ -342,7 +344,7 @@ function ProjectForm({
         {!project && (
           <div className="button-row">
             <button type="submit" className="button button-primary" disabled={form.busy}>
-              Anlegen
+              {t('Anlegen')}
             </button>
           </div>
         )}
@@ -366,7 +368,7 @@ function ProjectDetail() {
   const [error, setError] = useState<string | null>(null)
 
   if (ev.error) return <Alert kind="error">{ev.error}</Alert>
-  if (!ev.data) return <p className="muted">Lädt …</p>
+  if (!ev.data) return <p className="muted">{t('Lädt …')}</p>
   const d = ev.data
   const reload = () => {
     void ev.reload()
@@ -376,10 +378,11 @@ function ProjectDetail() {
   async function remove() {
     if (
       !(await confirmDialog({
-        title: `„${d.name}“ löschen?`,
-        message:
+        title: t('„{name}“ löschen?', { name: d.name }),
+        message: t(
           'Verknüpfte Termine bleiben im Kalender. Zugeordnete Buchungen müssen vorher gelöst werden.',
-        confirmLabel: 'Löschen',
+        ),
+        confirmLabel: t('Löschen'),
       }))
     )
       return
@@ -404,7 +407,7 @@ function ProjectDetail() {
   return (
     <div className="stack">
       <p className="small">
-        <Link to="/finanzen/veranstaltungen">← alle Veranstaltungen</Link>
+        <Link to="/finanzen/veranstaltungen">{t('← alle Veranstaltungen')}</Link>
       </p>
       <div className="card card-wide">
         <div className="card-head">
@@ -415,7 +418,7 @@ function ProjectDetail() {
                 period(d.starts_on, d.ends_on),
                 d.status_label,
                 d.department_name,
-                d.series_name ? `Reihe ${d.series_name}` : null,
+                d.series_name ? t('Reihe {series_name}', { series_name: d.series_name }) : null,
               ]
                 .filter(Boolean)
                 .join(' · ')}
@@ -434,7 +437,7 @@ function ProjectDetail() {
               className="button button-ghost"
               href={financeApi.projectReportUrl(org.id, d.id, 'xlsx')}
             >
-              Excel
+              {t('Excel')}
             </a>
             {canEdit && (
               <button
@@ -442,12 +445,12 @@ function ProjectDetail() {
                 className="button button-ghost"
                 onClick={() => setEditing(true)}
               >
-                Bearbeiten
+                {t('Bearbeiten')}
               </button>
             )}
             {canEdit && (
               <button type="button" className="button button-danger" onClick={() => void remove()}>
-                Löschen
+                {t('Löschen')}
               </button>
             )}
           </div>
@@ -474,42 +477,48 @@ function ProjectDetail() {
 
       <div className="tiles tiles-figures">
         <div className="card tile">
-          <h2>Einnahmen</h2>
+          <h2>{t('Einnahmen')}</h2>
           <p className="amount-big amount-in">{euro(tm.income)}</p>
         </div>
         <div className="card tile">
-          <h2>Ausgaben</h2>
+          <h2>{t('Ausgaben')}</h2>
           <p className="amount-big amount-out">{euro(tm.expense)}</p>
         </div>
         <div className="card tile">
-          <h2>{Number(tm.result) < 0 ? 'Fehlbetrag' : 'Überschuss'}</h2>
+          <h2>{Number(tm.result) < 0 ? t('Fehlbetrag') : t('Überschuss')}</h2>
           <p className={`amount-big ${Number(tm.result) < 0 ? 'amount-out' : 'amount-in'}`}>
             {euro(tm.result)}
           </p>
-          <span className="muted small">{d.booking_count} Buchungen</span>
+          <span className="muted small">
+            {d.booking_count} {t('Buchungen')}
+          </span>
         </div>
       </div>
       {d.open_invoices.count > 0 && (
         <Alert kind="info">
-          Noch offen:{' '}
-          {d.open_invoices.count === 1 ? 'eine Rechnung' : `${d.open_invoices.count} Rechnungen`}{' '}
-          über {euro(d.open_invoices.outstanding)}. Sie zählen erst mit dem Zahlungseingang.{' '}
-          <Link to={`/finanzen/rechnungen?veranstaltung=${d.id}`}>Ansehen</Link>
+          {t('Noch offen:')}{' '}
+          {d.open_invoices.count === 1
+            ? t('eine Rechnung')
+            : t('{count} Rechnungen', { count: d.open_invoices.count })}{' '}
+          {t('über {x}. Sie zählen erst mit dem Zahlungseingang.', {
+            x: euro(d.open_invoices.outstanding),
+          })}{' '}
+          <Link to={`/finanzen/rechnungen?veranstaltung=${d.id}`}>{t('Ansehen')}</Link>
         </Alert>
       )}
 
       <div className="card card-wide">
-        <h2>Nach Kategorie</h2>
+        <h2>{t('Nach Kategorie')}</h2>
         {d.categories.length === 0 ? (
-          <p className="muted">Noch keine Einnahmen oder Ausgaben zugeordnet.</p>
+          <p className="muted">{t('Noch keine Einnahmen oder Ausgaben zugeordnet.')}</p>
         ) : (
           <table className="table">
             <thead>
               <tr>
-                <th>Kategorie</th>
-                <th className="num">Einnahmen</th>
-                <th className="num">Ausgaben</th>
-                <th className="num">Saldo</th>
+                <th>{t('Kategorie')}</th>
+                <th className="num">{t('Einnahmen')}</th>
+                <th className="num">{t('Ausgaben')}</th>
+                <th className="num">{t('Saldo')}</th>
               </tr>
             </thead>
             <tbody>
@@ -526,7 +535,7 @@ function ProjectDetail() {
             </tbody>
             <tfoot>
               <tr>
-                <th>Summe</th>
+                <th>{t('Summe')}</th>
                 <th className="num">{euro(tm.income)}</th>
                 <th className="num">{euro(tm.expense)}</th>
                 <th className="num">
@@ -540,14 +549,14 @@ function ProjectDetail() {
 
       {d.tax_areas_enabled && d.tax_areas.length > 0 && (
         <div className="card card-wide">
-          <h2>Nach steuerlichem Bereich</h2>
+          <h2>{t('Nach steuerlichem Bereich')}</h2>
           <table className="table">
             <thead>
               <tr>
-                <th>Bereich</th>
-                <th className="num">Einnahmen</th>
-                <th className="num">Ausgaben</th>
-                <th className="num">Ergebnis</th>
+                <th>{t('Bereich')}</th>
+                <th className="num">{t('Einnahmen')}</th>
+                <th className="num">{t('Ausgaben')}</th>
+                <th className="num">{t('Ergebnis')}</th>
               </tr>
             </thead>
             <tbody>
@@ -568,18 +577,19 @@ function ProjectDetail() {
 
       <div className="card card-wide">
         <div className="card-head">
-          <h2>Buchungen</h2>
+          <h2>{t('Buchungen')}</h2>
           <Link
             className="small push-right"
             to={`/finanzen/kassenbuch?veranstaltung=${d.id}&jahr=alle`}
           >
-            im Kassenbuch ansehen
+            {t('im Kassenbuch ansehen')}
           </Link>
         </div>
         {d.bookings.length === 0 ? (
           <p className="muted small">
-            Noch keine Buchung. Im Kassenbuch kannst du bei jeder Einnahme oder Ausgabe die
-            Veranstaltung wählen, oder du ordnest hier vorhandene Buchungen zu.
+            {t(
+              'Noch keine Buchung. Im Kassenbuch kannst du bei jeder Einnahme oder Ausgabe die Veranstaltung wählen, oder du ordnest hier vorhandene Buchungen zu.',
+            )}
           </p>
         ) : (
           <div className="table-scroll">
@@ -587,10 +597,10 @@ function ProjectDetail() {
               <thead>
                 <tr>
                   <th>Nr.</th>
-                  <th>Datum</th>
-                  <th>Text</th>
-                  <th>Kategorie</th>
-                  <th className="num">Betrag</th>
+                  <th>{t('Datum')}</th>
+                  <th>{t('Text')}</th>
+                  <th>{t('Kategorie')}</th>
+                  <th className="num">{t('Betrag')}</th>
                   {canEdit && <th />}
                 </tr>
               </thead>
@@ -605,7 +615,9 @@ function ProjectDetail() {
                         {[
                           b.reference,
                           b.account_name,
-                          b.receipt_count ? `📎 ${b.receipt_count}` : '',
+                          b.receipt_count
+                            ? t('📎 {receipt_count}', { receipt_count: b.receipt_count })
+                            : '',
                         ]
                           .filter(Boolean)
                           .join(' · ')}
@@ -622,7 +634,7 @@ function ProjectDetail() {
                           className="link-button"
                           onClick={() => void unassign(b.id)}
                         >
-                          Zuordnung lösen
+                          {t('Zuordnung lösen')}
                         </button>
                       </td>
                     )}
@@ -675,7 +687,7 @@ function AssignBookings({ project, onDone }: { project: ProjectEvaluation; onDon
     return (
       <div className="button-row">
         <button type="button" className="button button-ghost" onClick={() => setOpen(true)}>
-          Vorhandene Buchungen zuordnen
+          {t('Vorhandene Buchungen zuordnen')}
         </button>
       </div>
     )
@@ -709,15 +721,15 @@ function AssignBookings({ project, onDone }: { project: ProjectEvaluation; onDon
 
   return (
     <div className="subcard">
-      <h3>Buchungen ohne Veranstaltung</h3>
+      <h3>{t('Buchungen ohne Veranstaltung')}</h3>
       <div className="filters">
         <Field label="von" type="date" value={von} onChange={(e) => setVon(e.target.value)} />
         <Field label="bis" type="date" value={bis} onChange={(e) => setBis(e.target.value)} />
         <Field
-          label="Suche"
+          label={t('Suche')}
           type="search"
           value={suche}
-          placeholder="Text, Beleg, Betrag"
+          placeholder={t('Text, Beleg, Betrag')}
           onChange={(e) => setSuche(e.target.value)}
         />
       </div>
@@ -726,14 +738,16 @@ function AssignBookings({ project, onDone }: { project: ProjectEvaluation; onDon
       )}
       {candidates.data && candidates.data.count > candidates.data.results.length && (
         <Alert kind="info">
-          Gezeigt werden die ersten {candidates.data.results.length} von {candidates.data.count}{' '}
-          Buchungen. Bitte Zeitraum oder Suche eingrenzen.
+          {t(
+            'Gezeigt werden die ersten {n} von {count}  Buchungen. Bitte Zeitraum oder Suche eingrenzen.',
+            { n: candidates.data.results.length, count: candidates.data.count },
+          )}
         </Alert>
       )}
       {!candidates.data ? (
-        !candidates.error && <p className="muted">Lädt …</p>
+        !candidates.error && <p className="muted">{t('Lädt …')}</p>
       ) : rows.length === 0 ? (
-        <p className="muted small">Keine passenden Buchungen in diesem Zeitraum.</p>
+        <p className="muted small">{t('Keine passenden Buchungen in diesem Zeitraum.')}</p>
       ) : (
         <div className="table-scroll">
           <table className="table">
@@ -746,7 +760,9 @@ function AssignBookings({ project, onDone }: { project: ProjectEvaluation; onDon
                         type="checkbox"
                         checked={picked.has(b.id)}
                         onChange={() => toggle(b)}
-                        aria-label={`Buchung ${b.display_number} zuordnen`}
+                        aria-label={t('Buchung {display_number} zuordnen', {
+                          display_number: b.display_number,
+                        })}
                       />
                       <span>{b.display_number}</span>
                     </label>
@@ -766,8 +782,10 @@ function AssignBookings({ project, onDone }: { project: ProjectEvaluation; onDon
       {picked.size > 0 && (
         <div className="subcard stack-sm" aria-live="polite">
           <p className="small">
-            <strong>{picked.size} ausgewählt</strong>
-            {outside > 0 && `, davon ${outside} außerhalb des Filters`}
+            <strong>
+              {picked.size} {t('ausgewählt')}
+            </strong>
+            {outside > 0 && t(', davon {outside} außerhalb des Filters', { outside })}
           </p>
           <ul className="plain-list small">
             {[...picked.values()].map((b) => (
@@ -781,7 +799,7 @@ function AssignBookings({ project, onDone }: { project: ProjectEvaluation; onDon
             ))}
           </ul>
           <button type="button" className="link-button" onClick={() => setPicked(new Map())}>
-            Auswahl leeren
+            {t('Auswahl leeren')}
           </button>
         </div>
       )}
@@ -793,10 +811,12 @@ function AssignBookings({ project, onDone }: { project: ProjectEvaluation; onDon
           disabled={picked.size === 0}
           onClick={() => void assign()}
         >
-          {picked.size === 1 ? '1 Buchung zuordnen' : `${picked.size} Buchungen zuordnen`}
+          {picked.size === 1
+            ? t('1 Buchung zuordnen')
+            : t('{size} Buchungen zuordnen', { size: picked.size })}
         </button>
         <button type="button" className="button button-ghost" onClick={cancel}>
-          Abbrechen
+          {t('Abbrechen')}
         </button>
       </div>
     </div>
@@ -805,7 +825,7 @@ function AssignBookings({ project, onDone }: { project: ProjectEvaluation; onDon
 
 function eventWhen(e: ProjectEvent): string {
   const when = e.all_day ? formatDate(e.starts_at) : formatDateTime(e.starts_at)
-  return e.is_series ? `${when} (Serie)` : when
+  return e.is_series ? t('{when} (Serie)', { when }) : when
 }
 
 /** Termine im Kalender, die zur Veranstaltung gehören. */
@@ -841,11 +861,12 @@ function EventsCard({
   const free = (candidates.data ?? []).filter((e) => !e.linked)
   return (
     <div className="card card-wide">
-      <h2>Termine im Kalender</h2>
+      <h2>{t('Termine im Kalender')}</h2>
       {project.events.length === 0 ? (
         <p className="muted small">
-          Kein Termin verknüpft. Die Veranstaltung erscheint nur im Kalender, wenn du Termine
-          verknüpfst.
+          {t(
+            'Kein Termin verknüpft. Die Veranstaltung erscheint nur im Kalender, wenn du Termine verknüpfst.',
+          )}
         </p>
       ) : (
         <ul className="plain-list">
@@ -856,7 +877,7 @@ function EventsCard({
               </Link>{' '}
               <span className="muted small">
                 {eventWhen(e)}
-                {e.is_cancelled ? ' · abgesagt' : ''}
+                {e.is_cancelled ? t(' · abgesagt') : ''}
               </span>
               {canEdit && (
                 <button
@@ -864,7 +885,7 @@ function EventsCard({
                   className="link-button"
                   onClick={() => void change({ unlink: [e.id] })}
                 >
-                  lösen
+                  {t('lösen')}
                 </button>
               )}
             </li>
@@ -875,28 +896,28 @@ function EventsCard({
       {canEdit && calendar && !open && (
         <div className="button-row">
           <button type="button" className="button button-ghost" onClick={() => setOpen(true)}>
-            Termin verknüpfen
+            {t('Termin verknüpfen')}
           </button>
         </div>
       )}
       {canEdit && open && (
         <div className="subcard">
-          <h3>Termin verknüpfen</h3>
+          <h3>{t('Termin verknüpfen')}</h3>
           <Field
-            label="Suche"
+            label={t('Suche')}
             type="search"
             value={suche}
-            placeholder="Titel des Termins (ohne Suche: Termine rund um den Zeitraum)"
+            placeholder={t('Titel des Termins (ohne Suche: Termine rund um den Zeitraum)')}
             onChange={(e) => setSuche(e.target.value)}
           />
           {candidates.error ? (
             <LoadError message={candidates.error} onRetry={() => void candidates.reload()} />
           ) : !candidates.data ? (
-            <p className="muted">Lädt …</p>
+            <p className="muted">{t('Lädt …')}</p>
           ) : free.length === 0 ? (
             <p className="muted small">
-              Keine passenden Termine. Neue Termine legst du im <Link to="/termine">Kalender</Link>{' '}
-              an.
+              {t('Keine passenden Termine. Neue Termine legst du im')}{' '}
+              <Link to="/termine">{t('Kalender')}</Link> an.
             </p>
           ) : (
             <ul className="plain-list">
@@ -908,7 +929,7 @@ function EventsCard({
                     className="link-button"
                     onClick={() => void change({ events: [e.id] })}
                   >
-                    verknüpfen
+                    {t('verknüpfen')}
                   </button>
                 </li>
               ))}
@@ -916,7 +937,7 @@ function EventsCard({
           )}
           <div className="button-row">
             <button type="button" className="button button-ghost" onClick={() => setOpen(false)}>
-              Schließen
+              {t('Schließen')}
             </button>
           </div>
         </div>
@@ -940,10 +961,10 @@ function SeriesPage() {
 
   async function create() {
     const name = await promptDialog({
-      title: 'Neue Reihe',
-      message: 'z. B. „Schützenfest“ – danach die Veranstaltungen der einzelnen Jahre zuordnen.',
-      label: 'Name',
-      confirmLabel: 'Anlegen',
+      title: t('Neue Reihe'),
+      message: t('z. B. „Schützenfest“ – danach die Veranstaltungen der einzelnen Jahre zuordnen.'),
+      label: t('Name'),
+      confirmLabel: t('Anlegen'),
       danger: false,
     })
     if (!name?.trim()) return
@@ -958,10 +979,10 @@ function SeriesPage() {
 
   async function rename(s: ProjectSeries) {
     const name = await promptDialog({
-      title: 'Reihe umbenennen',
-      label: 'Name',
+      title: t('Reihe umbenennen'),
+      label: t('Name'),
       defaultValue: s.name,
-      confirmLabel: 'Speichern',
+      confirmLabel: t('Speichern'),
       danger: false,
     })
     if (!name?.trim() || name.trim() === s.name) return
@@ -977,9 +998,9 @@ function SeriesPage() {
   async function remove(s: ProjectSeries) {
     if (
       !(await confirmDialog({
-        title: `Reihe „${s.name}“ löschen?`,
-        message: 'Die Veranstaltungen und ihre Buchungen bleiben erhalten.',
-        confirmLabel: 'Löschen',
+        title: t('Reihe „{name}“ löschen?', { name: s.name }),
+        message: t('Die Veranstaltungen und ihre Buchungen bleiben erhalten.'),
+        confirmLabel: t('Löschen'),
       }))
     )
       return
@@ -993,7 +1014,7 @@ function SeriesPage() {
   }
 
   if (list.error) return <Alert kind="error">{list.error}</Alert>
-  if (!list.data) return <p className="muted">Lädt …</p>
+  if (!list.data) return <p className="muted">{t('Lädt …')}</p>
   const sel = list.data.find((s) => s.id === current) ?? null
   const c = comparison.data
   return (
@@ -1002,7 +1023,7 @@ function SeriesPage() {
       <div className="card card-wide filters">
         {list.data.length > 0 && (
           <select
-            aria-label="Reihe"
+            aria-label={t('Reihe')}
             value={current ?? ''}
             onChange={(e) => setSelected(Number(e.target.value))}
           >
@@ -1027,17 +1048,17 @@ function SeriesPage() {
               className="button button-ghost"
               href={financeApi.seriesReportUrl(org.id, sel.id, 'xlsx')}
             >
-              Excel
+              {t('Excel')}
             </a>
           </>
         )}
         {canEdit && sel && (
           <>
             <button type="button" className="button button-ghost" onClick={() => void rename(sel)}>
-              Umbenennen
+              {t('Umbenennen')}
             </button>
             <button type="button" className="button button-ghost" onClick={() => void remove(sel)}>
-              Löschen
+              {t('Löschen')}
             </button>
           </>
         )}
@@ -1047,33 +1068,36 @@ function SeriesPage() {
             className="button button-primary push-right"
             onClick={() => void create()}
           >
-            Neue Reihe
+            {t('Neue Reihe')}
           </button>
         )}
       </div>
       {list.data.length === 0 ? (
         <div className="card empty-state">
-          <p>Noch keine Reihe.</p>
+          <p>{t('Noch keine Reihe.')}</p>
           <p className="muted small">
-            Mit einer Reihe vergleichst du wiederkehrende Veranstaltungen, z. B. das Schützenfest
-            über mehrere Jahre.
+            {t(
+              'Mit einer Reihe vergleichst du wiederkehrende Veranstaltungen, z. B. das Schützenfest über mehrere Jahre.',
+            )}
           </p>
         </div>
       ) : !c ? (
-        <p className="muted">Lädt …</p>
+        <p className="muted">{t('Lädt …')}</p>
       ) : c.projects.length === 0 ? (
         <div className="card empty-state">
-          <p>Zu dieser Reihe gehört noch keine Veranstaltung.</p>
-          <p className="muted small">Wähle die Reihe beim Bearbeiten einer Veranstaltung.</p>
+          <p>{t('Zu dieser Reihe gehört noch keine Veranstaltung.')}</p>
+          <p className="muted small">{t('Wähle die Reihe beim Bearbeiten einer Veranstaltung.')}</p>
         </div>
       ) : (
         <div className="card card-wide">
-          <h2>Vergleich {c.name}</h2>
+          <h2>
+            {t('Vergleich')} {c.name}
+          </h2>
           <div className="table-scroll">
             <table className="table">
               <thead>
                 <tr>
-                  <th>Kategorie (Saldo)</th>
+                  <th>{t('Kategorie (Saldo)')}</th>
                   {c.projects.map((p) => (
                     <th key={p.id} className="num">
                       <Link to={`/finanzen/veranstaltungen/${p.id}`}>{p.name}</Link>
@@ -1095,7 +1119,7 @@ function SeriesPage() {
               </tbody>
               <tfoot>
                 <tr>
-                  <th>Einnahmen</th>
+                  <th>{t('Einnahmen')}</th>
                   {c.projects.map((p) => (
                     <th key={p.id} className="num">
                       {euro(p.income)}
@@ -1103,7 +1127,7 @@ function SeriesPage() {
                   ))}
                 </tr>
                 <tr>
-                  <th>Ausgaben</th>
+                  <th>{t('Ausgaben')}</th>
                   {c.projects.map((p) => (
                     <th key={p.id} className="num">
                       {euro(p.expense)}
@@ -1111,7 +1135,7 @@ function SeriesPage() {
                   ))}
                 </tr>
                 <tr>
-                  <th>Ergebnis</th>
+                  <th>{t('Ergebnis')}</th>
                   {c.projects.map((p) => (
                     <th key={p.id} className="num">
                       <Result value={p.result} />

@@ -10,6 +10,7 @@ import { errorMessage, formatDate, useLoad } from '../../components/forms.ts'
 import { Alert, Field, SelectField } from '../../components/ui.tsx'
 import { useActiveOrg } from '../../org/OrgContext.tsx'
 import { HowTo, Term, Why } from '../../learning/Aids.tsx'
+import { t } from '../../i18n/index.ts'
 
 function todayIso(): string {
   const d = new Date()
@@ -23,43 +24,42 @@ export function ReservesPage({ canEdit }: { canEdit: boolean }) {
   const [notice, setNotice] = useState<{ kind: 'success' | 'error'; text: string } | null>(null)
 
   if (error) return <Alert kind="error">{error}</Alert>
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
 
   return (
     <div className="card card-wide">
       <div className="card-head">
-        <h2>Rücklagen</h2>
+        <h2>{t('Rücklagen')}</h2>
         {canEdit && !creating && (
           <button
             type="button"
             className="button button-ghost push-right"
             onClick={() => setCreating(true)}
           >
-            Neue Rücklage
+            {t('Neue Rücklage')}
           </button>
         )}
       </div>
       <p className="muted small">
-        Eine <Term k="reserve">Rücklage</Term> bindet einen Teil der Mittel für einen Zweck, etwa
-        das nächste Fest (Projektrücklage) oder ein neues Zelt (Wiederbeschaffung). Das Geld bleibt
-        auf den Konten. Die freie Rücklage darf höchstens ein Drittel des Überschusses aus der
-        Vermögensverwaltung plus 10 % der übrigen zeitnah zu verwendenden Mittel betragen (§ 62 Abs.
-        1 Nr. 3 AO). Den Beschluss bitte im Vorstandsprotokoll festhalten.
+        {t('Eine')} <Term k="reserve">{t('Rücklage')}</Term>{' '}
+        {t(
+          'bindet einen Teil der Mittel für einen Zweck, etwa das nächste Fest (Projektrücklage) oder ein neues Zelt (Wiederbeschaffung). Das Geld bleibt auf den Konten. Die freie Rücklage darf höchstens ein Drittel des Überschusses aus der Vermögensverwaltung plus 10 % der übrigen zeitnah zu verwendenden Mittel betragen (§ 62 Abs. 1 Nr. 3 AO). Den Beschluss bitte im Vorstandsprotokoll festhalten.',
+        )}
       </p>
       <Why k="reserves" />
       <table className="table">
         <tbody>
           <tr>
-            <td>Mittel auf allen Konten heute</td>
+            <td>{t('Mittel auf allen Konten heute')}</td>
             <td className="num">{euro(data.funds)}</td>
           </tr>
           <tr>
-            <td>davon in Rücklagen gebunden</td>
+            <td>{t('davon in Rücklagen gebunden')}</td>
             <td className="num">{euro(data.total)}</td>
           </tr>
           <tr>
             <td>
-              <strong>frei verfügbar</strong>
+              <strong>{t('frei verfügbar')}</strong>
             </td>
             <td className="num">
               <strong>{euro(data.free)}</strong>
@@ -70,7 +70,7 @@ export function ReservesPage({ canEdit }: { canEdit: boolean }) {
       <HowTo k="calc_reserve_free" />
       {Number(data.free) < 0 && (
         <Alert kind="error">
-          Die Rücklagen sind höher als die vorhandenen Mittel. Bitte Rücklagen auflösen.
+          {t('Die Rücklagen sind höher als die vorhandenen Mittel. Bitte Rücklagen auflösen.')}
         </Alert>
       )}
       {notice && <Alert kind={notice.kind}>{notice.text}</Alert>}
@@ -79,13 +79,13 @@ export function ReservesPage({ canEdit }: { canEdit: boolean }) {
           onCancel={() => setCreating(false)}
           onSaved={async (r) => {
             setCreating(false)
-            setNotice({ kind: 'success', text: `Rücklage „${r.name}“ angelegt.` })
+            setNotice({ kind: 'success', text: t('Rücklage „{name}“ angelegt.', { name: r.name }) })
             await reload()
           }}
         />
       )}
       {data.reserves.length === 0 ? (
-        <p className="muted">Noch keine Rücklagen.</p>
+        <p className="muted">{t('Noch keine Rücklagen.')}</p>
       ) : (
         data.reserves.map((r) => (
           <ReserveCard
@@ -134,17 +134,17 @@ function ReserveForm({
 
   return (
     <form className="subcard" onSubmit={(e) => void submit(e)}>
-      <h3>Neue Rücklage</h3>
+      <h3>{t('Neue Rücklage')}</h3>
       <div className="grid-2">
         <Field
-          label="Bezeichnung"
+          label={t('Bezeichnung')}
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="z. B. Schützenfest 2027"
+          placeholder={t('z. B. Schützenfest 2027')}
           required
         />
         <SelectField
-          label="Art"
+          label={t('Art')}
           value={kind}
           onChange={(e) => setKind(e.target.value as ReserveKind)}
         >
@@ -156,23 +156,23 @@ function ReserveForm({
         </SelectField>
       </div>
       <Field
-        label={needsPurpose ? 'Zweck bzw. Vorhaben' : 'Zweck bzw. Vorhaben (optional)'}
+        label={needsPurpose ? t('Zweck bzw. Vorhaben') : t('Zweck bzw. Vorhaben (optional)')}
         value={purpose}
         onChange={(e) => setPurpose(e.target.value)}
         required={needsPurpose}
         hint={
           needsPurpose
-            ? 'Konkret und mit Zeitraum, z. B. „Festzelt für das Schützenfest 2027“.'
+            ? t('Konkret und mit Zeitraum, z. B. „Festzelt für das Schützenfest 2027“.')
             : undefined
         }
       />
       {error && <Alert kind="error">{error}</Alert>}
       <div className="button-row">
         <button type="submit" className="button button-primary" disabled={busy}>
-          Anlegen
+          {t('Anlegen')}
         </button>
         <button type="button" className="button button-ghost" onClick={onCancel}>
-          Abbrechen
+          {t('Abbrechen')}
         </button>
       </div>
     </form>
@@ -213,7 +213,13 @@ function ReserveCard({
       setDirection(null)
       setAmount('')
       setNote('')
-      await onChanged(`${m.direction_label} von ${euro(m.amount)} für „${reserve.name}“ erfasst.`)
+      await onChanged(
+        t('{direction_label} von {x} für „{name}“ erfasst.', {
+          direction_label: m.direction_label,
+          x: euro(m.amount),
+          name: reserve.name,
+        }),
+      )
     } catch (err) {
       setError(errorMessage(err))
     } finally {
@@ -241,15 +247,15 @@ function ReserveCard({
       </div>
       <p className="muted small">
         {reserve.kind_label}
-        {reserve.purpose ? ` · ${reserve.purpose}` : ''}
+        {reserve.purpose ? t(' · {purpose}', { purpose: reserve.purpose }) : ''}
       </p>
       {reserve.movements.length > 0 && (
         <table className="table">
           <thead>
             <tr>
-              <th>Datum</th>
-              <th>Bewegung</th>
-              <th className="num">Betrag</th>
+              <th>{t('Datum')}</th>
+              <th>{t('Bewegung')}</th>
+              <th className="num">{t('Betrag')}</th>
               <th />
             </tr>
           </thead>
@@ -261,7 +267,13 @@ function ReserveCard({
                   {m.direction_label} ({m.year_label})
                   {(m.note || m.created_by_name) && (
                     <div className="muted small">
-                      {[m.note, m.created_by_name && `erfasst von ${m.created_by_name}`]
+                      {[
+                        m.note,
+                        m.created_by_name &&
+                          t('erfasst von {created_by_name}', {
+                            created_by_name: m.created_by_name,
+                          }),
+                      ]
                         .filter(Boolean)
                         .join(' · ')}
                     </div>
@@ -280,19 +292,27 @@ function ReserveCard({
                         void (async () => {
                           if (
                             await confirmDialog({
-                              title: `${m.direction_label} löschen?`,
-                              message: `${m.direction_label} von ${euro(m.amount)} am ${formatDate(m.date)} wird gelöscht.`,
-                              confirmLabel: 'Löschen',
+                              title: t('{direction_label} löschen?', {
+                                direction_label: m.direction_label,
+                              }),
+                              message: t('{direction_label} von {x} am {x2} wird gelöscht.', {
+                                direction_label: m.direction_label,
+                                x: euro(m.amount),
+                                x2: formatDate(m.date),
+                              }),
+                              confirmLabel: t('Löschen'),
                             })
                           )
                             await act(
                               () => reserveApi.removeMove(org.id, reserve.id, m.id),
-                              `${m.direction_label} gelöscht.`,
+                              t('{direction_label} gelöscht.', {
+                                direction_label: m.direction_label,
+                              }),
                             )
                         })()
                       }
                     >
-                      Löschen
+                      {t('Löschen')}
                     </button>
                   )}
                 </td>
@@ -305,12 +325,12 @@ function ReserveCard({
         <div className="button-row">
           {reserve.is_active && (
             <button type="button" className="link-button" onClick={() => setDirection('add')}>
-              Zuführen
+              {t('Zuführen')}
             </button>
           )}
           {Number(reserve.balance) > 0 && (
             <button type="button" className="link-button" onClick={() => setDirection('release')}>
-              Auflösen
+              {t('Auflösen')}
             </button>
           )}
           {reserve.movements.length === 0 ? (
@@ -320,11 +340,11 @@ function ReserveCard({
               onClick={() =>
                 void act(
                   () => reserveApi.remove(org.id, reserve.id),
-                  `Rücklage „${reserve.name}“ gelöscht.`,
+                  t('Rücklage „{name}“ gelöscht.', { name: reserve.name }),
                 )
               }
             >
-              Löschen
+              {t('Löschen')}
             </button>
           ) : (
             <button
@@ -334,12 +354,12 @@ function ReserveCard({
                 void act(
                   () => reserveApi.update(org.id, reserve.id, { is_active: !reserve.is_active }),
                   reserve.is_active
-                    ? `Rücklage „${reserve.name}“ archiviert.`
-                    : `Rücklage „${reserve.name}“ wieder aktiv.`,
+                    ? t('Rücklage „{name}“ archiviert.', { name: reserve.name })
+                    : t('Rücklage „{name}“ wieder aktiv.', { name: reserve.name }),
                 )
               }
             >
-              {reserve.is_active ? 'Archivieren' : 'Wieder aktivieren'}
+              {reserve.is_active ? t('Archivieren') : t('Wieder aktivieren')}
             </button>
           )}
         </div>
@@ -348,32 +368,32 @@ function ReserveCard({
         <form onSubmit={(e) => void submit(e)}>
           <div className="grid-3">
             <Field
-              label="Datum"
+              label={t('Datum')}
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
               required
             />
             <Field
-              label={direction === 'add' ? 'Zuführung in €' : 'Auflösung in €'}
+              label={direction === 'add' ? t('Zuführung in €') : t('Auflösung in €')}
               inputMode="decimal"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               required
             />
             <Field
-              label="Begründung"
+              label={t('Begründung')}
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder={
-                direction === 'add' ? 'z. B. Vorstandsbeschluss vom …' : 'z. B. Zelt gekauft'
+                direction === 'add' ? t('z. B. Vorstandsbeschluss vom …') : t('z. B. Zelt gekauft')
               }
             />
           </div>
           {error && <Alert kind="error">{error}</Alert>}
           <div className="button-row">
             <button type="submit" className="button button-primary" disabled={busy}>
-              {direction === 'add' ? 'Zuführen' : 'Auflösen'}
+              {direction === 'add' ? t('Zuführen') : t('Auflösen')}
             </button>
             <button
               type="button"
@@ -383,7 +403,7 @@ function ReserveCard({
                 setError(null)
               }}
             >
-              Abbrechen
+              {t('Abbrechen')}
             </button>
           </div>
         </form>

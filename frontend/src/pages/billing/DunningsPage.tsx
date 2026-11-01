@@ -8,6 +8,7 @@ import { Alert, Checkbox, LoadError } from '../../components/ui.tsx'
 import { useActiveOrg } from '../../org/OrgContext.tsx'
 import { PERM } from '../../api/orgs.ts'
 import { Term, Why } from '../../learning/Aids.tsx'
+import { t } from '../../i18n/index.ts'
 
 export function DunningsPage() {
   const org = useActiveOrg()
@@ -20,7 +21,7 @@ export function DunningsPage() {
   const [failure, setFailure] = useState<string | null>(null)
 
   if (error) return <LoadError message={error} onRetry={() => void reload()} />
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
   const chosen = data.proposals.filter((p) => !skip.has(p.id)).map((p) => p.id)
 
   async function run() {
@@ -30,9 +31,9 @@ export function DunningsPage() {
       const r = await billingApi.dun(org.id, chosen, send)
       setResult({
         text:
-          `${r.created} Mahnungen erstellt` +
-          (send ? `, ${r.sent} per E-Mail verschickt.` : '.') +
-          (r.unsent.length ? ` ${r.unsent.length} bitte ausdrucken.` : ''),
+          t('{created} Mahnungen erstellt', { created: r.created }) +
+          (send ? t(', {sent} per E-Mail verschickt.', { sent: r.sent }) : '.') +
+          (r.unsent.length ? t(' {n} bitte ausdrucken.', { n: r.unsent.length }) : ''),
         unsent: r.unsent,
       })
       setSkip(new Set())
@@ -55,42 +56,42 @@ export function DunningsPage() {
               target="_blank"
               rel="noreferrer"
             >
-              Mahnungen zum Drucken (PDF)
+              {t('Mahnungen zum Drucken (PDF)')}
             </a>
           )}
         </Alert>
       )}
       {data.levels.length === 0 ? (
         <div className="card empty-state">
-          <p>Noch keine Mahnstufen.</p>
+          <p>{t('Noch keine Mahnstufen.')}</p>
           <p className="muted small">
-            Lege sie unter{' '}
-            <Link to="/finanzen/einstellungen/mahnstufen">Einrichtung › Mahnstufen</Link> an, zum
-            Beispiel eine Zahlungserinnerung 14 Tage nach Fälligkeit.
+            {t('Lege sie unter')}{' '}
+            <Link to="/finanzen/einstellungen/mahnstufen">{t('Einrichtung › Mahnstufen')}</Link>{' '}
+            {t('an, zum Beispiel eine Zahlungserinnerung 14 Tage nach Fälligkeit.')}
           </p>
         </div>
       ) : data.proposals.length === 0 ? (
         <div className="card empty-state">
-          <p>Keine Mahnungen fällig.</p>
+          <p>{t('Keine Mahnungen fällig.')}</p>
           <p className="muted small">
-            Hier erscheinen offene Rechnungen, sobald die nächste Mahnstufe erreicht ist.
+            {t('Hier erscheinen offene Rechnungen, sobald die nächste Mahnstufe erreicht ist.')}
           </p>
         </div>
       ) : (
         <div className="card card-wide">
-          <h2>Fällige Mahnungen</h2>
+          <h2>{t('Fällige Mahnungen')}</h2>
           <div className="table-scroll">
             <table className="table">
               <thead>
                 <tr>
                   <th />
-                  <th>Rechnung</th>
-                  <th>Empfänger</th>
+                  <th>{t('Rechnung')}</th>
+                  <th>{t('Empfänger')}</th>
                   <th>
-                    <Term k="due_date">fällig</Term> seit
+                    <Term k="due_date">{t('fällig')}</Term> seit
                   </th>
                   <th>
-                    nächste <Term k="dunning_level">Stufe</Term>
+                    {t('nächste')} <Term k="dunning_level">{t('Stufe')}</Term>
                   </th>
                   <th className="num">
                     <Term k="outstanding">offen</Term>
@@ -103,7 +104,7 @@ export function DunningsPage() {
                     <td>
                       <input
                         type="checkbox"
-                        aria-label={`${p.number} mahnen`}
+                        aria-label={t('{number} mahnen', { number: p.number })}
                         checked={!skip.has(p.id)}
                         disabled={!canEdit}
                         onChange={(e) => {
@@ -118,16 +119,22 @@ export function DunningsPage() {
                     <td>
                       {p.recipient_name.split('\n')[0]}
                       <div className="muted small">
-                        {p.recipient_email || 'keine E-Mail, wird gedruckt'}
+                        {p.recipient_email || t('keine E-Mail, wird gedruckt')}
                       </div>
                     </td>
                     <td>
                       {formatDate(p.due_date)}
-                      <div className="muted small">{p.days_overdue} Tage</div>
+                      <div className="muted small">
+                        {p.days_overdue} {t('Tage')}
+                      </div>
                     </td>
                     <td>
                       {p.next_level_name}
-                      {Number(p.fee) > 0 && <div className="muted small">Gebühr {euro(p.fee)}</div>}
+                      {Number(p.fee) > 0 && (
+                        <div className="muted small">
+                          {t('Gebühr')} {euro(p.fee)}
+                        </div>
+                      )}
                     </td>
                     <td className="num">{euro(p.outstanding)}</td>
                   </tr>
@@ -138,7 +145,7 @@ export function DunningsPage() {
           {canEdit && (
             <>
               <Checkbox
-                label="per E-Mail verschicken, wo eine Adresse bekannt ist"
+                label={t('per E-Mail verschicken, wo eine Adresse bekannt ist')}
                 checked={send}
                 onChange={setSend}
               />
@@ -152,8 +159,8 @@ export function DunningsPage() {
                   onClick={() => void run()}
                 >
                   {send
-                    ? `${chosen.length} Mahnungen erstellen und per E-Mail versenden`
-                    : `${chosen.length} Mahnungen erstellen (ohne Versand)`}
+                    ? t('{n} Mahnungen erstellen und per E-Mail versenden', { n: chosen.length })
+                    : t('{n} Mahnungen erstellen (ohne Versand)', { n: chosen.length })}
                 </button>
               </div>
             </>

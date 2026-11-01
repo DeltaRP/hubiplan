@@ -25,16 +25,17 @@ import { confirmDialog, promptDialog } from '../../components/dialog.ts'
 import { ApiError } from '../../api/client.ts'
 import { useTerms } from '../../org/terms.ts'
 import { Term, Why } from '../../learning/Aids.tsx'
+import { t } from '../../i18n/index.ts'
 
 /** Wer das Geld bekommt (Ausgabe) bzw. zahlt (Einnahme). */
 function partnerLabel(kind: BookingKind): string {
-  return kind === 'expense' ? 'Empfänger' : 'Zahler'
+  return kind === 'expense' ? t('Empfänger') : t('Zahler')
 }
 
 const KIND_LABEL: Record<BookingKind, string> = {
-  income: 'Einnahme',
-  expense: 'Ausgabe',
-  transfer: 'Umbuchung',
+  income: t('Einnahme'),
+  expense: t('Ausgabe'),
+  transfer: t('Umbuchung'),
 }
 
 const KIND_PARAM: Record<BookingKind, string> = {
@@ -164,7 +165,8 @@ export function BookingsPage() {
 
   const loadError = settings.error ?? accounts.error ?? categories.error
   if (loadError) return <Alert kind="error">{loadError}</Alert>
-  if (!settings.data || !accounts.data || !categories.data) return <p className="muted">Lädt …</p>
+  if (!settings.data || !accounts.data || !categories.data)
+    return <p className="muted">{t('Lädt …')}</p>
 
   const refresh = () => {
     setVersion((v) => v + 1)
@@ -177,8 +179,8 @@ export function BookingsPage() {
     return (
       <div className="card empty-state">
         <p>
-          Zum Buchen muss zuerst ein Konto eingerichtet werden:{' '}
-          <Link to="/finanzen/einstellungen/konten">Finanzen → Einrichtung → Konten</Link>.
+          {t('Zum Buchen muss zuerst ein Konto eingerichtet werden:')}{' '}
+          <Link to="/finanzen/einstellungen/konten">{t('Finanzen → Einrichtung → Konten')}</Link>.
         </p>
       </div>
     )
@@ -193,26 +195,28 @@ export function BookingsPage() {
             className="button button-primary"
             onClick={() => setEditing('income')}
           >
-            Einnahme
+            {t('Einnahme')}
           </button>
           <button
             type="button"
             className="button button-primary"
             onClick={() => setEditing('expense')}
           >
-            Ausgabe
+            {t('Ausgabe')}
           </button>
           <button
             type="button"
             className="button button-ghost"
             onClick={() => setEditing('transfer')}
           >
-            Umbuchung
+            {t('Umbuchung')}
           </button>
         </div>
       )}
       {openedId !== null && editing === null && missing && (
-        <Alert kind="error">Die Buchung lässt sich nicht öffnen: {missing}</Alert>
+        <Alert kind="error">
+          {t('Die Buchung lässt sich nicht öffnen:')} {missing}
+        </Alert>
       )}
       {editing !== null && (
         <BookingForm
@@ -242,16 +246,16 @@ export function BookingsPage() {
         <input
           type="search"
           className="search-input"
-          placeholder="Suchen: Text, Empfänger/Zahler, Belegnummer, Betrag oder Nummer"
-          aria-label="Buchungen suchen"
+          placeholder={t('Suchen: Text, Empfänger/Zahler, Belegnummer, Betrag oder Nummer')}
+          aria-label={t('Buchungen suchen')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
         <input
           type="search"
           list="booking-partners-filter"
-          placeholder="Empfänger/Zahler"
-          aria-label="Empfänger/Zahler"
+          placeholder={t('Empfänger/Zahler')}
+          aria-label={t('Empfänger/Zahler')}
           value={partner}
           onChange={(e) => setPartner(e.target.value)}
         />
@@ -261,7 +265,7 @@ export function BookingsPage() {
           ))}
         </datalist>
         <select
-          aria-label="Geschäftsjahr"
+          aria-label={t('Geschäftsjahr')}
           value={year}
           onChange={(e) => setFilter('jahr', e.target.value)}
         >
@@ -270,14 +274,14 @@ export function BookingsPage() {
               {y.label}
             </option>
           ))}
-          <option value="alle">alle Jahre</option>
+          <option value="alle">{t('alle Jahre')}</option>
         </select>
         <select
-          aria-label="Konto"
+          aria-label={t('Konto')}
           value={filter.konto}
           onChange={(e) => setFilter('konto', e.target.value)}
         >
-          <option value="">alle Konten</option>
+          <option value="">{t('alle Konten')}</option>
           {accounts.data.map((a) => (
             <option key={a.id} value={a.id}>
               {a.name}
@@ -285,11 +289,11 @@ export function BookingsPage() {
           ))}
         </select>
         <select
-          aria-label="Kategorie"
+          aria-label={t('Kategorie')}
           value={filter.kategorie}
           onChange={(e) => setFilter('kategorie', e.target.value)}
         >
-          <option value="">alle Kategorien</option>
+          <option value="">{t('alle Kategorien')}</option>
           {categories.data.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
@@ -297,11 +301,11 @@ export function BookingsPage() {
           ))}
         </select>
         <select
-          aria-label="Art"
+          aria-label={t('Art')}
           value={filter.art}
           onChange={(e) => setFilter('art', e.target.value)}
         >
-          <option value="">alle Arten</option>
+          <option value="">{t('alle Arten')}</option>
           {Object.entries(KIND_LABEL).map(([k, label]) => (
             <option key={k} value={k}>
               {label}
@@ -310,27 +314,27 @@ export function BookingsPage() {
         </select>
         {settings.data.tax_areas_enabled && (
           <select
-            aria-label="steuerlicher Bereich"
+            aria-label={t('steuerlicher Bereich')}
             value={filter.bereich}
             onChange={(e) => setFilter('bereich', e.target.value)}
           >
-            <option value="">alle Bereiche</option>
+            <option value="">{t('alle Bereiche')}</option>
             {settings.data.tax_areas.map((a) => (
               <option key={a.value} value={a.value}>
                 {a.label}
               </option>
             ))}
-            <option value="-">ohne Zuordnung</option>
+            <option value="-">{t('ohne Zuordnung')}</option>
           </select>
         )}
         {(projects.data?.length ?? 0) > 0 && (
           <select
-            aria-label="Veranstaltung"
+            aria-label={t('Veranstaltung')}
             value={filter.veranstaltung}
             onChange={(e) => setFilter('veranstaltung', e.target.value)}
           >
-            <option value="">alle Veranstaltungen</option>
-            <option value="-">ohne Veranstaltung</option>
+            <option value="">{t('alle Veranstaltungen')}</option>
+            <option value="-">{t('ohne Veranstaltung')}</option>
             {projects.data!.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
@@ -346,23 +350,26 @@ export function BookingsPage() {
               const label = settings.data!.years.find((y) => String(y.year) === year)?.label
               if (
                 await confirmDialog({
-                  title: 'Buchungen neu nummerieren?',
-                  message: `Alle Buchungen im Geschäftsjahr ${label ?? year} werden nach Datum neu durchnummeriert.`,
-                  confirmLabel: 'Neu nummerieren',
+                  title: t('Buchungen neu nummerieren?'),
+                  message: t(
+                    'Alle Buchungen im Geschäftsjahr {x} werden nach Datum neu durchnummeriert.',
+                    { x: label ?? year },
+                  ),
+                  confirmLabel: t('Neu nummerieren'),
                   danger: false,
                 })
               ) {
                 financeApi
                   .renumber(org.id, Number(year))
                   .then((r) => {
-                    setNotice(`${r.changed} Buchungsnummern geändert.`)
+                    setNotice(t('{changed} Buchungsnummern geändert.', { changed: r.changed }))
                     refresh()
                   })
                   .catch((err) => setError(errorMessage(err)))
               }
             }}
           >
-            Neu nummerieren
+            {t('Neu nummerieren')}
           </button>
         )}
         <label className="checkbox">
@@ -371,7 +378,7 @@ export function BookingsPage() {
             checked={filter.ohne_beleg}
             onChange={(e) => setFilter('ohne_beleg', e.target.checked ? '1' : '')}
           />
-          <span>ohne Beleg</span>
+          <span>{t('ohne Beleg')}</span>
         </label>
       </div>
 
@@ -379,24 +386,26 @@ export function BookingsPage() {
         {error && <Alert kind="error">{error}</Alert>}
         {notice && <Alert kind="success">{notice}</Alert>}
         {!data ? (
-          <p className="muted">Lädt …</p>
+          <p className="muted">{t('Lädt …')}</p>
         ) : data.results.length === 0 ? (
-          <p className="muted">Keine Buchungen gefunden.</p>
+          <p className="muted">{t('Keine Buchungen gefunden.')}</p>
         ) : (
           <>
-            <p className="muted small">{data.count} Buchungen</p>
+            <p className="muted small">
+              {data.count} {t('Buchungen')}
+            </p>
             <div className="table-scroll">
               <table className="table">
                 <thead>
                   <tr>
                     <th>Nr.</th>
-                    <th>Datum</th>
-                    <th>Text</th>
-                    <th>Konto</th>
-                    <th>Kategorie</th>
-                    <th className="num">Betrag</th>
+                    <th>{t('Datum')}</th>
+                    <th>{t('Text')}</th>
+                    <th>{t('Konto')}</th>
+                    <th>{t('Kategorie')}</th>
+                    <th className="num">{t('Betrag')}</th>
                     <th>
-                      <Term k="receipt">Beleg</Term>
+                      <Term k="receipt">{t('Beleg')}</Term>
                     </th>
                   </tr>
                 </thead>
@@ -422,10 +431,10 @@ export function BookingsPage() {
                     setFilter('seite', filter.page! > 2 ? String(filter.page! - 1) : '')
                   }
                 >
-                  Zurück
+                  {t('Zurück')}
                 </button>
                 <span className="muted small">
-                  Seite {filter.page} von {pages}
+                  {t('Seite {page} von', { page: filter.page })} {pages}
                 </span>
                 <button
                   type="button"
@@ -433,7 +442,7 @@ export function BookingsPage() {
                   disabled={filter.page! >= pages}
                   onClick={() => setFilter('seite', String(filter.page! + 1))}
                 >
-                  Weiter
+                  {t('Weiter')}
                 </button>
               </div>
             )}
@@ -479,10 +488,16 @@ function BookingRow({
       <td>{formatDate(b.date)}</td>
       <td>
         {b.text}
-        {b.cancelled_by && <div className="small">storniert durch {b.cancelled_by.number}</div>}
+        {b.cancelled_by && (
+          <div className="small">
+            {t('storniert durch')} {b.cancelled_by.number}
+          </div>
+        )}
         <div className="muted small">
           {[
-            b.counterparty ? `${partnerLabel(b.kind)}: ${b.counterparty}` : null,
+            b.counterparty
+              ? t('{x}: {counterparty}', { x: partnerLabel(b.kind), counterparty: b.counterparty })
+              : null,
             b.reference,
             b.member_name,
             b.department_name,
@@ -492,8 +507,17 @@ function BookingRow({
             .join(' · ')}
         </div>
       </td>
-      <td>{b.kind === 'transfer' ? `${b.account_name} → ${b.to_account_name}` : b.account_name}</td>
-      <td>{b.kind === 'transfer' ? <span className="muted">Umbuchung</span> : b.category_name}</td>
+      <td>
+        {b.kind === 'transfer'
+          ? t('{account_name} → {to_account_name}', {
+              account_name: b.account_name,
+              to_account_name: b.to_account_name,
+            })
+          : b.account_name}
+      </td>
+      <td>
+        {b.kind === 'transfer' ? <span className="muted">{t('Umbuchung')}</span> : b.category_name}
+      </td>
       <td
         className={`num ${
           b.kind === 'transfer' && account === null ? '' : value < 0 ? 'amount-out' : 'amount-in'
@@ -501,7 +525,7 @@ function BookingRow({
       >
         {euro(b.kind === 'transfer' && account === null ? Number(b.amount) : value)}
       </td>
-      <td>{visible > 0 ? `📎 ${visible}` : <span className="muted">–</span>}</td>
+      <td>{visible > 0 ? t('📎 {visible}', { visible }) : <span className="muted">–</span>}</td>
     </tr>
   )
 }
@@ -636,8 +660,8 @@ function BookingForm({
         await financeApi.uploadReceipt(orgId, (saved as Booking).id, einvoice.file)
       } catch (err) {
         setEinvoiceError(
-          `Gebucht, aber die E-Rechnung ist nicht angehängt: ${errorMessage(err)}. ` +
-            'Bitte in der Buchung unter Belege erneut hinzufügen.',
+          t('Gebucht, aber die E-Rechnung ist nicht angehängt: {x}. ', { x: errorMessage(err) }) +
+            t('Bitte in der Buchung unter Belege erneut hinzufügen.'),
         )
         return
       }
@@ -672,9 +696,9 @@ function BookingForm({
     if (
       !booking ||
       !(await confirmDialog({
-        title: `Buchung ${booking.display_number} löschen?`,
-        message: 'Löschen geht nur am Tag der Erfassung. Danach bitte stornieren.',
-        confirmLabel: 'Löschen',
+        title: t('Buchung {display_number} löschen?', { display_number: booking.display_number }),
+        message: t('Löschen geht nur am Tag der Erfassung. Danach bitte stornieren.'),
+        confirmLabel: t('Löschen'),
       }))
     )
       return
@@ -685,12 +709,12 @@ function BookingForm({
   async function storno() {
     if (!booking) return
     const reason = await promptDialog({
-      title: `Buchung ${booking.display_number} stornieren?`,
+      title: t('Buchung {display_number} stornieren?', { display_number: booking.display_number }),
       message:
-        'Es entsteht eine Gegenbuchung mit heutigem Datum über denselben Betrag. Die Buchung ' +
-        'bleibt sichtbar und unverändert. Eine richtige Buchung legst du danach neu an.',
-      label: 'Grund',
-      confirmLabel: 'Stornieren',
+        t('Es entsteht eine Gegenbuchung mit heutigem Datum über denselben Betrag. Die Buchung ') +
+        t('bleibt sichtbar und unverändert. Eine richtige Buchung legst du danach neu an.'),
+      label: t('Grund'),
+      confirmLabel: t('Stornieren'),
     })
     if (reason === null) return
     const saved = await form.submit(() => financeApi.stornoBooking(orgId, booking.id, reason))
@@ -698,8 +722,8 @@ function BookingForm({
   }
 
   const title = booking
-    ? `${KIND_LABEL[kind]} ${booking.display_number}`
-    : `Neue ${KIND_LABEL[kind]}`
+    ? t('{x} {display_number}', { x: KIND_LABEL[kind], display_number: booking.display_number })
+    : t('Neue {x}', { x: KIND_LABEL[kind] })
 
   return (
     <div className="card card-wide">
@@ -707,25 +731,30 @@ function BookingForm({
         <div className="card-head">
           <h2>{title}</h2>
           <button type="button" className="button button-ghost push-right" onClick={close}>
-            Schließen
+            {t('Schließen')}
           </button>
         </div>
         {booking?.cancelled_by && (
           <Alert kind="info">
-            Storniert durch Buchung {booking.cancelled_by.number} vom{' '}
-            {formatDate(booking.cancelled_by.date)}: {booking.cancelled_by.reason}
+            {t('Storniert durch Buchung {number} vom  {x}:', {
+              number: booking.cancelled_by.number,
+              x: formatDate(booking.cancelled_by.date),
+            })}{' '}
+            {booking.cancelled_by.reason}
           </Alert>
         )}
         {booking?.cancels && (
           <Alert kind="info">
-            Storno von Buchung {booking.cancels.number}: {booking.cancel_reason}
+            {t('Storno von Buchung {number}:', { number: booking.cancels.number })}{' '}
+            {booking.cancel_reason}
           </Alert>
         )}
         {booking?.fixed && !booking.cancels && !booking.cancelled_by && (
           <>
             <Alert kind="info">
-              Die Buchung ist festgeschrieben und lässt sich nicht mehr ändern. Ist sie falsch,
-              bitte stornieren und neu buchen.
+              {t(
+                'Die Buchung ist festgeschrieben und lässt sich nicht mehr ändern. Ist sie falsch, bitte stornieren und neu buchen.',
+              )}
             </Alert>
             <Why k="booking_fixed" />
           </>
@@ -733,7 +762,7 @@ function BookingForm({
         {!booking && kind === 'expense' && canEdit && (
           <div className="einvoice-read">
             <label className="button button-ghost file-button">
-              E-Rechnung einlesen (XML oder ZUGFeRD-PDF)
+              {t('E-Rechnung einlesen (XML oder ZUGFeRD-PDF)')}
               <input
                 type="file"
                 accept=".xml,application/xml,text/xml,application/pdf"
@@ -746,15 +775,20 @@ function BookingForm({
             </label>
             {einvoice && (
               <Alert kind="info">
-                E-Rechnung {einvoice.info.number} von {einvoice.info.seller} über{' '}
-                {euro(einvoice.info.payable)} gelesen. Bitte Konto und Kategorie wählen; die Datei
-                wird beim Buchen als Beleg angehängt.
+                {t(
+                  'E-Rechnung {number} von {seller} über  {x} gelesen. Bitte Konto und Kategorie wählen; die Datei wird beim Buchen als Beleg angehängt.',
+                  {
+                    number: einvoice.info.number,
+                    seller: einvoice.info.seller,
+                    x: euro(einvoice.info.payable),
+                  },
+                )}
               </Alert>
             )}
             {einvoiceError && <Alert kind="error">{einvoiceError}</Alert>}
             <p className="muted small">
-              Eine <Term k="e_invoice">E-Rechnung</Term> füllt die Buchung vor und wird unverändert
-              als Beleg aufbewahrt.
+              {t('Eine')} <Term k="e_invoice">{t('E-Rechnung')}</Term>{' '}
+              {t('füllt die Buchung vor und wird unverändert als Beleg aufbewahrt.')}
             </p>
           </div>
         )}
@@ -762,18 +796,18 @@ function BookingForm({
           <div className="grid-3">
             {booking && (
               <Field
-                label="Buchungsnummer"
+                label={t('Buchungsnummer')}
                 type="number"
                 min={1}
                 required
                 value={v.number}
                 error={errors.number}
-                hint="Korrektur möglich, solange die Nummer frei ist"
+                hint={t('Korrektur möglich, solange die Nummer frei ist')}
                 onChange={(e) => set('number', e.target.value)}
               />
             )}
             <Field
-              label="Datum"
+              label={t('Datum')}
               type="date"
               required
               value={v.date}
@@ -781,7 +815,7 @@ function BookingForm({
               onChange={(e) => set('date', e.target.value)}
             />
             <Field
-              label="Betrag (€)"
+              label={t('Betrag (€)')}
               inputMode="decimal"
               required
               placeholder="0,00"
@@ -791,17 +825,21 @@ function BookingForm({
             />
             {kind !== 'transfer' && (
               <Field
-                label={kind === 'expense' ? 'Empfänger (Geschäft, Dienstleister …)' : 'Zahler'}
+                label={
+                  kind === 'expense' ? t('Empfänger (Geschäft, Dienstleister …)') : t('Zahler')
+                }
                 list="booking-partner-suggestions"
                 autoComplete="off"
-                placeholder={kind === 'expense' ? 'z. B. Getränkehandel' : 'z. B. Name oder Firma'}
+                placeholder={
+                  kind === 'expense' ? t('z. B. Getränkehandel') : t('z. B. Name oder Firma')
+                }
                 value={v.counterparty}
                 error={errors.counterparty}
                 onChange={(e) => set('counterparty', e.target.value)}
               />
             )}
             <SelectField
-              label={kind === 'transfer' ? 'von Konto' : 'Konto'}
+              label={kind === 'transfer' ? t('von Konto') : t('Konto')}
               value={v.account}
               error={errors.account}
               onChange={(e) => set('account', e.target.value)}
@@ -814,12 +852,12 @@ function BookingForm({
             </SelectField>
             {kind === 'transfer' ? (
               <SelectField
-                label="auf Konto"
+                label={t('auf Konto')}
                 value={v.to_account}
                 error={errors.to_account}
                 onChange={(e) => set('to_account', e.target.value)}
               >
-                <option value="">bitte wählen</option>
+                <option value="">{t('bitte wählen')}</option>
                 {activeAccounts
                   .filter((a) => String(a.id) !== v.account)
                   .map((a) => (
@@ -830,12 +868,12 @@ function BookingForm({
               </SelectField>
             ) : (
               <SelectField
-                label="Kategorie"
+                label={t('Kategorie')}
                 value={v.category}
                 error={errors.category}
                 onChange={(e) => set('category', e.target.value)}
               >
-                <option value="">bitte wählen</option>
+                <option value="">{t('bitte wählen')}</option>
                 {usable.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
@@ -844,14 +882,14 @@ function BookingForm({
               </SelectField>
             )}
             <Field
-              label="Buchungstext"
+              label={t('Buchungstext')}
               required
               value={v.text}
               error={errors.text}
               onChange={(e) => set('text', e.target.value)}
             />
             <Field
-              label="Belegnummer/Referenz"
+              label={t('Belegnummer/Referenz')}
               value={v.reference}
               error={errors.reference}
               onChange={(e) => set('reference', e.target.value)}
@@ -860,7 +898,7 @@ function BookingForm({
           {kind !== 'transfer' && usableProjects.length > 0 && !locked && (
             <div className="grid-2">
               <SelectField
-                label="Veranstaltung (optional)"
+                label={t('Veranstaltung (optional)')}
                 value={v.project}
                 error={errors.project}
                 onChange={(e) => set('project', e.target.value)}
@@ -882,13 +920,14 @@ function BookingForm({
           {kind !== 'transfer' && isClub && (
             <details className="booking-assign" open={assignedOpen}>
               <summary>
-                Mitglied oder {tm.sg} zuordnen <span className="muted">(optional)</span>
+                {t('Mitglied oder {sg} zuordnen', { sg: tm.sg })}{' '}
+                <span className="muted">(optional)</span>
               </summary>
               <div className="grid-2">
                 <MemberPicker orgId={orgId} value={member} onChange={pickMember} />
                 {departments.length > 0 && (
                   <SelectField
-                    label={`${tm.sg} (optional)`}
+                    label={t('{sg} (optional)', { sg: tm.sg })}
                     value={v.department}
                     onChange={(e) => set('department', e.target.value)}
                   >
@@ -905,18 +944,20 @@ function BookingForm({
           )}
           {usable.length === 0 && kind !== 'transfer' && (
             <Alert kind="info">
-              Für {KIND_LABEL[kind]}n gibt es noch keine Kategorie. Bitte unter{' '}
+              {kind === 'income'
+                ? t('Für Einnahmen gibt es noch keine Kategorie. Bitte unter')
+                : t('Für Ausgaben gibt es noch keine Kategorie. Bitte unter')}{' '}
               <Link to="/finanzen/einstellungen/kategorien">
-                Finanzen → Einrichtung → Kategorien
+                {t('Finanzen → Einrichtung → Kategorien')}
               </Link>{' '}
-              anlegen.
+              {t('anlegen.')}
             </Alert>
           )}
         </fieldset>
         {locked && canEdit && kind !== 'transfer' && usableProjects.length > 0 && (
           <div className="grid-2">
             <SelectField
-              label="Veranstaltung (optional)"
+              label={t('Veranstaltung (optional)')}
               value={v.project}
               error={errors.project}
               disabled={form.busy}
@@ -937,7 +978,7 @@ function BookingForm({
           <div className="button-row">
             {!booking && (
               <button type="submit" className="button button-primary" disabled={form.busy}>
-                Buchen
+                {t('Buchen')}
               </button>
             )}
             {!booking && (
@@ -947,7 +988,9 @@ function BookingForm({
                   checked={again}
                   onChange={(e) => setAgain(e.target.checked)}
                 />
-                <span>danach nächste {KIND_LABEL[kind]} erfassen</span>
+                <span>
+                  {t('danach nächste')} {KIND_LABEL[kind]} erfassen
+                </span>
               </label>
             )}
             {booking && !booking.cancels && !booking.cancelled_by && (
@@ -957,12 +1000,12 @@ function BookingForm({
                 disabled={form.busy}
                 onClick={() => void storno()}
               >
-                Stornieren
+                {t('Stornieren')}
               </button>
             )}
             {booking?.deletable && (
               <button type="button" className="button button-danger" onClick={remove}>
-                Löschen
+                {t('Löschen')}
               </button>
             )}
           </div>
@@ -971,7 +1014,7 @@ function BookingForm({
       {booking ? (
         <Receipts orgId={orgId} booking={booking} canEdit={canEdit} />
       ) : (
-        <p className="muted small">Belege kannst du nach dem Speichern anhängen.</p>
+        <p className="muted small">{t('Belege kannst du nach dem Speichern anhängen.')}</p>
       )}
     </div>
   )
@@ -1009,13 +1052,14 @@ function Receipts({
         setItems((prev) => [...prev, receipt])
         done++
       } catch (err) {
-        failed.push(`${file.name}: ${errorMessage(err)}`)
+        failed.push(t('{name}: {x}', { name: file.name, x: errorMessage(err) }))
       }
     }
     if (failed.length) {
       setError(
-        (list.length > 1 ? `${done} von ${list.length} Belegen hochgeladen. ` : '') +
-          `Nicht hochgeladen – bitte erneut auswählen: ${failed.join('; ')}`,
+        (list.length > 1
+          ? t('{done} von {n} Belegen hochgeladen. ', { done, n: list.length })
+          : '') + t('Nicht hochgeladen – bitte erneut auswählen: {x}', { x: failed.join('; ') }),
       )
     }
     setBusy(false)
@@ -1023,12 +1067,13 @@ function Receipts({
 
   async function hide(id: number) {
     const reason = await promptDialog({
-      title: 'Beleg ausblenden?',
+      title: t('Beleg ausblenden?'),
       message:
-        'Belege werden aufbewahrt (§ 147 AO) und nicht gelöscht. Der Beleg verschwindet aus der ' +
-        'Liste „mit Beleg“, bleibt aber gespeichert und steht im Datenexport.',
-      label: 'Grund',
-      confirmLabel: 'Ausblenden',
+        t(
+          'Belege werden aufbewahrt (§ 147 AO) und nicht gelöscht. Der Beleg verschwindet aus der ',
+        ) + t('Liste „mit Beleg“, bleibt aber gespeichert und steht im Datenexport.'),
+      label: t('Grund'),
+      confirmLabel: t('Ausblenden'),
     })
     if (reason === null) return
     try {
@@ -1044,7 +1089,8 @@ function Receipts({
     // Gerade hochgeladen: löschen (Fehlgriff); sonst nur ausblenden
     const recent = justUploaded(r.created_at) && !booking.fixed
     if (!recent) return hide(r.id)
-    if (!(await confirmDialog({ title: 'Beleg entfernen?', confirmLabel: 'Entfernen' }))) return
+    if (!(await confirmDialog({ title: t('Beleg entfernen?'), confirmLabel: t('Entfernen') })))
+      return
     try {
       await financeApi.deleteReceipt(orgId, r.id)
       setItems((prev) => prev.filter((x) => x.id !== r.id))
@@ -1056,10 +1102,10 @@ function Receipts({
 
   return (
     <div className="subcard">
-      <h3>Belege</h3>
+      <h3>{t('Belege')}</h3>
       <Why k="receipts" />
       {items.length === 0 ? (
-        <p className="muted small">Noch kein Beleg.</p>
+        <p className="muted small">{t('Noch kein Beleg.')}</p>
       ) : (
         <ul className="plain-list">
           {items.map((r) => (
@@ -1071,9 +1117,9 @@ function Receipts({
               {r.einvoice?.number && (
                 <span className="small">
                   {' '}
-                  · E-Rechnung {r.einvoice.number}
-                  {r.einvoice.seller ? ` von ${r.einvoice.seller}` : ''}
-                  {r.einvoice.payable ? ` über ${euro(r.einvoice.payable)}` : ''}
+                  {t('· E-Rechnung')} {r.einvoice.number}
+                  {r.einvoice.seller ? t(' von {seller}', { seller: r.einvoice.seller }) : ''}
+                  {r.einvoice.payable ? t(' über {x}', { x: euro(r.einvoice.payable) }) : ''}
                   {r.content_type === 'application/xml' && (
                     <>
                       {' '}
@@ -1082,14 +1128,17 @@ function Receipts({
                         target="_blank"
                         rel="noreferrer"
                       >
-                        lesbare Ansicht
+                        {t('lesbare Ansicht')}
                       </a>
                     </>
                   )}
                 </span>
               )}
               {r.hidden_at ? (
-                <span className="small"> – ausgeblendet: {r.hidden_reason}</span>
+                <span className="small">
+                  {' '}
+                  {t('– ausgeblendet:')} {r.hidden_reason}
+                </span>
               ) : (
                 canEdit && (
                   <button type="button" className="link-button" onClick={() => void remove(r)}>
@@ -1103,7 +1152,7 @@ function Receipts({
       )}
       {canEdit && (
         <label className="button button-ghost file-button">
-          {busy ? 'Lädt hoch …' : 'Foto, PDF oder E-Rechnung hinzufügen'}
+          {busy ? t('Lädt hoch …') : t('Foto, PDF oder E-Rechnung hinzufügen')}
           <input
             type="file"
             accept="application/pdf,image/*,.xml,application/xml,text/xml"

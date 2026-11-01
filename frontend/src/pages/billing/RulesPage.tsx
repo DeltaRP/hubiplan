@@ -11,6 +11,7 @@ import { useActiveOrg, useOrg } from '../../org/OrgContext.tsx'
 import { useTerms } from '../../org/terms.ts'
 import { HowTo, Term, Why } from '../../learning/Aids.tsx'
 import { locale } from '../../i18n/index.ts'
+import { t } from '../../i18n/index.ts'
 
 function useBillingSettings() {
   const org = useActiveOrg()
@@ -22,7 +23,7 @@ function useBillingSettings() {
 export function FeeRulesPage() {
   const { org, settings } = useBillingSettings()
   if (settings.error) return <Alert kind="error">{settings.error}</Alert>
-  if (!settings.data) return <p className="muted">Lädt …</p>
+  if (!settings.data) return <p className="muted">{t('Lädt …')}</p>
   const s = settings.data
   const federation = s.org_type === 'federation'
   return (
@@ -45,7 +46,7 @@ export function FeeRulesPage() {
 export function DunningLevelsPage() {
   const { org, settings } = useBillingSettings()
   if (settings.error) return <Alert kind="error">{settings.error}</Alert>
-  if (!settings.data) return <p className="muted">Lädt …</p>
+  if (!settings.data) return <p className="muted">{t('Lädt …')}</p>
   return <DunningLevelsCard orgId={org.id} canEdit={settings.data.can_edit} />
 }
 
@@ -54,7 +55,7 @@ export function BillingSettingsPage() {
   const { org, settings } = useBillingSettings()
   const { refresh } = useOrg()
   if (settings.error) return <Alert kind="error">{settings.error}</Alert>
-  if (!settings.data) return <p className="muted">Lädt …</p>
+  if (!settings.data) return <p className="muted">{t('Lädt …')}</p>
   const s = settings.data
   return (
     <SettingsCard
@@ -73,7 +74,7 @@ export function BillingSettingsPage() {
 function FeesCard({ orgId, canEdit }: { orgId: number; canEdit: boolean }) {
   const { data, error, setData } = useLoad(() => billingApi.fees(orgId), [orgId])
   if (error) return <Alert kind="error">{error}</Alert>
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
   return <FeesForm orgId={orgId} rows={data} canEdit={canEdit} onSaved={setData} />
 }
 
@@ -109,18 +110,19 @@ function FeesForm({
 
   return (
     <form className="card card-wide" onSubmit={(e) => e.preventDefault()}>
-      <h2>Jahresbeitrag je Mitgliedsart</h2>
+      <h2>{t('Jahresbeitrag je Mitgliedsart')}</h2>
       {canEdit && rows.length > 0 && <SaveStatus auto={auto} />}
       <HowTo k="calc_fee" />
       <p className="muted small">
-        Der Betrag gilt für ein ganzes Geschäftsjahr. Bei halbjährlicher, vierteljährlicher oder
-        monatlicher Abrechnung wird er aufgeteilt. Leer heißt beitragsfrei.
+        {t(
+          'Der Betrag gilt für ein ganzes Geschäftsjahr. Bei halbjährlicher, vierteljährlicher oder monatlicher Abrechnung wird er aufgeteilt. Leer heißt beitragsfrei.',
+        )}
       </p>
       {rows.length === 0 ? (
         <p className="muted">
-          Noch keine Mitgliedsarten. Lege sie zuerst unter{' '}
+          {t('Noch keine Mitgliedsarten. Lege sie zuerst unter')}{' '}
           <Link to="/mitglieder/einrichtung/mitgliedsarten">
-            Mitglieder → Einrichtung → Mitgliedsarten
+            {t('Mitglieder → Einrichtung → Mitgliedsarten')}
           </Link>{' '}
           an.
         </p>
@@ -129,7 +131,7 @@ function FeesForm({
           {rows.map((r) => (
             <Field
               key={r.member_type}
-              label={`${r.name} (€ im Jahr)`}
+              label={t('{name} (€ im Jahr)', { name: r.name })}
               inputMode="decimal"
               disabled={!canEdit}
               placeholder="beitragsfrei"
@@ -183,7 +185,7 @@ function AgeRatesCard({
           amount: v.mode === 'amount' ? value : null,
           discount_percent: v.mode === 'discount' ? value : null,
         }),
-      'Altersstufe angelegt.',
+      t('Altersstufe angelegt.'),
     )
     if (ok) {
       form.setValues({ ...v, name: '', min_age: '', max_age: '', value: '' })
@@ -205,25 +207,26 @@ function AgeRatesCard({
   if (!data) return null
   return (
     <div className="card card-wide">
-      <h2>Altersstufen</h2>
+      <h2>{t('Altersstufen')}</h2>
       <Why k="age_brackets" />
       <p className="muted small">
-        Zum Beispiel Jugend bis 17 Jahre mit halbem Beitrag. Maßgeblich ist das Alter am{' '}
-        <Term k="cutoff_date">Stichtag</Term>, dem Beginn des Geschäftsjahres.
+        {t('Zum Beispiel Jugend bis 17 Jahre mit halbem Beitrag. Maßgeblich ist das Alter am')}{' '}
+        <Term k="cutoff_date">{t('Stichtag')}</Term>
+        {t(', dem Beginn des Geschäftsjahres.')}
         {federation
-          ? ` Die Stufe gilt für die gemeldeten Mitglieder der ${tm.pl}.`
-          : ' Eine Stufe für eine bestimmte Mitgliedsart geht einer allgemeinen vor.'}
+          ? t(' Die Stufe gilt für die gemeldeten Mitglieder der {pl}.', { pl: tm.pl })
+          : t(' Eine Stufe für eine bestimmte Mitgliedsart geht einer allgemeinen vor.')}
       </p>
       {data.length === 0 ? (
-        <p className="muted">Keine Altersstufen.</p>
+        <p className="muted">{t('Keine Altersstufen.')}</p>
       ) : (
         <table className="table">
           <thead>
             <tr>
-              <th>Stufe</th>
-              <th>Alter</th>
-              <th>gilt für</th>
-              <th>Beitrag</th>
+              <th>{t('Stufe')}</th>
+              <th>{t('Alter')}</th>
+              <th>{t('gilt für')}</th>
+              <th>{t('Beitrag')}</th>
               <th />
             </tr>
           </thead>
@@ -235,21 +238,23 @@ function AgeRatesCard({
                 </td>
                 <td>
                   {a.min_age !== null && a.max_age !== null
-                    ? `${a.min_age} bis ${a.max_age} Jahre`
+                    ? t('{min_age} bis {max_age} Jahre', { min_age: a.min_age, max_age: a.max_age })
                     : a.max_age !== null
-                      ? `bis ${a.max_age} Jahre`
-                      : `ab ${a.min_age} Jahren`}
+                      ? t('bis {max_age} Jahre', { max_age: a.max_age })
+                      : t('ab {min_age} Jahren', { min_age: a.min_age })}
                 </td>
-                <td>{a.member_type_name ?? 'alle Mitgliedsarten'}</td>
+                <td>{a.member_type_name ?? t('alle Mitgliedsarten')}</td>
                 <td>
                   {a.amount !== null
-                    ? `${euro(a.amount)} im Jahr`
-                    : `${Number(a.discount_percent).toLocaleString(locale())} % Abschlag`}
+                    ? t('{x} im Jahr', { x: euro(a.amount) })
+                    : t('{x} % Abschlag', {
+                        x: Number(a.discount_percent).toLocaleString(locale()),
+                      })}
                 </td>
                 <td className="actions">
                   {canEdit && (
                     <button type="button" className="link-button" onClick={() => void remove(a.id)}>
-                      Löschen
+                      {t('Löschen')}
                     </button>
                   )}
                 </td>
@@ -261,18 +266,18 @@ function AgeRatesCard({
       {message && <Alert kind="error">{message}</Alert>}
       {canEdit && (
         <form className="subcard" onSubmit={add}>
-          <h3>Neue Altersstufe</h3>
+          <h3>{t('Neue Altersstufe')}</h3>
           <div className="grid-3">
             <Field
-              label="Bezeichnung"
+              label={t('Bezeichnung')}
               required
-              placeholder="z. B. Jugend"
+              placeholder={t('z. B. Jugend')}
               value={v.name}
               error={form.errors.name}
               onChange={(e) => form.set('name', e.target.value)}
             />
             <Field
-              label="ab Alter"
+              label={t('ab Alter')}
               type="number"
               min={0}
               value={v.min_age}
@@ -280,7 +285,7 @@ function AgeRatesCard({
               onChange={(e) => form.set('min_age', e.target.value)}
             />
             <Field
-              label="bis Alter (einschließlich)"
+              label={t('bis Alter (einschließlich)')}
               type="number"
               min={0}
               value={v.max_age}
@@ -289,11 +294,11 @@ function AgeRatesCard({
             />
             {!federation && (
               <SelectField
-                label="gilt für"
+                label={t('gilt für')}
                 value={v.member_type}
                 onChange={(e) => form.set('member_type', e.target.value)}
               >
-                <option value="">alle Mitgliedsarten</option>
+                <option value="">{t('alle Mitgliedsarten')}</option>
                 {(types.data ?? []).map((t) => (
                   <option key={t.member_type} value={t.member_type}>
                     {t.name}
@@ -302,17 +307,19 @@ function AgeRatesCard({
               </SelectField>
             )}
             <SelectField
-              label="Beitrag"
+              label={t('Beitrag')}
               value={v.mode}
               onChange={(e) => form.set('mode', e.target.value)}
             >
-              <option value="discount">Abschlag in Prozent</option>
+              <option value="discount">{t('Abschlag in Prozent')}</option>
               <option value="amount">
-                {federation ? 'eigener Betrag je Mitglied in €' : 'eigener Jahresbeitrag in €'}
+                {federation
+                  ? t('eigener Betrag je Mitglied in €')
+                  : t('eigener Jahresbeitrag in €')}
               </option>
             </SelectField>
             <Field
-              label={v.mode === 'discount' ? 'Abschlag (%)' : 'Jahresbeitrag (€)'}
+              label={v.mode === 'discount' ? t('Abschlag (%)') : t('Jahresbeitrag (€)')}
               inputMode="decimal"
               required
               value={v.value}
@@ -322,7 +329,7 @@ function AgeRatesCard({
           </div>
           {form.message && <Alert kind={form.message.kind}>{form.message.text}</Alert>}
           <button type="submit" className="button button-primary" disabled={form.busy}>
-            Anlegen
+            {t('Anlegen')}
           </button>
         </form>
       )}
@@ -374,7 +381,7 @@ function SettingsCard({
 
   return (
     <form className="card card-wide" onSubmit={(e) => e.preventDefault()}>
-      <h2>Abrechnung und Rechnung</h2>
+      <h2>{t('Abrechnung und Rechnung')}</h2>
       {canEdit && <SaveStatus auto={auto} />}
       <div className="aid-row">
         <Why k="billing_cycle" />
@@ -385,7 +392,7 @@ function SettingsCard({
       <fieldset disabled={!canEdit}>
         <div className="grid-3">
           <SelectField
-            label="Abrechnungsrhythmus"
+            label={t('Abrechnungsrhythmus')}
             value={v.rhythm}
             onChange={(e) => form.set('rhythm', e.target.value as Rhythm)}
           >
@@ -396,7 +403,7 @@ function SettingsCard({
             ))}
           </SelectField>
           <Field
-            label="Zahlungsziel (Tage)"
+            label={t('Zahlungsziel (Tage)')}
             type="number"
             min={0}
             value={v.due_days}
@@ -406,19 +413,19 @@ function SettingsCard({
           <div className="field">
             <span>&nbsp;</span>
             <Checkbox
-              label="Eintritt im laufenden Zeitraum anteilig je angefangenem Monat"
+              label={t('Eintritt im laufenden Zeitraum anteilig je angefangenem Monat')}
               checked={v.pro_rata}
               onChange={(val) => form.set('pro_rata', val)}
             />
           </div>
           <SelectField
-            label="Konto für Überweisungen"
+            label={t('Konto für Überweisungen')}
             value={v.account}
             error={form.errors.account}
-            hint="steht mit IBAN auf der Rechnung"
+            hint={t('steht mit IBAN auf der Rechnung')}
             onChange={(e) => form.set('account', e.target.value)}
           >
-            <option value="">kein Konto</option>
+            <option value="">{t('kein Konto')}</option>
             {settings.accounts
               .filter((a) => a.kind !== 'cash')
               .map((a) => (
@@ -429,13 +436,13 @@ function SettingsCard({
               ))}
           </SelectField>
           <SelectField
-            label="Kategorie für Zahlungseingänge"
+            label={t('Kategorie für Zahlungseingänge')}
             value={v.category}
             error={form.errors.category}
-            hint="Zahlungen werden damit in der Kasse gebucht"
+            hint={t('Zahlungen werden damit in der Kasse gebucht')}
             onChange={(e) => form.set('category', e.target.value)}
           >
-            <option value="">bitte wählen</option>
+            <option value="">{t('bitte wählen')}</option>
             {settings.categories.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -445,7 +452,7 @@ function SettingsCard({
           <div className="field">
             <span>&nbsp;</span>
             <Checkbox
-              label="QR-Code für die Banking-App aufdrucken"
+              label={t('QR-Code für die Banking-App aufdrucken')}
               checked={v.qr_code}
               onChange={(val) => form.set('qr_code', val)}
             />
@@ -453,35 +460,37 @@ function SettingsCard({
         </div>
         {settings.accounts.length === 0 && (
           <p className="muted small">
-            Konten und Kategorien legst du unter{' '}
-            <Link to="/finanzen/einstellungen/konten">Einrichtung › Konten</Link> an.
+            {t('Konten und Kategorien legst du unter')}{' '}
+            <Link to="/finanzen/einstellungen/konten">{t('Einrichtung › Konten')}</Link> an.
           </p>
         )}
         {/* Im Arbeitsbereich einer Untereinheit gibt es keine Lastschrift */}
         {settings.org_type !== 'unit' && (
           <>
-            <h3>SEPA-Lastschrift</h3>
+            <h3>{t('SEPA-Lastschrift')}</h3>
             <div className="aid-row">
               <Why k="sepa_use" />
               {v.sepa_enabled && <Why k="prenotification" />}
             </div>
             <Checkbox
-              label="SEPA-Lastschrift nutzen (Mandate, Lastschriftläufe, Mandat im Mitgliederbereich)"
+              label={t(
+                'SEPA-Lastschrift nutzen (Mandate, Lastschriftläufe, Mandat im Mitgliederbereich)',
+              )}
               checked={v.sepa_enabled}
               onChange={(val) => form.set('sepa_enabled', val)}
             />
             {v.sepa_enabled && (
               <div className="grid-3">
                 <Field
-                  label="Gläubiger-Identifikationsnummer"
-                  placeholder="z. B. DE98ZZZ09999999999"
+                  label={t('Gläubiger-Identifikationsnummer')}
+                  placeholder={t('z. B. DE98ZZZ09999999999')}
                   value={v.creditor_id}
                   error={form.errors.creditor_id}
-                  hint="bei der Bundesbank beantragt"
+                  hint={t('bei der Bundesbank beantragt')}
                   onChange={(e) => form.set('creditor_id', e.target.value)}
                 />
                 <Field
-                  label="Vorabankündigung (Tage vor dem Einzug)"
+                  label={t('Vorabankündigung (Tage vor dem Einzug)')}
                   type="number"
                   min={1}
                   max={30}
@@ -493,18 +502,22 @@ function SettingsCard({
             )}
             <p className="muted small">
               {v.sepa_enabled
-                ? 'Eingezogen wird auf das Konto für Überweisungen oben. Ohne Gläubiger-ID ist keine Lastschrift möglich.'
-                : 'Ausgeschaltet erscheinen Lastschriften und Mandate nirgends in der Oberfläche. Bereits erfasste Mandate bleiben gespeichert.'}
+                ? t(
+                    'Eingezogen wird auf das Konto für Überweisungen oben. Ohne Gläubiger-ID ist keine Lastschrift möglich.',
+                  )
+                : t(
+                    'Ausgeschaltet erscheinen Lastschriften und Mandate nirgends in der Oberfläche. Bereits erfasste Mandate bleiben gespeichert.',
+                  )}
             </p>
           </>
         )}
-        <h3>Umsatzsteuer</h3>
+        <h3>{t('Umsatzsteuer')}</h3>
         <Why k="vat_show" />
         <div className="grid-3">
           <div className="field">
             <span>&nbsp;</span>
             <Checkbox
-              label="Umsatzsteuer auf Rechnungen ausweisen (nur für steuerpflichtige Posten)"
+              label={t('Umsatzsteuer auf Rechnungen ausweisen (nur für steuerpflichtige Posten)')}
               checked={v.vat_enabled}
               onChange={(val) => form.set('vat_enabled', val)}
             />
@@ -512,14 +525,14 @@ function SettingsCard({
           {v.vat_enabled && (
             <>
               <Field
-                label="üblicher Steuersatz (%)"
+                label={t('üblicher Steuersatz (%)')}
                 inputMode="decimal"
                 value={v.vat_rate}
                 error={form.errors.vat_rate}
                 onChange={(e) => form.set('vat_rate', e.target.value)}
               />
               <Field
-                label="Steuernummer oder USt-IdNr."
+                label={t('Steuernummer oder USt-IdNr.')}
                 value={v.tax_number}
                 error={form.errors.tax_number}
                 onChange={(e) => form.set('tax_number', e.target.value)}
@@ -528,12 +541,13 @@ function SettingsCard({
           )}
         </div>
         <p className="muted small">
-          Mitgliedsbeiträge sind nicht steuerbar. Den Steuersatz wählst du je Posten, etwa für
-          Verkäufe im wirtschaftlichen Geschäftsbetrieb. Die Beträge sind Bruttobeträge.
+          {t(
+            'Mitgliedsbeiträge sind nicht steuerbar. Den Steuersatz wählst du je Posten, etwa für Verkäufe im wirtschaftlichen Geschäftsbetrieb. Die Beträge sind Bruttobeträge.',
+          )}
         </p>
         <div className="grid-2">
           <label className="field">
-            <span>Text vor den Posten</span>
+            <span>{t('Text vor den Posten')}</span>
             <textarea
               rows={3}
               value={v.intro_text}
@@ -541,10 +555,10 @@ function SettingsCard({
             />
           </label>
           <label className="field">
-            <span>Text unter der Rechnung</span>
+            <span>{t('Text unter der Rechnung')}</span>
             <textarea
               rows={3}
-              placeholder="z. B. Vereinsregister, Steuernummer, Dank"
+              placeholder={t('z. B. Vereinsregister, Steuernummer, Dank')}
               value={v.footer_text}
               onChange={(e) => form.set('footer_text', e.target.value)}
             />
@@ -586,31 +600,35 @@ function ClubRatesCard({
 
   return (
     <form className="card card-wide" onSubmit={(e) => e.preventDefault()}>
-      <h2>Verbandsbeitrag der {tm.pl}</h2>
+      <h2>
+        {t('Verbandsbeitrag der')} {tm.pl}
+      </h2>
       {canEdit && <SaveStatus auto={auto} />}
       <HowTo k="calc_federation_fee" />
       <p className="muted small">
-        Jahresbetrag je gemeldetem Mitglied. Gezählt werden die Mitglieder, deren Mitgliedsart an
-        {tm.e_akk} gemeldet wird, am ersten Tag des Abrechnungszeitraums. Leer heißt kein Beitrag.
+        {t(
+          'Jahresbetrag je gemeldetem Mitglied. Gezählt werden die Mitglieder, deren Mitgliedsart an {e_akk} gemeldet wird, am ersten Tag des Abrechnungszeitraums. Leer heißt kein Beitrag.',
+          { e_akk: tm.e_akk },
+        )}
       </p>
       <fieldset disabled={!canEdit}>
         <div className="grid-3">
           <Field
-            label="je aktivem Mitglied (€ im Jahr)"
+            label={t('je aktivem Mitglied (€ im Jahr)')}
             inputMode="decimal"
             value={v.club_rate_active}
             error={form.errors.club_rate_active}
             onChange={(e) => form.set('club_rate_active', e.target.value)}
           />
           <Field
-            label="je passivem Mitglied (€ im Jahr)"
+            label={t('je passivem Mitglied (€ im Jahr)')}
             inputMode="decimal"
             value={v.club_rate_passive}
             error={form.errors.club_rate_passive}
             onChange={(e) => form.set('club_rate_passive', e.target.value)}
           />
           <Field
-            label={`Grundbetrag je ${tm.sg} (€ im Jahr)`}
+            label={t('Grundbetrag je {sg} (€ im Jahr)', { sg: tm.sg })}
             inputMode="decimal"
             value={v.club_base_amount}
             error={form.errors.club_base_amount}
@@ -640,7 +658,7 @@ function DunningLevelsCard({ orgId, canEdit }: { orgId: number; canEdit: boolean
           fee: parseAmount(v.fee) || '0',
           text: v.text,
         }),
-      'Mahnstufe angelegt.',
+      t('Mahnstufe angelegt.'),
     )
     if (ok) {
       form.setValues({ name: '', days: String((Number(v.days) || 0) + 14), fee: '', text: '' })
@@ -663,25 +681,26 @@ function DunningLevelsCard({ orgId, canEdit }: { orgId: number; canEdit: boolean
   return (
     <div className="card card-wide">
       <h2>
-        <Term k="dunning_level">Mahnstufen</Term>
+        <Term k="dunning_level">{t('Mahnstufen')}</Term>
       </h2>
       <div className="aid-row">
         <Why k="dunning_levels" />
         <HowTo k="calc_dunning" />
       </div>
       <p className="muted small">
-        Zum Beispiel Zahlungserinnerung 14 Tage nach Fälligkeit, 1. Mahnung nach 28 Tagen mit 5 €
-        Gebühr. Fällige Mahnungen erscheinen unter Mahnungen.
+        {t(
+          'Zum Beispiel Zahlungserinnerung 14 Tage nach Fälligkeit, 1. Mahnung nach 28 Tagen mit 5 € Gebühr. Fällige Mahnungen erscheinen unter Mahnungen.',
+        )}
       </p>
       {data.length === 0 ? (
-        <p className="muted">Keine Mahnstufen.</p>
+        <p className="muted">{t('Keine Mahnstufen.')}</p>
       ) : (
         <table className="table">
           <thead>
             <tr>
-              <th>Stufe</th>
-              <th>fällig nach</th>
-              <th className="num">Gebühr</th>
+              <th>{t('Stufe')}</th>
+              <th>{t('fällig nach')}</th>
+              <th className="num">{t('Gebühr')}</th>
               <th />
             </tr>
           </thead>
@@ -693,12 +712,14 @@ function DunningLevelsCard({ orgId, canEdit }: { orgId: number; canEdit: boolean
                     {d.level}. {d.name}
                   </strong>
                 </td>
-                <td>{d.days} Tagen über Fälligkeit</td>
+                <td>
+                  {d.days} {t('Tagen über Fälligkeit')}
+                </td>
                 <td className="num">{Number(d.fee) ? euro(d.fee) : '–'}</td>
                 <td className="actions">
                   {canEdit && (
                     <button type="button" className="link-button" onClick={() => void remove(d.id)}>
-                      Löschen
+                      {t('Löschen')}
                     </button>
                   )}
                 </td>
@@ -710,18 +731,18 @@ function DunningLevelsCard({ orgId, canEdit }: { orgId: number; canEdit: boolean
       {message && <Alert kind="error">{message}</Alert>}
       {canEdit && (
         <form className="subcard" onSubmit={add}>
-          <h3>Neue Mahnstufe</h3>
+          <h3>{t('Neue Mahnstufe')}</h3>
           <div className="grid-3">
             <Field
-              label="Bezeichnung"
+              label={t('Bezeichnung')}
               required
-              placeholder="z. B. Zahlungserinnerung"
+              placeholder={t('z. B. Zahlungserinnerung')}
               value={v.name}
               error={form.errors.name}
               onChange={(e) => form.set('name', e.target.value)}
             />
             <Field
-              label="Tage nach Fälligkeit"
+              label={t('Tage nach Fälligkeit')}
               type="number"
               min={0}
               value={v.days}
@@ -729,7 +750,7 @@ function DunningLevelsCard({ orgId, canEdit }: { orgId: number; canEdit: boolean
               onChange={(e) => form.set('days', e.target.value)}
             />
             <Field
-              label="Gebühr (€, optional)"
+              label={t('Gebühr (€, optional)')}
               inputMode="decimal"
               value={v.fee}
               error={form.errors.fee}
@@ -737,17 +758,17 @@ function DunningLevelsCard({ orgId, canEdit }: { orgId: number; canEdit: boolean
             />
           </div>
           <label className="field">
-            <span>Text im Schreiben (optional)</span>
+            <span>{t('Text im Schreiben (optional)')}</span>
             <textarea
               rows={3}
-              placeholder="leer = Standardtext"
+              placeholder={t('leer = Standardtext')}
               value={v.text}
               onChange={(e) => form.set('text', e.target.value)}
             />
           </label>
           {form.message && <Alert kind={form.message.kind}>{form.message.text}</Alert>}
           <button type="submit" className="button button-primary" disabled={form.busy}>
-            Anlegen
+            {t('Anlegen')}
           </button>
         </form>
       )}

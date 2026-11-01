@@ -18,6 +18,7 @@ import { useTerms } from '../../org/terms.ts'
 import { HowTo, Term, Why } from '../../learning/Aids.tsx'
 import { Checklist } from '../../learning/Checklist.tsx'
 import { debitChecks } from '../../learning/checks.ts'
+import { t } from '../../i18n/index.ts'
 
 /** So viele Läufe zeigt die Seite zunächst; ältere erst auf Wunsch. */
 const RUNS_SHOWN = 10
@@ -42,7 +43,7 @@ export function DebitsPage() {
 
   if (proposals.error ?? runs.error)
     return <Alert kind="error">{proposals.error ?? runs.error}</Alert>
-  if (!proposals.data || !runs.data) return <p className="muted">Lädt …</p>
+  if (!proposals.data || !runs.data) return <p className="muted">{t('Lädt …')}</p>
   const p = proposals.data
   const ready = !!p.creditor_id && p.account_has_iban
 
@@ -50,10 +51,12 @@ export function DebitsPage() {
     <div className="stack">
       {!ready && (
         <Alert kind="error">
-          Für Lastschriften fehlen noch {!p.creditor_id && 'die Gläubiger-Identifikationsnummer'}
+          {t('Für Lastschriften fehlen noch')}{' '}
+          {!p.creditor_id && t('die Gläubiger-Identifikationsnummer')}
           {!p.creditor_id && !p.account_has_iban && ' und '}
-          {!p.account_has_iban && 'ein Konto mit IBAN'}. Beides steht unter{' '}
-          <Link to="/finanzen/einstellungen/rechnung">Einrichtung › Rechnung & Zahlung</Link>.
+          {!p.account_has_iban && t('ein Konto mit IBAN')}. Beides steht unter{' '}
+          <Link to="/finanzen/einstellungen/rechnung">{t('Einrichtung › Rechnung & Zahlung')}</Link>
+          .
         </Alert>
       )}
       {ready && canEdit && <NewRun orgId={org.id} proposals={p} onCreated={reload} />}
@@ -62,7 +65,8 @@ export function DebitsPage() {
       ))}
       {!showAll && runs.data.length > RUNS_SHOWN && (
         <button type="button" className="button button-ghost" onClick={() => setShowAll(true)}>
-          Ältere Lastschriftläufe anzeigen ({runs.data.length - RUNS_SHOWN})
+          {t('Ältere Lastschriftläufe anzeigen (')}
+          {runs.data.length - RUNS_SHOWN})
         </button>
       )}
     </div>
@@ -108,8 +112,10 @@ function NewRun({
       setNotice({
         kind: 'success',
         text:
-          `Lastschriftlauf über ${euro(run.total)} erstellt, ${run.prenotified ?? 0} Ankündigungen per E-Mail verschickt.` +
-          (unsent ? ` ${unsent} Ankündigungen bitte ausdrucken.` : ''),
+          t('Lastschriftlauf über {x} erstellt, {x2} Ankündigungen per E-Mail verschickt.', {
+            x: euro(run.total),
+            x2: run.prenotified ?? 0,
+          }) + (unsent ? t(' {unsent} Ankündigungen bitte ausdrucken.', { unsent }) : ''),
       })
       setSkip(new Set())
       await onCreated()
@@ -122,14 +128,14 @@ function NewRun({
 
   return (
     <form className="card card-wide" onSubmit={create}>
-      <h2>Neuer Lastschriftlauf</h2>
+      <h2>{t('Neuer Lastschriftlauf')}</h2>
       {notice && <Alert kind={notice.kind}>{notice.text}</Alert>}
       <Why k="sepa_use" />
       {proposals.invoices.length === 0 ? (
         <p className="muted">
-          Keine offenen Rechnungen mit gültigem Mandat. Mandate erfasst du im Reiter{' '}
-          <Link to="/finanzen/lastschrift/mandate">SEPA-Mandate</Link>, oder die Mitglieder erteilen
-          sie im Mitgliederbereich.
+          {t('Keine offenen Rechnungen mit gültigem Mandat. Mandate erfasst du im Reiter')}{' '}
+          <Link to="/finanzen/lastschrift/mandate">{t('SEPA-Mandate')}</Link>
+          {t(', oder die Mitglieder erteilen sie im Mitgliederbereich.')}
         </p>
       ) : (
         <>
@@ -138,12 +144,12 @@ function NewRun({
               <thead>
                 <tr>
                   <th />
-                  <th>Rechnung</th>
-                  <th>Zahler</th>
+                  <th>{t('Rechnung')}</th>
+                  <th>{t('Zahler')}</th>
                   <th>
-                    <Term k="mandate">Mandat</Term>
+                    <Term k="mandate">{t('Mandat')}</Term>
                   </th>
-                  <th className="num">Betrag</th>
+                  <th className="num">{t('Betrag')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -152,7 +158,7 @@ function NewRun({
                     <td>
                       <input
                         type="checkbox"
-                        aria-label={`${i.number} einziehen`}
+                        aria-label={t('{number} einziehen', { number: i.number })}
                         checked={!skip.has(i.id)}
                         onChange={(e) => {
                           const next = new Set(skip)
@@ -179,12 +185,15 @@ function NewRun({
           </div>
           <div className="grid-3">
             <Field
-              label="Einzugsdatum"
+              label={t('Einzugsdatum')}
               type="date"
               required
               min={proposals.earliest}
               value={date}
-              hint={`frühestens ${formatDate(proposals.earliest)} (Vorabankündigung ${proposals.prenotification_days} Tage)`}
+              hint={t('frühestens {x} (Vorabankündigung {prenotification_days} Tage)', {
+                x: formatDate(proposals.earliest),
+                prenotification_days: proposals.prenotification_days,
+              })}
               onChange={(e) => setDate(e.target.value)}
             />
           </div>
@@ -192,21 +201,23 @@ function NewRun({
             <Why k="collection_date" />
             <HowTo k="calc_earliest_collection" />
           </div>
-          <Checklist title="Vor dem Lastschriftlauf" items={checks} />
+          <Checklist title={t('Vor dem Lastschriftlauf')} items={checks} />
           <div className="button-row">
             <button
               type="submit"
               className="button button-primary"
               disabled={busy || chosen.length === 0}
             >
-              {chosen.length} Lastschriften über {euro(total)} erstellen
+              {chosen.length} {t('Lastschriften über {x} erstellen', { x: euro(total) })}
             </button>
           </div>
           <p className="muted small">
-            Die Zahler bekommen die <Term k="prenotification_term">Vorabankündigung</Term> per
-            E-Mail. Danach lädst du die <Term k="bank_file">Datei für die Bank</Term> herunter und
-            reichst sie im Online-Banking ein. Eingezogen wird mit eurer{' '}
-            <Term k="creditor_id">Gläubiger-ID</Term>.
+            {t('Die Zahler bekommen die')}{' '}
+            <Term k="prenotification_term">{t('Vorabankündigung')}</Term>{' '}
+            {t('per E-Mail. Danach lädst du die')}{' '}
+            <Term k="bank_file">{t('Datei für die Bank')}</Term>{' '}
+            {t('herunter und reichst sie im Online-Banking ein. Eingezogen wird mit eurer')}{' '}
+            <Term k="creditor_id">{t('Gläubiger-ID')}</Term>.
           </p>
         </>
       )}
@@ -249,18 +260,20 @@ function RunCard({
   return (
     <div className="card card-wide">
       <div className="card-head">
-        <h2>Lastschrift zum {formatDate(run.collection_date)}</h2>
+        <h2>
+          {t('Lastschrift zum')} {formatDate(run.collection_date)}
+        </h2>
         <span
           className={`status status-${run.status === 'booked' ? 'paid' : run.status === 'cancelled' ? 'cancelled' : 'open'}`}
         >
           {run.status_label}
         </span>
         <span className="muted small push-right">
-          {run.items.length} Lastschriften · {euro(run.total)} · {run.account_name}
+          {run.items.length} {t('Lastschriften · {x} ·', { x: euro(run.total) })} {run.account_name}
         </span>
       </div>
       <details onToggle={(e) => setOpen(e.currentTarget.open)}>
-        <summary>Einzelne Lastschriften</summary>
+        <summary>{t('Einzelne Lastschriften')}</summary>
         {open && (
           <table className="table">
             <tbody>
@@ -271,8 +284,10 @@ function RunCard({
                     {i.payer}
                     <div className="muted small">
                       {i.mandate_reference} ·{' '}
-                      {i.sequence === 'FRST' ? 'Erstlastschrift' : 'Folgelastschrift'}
-                      {i.prenotified_at ? ' · angekündigt per E-Mail' : ' · Ankündigung drucken'}
+                      {i.sequence === 'FRST' ? t('Erstlastschrift') : t('Folgelastschrift')}
+                      {i.prenotified_at
+                        ? t(' · angekündigt per E-Mail')
+                        : t(' · Ankündigung drucken')}
                     </div>
                   </td>
                   <td className="num">{euro(i.amount)}</td>
@@ -285,15 +300,15 @@ function RunCard({
       {notice && <Alert kind={notice.kind}>{notice.text}</Alert>}
       {problems.length > 0 && (
         <Alert kind="error">
-          Die Datei für die Bank passt nicht mehr zum Stand: {problems.join('; ')}. Bitte den Lauf
-          verwerfen und neu erstellen.
+          {t('Die Datei für die Bank passt nicht mehr zum Stand:')} {problems.join('; ')}. Bitte den
+          Lauf verwerfen und neu erstellen.
         </Alert>
       )}
       {run.status !== 'cancelled' && (
         <div className="button-row">
           {problems.length === 0 && (
             <a className="button button-primary" href={sepaApi.xmlUrl(orgId, run.id)}>
-              Datei für die Bank (SEPA-XML)
+              {t('Datei für die Bank (SEPA-XML)')}
             </a>
           )}
           {unsent > 0 && (
@@ -303,7 +318,7 @@ function RunCard({
               target="_blank"
               rel="noreferrer"
             >
-              {unsent} Ankündigungen drucken
+              {unsent} {t('Ankündigungen drucken')}
             </a>
           )}
           {canEdit && run.status === 'created' && (
@@ -315,20 +330,21 @@ function RunCard({
                 onClick={async () => {
                   if (
                     await confirmDialog({
-                      title: 'Hat die Bank die Lastschriften eingezogen?',
-                      message:
+                      title: t('Hat die Bank die Lastschriften eingezogen?'),
+                      message: t(
                         'Dann werden die Zahlungen gebucht und die Rechnungen als bezahlt markiert.',
-                      confirmLabel: 'Zahlungen buchen',
+                      ),
+                      confirmLabel: t('Zahlungen buchen'),
                       danger: false,
                     })
                   )
                     void act(
                       () => sepaApi.bookRun(orgId, run.id),
-                      (r) => `${r.booked} Zahlungen gebucht.`,
+                      (r) => t('{booked} Zahlungen gebucht.', { booked: r.booked }),
                     )
                 }}
               >
-                Als eingezogen buchen
+                {t('Als eingezogen buchen')}
               </button>
               <button
                 type="button"
@@ -337,18 +353,18 @@ function RunCard({
                 onClick={async () => {
                   if (
                     await confirmDialog({
-                      title: 'Lastschriftlauf verwerfen?',
-                      message: 'Die Rechnungen bleiben offen.',
-                      confirmLabel: 'Verwerfen',
+                      title: t('Lastschriftlauf verwerfen?'),
+                      message: t('Die Rechnungen bleiben offen.'),
+                      confirmLabel: t('Verwerfen'),
                     })
                   )
                     void act(
                       () => sepaApi.cancelRun(orgId, run.id),
-                      () => 'Verworfen.',
+                      () => t('Verworfen.'),
                     )
                 }}
               >
-                Verwerfen
+                {t('Verwerfen')}
               </button>
             </>
           )}
@@ -356,8 +372,9 @@ function RunCard({
       )}
       {run.status === 'booked' && (
         <p className="muted small">
-          Kommt eine Lastschrift zurück, entferne die Zahlung an der Rechnung. Die Buchung in der
-          Kasse verschwindet dann mit.
+          {t(
+            'Kommt eine Lastschrift zurück, entferne die Zahlung an der Rechnung. Die Buchung in der Kasse verschwindet dann mit.',
+          )}
         </p>
       )}
     </div>
@@ -383,14 +400,14 @@ function MandatesCard({ orgId, canEdit }: { orgId: number; canEdit: boolean }) {
   async function revoke(m: Mandate) {
     if (
       !(await confirmDialog({
-        title: `Mandat ${m.reference} als widerrufen markieren?`,
-        confirmLabel: 'Widerrufen',
+        title: t('Mandat {reference} als widerrufen markieren?', { reference: m.reference }),
+        confirmLabel: t('Widerrufen'),
       }))
     )
       return
     try {
       await sepaApi.revokeMandate(orgId, m.id)
-      setNotice({ kind: 'success', text: 'Widerrufen.' })
+      setNotice({ kind: 'success', text: t('Widerrufen.') })
       await reload()
     } catch (err) {
       setNotice({ kind: 'error', text: errorMessage(err) })
@@ -401,7 +418,7 @@ function MandatesCard({ orgId, canEdit }: { orgId: number; canEdit: boolean }) {
     <div className="card card-wide">
       <div className="card-head">
         <h2>
-          <Term k="mandate">Mandate</Term>
+          <Term k="mandate">{t('Mandate')}</Term>
         </h2>
         {canEdit && !adding && (
           <button
@@ -409,7 +426,7 @@ function MandatesCard({ orgId, canEdit }: { orgId: number; canEdit: boolean }) {
             className="button button-ghost push-right"
             onClick={() => setAdding(true)}
           >
-            Mandat erfassen
+            {t('Mandat erfassen')}
           </button>
         )}
       </div>
@@ -421,7 +438,10 @@ function MandatesCard({ orgId, canEdit }: { orgId: number; canEdit: boolean }) {
           onCancel={() => setAdding(false)}
           onSaved={async (m) => {
             setAdding(false)
-            setNotice({ kind: 'success', text: `Mandat ${m.reference} gespeichert.` })
+            setNotice({
+              kind: 'success',
+              text: t('Mandat {reference} gespeichert.', { reference: m.reference }),
+            })
             await reload()
           }}
         />
@@ -435,8 +455,8 @@ function MandatesCard({ orgId, canEdit }: { orgId: number; canEdit: boolean }) {
       >
         <input
           type="search"
-          aria-label="Mandate durchsuchen"
-          placeholder="Name, Kontoinhaber oder Mandatsreferenz"
+          aria-label={t('Mandate durchsuchen')}
+          placeholder={t('Name, Kontoinhaber oder Mandatsreferenz')}
           value={term}
           onChange={(e) => setTerm(e.target.value)}
         />
@@ -444,21 +464,21 @@ function MandatesCard({ orgId, canEdit }: { orgId: number; canEdit: boolean }) {
       {notice && <Alert kind={notice.kind}>{notice.text}</Alert>}
       {error && <Alert kind="error">{error}</Alert>}
       <HowTo k="calc_mandate_expiry" />
-      {data && data.results.length === 0 && <p className="muted">Keine Mandate.</p>}
+      {data && data.results.length === 0 && <p className="muted">{t('Keine Mandate.')}</p>}
       {data && data.results.length > 0 && (
         <div className="table-scroll">
           <table className="table">
             <thead>
               <tr>
-                <th>Zahler</th>
+                <th>{t('Zahler')}</th>
                 <th>
-                  <Term k="mandate_reference">Mandatsreferenz</Term>
+                  <Term k="mandate_reference">{t('Mandatsreferenz')}</Term>
                 </th>
                 <th>
-                  <Term k="iban_bic">Konto</Term>
+                  <Term k="iban_bic">{t('Konto')}</Term>
                 </th>
                 <th>erteilt</th>
-                <th>Status</th>
+                <th>{t('Status')}</th>
                 <th />
               </tr>
             </thead>
@@ -477,7 +497,7 @@ function MandatesCard({ orgId, canEdit }: { orgId: number; canEdit: boolean }) {
                   </td>
                   <td>
                     {m.expired ? (
-                      <Term k="mandate_expiry">verfallen (36 Monate ungenutzt)</Term>
+                      <Term k="mandate_expiry">{t('verfallen (36 Monate ungenutzt)')}</Term>
                     ) : (
                       m.status_label
                     )}
@@ -488,7 +508,7 @@ function MandatesCard({ orgId, canEdit }: { orgId: number; canEdit: boolean }) {
                   <td className="actions">
                     {canEdit && m.status === 'active' && (
                       <button type="button" className="link-button" onClick={() => void revoke(m)}>
-                        Widerrufen
+                        {t('Widerrufen')}
                       </button>
                     )}
                   </td>
@@ -552,7 +572,7 @@ function MandateForm({
 
   return (
     <form className="subcard" onSubmit={save}>
-      <h3>Schriftliches Mandat erfassen</h3>
+      <h3>{t('Schriftliches Mandat erfassen')}</h3>
       <Why k="paper_mandate" />
       <div className="grid-3">
         {federation ? (
@@ -562,7 +582,7 @@ function MandateForm({
             error={errors.club}
             onChange={(e) => setClub(e.target.value)}
           >
-            <option value="">bitte wählen</option>
+            <option value="">{t('bitte wählen')}</option>
             {clubs.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -575,13 +595,19 @@ function MandateForm({
             value={member}
             onChange={(m) => {
               setMember(m)
-              if (m && !holder) setHolder(`${m.first_name} ${m.last_name}`)
+              if (m && !holder)
+                setHolder(
+                  t('{first_name} {last_name}', {
+                    first_name: m.first_name,
+                    last_name: m.last_name,
+                  }),
+                )
             }}
-            label="Mitglied"
+            label={t('Mitglied')}
           />
         )}
         <Field
-          label="Kontoinhaber"
+          label={t('Kontoinhaber')}
           required
           value={holder}
           error={errors.holder}
@@ -595,13 +621,13 @@ function MandateForm({
           onChange={(e) => setIban(e.target.value)}
         />
         <Field
-          label="BIC (optional)"
+          label={t('BIC (optional)')}
           value={bic}
           error={errors.bic}
           onChange={(e) => setBic(e.target.value)}
         />
         <Field
-          label="unterschrieben am"
+          label={t('unterschrieben am')}
           type="date"
           required
           value={signedOn}
@@ -610,16 +636,17 @@ function MandateForm({
         />
       </div>
       <p className="muted small">
-        Das unterschriebene Formular bitte aufbewahren. Ein neues Mandat ersetzt ein älteres des
-        gleichen Zahlers.
+        {t(
+          'Das unterschriebene Formular bitte aufbewahren. Ein neues Mandat ersetzt ein älteres des gleichen Zahlers.',
+        )}
       </p>
       {error && <Alert kind="error">{error}</Alert>}
       <div className="button-row">
         <button type="submit" className="button button-primary" disabled={busy}>
-          Speichern
+          {t('Speichern')}
         </button>
         <button type="button" className="button button-ghost" onClick={onCancel}>
-          Abbrechen
+          {t('Abbrechen')}
         </button>
       </div>
     </form>

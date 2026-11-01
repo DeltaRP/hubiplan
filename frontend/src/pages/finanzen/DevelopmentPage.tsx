@@ -18,21 +18,28 @@ import { formatDate, useLoad } from '../../components/forms.ts'
 import { Alert } from '../../components/ui.tsx'
 import { useActiveOrg } from '../../org/OrgContext.tsx'
 import { locale } from '../../i18n/index.ts'
+import { t } from '../../i18n/index.ts'
 
 const num = (v: string | null) => (v === null ? null : Number(v))
 const money = (n: number) => euro(n)
 /** Kurz für Achsen: 12.500 € statt 12.500,00 € */
 const axisMoney = (n: number) =>
-  `${n.toLocaleString(locale(), { maximumFractionDigits: Math.abs(n) < 10 ? 2 : 0 })} €`
+  t('{x} €', { x: n.toLocaleString(locale(), { maximumFractionDigits: Math.abs(n) < 10 ? 2 : 0 }) })
 
 function Compare({ now, before }: { now: string; before: string }) {
   const a = Number(now)
   const b = Number(before)
-  if (b === 0) return <p className="small muted">Vorjahreszeitraum: {euro(before)}</p>
+  if (b === 0)
+    return (
+      <p className="small muted">
+        {t('Vorjahreszeitraum:')} {euro(before)}
+      </p>
+    )
   const pct = Math.round(((a - b) / Math.abs(b)) * 100)
   return (
     <p className="small muted">
-      {pct > 0 ? `+${pct}` : pct < 0 ? `−${-pct}` : '±0'} % zum Vorjahreszeitraum ({euro(before)})
+      {pct > 0 ? `+${pct}` : pct < 0 ? `−${-pct}` : '±0'}{' '}
+      {t('% zum Vorjahreszeitraum ({x})', { x: euro(before) })}
     </p>
   )
 }
@@ -46,17 +53,21 @@ export function FinanceDevelopment({ canEdit }: { canEdit: boolean }) {
     <div className="stack">
       <RangePicker
         range={range}
-        info={data ? `${formatDate(data.von)} bis ${formatDate(data.bis)}` : undefined}
+        info={
+          data
+            ? t('{x} bis {x2}', { x: formatDate(data.von), x2: formatDate(data.bis) })
+            : undefined
+        }
       />
       {error && <Alert kind="error">{error}</Alert>}
-      {!data && !error && <p className="muted">Lädt …</p>}
+      {!data && !error && <p className="muted">{t('Lädt …')}</p>}
       {data &&
         (data.accounts.length === 0 ? (
           <div className="card empty-state">
-            <p>Für diesen Zeitraum gibt es noch keine Konten.</p>
+            <p>{t('Für diesen Zeitraum gibt es noch keine Konten.')}</p>
             {canEdit && (
               <p>
-                <Link to="/finanzen/einstellungen/konten">Konto anlegen</Link>
+                <Link to="/finanzen/einstellungen/konten">{t('Konto anlegen')}</Link>
               </p>
             )}
           </div>
@@ -70,7 +81,7 @@ export function FinanceDevelopment({ canEdit }: { canEdit: boolean }) {
 function FinanceCharts({ data }: { data: FinanceStats }) {
   const s = data.summary
   const labels = data.buckets.map((b) => b.label)
-  const per = data.raster === 'monat' ? 'je Monat' : 'je Geschäftsjahr'
+  const per = data.raster === 'monat' ? t('je Monat') : t('je Geschäftsjahr')
   const change = Number(s.balance_end) - Number(s.balance_start)
   const accounts = foldSeries(
     data.accounts.map((a) => ({
@@ -83,7 +94,10 @@ function FinanceCharts({ data }: { data: FinanceStats }) {
     const account = data.accounts.find((a) => String(a.id) === serie.key)
     return account ? { ...serie, values: account.values.map(num) } : serie
   })
-  const previous = `${formatDate(data.previous.von)} bis ${formatDate(data.previous.bis)}`
+  const previous = t('{x} bis {x2}', {
+    x: formatDate(data.previous.von),
+    x2: formatDate(data.previous.bis),
+  })
   const categoryRows = (kind: 'income' | 'expense') =>
     data.categories
       .filter((c) => Number(c[kind]) > 0 || Number(c[`previous_${kind}`]) > 0)
@@ -100,10 +114,14 @@ function FinanceCharts({ data }: { data: FinanceStats }) {
   const compareSeries = (color: string) =>
     hasPrevious
       ? [
-          { key: 'vorher', name: `Vorjahreszeitraum (${previous})`, color: PREVIOUS },
-          { key: 'jetzt', name: 'Gewählter Zeitraum', color },
+          {
+            key: 'vorher',
+            name: t('Vorjahreszeitraum ({previous})', { previous }),
+            color: PREVIOUS,
+          },
+          { key: 'jetzt', name: t('Gewählter Zeitraum'), color },
         ]
-      : [{ key: 'jetzt', name: 'Gewählter Zeitraum', color }]
+      : [{ key: 'jetzt', name: t('Gewählter Zeitraum'), color }]
   const strip = (rows: ReturnType<typeof categoryRows>) =>
     hasPrevious ? rows : rows.map((r) => ({ ...r, values: [r.values[1]] }))
   const incomeRows = strip(categoryRows('income'))
@@ -113,24 +131,28 @@ function FinanceCharts({ data }: { data: FinanceStats }) {
     <>
       <div className="tiles tiles-figures">
         <div className="card tile">
-          <h2>Einnahmen</h2>
+          <h2>{t('Einnahmen')}</h2>
           <p className="amount-big amount-in">{euro(s.income)}</p>
           <Compare now={s.income} before={s.previous_income} />
         </div>
         <div className="card tile">
-          <h2>Ausgaben</h2>
+          <h2>{t('Ausgaben')}</h2>
           <p className="amount-big amount-out">{euro(s.expense)}</p>
           <Compare now={s.expense} before={s.previous_expense} />
         </div>
         <div className="card tile">
-          <h2>Ergebnis</h2>
+          <h2>{t('Ergebnis')}</h2>
           <p className={`amount-big ${Number(s.result) < 0 ? 'amount-out' : 'amount-in'}`}>
             {euro(s.result)}
           </p>
-          <p className="small muted">Vorjahreszeitraum: {euro(s.previous_result)}</p>
+          <p className="small muted">
+            {t('Vorjahreszeitraum:')} {euro(s.previous_result)}
+          </p>
         </div>
         <div className="card tile">
-          <h2>Kontostand am {formatDate(data.bis)}</h2>
+          <h2>
+            {t('Kontostand am')} {formatDate(data.bis)}
+          </h2>
           <p className="amount-big">{euro(s.balance_end)}</p>
           <p className="small muted">
             {change >= 0 ? '+' : '−'}
@@ -140,11 +162,15 @@ function FinanceCharts({ data }: { data: FinanceStats }) {
       </div>
 
       <ChartCard
-        title="Kontostand gesamt"
-        note={`Summe aller Konten am Ende jedes ${data.raster === 'monat' ? 'Monats' : 'Geschäftsjahres'}`}
+        title={t('Kontostand gesamt')}
+        note={
+          data.raster === 'monat'
+            ? t('Summe aller Konten am Ende jedes Monats')
+            : t('Summe aller Konten am Ende jedes Geschäftsjahres')
+        }
       >
         <TimeChart
-          title="Kontostand gesamt"
+          title={t('Kontostand gesamt')}
           kind="line"
           labels={labels}
           format={money}
@@ -152,7 +178,7 @@ function FinanceCharts({ data }: { data: FinanceStats }) {
           series={[
             {
               key: 'summe',
-              name: 'Kontostand',
+              name: t('Kontostand'),
               color: PRIMARY,
               values: data.buckets.map((b) => num(b.balance)),
             },
@@ -161,9 +187,9 @@ function FinanceCharts({ data }: { data: FinanceStats }) {
       </ChartCard>
 
       {data.accounts.length > 1 && (
-        <ChartCard title="Kontostände je Konto">
+        <ChartCard title={t('Kontostände je Konto')}>
           <TimeChart
-            title="Kontostände je Konto"
+            title={t('Kontostände je Konto')}
             kind="line"
             labels={labels}
             format={money}
@@ -173,9 +199,12 @@ function FinanceCharts({ data }: { data: FinanceStats }) {
         </ChartCard>
       )}
 
-      <ChartCard title={`Einnahmen und Ausgaben ${per}`} note="Ohne Umbuchungen zwischen Konten">
+      <ChartCard
+        title={t('Einnahmen und Ausgaben {per}', { per })}
+        note={t('Ohne Umbuchungen zwischen Konten')}
+      >
         <TimeChart
-          title={`Einnahmen und Ausgaben ${per}`}
+          title={t('Einnahmen und Ausgaben {per}', { per })}
           kind="bar"
           labels={labels}
           format={money}
@@ -183,13 +212,13 @@ function FinanceCharts({ data }: { data: FinanceStats }) {
           series={[
             {
               key: 'ein',
-              name: 'Einnahmen',
+              name: t('Einnahmen'),
               color: INCOME,
               values: data.buckets.map((b) => Number(b.income)),
             },
             {
               key: 'aus',
-              name: 'Ausgaben',
+              name: t('Ausgaben'),
               color: EXPENSE,
               values: data.buckets.map((b) => Number(b.expense)),
             },
@@ -197,9 +226,9 @@ function FinanceCharts({ data }: { data: FinanceStats }) {
         />
       </ChartCard>
 
-      <ChartCard title={`Ergebnis ${per}`} note="Einnahmen minus Ausgaben">
+      <ChartCard title={t('Ergebnis {per}', { per })} note={t('Einnahmen minus Ausgaben')}>
         <TimeChart
-          title={`Ergebnis ${per}`}
+          title={t('Ergebnis {per}', { per })}
           kind="bar"
           labels={labels}
           format={money}
@@ -207,7 +236,7 @@ function FinanceCharts({ data }: { data: FinanceStats }) {
           series={[
             {
               key: 'ergebnis',
-              name: 'Ergebnis',
+              name: t('Ergebnis'),
               color: PRIMARY,
               values: data.buckets.map((b) => Number(b.result)),
             },
@@ -216,24 +245,24 @@ function FinanceCharts({ data }: { data: FinanceStats }) {
       </ChartCard>
 
       <div className="chart-pair">
-        <ChartCard title="Einnahmen nach Kategorie">
+        <ChartCard title={t('Einnahmen nach Kategorie')}>
           {incomeRows.length === 0 ? (
-            <p className="muted">Keine Einnahmen.</p>
+            <p className="muted">{t('Keine Einnahmen.')}</p>
           ) : (
             <BarList
-              head="Kategorie"
+              head={t('Kategorie')}
               format={money}
               series={compareSeries(INCOME)}
               rows={incomeRows}
             />
           )}
         </ChartCard>
-        <ChartCard title="Ausgaben nach Kategorie">
+        <ChartCard title={t('Ausgaben nach Kategorie')}>
           {expenseRows.length === 0 ? (
-            <p className="muted">Keine Ausgaben.</p>
+            <p className="muted">{t('Keine Ausgaben.')}</p>
           ) : (
             <BarList
-              head="Kategorie"
+              head={t('Kategorie')}
               format={money}
               series={compareSeries(EXPENSE)}
               rows={expenseRows}
