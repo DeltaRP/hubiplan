@@ -11,8 +11,10 @@ einzeln ein- und ausschalten.
 
 > **English:** HUBIplan is free (AGPL-3.0-or-later), self-hostable membership management for
 > clubs and associations, built with Django, React and PostgreSQL. It targets German clubs
-> (SEPA, GoBD-compliant cash book, German donation receipts), so the user interface and the
-> documentation are in German. Issues, questions and security reports in English are welcome.
+> (SEPA, GoBD-compliant cash book, German donation receipts). Once the operator enables
+> it, each user can switch the interface to English; club documents (invoices, letters,
+> receipts) and the developer documentation are in German. Issues, questions and security
+> reports in English are welcome.
 
 Zu HUBIplan gehören drei Repositories:
 
@@ -55,6 +57,10 @@ Zu HUBIplan gehören drei Repositories:
 - Anmeldung mit E-Mail und Passwort, Zwei-Faktor-Anmeldung (TOTP), Einladungen statt
   Startpasswörtern
 - Rollen mit frei wählbaren Rechten je Einheit; eine Person kann mehrere Rollen haben
+- „Ansicht als Rolle“: HUBIplan nur lesend so ansehen, wie eine Rolle es sieht, nie mit mehr
+  als den eigenen Rechten ([docs/ansicht-als-rolle.md](docs/ansicht-als-rolle.md))
+- Anmeldung an der Nextcloud des Vereins mit dem HUBIplan-Konto (OpenID Connect,
+  [docs/nextcloud.md](docs/nextcloud.md))
 - Mitgliederbereich („Mein Bereich“), Bereich für Untereinheiten, Zugänge für Kassierer
   und Kassenprüfer
 
@@ -75,6 +81,18 @@ Zu HUBIplan gehören drei Repositories:
 - Zu- und Absagen mit Anmeldeschluss, Höchstzahl und Begleitpersonen, Teilnehmerlisten
 - Einladung, Änderung und Erinnerung per E-Mail, Jahresprogramm als PDF, Kalender-Abo (iCal)
 
+**Wettbewerbe und Meldungen** (Module, je Einheit freizuschalten)
+- Schießen und andere Wettbewerbe mit Einzel- und Zugwertung, Stechen, Vogelschießen mit
+  Pfändern, Auszeichnungen, Wanderpokale und Reihen über mehrere Jahre
+- Erfassen auch ohne Netz, Standmodus für Tablet und Handy mit eigenem Standzugang,
+  Live-Tabellen, Druckvorlagen, Urkunden und Startkarten
+- Scheibenkatalog mit Wertung aus dem Trefferpunkt; Treffer antippen oder aus einem Foto der
+  Scheibe vorschlagen lassen (das Foto wird nur im Speicher ausgewertet)
+- Ergebnisse auf der Vereinswebseite und unter „Meine Ergebnisse“
+- Meldungen an fremde Veranstalter (Mannschaften, Personen, Angaben) und Ausschreibungen an
+  die eigenen Untereinheiten ([docs/wettbewerbe.md](docs/wettbewerbe.md),
+  [docs/meldungen.md](docs/meldungen.md))
+
 **Kommunikation und Dokumente**
 - Rundschreiben als E-Mail, Serienbrief, Mitteilung im Mitgliederbereich oder Push in die App
 - Mailverteiler, Postausgang mit Versand über SMTP
@@ -90,8 +108,21 @@ Zu HUBIplan gehören drei Repositories:
 - Schnittstelle für die [Android-App](https://github.com/hubiplan/hubiplan-android):
   Verbinden per QR-Code, Geräteschlüssel je Gerät, Push über Web-Push/UnifiedPush
 
-**Barrierearm, mit Hilfe und Lernhilfen**: Anleitungen mit Bildern, Hilfe zu jeder Seite, Erklärungen und Glossar direkt in der Oberfläche,
-Prüflisten für wiederkehrende Aufgaben ([docs/lernhilfen.md](docs/lernhilfen.md)).
+**Datenschutz**
+- vertrauliche Felder (Kontaktdaten, Geburtsdatum, Bankverbindungen, SEPA-Mandate,
+  Zusatzfelder), private Dateien, Änderungsprotokoll und Postausgang liegen verschlüsselt
+  mit einem Schlüssel je Verein ([docs/betrieb.md](docs/betrieb.md#verschlüsselung-der-daten))
+- Mandantentrennung zusätzlich in der Datenbank (Row-Level Security), Einwilligungen für
+  Fotos und Veröffentlichung, Löschfristen
+
+**Sprache, Hilfe und Lernhilfen**
+- Oberfläche, Hinweis-Mails und Push auf Deutsch oder Englisch, je Benutzer wählbar, sobald
+  der Betreiber Englisch freischaltet (`HUBIPLAN_LANGUAGES=de,en`,
+  [docs/uebersetzung.md](docs/uebersetzung.md))
+- Hilfe-Seite mit Suche, Anleitungen mit Bildschirmfotos und „Hilfe zu dieser Seite“
+  (Taste `?`, [docs/hilfe.md](docs/hilfe.md))
+- Erklärungen und Glossar direkt in der Oberfläche, Prüflisten für wiederkehrende Aufgaben
+  ([docs/lernhilfen.md](docs/lernhilfen.md)); barrierearm bedienbar
 
 ## Aufbau
 
@@ -132,6 +163,7 @@ Die Oberfläche spricht ausschließlich über die REST-API mit dem Backend.
 | Datenbank | PostgreSQL 18 mit Row-Level Security |
 | Hintergrund-Jobs | Celery mit Redis 8 |
 | Dateien | openpyxl (Excel), reportlab und pypdfium2 (PDF), Pillow (Bilder) |
+| Scheibenauswertung | OpenCV (ohne Oberfläche) und NumPy |
 | Betrieb | Docker Compose, Caddy (HTTPS), gunicorn |
 
 ## Ausprobieren mit Docker
@@ -251,11 +283,13 @@ geänderten Quellcode genauso anbieten.
 
 ```text
 backend/
+  locale/          englische Texte des Backends
   config/          Einstellungen, URLs, Celery
-  core/            Health-Check, CSRF, /api/me/, Row-Level Security, Dateiprüfung
+  core/            Health-Check, CSRF, /api/me/, Row-Level Security, Verschlüsselung, Dateiprüfung
   accounts/        Benutzerkonten (E-Mail als Login)
   organizations/   Plattform und Einheiten, Impressum, Demodaten (seed_testdata)
   access/          Rollen und Rechte
+  oidc/            Anmeldedienst (OpenID Connect) für die Nextcloud
   members/         Mitglieder, Mitgliedschaften, Mitgliedsarten, Jubiläen
   customfields/    Zusatzfelder
   honors/          Würden und Chronik
@@ -268,6 +302,8 @@ backend/
   billing/         Beiträge, Beitragsläufe, Rechnungen, SEPA
   finance/         Kasse, Projekte, Quittungen, Jahresabschluss, GoBD-Export
   events/          Termine, Zu- und Absagen, Kalender-Abos
+  competitions/    Wettbewerbe, Standmodus, Scheiben und Fotoerkennung, Urkunden
+  entries/         Meldungen und Ausschreibungen
   circulars/       Rundschreiben
   letterhead/      Briefbogen und Word-Briefvorlage
   documents/       Dokumentenablage
@@ -284,6 +320,7 @@ frontend/
   src/pages/       Seiten, nach Bereichen gegliedert
   src/help/        Hilfe: Anleitungen und Seitenhilfen (Markdown, de/en)
   src/learning/    Lernhilfen und Glossar
+  src/i18n/        englische Texte der Oberfläche
   src/theme/       Farben und Logo als CSS-Variablen
   lizenzen/        erzeugt die Lizenzliste der Browser-Bibliotheken
 deploy/            Caddy, Ausrollen, Servereinrichtung, Backup, HestiaCP-Vorlagen
@@ -300,6 +337,8 @@ docs/              Betrieb und Beschreibungen einzelner Bereiche
 | [docs/echtbetrieb.md](docs/echtbetrieb.md) | Betrieb hinter einem vorhandenen Webserver (HestiaCP) |
 | [docs/testserver.md](docs/testserver.md) | Testserver, Testplätze, Demodaten |
 | [docs/sicherheitspruefung.md](docs/sicherheitspruefung.md) | Sicherheitsprüfung |
+| [docs/ansicht-als-rolle.md](docs/ansicht-als-rolle.md) | Ansicht als Rolle |
+| [docs/konzept-verschluesselung-stufe2.md](docs/konzept-verschluesselung-stufe2.md) | Konzept: Verschlüsselung Stufe 2 (auch Namen) |
 | [docs/verbund.md](docs/verbund.md) | Verbund mit anderen Instanzen |
 | [docs/nextcloud.md](docs/nextcloud.md) | Anmeldung an der Nextcloud mit dem HUBIplan-Konto |
 | [docs/app.md](docs/app.md) | Schnittstelle für die App, Push |
@@ -310,11 +349,14 @@ docs/              Betrieb und Beschreibungen einzelner Bereiche
 | [docs/rundschreiben.md](docs/rundschreiben.md) | Rundschreiben |
 | [docs/briefvorlage.md](docs/briefvorlage.md) | Briefbogen und Briefvorlage |
 | [docs/dokumente.md](docs/dokumente.md) | Dokumentenablage und Satzung |
+| [docs/wettbewerbe.md](docs/wettbewerbe.md) | Wettbewerbe, Standmodus, Scheiben und Fotoerkennung |
+| [docs/meldungen.md](docs/meldungen.md) | Meldungen und Ausschreibungen |
 | [docs/ehrungen.md](docs/ehrungen.md), [docs/wuerden.md](docs/wuerden.md), [docs/aemter.md](docs/aemter.md) | Ehrungen, Würden, Ämter |
 | [docs/impressum.md](docs/impressum.md) | Impressum und Datenschutzhinweise |
 | [docs/social-media-beitraege.md](docs/social-media-beitraege.md) | Social-Media-Beiträge auf der Webseite |
 | [docs/hilfe.md](docs/hilfe.md) | Hilfe: Anleitungen, Seitenhilfen, Bildschirmfotos |
 | [docs/lernhilfen.md](docs/lernhilfen.md) | Lernhilfen, Glossar, Prüflisten |
+| [docs/uebersetzung.md](docs/uebersetzung.md), [docs/glossar-en.md](docs/glossar-en.md) | Deutsch und Englisch, Begriffe |
 | [docs/lizenzen.md](docs/lizenzen.md) | Lizenzen der Abhängigkeiten, Pflichten bei der Weitergabe |
 
 ## Mitwirken
@@ -322,7 +364,9 @@ docs/              Betrieb und Beschreibungen einzelner Bereiche
 Fehlermeldungen, Ideen und Pull Requests sind willkommen. Wie das geht und unter welchen
 Bedingungen Beiträge aufgenommen werden, steht in [CONTRIBUTING.md](CONTRIBUTING.md).
 Wichtig vorab: nur erfundene Daten in Tests, Beispielen und Fehlerberichten, nie echte
-Mitgliederdaten.
+Mitgliederdaten. Neue Texte der Oberfläche und des Backends brauchen gleich auch die
+englische Fassung ([docs/uebersetzung.md](docs/uebersetzung.md)); wer eine Seite oder einen
+Ablauf ändert, passt die Hilfe mit an ([docs/hilfe.md](docs/hilfe.md)).
 
 ## Sicherheit
 
