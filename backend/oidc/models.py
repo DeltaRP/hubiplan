@@ -9,6 +9,7 @@ Datenbank.
 from __future__ import annotations
 
 import hashlib
+import re
 import secrets
 from urllib.parse import urlsplit
 
@@ -26,6 +27,29 @@ def new_client_id() -> str:
 
 def new_salt() -> str:
     return secrets.token_urlsafe(32)
+
+
+USERNAME_RE = re.compile(r"^[a-z0-9][a-z0-9._@-]{0,63}$")
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def parse_usernames(text: str) -> list[tuple[str, str, str]]:
+    """Zeilen „E-Mail = Benutzername“ → (E-Mail, Name, Fehler). Leer und # wird übersprungen."""
+    out: list[tuple[str, str, str]] = []
+    for line in str(text or "").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        sep = "=" if "=" in line else ":"
+        email, _, name = (part.strip() for part in line.partition(sep))
+        email, name = email.lower(), name.lower()
+        if not EMAIL_RE.match(email):
+            out.append((email, name, "email"))
+        elif not USERNAME_RE.match(name):
+            out.append((email, name, "name"))
+        else:
+            out.append((email, name, ""))
+    return out
 
 
 class Client(models.Model):
@@ -53,6 +77,11 @@ class Client(models.Model):
     groups_roles = models.BooleanField("je Rolle eine Gruppe", default=True)
     groups_units = models.BooleanField("je Untereinheit eine Gruppe", default=True)
     groups_members = models.BooleanField("Gruppe „Mitglieder“", default=True)
+    # Bisherige Benutzernamen in der Nextcloud, je Zeile „E-Mail = Benutzername“. Wer hier
+    # steht, wird bei der ersten Anmeldung mit seinem vorhandenen Nextcloud-Konto verbunden
+    # (Angabe preferred_username). Bewusst nur von Hand gepflegt: Aus Namen abgeleitet könnte
+    # sich jemand durch eine Namensänderung ein fremdes Konto holen.
+    usernames = models.TextField("bisherige Benutzernamen", blank=True, default="")
     is_active = models.BooleanField("eingeschaltet", default=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+"
@@ -73,6 +102,7 @@ class Client(models.Model):
             "groups_roles",
             "groups_units",
             "groups_members",
+            "usernames",
             "is_active",
         }
     )
@@ -98,6 +128,10 @@ class Client(models.Model):
         return bool(self.secret_hash) and secrets.compare_digest(
             self.secret_hash, hash_secret(secret or "")
         )
+
+    def username_map(self) -> dict[str, str]:
+        """E-Mail (klein) → Benutzername aus ``usernames``; ungültige Zeilen fallen weg."""
+        return {email: name for email, name, error in parse_usernames(self.usernames) if not error}
 
     @property
     def redirect_uris(self) -> list[str]:
