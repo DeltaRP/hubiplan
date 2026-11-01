@@ -68,7 +68,7 @@ class Call(models.Model):
         default=Changes.SUBSTITUTE,
     )
     # Beim Abgeben einen fremden Wettbewerb mit den Mannschaften anlegen (Modul Wettbewerbe)
-    create_competition = models.BooleanField("fremden Wettbewerb anlegen", default=True)
+    create_competition = models.BooleanField("fremden Wettbewerb anlegen", default=False)
     event = models.ForeignKey(
         "events.Event",
         verbose_name="Termin",

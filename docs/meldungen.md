@@ -120,7 +120,8 @@ Erzeugen hoch).
 
 ## Wettbewerb
 
-Ist das Modul Wettbewerbe an und die Ausschreibung hat „fremden Wettbewerb anlegen“ (Standard),
+Ist das Modul Wettbewerbe an und die Ausschreibung hat „fremden Wettbewerb anlegen“ (seit 01.11. nur auf Wunsch,
+bei Ausschreibungen an die eigenen Untereinheiten standardmäßig an),
 legt das erste Abgeben einen fremden Wettbewerb mit Titel, Veranstalter, Datum und Ort an, dazu
 Einzel- und Mannschaftswertung, die Mannschaften und je gemeldeter Person einen Starter
 (`EntryTeam.team`, `EntryPerson.starter`). Spätere Fassungen führen Mannschaften und Starter nach,

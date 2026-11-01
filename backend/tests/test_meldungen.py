@@ -162,6 +162,7 @@ class TestAblauf:
             club,
             person_fields=["birth_year", "member_number"],
             conditions={"active": True, "min_age": 16},
+            create_competition=True,
         )
         block = call["blocks"][0]["id"]
         _patch(
@@ -265,6 +266,18 @@ class TestAblauf:
         assert entry["versions"][-1]["kind"] == "rueckzug"
         resp = c.post(f"{base}teams/", {"block": call["blocks"][0]["id"]}, "application/json")
         assert resp.status_code == 400
+
+    def test_fremder_veranstalter_legt_ohne_wunsch_keinen_wettbewerb_an(
+        self, club, schuetzen, board_a, api
+    ):
+        c = api(board_a)
+        call = _call(c, club)
+        assert call["create_competition"] is False
+        _mannschaften(c, club, call, schuetzen, ZEHN)
+        base = url(club, f"calls/{call['id']}/entry/")
+        entry = _post(c, f"{base}submit/", {"channel": "sonstiges", "sent_to": "persönlich"})
+        assert entry["competition"] is None
+        assert not Competition.objects.filter(title=call["title"]).exists()
 
     def test_nach_rueckzug_wieder_oeffnen_oder_loeschen(self, club, schuetzen, board_a, api):
         c = api(board_a)
