@@ -74,6 +74,7 @@ INSTALLED_APPS = [
     "entries",
     "peering",
     "devices",
+    "oidc",
 ]
 
 MIDDLEWARE = [
@@ -418,6 +419,10 @@ SOCIAL_CALLBACK_BASE = os.environ.get("SOCIAL_CALLBACK_BASE", "")
 PEERING_BASE_URL = os.environ.get("PEERING_BASE_URL", "")
 # Datei mit Instanz-ID und privatem Schlüssel (Standard: PRIVATE_ROOT/peering/instance.json)
 PEERING_KEY_FILE = os.environ.get("PEERING_KEY_FILE", "")
+# Anmeldung an der Nextcloud mit dem HUBIplan-Konto (App oidc): Kennung als Anbieter
+# (Standard: FRONTEND_URL/api/oidc) und Schlüsseldatei (Standard: PRIVATE_ROOT/oidc/signing.pem)
+OIDC_ISSUER = os.environ.get("OIDC_ISSUER", "")
+OIDC_KEY_FILE = os.environ.get("OIDC_KEY_FILE", "")
 # Land des Serverstandorts (Selbstauskunft, ISO-Kürzel)
 PEERING_COUNTRY = os.environ.get("PEERING_COUNTRY", "DE")
 # Push an die App (Web-Push mit VAPID). Schlüsseldatei Standard: PRIVATE_ROOT/push/vapid.json

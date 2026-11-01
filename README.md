@@ -300,6 +300,7 @@ docs/              Betrieb und Beschreibungen einzelner Bereiche
 | [docs/testserver.md](docs/testserver.md) | Testserver, Testplätze, Demodaten |
 | [docs/sicherheitspruefung.md](docs/sicherheitspruefung.md) | Sicherheitsprüfung |
 | [docs/verbund.md](docs/verbund.md) | Verbund mit anderen Instanzen |
+| [docs/nextcloud.md](docs/nextcloud.md) | Anmeldung an der Nextcloud mit dem HUBIplan-Konto |
 | [docs/app.md](docs/app.md) | Schnittstelle für die App, Push |
 | [docs/kontoauszug.md](docs/kontoauszug.md) | Kontoauszüge (CAMT.053) einlesen |
 | [docs/verfahrensdokumentation-kasse.md](docs/verfahrensdokumentation-kasse.md) | Verfahrensdokumentation Kasse und Quittungen (GoBD) |
