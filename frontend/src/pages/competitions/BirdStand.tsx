@@ -17,6 +17,7 @@ import {
 } from '../../api/competitions.ts'
 import { StandFinish } from './StandFinish.tsx'
 import { describe, guestOrigin, useStandStore, type LocalStarter } from './standStore.ts'
+import { HowTo } from '../../learning/Aids.tsx'
 
 export function BirdStand({
   api,
@@ -189,6 +190,7 @@ export function BirdStand({
           })}
         </ol>
       )}
+      <HowTo k="how_comp_bird_order" />
       <p className="stand-counter">
         Schuss Nr. <strong>{view.total}</strong> · für dieses Pfand{' '}
         <strong>{view.sinceLast}</strong>

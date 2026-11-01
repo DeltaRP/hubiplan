@@ -34,6 +34,9 @@ import { ManualPrizes, PrizesCard, StandAccessCard } from './BirdSetup.tsx'
 import { ForeignPanel } from './ForeignPanel.tsx'
 import { ResultsPanel } from './ResultsPanel.tsx'
 import { StandPanel } from './StandPanel.tsx'
+import { Term, Why } from '../../learning/Aids.tsx'
+import { Checklist } from '../../learning/Checklist.tsx'
+import { competitionFinishChecks } from '../../learning/checks.ts'
 
 export function CompetitionsPage() {
   return (
@@ -209,6 +212,7 @@ function NewCompetition({
             />
           )}
         </div>
+        <Why k="comp_own" />
         {form.message && <Alert kind={form.message.kind}>{form.message.text}</Alert>}
         <div className="button-row">
           <button type="submit" className="button" disabled={form.busy}>
@@ -242,8 +246,13 @@ function CompetitionArea() {
         {new Date(data.date).toLocaleDateString('de-DE')}
         {data.occasion ? ` · ${data.occasion}` : ''}
         {data.discipline ? ` · ${data.discipline}` : ''}
-        {!data.own && data.organizer ? ` · Ausrichter: ${data.organizer}` : ''} ·{' '}
-        {STATUS_LABELS[data.status]}
+        {!data.own && data.organizer ? (
+          <>
+            {' '}
+            · <Term k="comp_organizer">Ausrichter</Term>: {data.organizer}
+          </>
+        ) : null}{' '}
+        · {STATUS_LABELS[data.status]}
       </p>
       <Tabs
         items={[
@@ -517,6 +526,7 @@ function Setup({
               ))}
             </SelectField>
           </div>
+          <Why k="comp_website" />
           {comp.form === 'vogel' && (
             <>
               <h3>Vogelschießen</h3>
@@ -551,6 +561,8 @@ function Setup({
                   onChange={(e) => set('lots', numOrNull(e.target.value))}
                 />
               </div>
+              <Why k="comp_bird_rules" />
+              <Why k="comp_lots" />
             </>
           )}
           <label className="field">
@@ -679,7 +691,13 @@ function Setup({
           <h2>Zustand und Weiteres</h2>
           <p>
             Zustand: <strong>{STATUS_LABELS[comp.status]}</strong>
+            <span className="muted">
+              {' '}
+              · erst <Term k="comp_provisional_term">vorläufig</Term>, nach dem Abschluss{' '}
+              <Term k="comp_final_term">endgültig</Term>
+            </span>
           </p>
+          {comp.own && comp.status !== 'endgueltig' && <FinishChecklist org={org} comp={comp} />}
           <div className="button-row">
             {comp.status !== 'vorlaeufig' && comp.status !== 'endgueltig' && (
               <button
@@ -719,6 +737,9 @@ function Setup({
               Löschen
             </button>
           </div>
+          <Why k="comp_provisional" />
+          <Why k="comp_final" />
+          {comp.status !== 'endgueltig' && <Why k="comp_reset" />}
         </div>
       )}
     </>
@@ -790,11 +811,13 @@ function ScoringCard({
     <div className="card card-wide">
       <div className="card-head">
         <h3>
-          {unit
-            ? 'Wertung der Untereinheiten'
-            : scoring.kind === 'mannschaft'
-              ? 'Mannschaftswertung'
-              : 'Einzelwertung'}
+          {unit ? (
+            <Term k="comp_unit_scoring">Wertung der Untereinheiten</Term>
+          ) : scoring.kind === 'mannschaft' ? (
+            'Mannschaftswertung'
+          ) : (
+            'Einzelwertung'
+          )}
         </h3>
         {canManage && <SaveStatus auto={auto} />}
       </div>
@@ -953,6 +976,14 @@ function ScoringCard({
             />
           )}
         </div>
+        {!foreign && !unit && (
+          <p className="muted small">
+            Mit <Term k="comp_counted">gewerteten Schüssen</Term> und Höchstwert prüft HUBIplan jede
+            Eingabe.
+          </p>
+        )}
+        {!foreign && (unit ? <Why k="comp_team_mode" /> : <Why k="comp_shots" />)}
+        {!foreign && <Why k="comp_prize_places" />}
         {canManage && (
           <div className="button-row">
             <button type="button" className="button button-ghost" onClick={() => void remove()}>
@@ -962,5 +993,25 @@ function ScoringCard({
         )}
       </fieldset>
     </div>
+  )
+}
+
+/** Prüfliste vor „Endgültig abschließen“; blockiert nichts (Lernhilfen Wettbewerbe). */
+function FinishChecklist({ org, comp }: { org: number; comp: CompetitionDetail }) {
+  const { data } = useLoad(() => competitionsApi.standings(org, comp.id), [org, comp.id])
+  if (!data) return null
+  return (
+    <Checklist
+      title="Vor dem endgültigen Abschluss"
+      items={competitionFinishChecks({
+        missing: data.scorings
+          .filter((b) => b.kind === 'einzel')
+          .reduce((n, b) => n + b.without_value.length, 0),
+        openShootoffs: data.open_shootoffs,
+        bird: comp.form === 'vogel',
+        hangingPrizes: data.bird ? data.bird.prizes.filter((p) => !p.winner_name).length : 0,
+        website: comp.website,
+      })}
+    />
   )
 }

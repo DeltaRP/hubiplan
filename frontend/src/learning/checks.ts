@@ -354,3 +354,78 @@ export function donationChecks(c: DonationInput): CheckItem[] {
     })
   return items
 }
+
+// --- vor dem endgültigen Abschluss eines Wettbewerbs ---
+
+export interface CompetitionFinishInput {
+  /** Schützen ohne Ergebnis (Einzelwertungen) */
+  missing: number
+  openShootoffs: number
+  bird: boolean
+  /** Vogelschießen: Pfänder, die noch hängen */
+  hangingPrizes: number
+  website: 'aus' | 'live' | 'abschluss'
+}
+
+export function competitionFinishChecks(input: CompetitionFinishInput): CheckItem[] {
+  const items: CheckItem[] = []
+  if (input.bird) {
+    items.push({
+      key: 'prizes',
+      ok: input.hangingPrizes === 0,
+      text:
+        input.hangingPrizes === 0
+          ? 'Alle Pfänder sind gefallen.'
+          : `${plural(input.hangingPrizes, 'Pfand hängt', 'Pfänder hängen')} noch.`,
+      fix: 'Nachtragen unter „Einrichten“, falls auf Papier gezählt wurde.',
+    })
+  } else {
+    items.push({
+      key: 'results',
+      ok: input.missing === 0,
+      text:
+        input.missing === 0
+          ? 'Alle Schützen haben ein Ergebnis.'
+          : `${plural(input.missing, 'Schütze', 'Schützen')} ohne Ergebnis.`,
+      fix: 'Nachtragen oder bewusst ohne Ergebnis lassen; die Namen stehen unter „Auswertung“.',
+      why: 'comp_provisional',
+    })
+  }
+  if (!input.bird) {
+    items.push({
+      key: 'shootoffs',
+      ok: input.openShootoffs === 0,
+      text:
+        input.openShootoffs === 0
+          ? 'Keine offenen Gleichstände auf Preisplätzen.'
+          : `${plural(input.openShootoffs, 'Gleichstand', 'Gleichstände')} auf Preisplätzen ohne Stechen; der Abschluss ist erst danach möglich.`,
+      fix: 'Stechen unter „Auswertung“ oder im Standmodus anlegen.',
+      why: 'comp_final',
+    })
+  }
+  items.push({
+    key: 'tablets',
+    ok: true,
+    info: true,
+    text: 'Auf jedem Tablet im Standmodus sollte „Alles gespeichert“ stehen, sonst fehlen Eingaben ohne Empfang.',
+  })
+  items.push({
+    key: 'guests',
+    ok: true,
+    info: true,
+    text: 'Gäste und Schützen außer Konkurrenz richtig markiert? Sie bekommen sonst Plätze.',
+  })
+  items.push({
+    key: 'website',
+    ok: true,
+    info: true,
+    text:
+      input.website === 'aus'
+        ? 'Die Ergebnisse erscheinen nicht auf der Webseite.'
+        : input.website === 'live'
+          ? 'Die Ergebnisse stehen schon während des Schießens auf der Webseite.'
+          : 'Nach dem Abschluss erscheinen die Ergebnisse auf der Webseite.',
+    why: 'comp_website',
+  })
+  return items
+}

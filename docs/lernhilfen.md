@@ -13,11 +13,11 @@ angemeldete Bearbeitende, nicht im Mitgliederbereich und nicht auf öffentlichen
 | **Warum?** (Grundlage) | an Entscheidungen mit Basiswissen, z. B. Belege, Kassenprüfung | nur mit eingeschalteten Lernhilfen |
 | **?** an Begriffen | an Fachwörtern in Überschriften, Tabellenköpfen und Texten | nur mit eingeschalteten Lernhilfen; einfache Begriffe nur beim ersten Vorkommen pro Seite |
 | **Wie gerechnet?** / **So funktioniert es:** | an berechneten Werten und Abläufen | immer |
-| **Prüfliste** | vor dem Beitragslauf, dem Lastschriftlauf, dem Jahresabschluss und den Jahresbestätigungen für Zuwendungen | immer; blockiert nie |
+| **Prüfliste** | vor dem Beitragslauf, dem Lastschriftlauf, dem Jahresabschluss, den Jahresbestätigungen für Zuwendungen und dem endgültigen Abschluss eines Wettbewerbs | immer; blockiert nie |
 | **Glossar** | `/glossar`, verlinkt aus „Mein Konto“ und aus jeder „?“-Box | immer |
 
 Hilfen zu Funktionen, die eine Einheit nicht freigeschaltet hat (Beiträge, Finanzen,
-Termine, Webseite), erscheinen weder an der Stelle noch im Glossar.
+Termine, Webseite, Wettbewerbe), erscheinen weder an der Stelle noch im Glossar.
 
 ## Schalter und Ausblenden
 
@@ -91,6 +91,9 @@ Lernhilfen gibt es bei Mitgliedern, Beiträgen und Rechnungen, SEPA-Lastschrift,
 Abschluss (auch Kassenzählung und Kassenbericht Fest, Abschluss aufheben, Aufbewahrungsende,
 Rücklagen, DATEV-Konten und E-Rechnung), Zuwendungsbestätigungen, Quittungen und Kontoauszug (camt.053), Webseite (Namen,
 Fotos, Einwilligung, Suchmaschinen, Social Media, Alternativtext, Impressum), Verbund,
-Untereinheiten, App-Geräten, dem verketteten Änderungsprotokoll sowie Würden (Ordnungszahlen). Die Prüfliste der Webseite
+Untereinheiten, App-Geräten, dem verketteten Änderungsprotokoll, Würden (Ordnungszahlen) sowie
+Wettbewerben (eigener oder fremder Wettbewerb, Wertung, Zugwertung, Preisplätze, Stechen,
+vorläufig und endgültig, Zurücksetzen, Standzugang, Vogelschießen, Webseite; Quellen BGB,
+DSGVO, KUG und DSB-Sportordnung). Die Prüfliste der Webseite
 behält ihre eigene Form, weil dort offene Pflichtpunkte das Veröffentlichen sperren; sie
 trägt aber das „?“ an Impressum und „Verantwortlich“.

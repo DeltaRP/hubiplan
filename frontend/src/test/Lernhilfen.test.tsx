@@ -125,7 +125,7 @@ describe('Inhalte', () => {
     }
     for (const [k, text] of allTexts()) expect(sentences(tr(text)), k).toBeLessThanOrEqual(3)
     // Kurzbeleg im Text: Paragraph, Artikel oder Regelwerk
-    const cite = /§|Art\. \d|EPC|UStAE|GoBD|Bundesbank|WCAG|EuGH|ISO 20022/
+    const cite = /§|Art\. \d|EPC|UStAE|GoBD|Bundesbank|WCAG|EuGH|ISO 20022|DSB-Sportordnung/
     for (const [k, e] of Object.entries(DECISIONS)) expect(tr(e.text), k).toMatch(cite)
     for (const [k, t] of Object.entries(TERMS)) expect(tr(t.meaning), k).toMatch(cite)
   })
@@ -466,7 +466,14 @@ describe('Freischaltung', () => {
 describe('Glossar', () => {
   it('5: jeder Begriff in genau einem Abschnitt, mit Anker, sortiert; Entscheidungen mit Ort und Phase; Quellen je einmal', async () => {
     for (const [k, t] of Object.entries(TERMS)) expect(SECTIONS, k).toHaveProperty(t.section)
-    renderWithOrg(<GlossaryPage />, ['members', 'billing', 'finance', 'events', 'website'])
+    renderWithOrg(<GlossaryPage />, [
+      'members',
+      'billing',
+      'finance',
+      'events',
+      'website',
+      'competitions',
+    ])
     await waitFor(() => expect(document.getElementById(termAnchor('mandate'))).not.toBeNull())
     for (const k of Object.keys(TERMS))
       expect(document.getElementById(termAnchor(k)), k).not.toBeNull()

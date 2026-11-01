@@ -112,6 +112,10 @@ const SOURCES_DATA = {
     full: 'Die Deutsche Kreditwirtschaft: Spezifikation der Datenformate, Anlage 3 der Schnittstellenspezifikation für die Datenfernübertragung (DFÜ-Abkommen), Kontoauszug camt.053 nach ISO 20022, in der jeweils geltenden Fassung.',
     url: 'https://www.ebics.de/de/datenformate',
   },
+  dsbSpo: {
+    full: 'Deutscher Schützenbund e. V.: Sportordnung (Regelwerk für das sportliche Schießen), in der jeweils geltenden Fassung.',
+    url: 'https://www.dsb.de/fileadmin/dsb/sportordnung/',
+  },
 } satisfies Record<string, Source>
 
 export type SourceKey = keyof typeof SOURCES_DATA
@@ -126,11 +130,12 @@ export const PHASES = {
   privacy: { de: 'Mitglieder und Datenschutz' },
   donations: { de: 'Spenden bestätigen' },
   website: { de: 'Webseite und Verbund' },
+  competitions: { de: 'Wettbewerbe' },
 } satisfies Record<string, Text>
 export type PhaseKey = keyof typeof PHASES
 
 /** Freischaltung: Modul der Organisation, ohne das eine Hilfe nicht erscheint. */
-export type Feature = 'billing' | 'finance' | 'events' | 'platform' | 'website'
+export type Feature = 'billing' | 'finance' | 'events' | 'platform' | 'website' | 'competitions'
 
 export interface Decision {
   title: Text
@@ -681,6 +686,128 @@ const DECISIONS_DATA = {
     place: d('Untereinheiten → Bearbeiten → Verwaltung'),
     phase: 'setup',
   },
+
+  // --- Wettbewerbe (Ralf 2026-11-01: „Alles wie in der Liste“) ---
+  comp_own: {
+    title: d('Eigener oder fremder Wettbewerb?'),
+    text: d(
+      'Beim eigenen Wettbewerb erfasst ihr Schützen und Werte selbst, und HUBIplan rechnet Plätze, Zugwertung und Stechen. Beim fremden tragt ihr nur ein, was der Ausrichter bekannt gegeben hat: Platz und Wert eurer Teilnehmer. Wie dort gewertet wird, regelt die Schießordnung des Ausrichters (§ 25 BGB).',
+    ),
+    sources: ['bgb'],
+    place: d('Wettbewerbe → Neuer Wettbewerb'),
+    phase: 'competitions',
+    feature: 'competitions',
+  },
+  comp_shots: {
+    title: d('Wozu Schusszahl und Höchstwert je Schuss?'),
+    text: d(
+      'Mit gewerteten Schüssen und Höchstwert weist HUBIplan unmögliche Werte beim Erfassen ab, etwa 31 bei 3 gewerteten Schüssen mit höchstens 10. So fallen Tippfehler am Stand auf, bevor sie Plätze verschieben. Die Zahlen stehen in der Schießordnung des Vereins oder in der DSB-Sportordnung.',
+    ),
+    sources: ['dsbSpo'],
+    place: d('Wettbewerb → Einrichten → Einzelwertung'),
+    phase: 'competitions',
+    feature: 'competitions',
+  },
+  comp_team_mode: {
+    title: d('Warum zählen nur die besten Schützen einer Einheit?'),
+    text: d(
+      'Mit „Summe der besten 5“ gewinnt ein großer Zug nicht schon durch mehr Schützen, und schwache Ergebnisse ziehen niemanden herunter. Ein Zug mit weniger als 5 Schützen wird deshalb nicht gewertet, sonst stünde er gegen volle Züge schlechter da. Auch die DSB-Sportordnung wertet Mannschaften mit fester Schützenzahl.',
+    ),
+    sources: ['dsbSpo'],
+    place: d('Wettbewerb → Einrichten → Wertung der Untereinheiten'),
+    phase: 'competitions',
+    feature: 'competitions',
+  },
+  comp_prize_places: {
+    title: d('Wozu Preisplätze?'),
+    text: d(
+      'Nur auf Preisplätzen entscheidet ein Gleichstand über einen Preis, deshalb verlangt HUBIplan nur dort ein Stechen; darunter teilen sich Gleichstände den Platz. Wie viele Plätze einen Preis bekommen, steht in der Ausschreibung. Ein öffentlich ausgeschriebener Preis ist eine Auslobung, an die der Verein gebunden ist (§§ 657, 661 BGB).',
+    ),
+    sources: ['bgb'],
+    place: d('Wettbewerb → Einrichten → Wertung'),
+    phase: 'competitions',
+    feature: 'competitions',
+  },
+  comp_shootoff_rules: {
+    title: d('Warum die Stechregeln erst beim Anlegen?'),
+    text: d(
+      'Ob 1 oder 3 Schuss gestochen werden, entscheidet oft die Schießleitung am Stand. HUBIplan schlägt die Regel aus „Einrichten“ vor; ändern geht, bis der erste Wert eingetragen ist, sonst würden sich die Bedingungen mitten im Stechen ändern. Für Verbandswettkämpfe regelt die DSB-Sportordnung das Stechen, im Verein die eigene Schießordnung.',
+    ),
+    sources: ['dsbSpo'],
+    place: d('Wettbewerb → Auswertung oder Standmodus → Stechen anlegen'),
+    phase: 'competitions',
+    feature: 'competitions',
+  },
+  comp_provisional: {
+    title: d('Wann ist das Schießen beendet?'),
+    text: d(
+      'HUBIplan erkennt das Ende nicht selbst, denn Nachzügler, Fehlende und Stechen kennt nur die Schießleitung. „Schießen beenden“ kennzeichnet die Ergebnisse als vorläufig, Nachträge und Stechen bleiben möglich. Gebt vorläufige Listen nur mit diesem Hinweis heraus, damit niemand sie für richtig und fertig hält (Art. 5 Abs. 1 lit. d DSGVO).',
+    ),
+    sources: ['dsgvo'],
+    place: d('Wettbewerb → Einrichten → Zustand; Standmodus → Abschluss'),
+    phase: 'competitions',
+    feature: 'competitions',
+  },
+  comp_final: {
+    title: d('Was bedeutet endgültig abschließen?'),
+    text: d(
+      'Danach sind Eingaben gesperrt, und nur endgültige Ergebnisse sind für Webseite und Ehrungen gedacht. Offene Stechen sperren den Abschluss, weil sonst Plätze ungeklärt blieben. Veröffentlichte Ergebnisse müssen sachlich richtig sein (Art. 5 Abs. 1 lit. d DSGVO), „Wieder öffnen“ bleibt für Korrekturen.',
+    ),
+    sources: ['dsgvo'],
+    place: d('Wettbewerb → Einrichten → Zustand'),
+    phase: 'competitions',
+    feature: 'competitions',
+  },
+  comp_reset: {
+    title: d('Was passiert beim Zurücksetzen?'),
+    text: d(
+      'Zurücksetzen löscht alle erfassten Werte, Stechen, Schüsse und gefallenen Pfänder; Regeln, Pfänder, Standzugang und Termin bleiben. Tablets, die ohne Empfang noch alte Eingaben gespeichert haben, verwerfen sie beim nächsten Abgleich. Ob ein Durchgang wiederholt wird, regelt die Schießordnung (§ 25 BGB), rückgängig machen lässt es sich nicht.',
+    ),
+    sources: ['bgb'],
+    place: d('Wettbewerb → Einrichten → Zustand'),
+    phase: 'competitions',
+    feature: 'competitions',
+  },
+  comp_stand_access: {
+    title: d('Warum ein Standzugang statt Anmeldung?'),
+    text: d(
+      'Ein geliehenes Tablet bekommt einen eigenen Schlüssel, der nur diesen Wettbewerb erfassen kann und am Ende des Wettbewerbstags abläuft. So gibt niemand sein Passwort auf einem fremden Gerät ein, und das Tablet sieht nur Name und Untereinheit (Art. 5 Abs. 1 lit. c, Art. 32 DSGVO). Geht ein Gerät verloren, beende den Zugang sofort.',
+    ),
+    sources: ['dsgvo'],
+    place: d('Wettbewerb → Erfassen → Anderes Gerät per QR-Code'),
+    phase: 'competitions',
+    feature: 'competitions',
+  },
+  comp_lots: {
+    title: d('Wozu „Lose im Hut“?'),
+    text: d(
+      'Ohne diese Angabe zieht „Nummer ziehen“ nur bis zur Zahl der bisherigen Schützen, und ein Nachzügler bekommt meist die nächste Nummer. Mit der Zahl der Lose im Hut zieht HUBIplan wie aus einem echten Hut; wer lieber alle zugleich auslost, nimmt „Alle ohne Nummer auslosen“. Wie die Reihenfolge bestimmt wird, regelt die Schießordnung (§ 25 BGB).',
+    ),
+    sources: ['bgb'],
+    place: d('Wettbewerb → Einrichten → Vogelschießen'),
+    phase: 'competitions',
+    feature: 'competitions',
+  },
+  comp_bird_rules: {
+    title: d('Ausscheiden und feste Reihenfolge?'),
+    text: d(
+      'Scheidet aus, wer ein Pfand errungen hat, kommen mehr Schützen zu einem Preis. In fester Reihenfolge wird Pfand für Pfand geschossen, und HUBIplan bietet nach jedem Treffer gleich das nächste an. Welche Regel gilt, steht in der Schießordnung des Vereins (§ 25 BGB).',
+    ),
+    sources: ['bgb'],
+    place: d('Wettbewerb → Einrichten → Vogelschießen'),
+    phase: 'competitions',
+    feature: 'competitions',
+  },
+  comp_website: {
+    title: d('Ergebnisse auf der Webseite?'),
+    text: d(
+      'Namen mit Ergebnissen zu zeigen stützt sich meist auf das berechtigte Interesse des Vereins (Art. 6 Abs. 1 lit. f DSGVO); Mitglieder können widersprechen (Art. 21 DSGVO), bei Minderjährigen fragt die Eltern. Für Fotos der Sieger gelten zusätzlich §§ 22 und 23 KUG. „Nach Abschluss“ zeigt nur geprüfte Ergebnisse, „live“ auch Zwischenstände.',
+    ),
+    sources: ['dsgvo', 'kug'],
+    place: d('Wettbewerb → Einrichten → Auf der Webseite'),
+    phase: 'competitions',
+    feature: 'competitions',
+  },
 } satisfies Record<string, Decision>
 
 export type DecisionKey = keyof typeof DECISIONS_DATA
@@ -697,6 +824,7 @@ export const SECTIONS = {
   law: { de: 'Recht und Datenschutz' },
   donations: { de: 'Spenden' },
   web: { de: 'Webseite' },
+  competitions: { de: 'Wettbewerbe' },
 } satisfies Record<string, Text>
 export type SectionKey = keyof typeof SECTIONS
 
@@ -1366,6 +1494,195 @@ const TERMS_DATA = {
     sources: ['ao', 'gobd'],
     section: 'law',
   },
+  // --- Wettbewerbe ---
+  comp_shootoff: {
+    name: d('Stechen'),
+    meaning: d(
+      'Zusätzliches Schießen bei Gleichstand auf einem Preisplatz, mit eigenen Regeln für Schusszahl und Wertung. Steht es danach wieder gleich, folgt ein weiteres Stechen; die Regeln stehen in der Schießordnung oder der DSB-Sportordnung.',
+    ),
+    example: d(
+      'Beispiel: Anna und Paul haben beide 28 Ringe für Platz 1; im Stechen mit 1 Schuss schießt Anna 9, Paul 8, Anna wird Erste.',
+    ),
+    sources: ['dsbSpo'],
+    section: 'competitions',
+    feature: 'competitions',
+  },
+  comp_tie: {
+    name: d('Gleichstand'),
+    meaning: d(
+      'Zwei oder mehr Schützen haben denselben Wert. Sie teilen sich den Platz, auf Preisplätzen entscheidet ein Stechen (Schießordnung des Vereins, DSB-Sportordnung).',
+    ),
+    example: d(
+      'Beispiel: Zweimal 27 Ringe ergibt zweimal Platz 2, der nächste Schütze ist Vierter.',
+    ),
+    sources: ['dsbSpo'],
+    section: 'competitions',
+    feature: 'competitions',
+  },
+  comp_prize_place: {
+    name: d('Preisplatz'),
+    meaning: d(
+      'Platz, für den es laut Ausschreibung einen Preis gibt, etwa die ersten drei. Nur hier braucht ein Gleichstand ein Stechen (§ 661 BGB).',
+    ),
+    example: d(
+      'Beispiel: Bei 3 Preisplätzen muss ein Gleichstand auf Platz 3 gestochen werden, einer auf Platz 4 nicht.',
+    ),
+    sources: ['bgb'],
+    section: 'competitions',
+    feature: 'competitions',
+  },
+  comp_counted: {
+    name: d('gewertete Schüsse'),
+    meaning: d(
+      'Die Schüsse, deren Ringe in den Wert eingehen; die übrigen sind Probe- oder Streichschüsse. Wie viele zählen, legt die Schießordnung des Vereins oder die DSB-Sportordnung fest.',
+    ),
+    example: d(
+      'Beispiel: 5 Schuss, davon 3 gewertet: Wer 9, 10, 8, 10, 7 schießt, hat mit den besten drei 29 Ringe, wenn die Ordnung die besten zählt.',
+    ),
+    sources: ['dsbSpo'],
+    section: 'competitions',
+    feature: 'competitions',
+  },
+  comp_unit_scoring: {
+    name: d('Wertung der Untereinheiten'),
+    meaning: d(
+      'Wertung der Züge oder Abteilungen aus den Einzelergebnissen ihrer Schützen, etwa als Summe der besten 5 (Zugwertung). Einheiten mit zu wenigen Schützen bleiben ungewertet, wie bei Mannschaften nach der DSB-Sportordnung.',
+    ),
+    example: d('Beispiel: Zug 1 mit 28, 27, 25, 24, 22 und 20 Ringen hat bei „beste 5“ 126 Ringe.'),
+    sources: ['dsbSpo'],
+    section: 'competitions',
+    feature: 'competitions',
+  },
+  comp_ooc: {
+    name: d('außer Konkurrenz'),
+    meaning: d(
+      'Der Schütze schießt mit und erscheint in der Liste, bekommt aber keinen Platz und keinen Preis. Üblich etwa für Schießleiter oder Gäste aus Nachbarvereinen (§ 25 BGB, Schießordnung).',
+    ),
+    example: d(
+      'Beispiel: Der Schießleiter schießt 30 Ringe außer Konkurrenz; Platz 1 geht an die Beste mit 28.',
+    ),
+    sources: ['bgb'],
+    section: 'competitions',
+    simple: true,
+    feature: 'competitions',
+  },
+  comp_guest: {
+    name: d('Gast'),
+    meaning: d(
+      'Teilnehmer, der nicht Mitglied ist; von ihm speichert HUBIplan nur Name und Verein (Art. 5 Abs. 1 lit. c DSGVO). Ob Gäste um Preise schießen dürfen, regelt die Ausschreibung.',
+    ),
+    example: d(
+      'Beispiel: „Gerd Gast, SV Nachbarort“ schießt 26 Ringe mit; für die Zugwertung kann er einer Untereinheit zugeordnet werden.',
+    ),
+    sources: ['dsgvo'],
+    section: 'competitions',
+    simple: true,
+    feature: 'competitions',
+  },
+  comp_lot: {
+    name: d('Losnummer'),
+    meaning: d(
+      'Nummer aus dem Hut, die beim Vogelschießen die Reihenfolge der Schützen bestimmt. Nachzügler ziehen eine noch freie Nummer; das Verfahren regelt die Schießordnung (§ 25 BGB).',
+    ),
+    example: d('Beispiel: Wer Los 7 zieht, schießt nach Nummer 6 und vor Nummer 8.'),
+    sources: ['bgb'],
+    section: 'competitions',
+    feature: 'competitions',
+  },
+  comp_prize: {
+    name: d('Pfand'),
+    meaning: d(
+      'Teil des Vogels, für dessen Abschuss es einen Preis gibt, etwa Kopf, Flügel oder Schweif. Wer es herunterholt, hat das Pfand errungen; Pfänder und Preise legt die Schießordnung fest (§ 25 BGB).',
+    ),
+    example: d(
+      'Beispiel: Paul holt mit Schuss 54 den linken Flügel herunter und erhält den Flügelorden.',
+    ),
+    sources: ['bgb'],
+    section: 'competitions',
+    feature: 'competitions',
+  },
+  comp_round: {
+    name: d('Runde'),
+    meaning: d(
+      'Ein Durchgang durch alle Losnummern; danach beginnt die nächste Runde wieder bei der kleinsten Nummer. Fehlende und Ausgeschiedene werden übersprungen (Schießordnung, § 25 BGB).',
+    ),
+    example: d('Beispiel: Bei 40 Schützen beginnt mit dem 41. Schuss die zweite Runde.'),
+    sources: ['bgb'],
+    section: 'competitions',
+    feature: 'competitions',
+  },
+  comp_shots_for: {
+    name: d('Schüsse für das Pfand'),
+    meaning: d(
+      'Schüsse seit dem vorher gefallenen Pfand bis zu dem, der dieses Pfand heruntergeholt hat. Beim ersten Pfand zählen alle Schüsse seit Beginn; wofür es Preise gibt, regelt die Schießordnung (§ 25 BGB).',
+    ),
+    example: d(
+      'Beispiel: Der Kopf fällt mit Schuss 30, der Schweif mit Schuss 75: für den Schweif waren es 45 Schüsse.',
+    ),
+    sources: ['bgb'],
+    section: 'competitions',
+    feature: 'competitions',
+  },
+  comp_provisional_term: {
+    name: d('vorläufig'),
+    meaning: d(
+      'Zustand nach „Schießen beenden“: Ergebnisse stehen, Nachträge und Stechen sind noch möglich. Listen tragen den Hinweis „vorläufig“, damit niemand sie für fertig hält (Art. 5 Abs. 1 lit. d DSGVO).',
+    ),
+    example: d(
+      'Beispiel: Am Abend hängt die vorläufige Liste aus; ein Stechen am nächsten Morgen ändert noch Platz 3.',
+    ),
+    sources: ['dsgvo'],
+    section: 'competitions',
+    feature: 'competitions',
+  },
+  comp_final_term: {
+    name: d('endgültig'),
+    meaning: d(
+      'Zustand nach dem Abschluss: Eingaben sind gesperrt, die Ergebnisse gelten. Nur endgültige Ergebnisse sind für Webseite und Ehrungen gedacht (Art. 5 Abs. 1 lit. d DSGVO).',
+    ),
+    example: d(
+      'Beispiel: Nach dem 2. Stechen schließt der Schießmeister ab, danach lässt sich kein Wert mehr ändern.',
+    ),
+    sources: ['dsgvo'],
+    section: 'competitions',
+    feature: 'competitions',
+  },
+  comp_stand_mode: {
+    name: d('Standmodus'),
+    meaning: d(
+      'Vollbildansicht für Tablet oder Handy am Schießstand, mit großer Suche und Eingabe; sie arbeitet auch ohne Empfang weiter. Sie zeigt nur, was zum Erfassen nötig ist (Art. 5 Abs. 1 lit. c DSGVO), und sendet, sobald wieder Verbindung besteht.',
+    ),
+    example: d(
+      'Beispiel: Am Stand tippt die Aufsicht „Mül“, wählt Jürgen Müller und trägt 27 ein.',
+    ),
+    sources: ['dsgvo'],
+    section: 'competitions',
+    feature: 'competitions',
+  },
+  comp_stand_access_term: {
+    name: d('Standzugang'),
+    meaning: d(
+      'Zugang per QR-Code für ein Gerät ohne Anmeldung, nur für diesen Wettbewerb und bis zum Ende des Wettbewerbstags (Art. 32 DSGVO).',
+    ),
+    example: d(
+      'Beispiel: Das Leihtablet „Stand 2“ scannt den Code und kann bis 23:59 Uhr erfassen.',
+    ),
+    sources: ['dsgvo'],
+    section: 'competitions',
+    feature: 'competitions',
+  },
+  comp_organizer: {
+    name: d('Ausrichter'),
+    meaning: d(
+      'Verein oder Verband, der einen fremden Wettbewerb veranstaltet und wertet. Er legt Regeln und Preise fest (§ 25 BGB).',
+    ),
+    example: d(
+      'Beispiel: Beim Bezirksschießen 2027 ist der Bezirksverband der Ausrichter; ihr tragt nur eure Plätze ein, etwa Platz 3 mit 287 Ringen.',
+    ),
+    sources: ['bgb'],
+    section: 'competitions',
+    feature: 'competitions',
+  },
 } satisfies Record<string, TermEntry>
 
 export type TermKey = keyof typeof TERMS_DATA
@@ -1601,6 +1918,75 @@ const HOWTOS_DATA = {
     },
     sources: [],
     feature: 'finance',
+  },
+  // --- Wettbewerbe ---
+  how_comp_ranking: {
+    kind: 'calc',
+    title: d('Plätze bei Gleichstand'),
+    text: d(
+      'Gleiche Werte teilen sich den Platz, der nächste Platz wird übersprungen. Auf Preisplätzen entscheidet ein Stechen, danach gilt die Reihenfolge des Stechens.',
+    ),
+    example: {
+      head: ['Schütze', 'Wert', 'Platz'],
+      rows: [
+        ['A', '29', '1.'],
+        ['B', '27', '2.'],
+        ['C', '27', '2.'],
+        ['D', '25', '4.'],
+      ],
+    },
+    sources: [],
+    feature: 'competitions',
+  },
+  how_comp_unit: {
+    kind: 'calc',
+    title: d('Wertung der Untereinheiten'),
+    text: d(
+      'Bei „Summe der besten k“ zählen die k besten Einzelwerte der Einheit; Schützen außer Konkurrenz zählen nicht. Hat eine Einheit weniger als k Werte, bleibt sie ohne Platz.',
+    ),
+    example: {
+      head: ['Zug', 'Einzelwerte', 'beste 3'],
+      rows: [
+        ['Zug 1', '28, 27, 25, 20', '80'],
+        ['Zug 2', '29, 26, 24', '79'],
+        ['Zug 3', '30, 28', 'nicht gewertet'],
+      ],
+    },
+    sources: [],
+    feature: 'competitions',
+  },
+  how_comp_bird_order: {
+    kind: 'how',
+    title: d('Reihenfolge beim Vogelschießen'),
+    text: d(
+      'Geschossen wird nach Losnummer, Fehlende und Ausgeschiedene werden übersprungen. Nach der höchsten Nummer beginnt die nächste Runde wieder bei der kleinsten.',
+    ),
+    sources: [],
+    feature: 'competitions',
+  },
+  how_comp_shots_for: {
+    kind: 'calc',
+    title: d('Schüsse für das Pfand'),
+    text: d('Gezählt werden die Schüsse seit dem vorher gefallenen Pfand bis zum Treffer.'),
+    example: {
+      head: ['Pfand', 'Schuss Nr.', 'Schüsse für das Pfand'],
+      rows: [
+        ['Kopf', '30', '30'],
+        ['Linker Flügel', '54', '24'],
+        ['Schweif', '75', '21'],
+      ],
+    },
+    sources: [],
+    feature: 'competitions',
+  },
+  how_comp_tablets: {
+    kind: 'how',
+    title: d('Mehrere Tablets gleichzeitig'),
+    text: d(
+      'Alle Geräte gleichen sich etwa alle 3 Sekunden ab; für einen Schützen gilt der zuletzt eingetragene Wert, und doppelt angelegte Schützen werden zusammengeführt. Ohne Empfang wird weiter erfasst und später gesendet. Stechen anlegen und abschließen braucht Empfang.',
+    ),
+    sources: [],
+    feature: 'competitions',
   },
 } satisfies Record<string, HowEntry>
 
