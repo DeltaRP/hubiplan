@@ -1,5 +1,6 @@
 // Wettbewerbe: eigene Schießen mit Einzel- und Zugwertung, Stechen und Auswertung.
 import { api } from './client.ts'
+import type { Award, Grant } from './competitionHistory.ts'
 
 export type CompetitionStatus = 'vorbereitung' | 'laeuft' | 'vorlaeufig' | 'endgueltig'
 export type WebsiteMode = 'aus' | 'live' | 'abschluss'
@@ -15,6 +16,14 @@ export const WEBSITE_LABELS: Record<WebsiteMode, string> = {
   aus: 'nicht auf der Webseite',
   live: 'live während des Wettbewerbs',
   abschluss: 'nach Abschluss',
+}
+
+export type WebsiteDepth = 'einheiten' | 'top3' | 'alle'
+
+export const WEBSITE_DEPTH_LABELS: Record<WebsiteDepth, string> = {
+  einheiten: 'nur Wertung der Untereinheiten und Mannschaften',
+  top3: 'Plätze 1 bis 3 mit Namen',
+  alle: 'ganze Rangliste',
 }
 
 export interface Detail {
@@ -40,6 +49,9 @@ export interface Competition {
   status: CompetitionStatus
   status_label: string
   website: WebsiteMode
+  website_depth: WebsiteDepth
+  /** Reihe (Archiv über die Jahre) */
+  series: number | null
   drop_out: boolean
   fixed_order: boolean
   /** Lose im Hut: „Nummer ziehen“ zieht aus 1 bis zu dieser Zahl */
@@ -209,6 +221,9 @@ export interface CompetitionDetail extends Competition {
   units: { id: number; name: string }[]
   prizes: PrizeSetup[]
   can_manage: boolean
+  awards?: Award[]
+  grants?: Grant[]
+  series_name?: string
   event_info?: CompetitionEvent | null
   calendar?: CalendarAccess
   /** nur über einen Standzugang */

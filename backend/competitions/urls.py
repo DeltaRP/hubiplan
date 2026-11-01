@@ -3,9 +3,12 @@
 from django.urls import path
 from rest_framework.routers import SimpleRouter
 
-from . import bird_views, event_views, foreign_views, stand_views, target_views, views
+from . import award_views, bird_views, event_views, foreign_views, stand_views, target_views, views
 
 router = SimpleRouter()
+# Reihen und Wanderpokale vor den Wettbewerben (sonst fängt „competitions/<pk>/“ sie ab)
+router.register("competitions/series", award_views.SeriesViewSet, basename="competition-series")
+router.register("competitions/trophies", award_views.TrophyViewSet, basename="competition-trophy")
 router.register("competitions", views.CompetitionViewSet, basename="competition")
 router.register(
     r"competitions/(?P<competition_id>\d+)/scorings",
@@ -67,6 +70,26 @@ org_patterns = [
     path(f"{C}undo/", bird_views.UndoView.as_view(), name="competition-undo"),
     path(f"{C}draw/", bird_views.DrawView.as_view(), name="competition-draw"),
     path(f"{C}draw-all/", bird_views.DrawAllView.as_view(), name="competition-draw-all"),
+    # Auszeichnungen und Geschichte (Schritt 4)
+    path(f"{C}awards/", award_views.AwardsView.as_view(), name="competition-awards"),
+    path(f"{C}awards/<int:pk>/", award_views.AwardView.as_view(), name="competition-award"),
+    path(f"{C}grant/", award_views.GrantAgainView.as_view(), name="competition-grant"),
+    path("competitions/grants/", award_views.GrantsView.as_view(), name="competition-grants"),
+    path(
+        "competitions/grants/<int:pk>/",
+        award_views.GrantView.as_view(),
+        name="competition-grant-detail",
+    ),
+    path(
+        "competitions/grants/<int:pk>/dignity/",
+        award_views.DignityDecisionView.as_view(),
+        name="competition-grant-dignity",
+    ),
+    path(
+        "competitions/member/<int:membership_id>/",
+        award_views.MemberHistoryView.as_view(),
+        name="competition-member-history",
+    ),
     # Fremde Wettbewerbe
     path(f"{C}teams/", foreign_views.TeamsView.as_view(), name="competition-teams"),
     path(f"{C}teams/<int:pk>/", foreign_views.TeamView.as_view(), name="competition-team"),

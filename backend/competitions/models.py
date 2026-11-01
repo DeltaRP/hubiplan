@@ -19,6 +19,28 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy
 
 
+class Series(models.Model):
+    """Reihe: verbindet denselben Wettbewerb über die Jahre („Vergleichsschießen“), für
+    Archiv, Bestenliste und Vergleich der eigenen Züge (Konzept Abschnitte 3 und 12)."""
+
+    organization = models.ForeignKey(
+        "organizations.Organization", on_delete=models.CASCADE, related_name="+"
+    )
+    name = models.CharField("Bezeichnung", max_length=200)
+    description = models.TextField("Beschreibung", blank=True, max_length=2000)
+    # Auf der Webseite das Archiv der Reihe zeigen („alle Vereinsmeister“)
+    on_website = models.BooleanField("Archiv auf der Webseite", default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Reihe"
+        verbose_name_plural = "Reihen"
+        ordering = ["name", "pk"]
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class Competition(models.Model):
     class Status(models.TextChoices):
         PREPARATION = "vorbereitung", gettext_lazy("Vorbereitung")
@@ -30,6 +52,11 @@ class Competition(models.Model):
         OFF = "aus", gettext_lazy("nicht auf der Webseite")
         LIVE = "live", gettext_lazy("live während des Wettbewerbs")
         FINAL = "abschluss", gettext_lazy("nach Abschluss")
+
+    class WebsiteDepth(models.TextChoices):
+        UNITS = "einheiten", gettext_lazy("nur Wertung der Untereinheiten und Mannschaften")
+        TOP3 = "top3", gettext_lazy("Plätze 1 bis 3 mit Namen")
+        ALL = "alle", gettext_lazy("ganze Rangliste")
 
     class Form(models.TextChoices):
         RANKING = "rangliste", gettext_lazy("Rangliste")
@@ -57,6 +84,21 @@ class Competition(models.Model):
     # Webseite: nicht, live während des Wettbewerbs oder erst nach Abschluss (Ralf 2026-11-01)
     website = models.CharField(
         "auf der Webseite", max_length=10, choices=Website.choices, default=Website.OFF
+    )
+    # Wie viel die Webseite zeigt: nur Zugwertung, Plätze 1–3 mit Namen oder alles
+    website_depth = models.CharField(
+        "Umfang auf der Webseite",
+        max_length=10,
+        choices=WebsiteDepth.choices,
+        default=WebsiteDepth.TOP3,
+    )
+    series = models.ForeignKey(
+        Series,
+        verbose_name="Reihe",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="competitions",
     )
     # Vogelschießen (Konzept 5b)
     drop_out = models.BooleanField("wer ein Pfand errungen hat, scheidet aus", default=True)
@@ -633,3 +675,157 @@ class PhotoSample(models.Model):
 
     def __str__(self) -> str:
         return f"Spiegelausschnitt {self.target}"
+
+
+class Trophy(models.Model):
+    """Wanderpokal: eigener Gegenstand der Einheit mit wechselnden Inhabern, nicht an eine
+    Reihe gebunden. Optional geht er nach n Gewinnen in Folge in den Besitz über."""
+
+    organization = models.ForeignKey(
+        "organizations.Organization", on_delete=models.CASCADE, related_name="+"
+    )
+    name = models.CharField("Bezeichnung", max_length=200)
+    description = models.TextField("Beschreibung", blank=True, max_length=2000)
+    keep_after = models.PositiveSmallIntegerField(
+        "geht nach so vielen Siegen in Folge in den Besitz über", null=True, blank=True
+    )
+    is_archived = models.BooleanField("nicht mehr vergeben", default=False)
+    on_website = models.BooleanField("Inhaber auf der Webseite", default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Wanderpokal"
+        verbose_name_plural = "Wanderpokale"
+        ordering = ["name", "pk"]
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class Award(models.Model):
+    """Auszeichnung einer Wertung für bestimmte Plätze (Konzept 5.4) oder für ein Pfand beim
+    Vogelschießen: Titel („Vereinsmeister“), Preis (Pokal, Medaille), Würde, Wanderpokal."""
+
+    organization = models.ForeignKey(
+        "organizations.Organization", on_delete=models.CASCADE, related_name="+"
+    )
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE, related_name="awards")
+    scoring = models.ForeignKey(
+        Scoring, on_delete=models.CASCADE, null=True, blank=True, related_name="awards"
+    )
+    prize = models.ForeignKey(
+        Prize, on_delete=models.CASCADE, null=True, blank=True, related_name="awards"
+    )
+    place_from = models.PositiveSmallIntegerField("ab Platz", default=1)
+    place_to = models.PositiveSmallIntegerField("bis Platz", default=1)
+    # Titel ohne Jahr; das Jahr hängt HUBIplan an („Vereinsmeister 2027“)
+    title = models.CharField("Titel", max_length=200, blank=True)
+    item = models.CharField("Preis", max_length=200, blank=True)
+    dignity = models.ForeignKey(
+        "honors.Dignity",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name="Würde",
+    )
+    trophy = models.ForeignKey(
+        Trophy,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="awards",
+        verbose_name="Wanderpokal",
+    )
+    sort_order = models.PositiveSmallIntegerField("Reihenfolge", default=0)
+
+    class Meta:
+        verbose_name = "Auszeichnung"
+        verbose_name_plural = "Auszeichnungen"
+        ordering = ["sort_order", "place_from", "pk"]
+
+    def __str__(self) -> str:
+        return self.title or self.item or "Auszeichnung"
+
+
+class AwardGrant(models.Model):
+    """Vergebene Auszeichnung: entsteht beim Abschluss („endgültig“) aus den Auszeichnungen,
+    oder von Hand für frühere Jahre (Altdaten). Name als Text bleibt nach Austritt."""
+
+    class DignityState(models.TextChoices):
+        NONE = "", "–"
+        PROPOSED = "vorschlag", gettext_lazy("vorgeschlagen")
+        CONFIRMED = "bestaetigt", gettext_lazy("bestätigt")
+        REJECTED = "abgelehnt", gettext_lazy("abgelehnt")
+
+    organization = models.ForeignKey(
+        "organizations.Organization", on_delete=models.CASCADE, related_name="+"
+    )
+    award = models.ForeignKey(
+        Award, on_delete=models.SET_NULL, null=True, blank=True, related_name="grants"
+    )
+    competition = models.ForeignKey(
+        Competition, on_delete=models.CASCADE, null=True, blank=True, related_name="grants"
+    )
+    series = models.ForeignKey(
+        Series, on_delete=models.SET_NULL, null=True, blank=True, related_name="grants"
+    )
+    year = models.PositiveSmallIntegerField("Jahr")
+    title = models.CharField("Titel", max_length=200, blank=True)
+    item = models.CharField("Preis", max_length=200, blank=True)
+    scoring_name = models.CharField("Wertung", max_length=100, blank=True)
+    place = models.PositiveSmallIntegerField("Platz", null=True, blank=True)
+    value_text = models.CharField("Wert", max_length=40, blank=True)
+    starter = models.ForeignKey(
+        Starter, on_delete=models.SET_NULL, null=True, blank=True, related_name="grants"
+    )
+    membership = models.ForeignKey(
+        "members.Membership",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name="Mitglied",
+    )
+    # Zugwertung: die Untereinheit ist der Träger
+    unit = models.ForeignKey(
+        "organizations.Department",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name="Untereinheit",
+    )
+    name = models.CharField("Name", max_length=200)
+    trophy = models.ForeignKey(
+        Trophy, on_delete=models.SET_NULL, null=True, blank=True, related_name="grants"
+    )
+    dignity = models.ForeignKey(
+        "honors.Dignity", on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    dignity_state = models.CharField(
+        "Würdenvorschlag",
+        max_length=12,
+        choices=DignityState.choices,
+        default=DignityState.NONE,
+        blank=True,
+    )
+    reign = models.ForeignKey(
+        "honors.Reign", on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    manual = models.BooleanField("von Hand eingetragen", default=False)
+    note = models.CharField("Bemerkung", max_length=200, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "vergebene Auszeichnung"
+        verbose_name_plural = "vergebene Auszeichnungen"
+        ordering = ["-year", "place", "pk"]
+
+    def __str__(self) -> str:
+        return f"{self.full_title}: {self.name}"
+
+    @property
+    def full_title(self) -> str:
+        base = self.title or self.item
+        return f"{base} {self.year}".strip() if self.title else base

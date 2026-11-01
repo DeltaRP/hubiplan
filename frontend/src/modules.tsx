@@ -96,6 +96,12 @@ export const modules: AppModule[] = [
       org.modules.includes('competitions') &&
       (org.permissions.includes(PERM.competitionsManage) ||
         org.permissions.includes(PERM.competitionsResults)),
+    children: () => [
+      { to: '/wettbewerbe', label: t('Wettbewerbe') },
+      { to: '/wettbewerbe/reihen', label: t('Reihen') },
+      { to: '/wettbewerbe/pokale', label: t('Wanderpokale') },
+      { to: '/wettbewerbe/titel', label: t('Titel und Würden') },
+    ],
   },
   {
     id: 'meldungen',

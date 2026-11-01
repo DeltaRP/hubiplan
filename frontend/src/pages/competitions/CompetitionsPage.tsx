@@ -6,12 +6,14 @@ import {
   competitionsApi,
   orgStandApi,
   STATUS_LABELS,
+  WEBSITE_DEPTH_LABELS,
   WEBSITE_LABELS,
   type Competition,
   type CompetitionDetail,
   type CompetitionStatus,
   type Detail,
   type Scoring,
+  type WebsiteDepth,
   type WebsiteMode,
 } from '../../api/competitions.ts'
 import { PERM } from '../../api/orgs.ts'
@@ -33,17 +35,30 @@ import { EventCard, EventPicker } from './CalendarLink.tsx'
 import { ManualPrizes, PrizesCard, StandAccessCard } from './BirdSetup.tsx'
 import { ForeignPanel } from './ForeignPanel.tsx'
 import { ResultsPanel } from './ResultsPanel.tsx'
+import {
+  AwardsCard,
+  GrantsCard,
+  SeriesListPage,
+  SeriesPage,
+  SeriesSelect,
+  TitlesPage,
+  TrophiesPage,
+} from './History.tsx'
 import { StandPanel } from './StandPanel.tsx'
 import { TargetSettings } from './TargetSettings.tsx'
 import { Term, Why } from '../../learning/Aids.tsx'
 import { Checklist } from '../../learning/Checklist.tsx'
 import { competitionFinishChecks } from '../../learning/checks.ts'
-import { locale } from '../../i18n/index.ts'
+import { locale, t } from '../../i18n/index.ts'
 
 export function CompetitionsPage() {
   return (
     <Routes>
       <Route index element={<CompetitionList />} />
+      <Route path="reihen" element={<SeriesListPage />} />
+      <Route path="reihen/:id" element={<SeriesPage />} />
+      <Route path="pokale" element={<TrophiesPage />} />
+      <Route path="titel" element={<TitlesPage />} />
       <Route path=":id/*" element={<CompetitionArea />} />
     </Routes>
   )
@@ -310,7 +325,12 @@ function CompetitionArea() {
         />
         <Route
           path="auswertung"
-          element={<ResultsPanel org={org.id} comp={data} onChanged={reload} />}
+          element={
+            <>
+              <ResultsPanel org={org.id} comp={data} onChanged={reload} />
+              <GrantsCard org={org.id} comp={data} onChanged={reload} />
+            </>
+          }
         />
         <Route
           path="einrichten"
@@ -392,6 +412,8 @@ function Setup({
     description: comp.description,
     details: comp.details,
     website: comp.website,
+    website_depth: comp.website_depth,
+    series: comp.series,
     organizer: comp.organizer,
     drop_out: comp.drop_out,
     fixed_order: comp.fixed_order,
@@ -515,10 +537,15 @@ function Setup({
                 onChange={(e) => set('organizer', e.target.value)}
               />
             )}
+            <SeriesSelect
+              org={org}
+              value={v.series}
+              disabled={!canManage}
+              onChange={(id) => set('series', id)}
+            />
             <SelectField
               label="Auf der Webseite"
               value={v.website}
-              hint="Die Anzeige auf der Webseite folgt in einem späteren Schritt."
               onChange={(e) => set('website', e.target.value as WebsiteMode)}
             >
               {Object.entries(WEBSITE_LABELS).map(([value, label]) => (
@@ -527,6 +554,19 @@ function Setup({
                 </option>
               ))}
             </SelectField>
+            {v.website !== 'aus' && (
+              <SelectField
+                label={t('Umfang auf der Webseite')}
+                value={v.website_depth}
+                onChange={(e) => set('website_depth', e.target.value as WebsiteDepth)}
+              >
+                {Object.entries(WEBSITE_DEPTH_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </SelectField>
+            )}
           </div>
           <Why k="comp_website" />
           {comp.form === 'vogel' && (
@@ -687,6 +727,7 @@ function Setup({
           )}
         </div>
       )}
+      <AwardsCard org={org} comp={comp} />
 
       {canManage && (
         <div className="card card-wide">

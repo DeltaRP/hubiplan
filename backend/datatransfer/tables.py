@@ -66,6 +66,8 @@ MODULE_MODELS = (
     "events.CalendarPublication",
     "events.EventResponse",
     # Wettbewerbe nach den Terminen (Verweis auf den Termin)
+    "competitions.Series",
+    "competitions.Trophy",
     "competitions.Competition",
     "competitions.Scoring",
     "competitions.Starter",
@@ -78,6 +80,8 @@ MODULE_MODELS = (
     "competitions.Team",
     "competitions.TeamMember",
     "competitions.Placing",
+    "competitions.Award",
+    "competitions.AwardGrant",
     # Meldungen nach den Wettbewerben (Verweise auf Wettbewerb, Mannschaft und Starter)
     "entries.Call",
     "entries.CallBlock",
@@ -133,6 +137,10 @@ MEMBER_MODELS = {
     "competitions.team",
     "competitions.teammember",
     "competitions.placing",
+    "competitions.series",
+    "competitions.trophy",
+    "competitions.award",
+    "competitions.awardgrant",
     # Meldungen nennen Mitglieder (gemeldete Personen, Fassungen mit Angaben je Person)
     "entries.entry",
     "entries.entryteam",
