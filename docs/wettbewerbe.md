@@ -249,7 +249,13 @@ Starter und Mannschaften in der Gesamtwertung und die Wertung der Untereinheiten
 der Untereinheiten; Mitglieder nur bei eigenen Mannschaften). Die ganze Einzelrangliste mit
 fremden Namen nur mit „Ganze Rangliste an die meldenden Untereinheiten“
 (`Competition.share_ranking`, Einstellung nur bei Wettbewerben aus einer solchen
-Ausschreibung). Ergebnisse an Vereine einer anderen Instanz: Verbund-Paket (Schritt 7).
+Ausschreibung).
+
+Ergebnisse an Einheiten einer anderen Instanz (Schritt 7) bringt das Verbund-Paket `results`
+(`peering/packet_results.py`, Standard aus, siehe [verbund.md](verbund.md)). „Eigene“ Starter
+erkennt es an der Untereinheit (Platzhalter der fernen Einheit) oder am Vereinsnamen des
+Starters; Starter ohne Verein gehen nicht hinaus. Die empfangende Einheit sieht die Ergebnisse
+unter Einstellungen › Verbund bei der Kopplung.
 
 ## Standzugang
 

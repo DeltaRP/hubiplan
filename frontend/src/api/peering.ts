@@ -105,6 +105,21 @@ export interface Received {
     total: number
     counts: { kind: 'active' | 'passive'; birth: string; n: number }[]
   }
+  results?: { competitions: ReceivedCompetition[] }
+}
+
+/** Endgültige Ergebnisse eines Wettbewerbs der Einheit darüber (Paket „Ergebnisse“) */
+export interface ReceivedCompetition {
+  uid: string
+  title: string
+  date: string
+  location: string
+  scorings: {
+    name: string
+    kind: string
+    field: number | null
+    rows: { place: number | null; name: string; value: string; own: boolean }[]
+  }[]
 }
 
 export interface RemoteTransfer {

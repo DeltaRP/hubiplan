@@ -14,6 +14,7 @@ class PeeringConfig(AppConfig):
             packet_info,
             packet_invoices,
             packet_members,
+            packet_results,
             packet_unit,
             packet_unit_members,
         )
