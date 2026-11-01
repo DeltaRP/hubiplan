@@ -4028,6 +4028,51 @@ label:has(> .file-input:focus-visible) {
   background: var(--color-error-bg);
   border-color: var(--color-error);
 }
+/* Live-Kamera (Schritt 5): Vollbild, Rahmen rot bis die Lage passt, dann grün */
+.live-camera {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-bg);
+  overflow: auto;
+}
+.live-frame {
+  position: relative;
+  width: min(100%, 40rem);
+  border: 6px solid var(--color-error);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  line-height: 0;
+}
+.live-frame.live-ok {
+  border-color: var(--color-success);
+}
+.live-frame video {
+  width: 100%;
+  height: auto;
+}
+.live-guide {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 70%;
+  aspect-ratio: 1;
+  max-height: 90%;
+  border: 2px dashed rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.live-hint {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  text-align: center;
+}
 .pad-lens-right {
   left: auto;
   right: 0.5rem;

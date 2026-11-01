@@ -110,6 +110,13 @@ sind vor ernsthafter Nutzung gegen die aktuelle Sportordnung zu lesen.
     43 %, unbemerkt falsch 0 / 1,7 / 1,7 %, „bitte prüfen“ 87 / 88 / 88 %. Einzelne Löcher
     liegen meist auf 0,03–0,1 mm genau; Fehler kommen fast nur aus dichten Gruppen (dann
     „bitte prüfen“). Die Mitte der Scheibe findet die Erkennung auf etwa 0,06 mm.
+  - **Live-Kamera** (Schritt 5): „Live-Kamera“ zeigt das Kamerabild mit Rahmen (rot, bis
+    die Lage passt, dann grün) und Hinweisen (näher heran, weiter weg, in die Mitte, gerade
+    von oben, ruhig halten, mehr Licht). Jedes Bild wird im Browser verkleinert geprüft
+    (`aim.ts`: Spiegel suchen, Lage, Rundheit als Maß für Schräge, Schärfe); nach sechs
+    guten, ruhigen Bildern hintereinander löst die Kamera aus und nimmt das schärfste davon
+    in voller Auflösung. „Jetzt auslösen“ geht immer. Braucht HTTPS und die Kamerafreigabe
+    des Browsers; sonst bleibt „Foto der Scheibe“.
   - Grenzen: Ein Loch im Schwarzen auf dunkler Unterlage ist kaum zu sehen; die Scheibe also
     auf eine helle Unterlage legen oder gegen das Licht halten. Echte Fotos können anders
     aussehen als die künstlichen; die Werte zeigen nur, ob die Erkennung besser oder

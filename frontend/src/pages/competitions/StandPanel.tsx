@@ -439,6 +439,11 @@ export function StandPanel({
                     {target.photo && (
                       <PhotoButton
                         disabled={!online}
+                        blackShare={
+                          target.black_diameter && target.rings[0]
+                            ? target.black_diameter / target.rings[0].diameter
+                            : null
+                        }
                         detect={(photo) => api.photo(scoring.id, photo)}
                         onResult={(sug) => {
                           setPadHits(sug.hits)
