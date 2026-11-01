@@ -64,6 +64,13 @@ until docker exec "$ID-backend" python -c "import urllib.request; urllib.request
     sleep 2
 done
 docker exec "$ID-backend" python manage.py seed_testdata --password "$PASSWORD" > /dev/null
+# Für die Bilder auch die Module, die neue Vereine erst einschalten (nur in diesem Wegwerf-Stand)
+docker exec -e DATABASE_APP_ROLE= "$ID-backend" python manage.py shell -c "
+from organizations.models import Organization
+for o in Organization.objects.filter(type='club'):
+    o.enabled_modules = sorted(set(o.enabled_modules or []) | {'competitions', 'entries', 'website'})
+    o.save(update_fields=['enabled_modules'])
+" > /dev/null
 echo "Backend mit Demodaten bereit"
 
 docker run -d --name "$ID-web" --network "$ID" --network-alias web "$CPUS" \

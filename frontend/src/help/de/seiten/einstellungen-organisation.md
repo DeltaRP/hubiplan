@@ -4,7 +4,6 @@ titel: Einstellungen › Organisation
 bereich: einstellungen
 rechte: [org.edit]
 routen: [/einstellungen/organisation, /einstellungen]
-stichworte: [Verein, Name, Anschrift, Module, Bezeichnung]
+stichworte: [Verein, Name, Anschrift, Kontakt, Gründungsjahr]
 ---
-
-Hier pflegt ihr Name, Anschrift und Kontakt der Einheit, die Bezeichnung der Untereinheiten (etwa „Zug“ oder „Abteilung“) und welche Module eingeschaltet sind. Ein ausgeschaltetes Modul verschwindet für alle aus dem Menü, die Daten bleiben erhalten.
+Hier pflegt ihr Namen, Kurznamen, Gründungsjahr, Anschrift und Kontakt der Einheit. Der vollständige Name erscheint auf Rechnungen, Ausweisen, PDFs und in Mails. Welche Module ihr nutzt, schaltet die Plattform-Verwaltung frei.

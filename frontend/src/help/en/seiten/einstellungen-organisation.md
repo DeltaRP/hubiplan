@@ -4,7 +4,6 @@ titel: Settings › Organisation
 bereich: einstellungen
 rechte: [org.edit]
 routen: [/einstellungen/organisation, /einstellungen]
-stichworte: [club, name, address, modules, label]
+stichworte: [club, name, address, contact, founding year]
 ---
-
-Here you maintain the unit's name, address and contact, the label for sub-units (for example “platoon” or “department”) and which modules are switched on. A switched-off module disappears from the menu for everyone; the data is kept.
+Here you maintain the unit's name, short name, founding year, address and contact. The full name appears on invoices, cards, PDFs and in emails. The platform administration enables which modules you use.

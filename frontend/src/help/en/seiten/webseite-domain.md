@@ -7,5 +7,4 @@ rechte: [website.manage, website.content]
 routen: [/webseite/domain]
 stichworte: [domain, address, DNS]
 ---
-
 This shows the web address where the website can be reached and how to set up your own domain.
