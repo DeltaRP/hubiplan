@@ -131,7 +131,9 @@ export function LiveCamera({
     <div className="live-camera" role="dialog" aria-modal="true" aria-label="Live-Kamera">
       <div className={`live-frame${aim.ok ? ' live-ok' : ''}`}>
         <video ref={video} playsInline muted aria-hidden="true" />
-        <div className="live-guide" aria-hidden="true" />
+        <svg className="live-guide" viewBox="0 0 100 100" aria-hidden="true">
+          <circle cx="50" cy="50" r="42" />
+        </svg>
       </div>
       <p className="live-hint" role="status" aria-live="polite">
         {aim.hint}
