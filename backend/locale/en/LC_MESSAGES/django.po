@@ -949,6 +949,63 @@ msgstr "This link is invalid or has expired."
 msgid "Unbekannte Aktion."
 msgstr "Unknown action."
 
+msgid "Bitte einen Platz angeben."
+msgstr "Please enter a place."
+
+msgid "Bitte einen Platz von 1 bis 999 angeben."
+msgstr "Please enter a place from 1 to 999."
+
+msgid "Unbekannte Wertung."
+msgstr "Unknown ranking."
+
+msgid "Unbekanntes Pfand."
+msgstr "Unknown piece."
+
+msgid "Bitte eine Wertung oder ein Pfand wählen."
+msgstr "Please choose a ranking or a pledge."
+
+msgid "„bis Platz“ liegt vor „ab Platz“."
+msgstr "“To place” is before “from place”."
+
+msgid "Bitte einen Titel, einen Preis, eine Würde oder einen Pokal angeben."
+msgstr "Please enter a title, a prize, a royal title or a trophy."
+
+msgid "Vergeben wird erst, wenn der Wettbewerb endgültig ist."
+msgstr "Awards are only made once the competition is final."
+
+msgid "Bitte eine Bezeichnung angeben."
+msgstr "Please enter a label."
+
+msgid "Bitte eine Zahl von 1 bis 20 angeben."
+msgstr "Please enter a number from 1 to 20."
+
+msgid "Bitte ein Jahr angeben."
+msgstr "Please enter a year."
+
+msgid "Bitte ein vierstelliges Jahr angeben."
+msgstr "Please enter a four-digit year."
+
+msgid "Bitte ein Mitglied wählen oder einen Namen angeben."
+msgstr "Please choose a member or enter a name."
+
+msgid "Bitte einen Titel, Preis oder Pokal angeben."
+msgstr "Please enter a title, prize or trophy."
+
+msgid "Aus einem Wettbewerb vergeben: dort die Auszeichnung ändern."
+msgstr "Awarded from a competition: change the award there."
+
+msgid "Dieser Vorschlag ist schon entschieden."
+msgstr "This proposal has already been decided."
+
+msgid "Würden eintragen braucht das Recht „Mitglieder bearbeiten“."
+msgstr "Entering titles requires the “Edit members” permission."
+
+msgid "Bitte bestätigen oder ablehnen."
+msgstr "Please confirm or reject."
+
+msgid "Das Modul Wettbewerbe ist nicht freigeschaltet."
+msgstr "The competitions module is not enabled."
+
 msgid "Der Wettbewerb ist endgültig abgeschlossen."
 msgstr "The competition is finally closed."
 
@@ -957,9 +1014,6 @@ msgstr "This is not a bird shoot."
 
 msgid "Alle Pfänder sind gefallen, der Schuss zählt nicht mehr."
 msgstr "All pieces have fallen; the shot no longer counts."
-
-msgid "Unbekanntes Pfand."
-msgstr "Unknown piece."
 
 #, python-brace-format
 msgid "{name} ist schon gefallen."
@@ -1053,6 +1107,15 @@ msgstr "live during the competition"
 msgid "nach Abschluss"
 msgstr "after completion"
 
+msgid "nur Wertung der Untereinheiten und Mannschaften"
+msgstr "only the ranking of units and teams"
+
+msgid "Plätze 1 bis 3 mit Namen"
+msgstr "places 1 to 3 with names"
+
+msgid "ganze Rangliste"
+msgstr "full ranking"
+
 msgid "Rangliste"
 msgstr "Ranking"
 
@@ -1097,6 +1160,15 @@ msgstr "recognised from photo"
 
 msgid "von Hand"
 msgstr "by hand"
+
+msgid "vorgeschlagen"
+msgstr "proposed"
+
+msgid "bestätigt"
+msgstr "confirmed"
+
+msgid "abgelehnt"
+msgstr "rejected"
 
 msgid "Zu viele Aufrufe. Bitte kurz warten."
 msgstr "Too many requests. Please wait a moment."
@@ -1150,9 +1222,6 @@ msgstr "Invalid tie-break rules."
 msgid "Unbekannte Gleichstandsregel „{item}“."
 msgstr "Unknown tie-break rule “{item}”."
 
-msgid "Das Modul Wettbewerbe ist nicht freigeschaltet."
-msgstr "The competitions module is not enabled."
-
 msgid "Die Art des Wettbewerbs lässt sich nicht mehr ändern."
 msgstr "The type of competition can no longer be changed."
 
@@ -1161,6 +1230,9 @@ msgstr "A bird shoot can only be created as an own competition."
 
 msgid "Bitte einen Titel angeben."
 msgstr "Please enter a title."
+
+msgid "Bitte eine Reihe dieser Einheit wählen."
+msgstr "Please choose a series of this unit."
 
 msgid "Höchstens 30 weitere Angaben."
 msgstr "At most 30 further details."
@@ -1182,9 +1254,6 @@ msgstr "For rings, tenths or distance please choose a target."
 
 msgid "Höchstens 3 Nachkommastellen."
 msgstr "At most 3 decimal places."
-
-msgid "Bitte eine Bezeichnung angeben."
-msgstr "Please enter a label."
 
 msgid "Beim Vogelschießen gibt es keine Wertungen, nur Pfänder."
 msgstr "A bird shoot has no rankings, only pieces."
@@ -1844,9 +1913,6 @@ msgstr "Choice"
 msgid "Text"
 msgstr "Text"
 
-msgid "bestätigt"
-msgstr "confirmed"
-
 msgid "Rückfrage"
 msgstr "Query"
 
@@ -1966,9 +2032,6 @@ msgstr "Please choose a team."
 #, python-brace-format
 msgid "Höchstens {MAX_PERSONS} Personen."
 msgstr "At most {MAX_PERSONS} people."
-
-msgid "Bitte ein Mitglied wählen oder einen Namen angeben."
-msgstr "Please choose a member or enter a name."
 
 msgid "Unbekannte Aufgabe."
 msgstr "Unknown task."
@@ -2425,9 +2488,6 @@ msgstr "The breakdown comes to {x}; the day's takings are {x2}."
 
 msgid "Zuwendungsbestätigungen gibt es nicht für die Plattform."
 msgstr "Donation receipts do not exist for the platform."
-
-msgid "Bitte ein Jahr angeben."
-msgstr "Please enter a year."
 
 msgid "Bitte ein gültiges Jahr angeben."
 msgstr "Please enter a valid year."
@@ -2931,9 +2991,6 @@ msgstr "Number out of range"
 
 msgid "Bitte ein Jahr oder einen Zeitraum angeben."
 msgstr "Please enter a year or a period."
-
-msgid "Bitte ein vierstelliges Jahr angeben."
-msgstr "Please enter a four-digit year."
 
 msgid "Bitte zuerst das Startjahr angeben."
 msgstr "Please enter the start year first."
@@ -4212,3 +4269,6 @@ msgstr "Please choose a PDF file."
 
 msgid "Unbekannte Dokumentart."
 msgstr "Unknown document type."
+
+msgid "Diese Sprache ist auf diesem Server nicht freigeschaltet."
+msgstr "This language is not enabled on this server."

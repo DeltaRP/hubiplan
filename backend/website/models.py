@@ -184,6 +184,11 @@ class Website(models.Model):
         "weitergegebene Würden der übergeordneten Einheiten zeigen", default=False
     )
     allow_indexing = models.BooleanField("Suchmaschinen erlauben", default=True)
+    # Sprache der festen Texte auf der Webseite (konzepte/englisch.md, W1); Vereinsdaten
+    # bleiben, wie sie sind
+    language = models.CharField(
+        "Sprache der Webseite", max_length=8, choices=settings.LANGUAGES, default="de"
+    )
     contact_limit_per_hour = models.PositiveSmallIntegerField(
         "höchstens Formularmails je Stunde", default=20
     )

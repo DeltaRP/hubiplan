@@ -68,6 +68,7 @@ class TestZustand:
         assert data["name"] == "Verein A" and data["state"] == "public"
         assert data["email"] == "info@verein-a.example.org"
         assert data["units"][0]["slug"] == "jaegerzug"
+        assert data["language"] == "de"
         assert resp["Access-Control-Allow-Origin"] == "*"
         assert "public" in resp["Cache-Control"]
         # keine internen Nummern
