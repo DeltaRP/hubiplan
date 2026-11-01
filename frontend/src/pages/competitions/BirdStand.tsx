@@ -18,6 +18,7 @@ import {
 import { StandFinish } from './StandFinish.tsx'
 import { describe, guestOrigin, useStandStore, type LocalStarter } from './standStore.ts'
 import { HowTo } from '../../learning/Aids.tsx'
+import { t } from '../../i18n/index.ts'
 
 export function BirdStand({
   api,
@@ -37,7 +38,15 @@ export function BirdStand({
     describe,
     (conflicts) =>
       setNotice(
-        conflicts.map((c) => `${c.name}: ${c.note ?? ''} Neue Nummer ${c.number}`).join(' '),
+        conflicts
+          .map((c) =>
+            t('{name}: {x} Neue Nummer {number}', {
+              name: c.name,
+              x: c.note ?? '',
+              number: c.number,
+            }),
+          )
+          .join(' '),
       ),
     true,
   )
@@ -74,7 +83,11 @@ export function BirdStand({
     const names = view.prizes.filter((p) => hits.includes(p.id)).map((p) => p.name)
     setNotice(
       names.length
-        ? `${current.name} schießt ${names.join(' und ')} ab (Schuss ${view.total + 1}).`
+        ? t('{name} schießt {x} ab (Schuss {x2}).', {
+            name: current.name,
+            x: names.join(t(' und ')),
+            x2: view.total + 1,
+          })
         : null,
     )
     setChoosing(null)
@@ -92,7 +105,7 @@ export function BirdStand({
     } else {
       push({ op: 'undo', client_key: last.key })
     }
-    setNotice(`Schuss ${last.number} zurückgenommen.`)
+    setNotice(t('Schuss {number} zurückgenommen.', { number: last.number }))
   }
 
   function setPresence(s: Starter, presence: Presence) {
@@ -139,24 +152,26 @@ export function BirdStand({
 
   return (
     <div className={`stand stand-bird${fullscreen ? ' stand-full' : ''}`}>
-      <section className="stand-block" aria-label="Schießen">
+      <section className="stand-block" aria-label={t('Schießen')}>
         <p
           className={`stand-sync ${store.pending ? 'stand-sync-wait' : 'stand-sync-ok'}`}
           role="status"
         >
-          {online ? '' : 'Kein Empfang · '}
+          {online ? '' : t('Kein Empfang · ')}
           {statusText}
         </p>
         {syncError && <p className="alert alert-error">{syncError}</p>}
         {closed && (
-          <p className="alert alert-info">Der Wettbewerb ist endgültig, Eingaben sind gesperrt.</p>
+          <p className="alert alert-info">
+            {t('Der Wettbewerb ist endgültig, Eingaben sind gesperrt.')}
+          </p>
         )}
         {big && (
           <div className="stand-draw-big" role="status">
             <span>{big.name}</span>
             <strong>{big.number}</strong>
             <button type="button" className="button" onClick={() => setBig(null)}>
-              Weiter
+              {t('Weiter')}
             </button>
           </div>
         )}
@@ -173,8 +188,8 @@ export function BirdStand({
           ) : (
             <span className="muted">
               {local.starters.length
-                ? 'Niemand in der Reihenfolge: Losnummern fehlen oder alle sind ausgeschieden.'
-                : 'Noch keine Schützen. Unten unter „Schützen und Losnummern“ hinzufügen.'}
+                ? t('Niemand in der Reihenfolge: Losnummern fehlen oder alle sind ausgeschieden.')
+                : t('Noch keine Schützen. Unten unter „Schützen und Losnummern“ hinzufügen.')}
             </span>
           )}
         </div>
@@ -193,12 +208,12 @@ export function BirdStand({
         )}
         <HowTo k="how_comp_bird_order" />
         <p className="stand-counter">
-          Schuss Nr. <strong>{view.total}</strong> · für dieses Pfand{' '}
+          {t('Schuss Nr.')} <strong>{view.total}</strong> {t('· für dieses Pfand')}{' '}
           <strong>{view.sinceLast}</strong>
           {view.round ? (
             <>
               {' '}
-              · Runde <strong>{view.round}</strong>
+              {t('· Runde')} <strong>{view.round}</strong>
             </>
           ) : null}
         </p>
@@ -210,10 +225,10 @@ export function BirdStand({
         )}
 
         {!closed && choosing && (
-          <div className="stand-choose" role="group" aria-label="Gefallene Pfänder wählen">
+          <div className="stand-choose" role="group" aria-label={t('Gefallene Pfänder wählen')}>
             <p className="stand-label">
-              Welche Pfänder sind gefallen? ({current?.name})
-              {fixed && <span className="muted small"> Feste Reihenfolge: bis wohin?</span>}
+              {t('Welche Pfänder sind gefallen? ({name})', { name: current?.name })}
+              {fixed && <span className="muted small"> {t('Feste Reihenfolge: bis wohin?')}</span>}
             </p>
             <div className="stand-prize-buttons">
               {allowed.map((p, i) => (
@@ -224,7 +239,7 @@ export function BirdStand({
                   className={`button stand-prize${choosing.includes(p.id) ? '' : ' button-ghost'}`}
                   onClick={() => setChoosing((c) => pick(c, p.id))}
                 >
-                  {i < 9 ? `${i + 1} · ` : ''}
+                  {i < 9 ? t('{x} · ', { x: i + 1 }) : ''}
                   {p.name}
                 </button>
               ))}
@@ -236,14 +251,14 @@ export function BirdStand({
                 disabled={!choosing.length}
                 onClick={() => shot(choosing)}
               >
-                Speichern
+                {t('Speichern')}
               </button>
               <button
                 type="button"
                 className="button button-ghost"
                 onClick={() => setChoosing(null)}
               >
-                Abbrechen
+                {t('Abbrechen')}
               </button>
             </div>
           </div>
@@ -252,8 +267,9 @@ export function BirdStand({
         {!closed && done && (
           <div className="stand-done" role="status">
             <p className="alert alert-success">
-              Alle Pfänder sind gefallen. Jetzt den Wettbewerb abschließen oder, falls nötig, den
-              letzten Schuss zurücknehmen.
+              {t(
+                'Alle Pfänder sind gefallen. Jetzt den Wettbewerb abschließen oder, falls nötig, den letzten Schuss zurücknehmen.',
+              )}
             </p>
             <StandFinish
               api={api}
@@ -269,7 +285,7 @@ export function BirdStand({
                 disabled={!view.last}
                 onClick={undo}
               >
-                Rückgängig
+                {t('Rückgängig')}
               </button>
             </div>
           </div>
@@ -283,7 +299,7 @@ export function BirdStand({
               disabled={!current}
               onClick={() => shot()}
             >
-              Schuss
+              {t('Schuss')}
             </button>
             {fixed && hanging[0] ? (
               <>
@@ -303,7 +319,7 @@ export function BirdStand({
                     disabled={!current}
                     onClick={() => setChoosing([hanging[0].id, hanging[1].id])}
                   >
-                    mehrere auf einmal
+                    {t('mehrere auf einmal')}
                   </button>
                 )}
               </>
@@ -314,7 +330,7 @@ export function BirdStand({
                 disabled={!current || !allowed.length}
                 onClick={() => setChoosing([])}
               >
-                Pfand gefallen
+                {t('Pfand gefallen')}
               </button>
             )}
             <button
@@ -323,7 +339,7 @@ export function BirdStand({
               disabled={!current}
               onClick={() => current && setPresence(current, 'fehlt')}
             >
-              Schütze fehlt
+              {t('Schütze fehlt')}
             </button>
             <button
               type="button"
@@ -331,14 +347,14 @@ export function BirdStand({
               disabled={!view.last}
               onClick={undo}
             >
-              Rückgängig
+              {t('Rückgängig')}
             </button>
           </div>
         )}
       </section>
 
-      <section className="stand-block" aria-label="Pfänder">
-        <h2 className="stand-h">Pfänder</h2>
+      <section className="stand-block" aria-label={t('Pfänder')}>
+        <h2 className="stand-h">{t('Pfänder')}</h2>
         <ul className="stand-prizes">
           {view.prizes.map((p) => (
             <li key={p.id} className={p.fallen ? 'fallen' : ''}>
@@ -347,22 +363,25 @@ export function BirdStand({
                 <span>
                   {' '}
                   {p.winner_name}
-                  {p.unit_name || p.club ? ` (${p.unit_name || p.club})` : ''} · Schuss{' '}
-                  {p.shot_number}, {p.shots_for} für das Pfand
+                  {p.unit_name || p.club ? ` (${p.unit_name || p.club})` : ''}{' '}
+                  {t('· Schuss  {shot_number}, {shots_for} für das Pfand', {
+                    shot_number: p.shot_number,
+                    shots_for: p.shots_for,
+                  })}
                 </span>
               ) : (
-                <span className="muted"> hängt noch</span>
+                <span className="muted"> {t('hängt noch')}</span>
               )}
             </li>
           ))}
         </ul>
       </section>
-      <section className="stand-block" aria-label="Schützen">
+      <section className="stand-block" aria-label={t('Schützen')}>
         <details
           className="stand-section"
           open={!fullscreen || !local.starters.length || undefined}
         >
-          <summary>Schützen und Losnummern ({local.starters.length})</summary>
+          <summary>{t('Schützen und Losnummern ({n})', { n: local.starters.length })}</summary>
           {!closed && (
             <AddShooter
               starters={local.starters}
@@ -393,7 +412,7 @@ export function BirdStand({
                 disabled={!online}
                 onClick={() => void onDrawAll().then(() => store.sync(true))}
               >
-                Alle ohne Nummer auslosen
+                {t('Alle ohne Nummer auslosen')}
               </button>
             </div>
           )}
@@ -454,8 +473,10 @@ function DrawReport({ starters, gaps: showGaps }: { starters: LocalStarter[]; ga
   if (!missing.length && !gaps.length) return null
   return (
     <p className="muted">
-      {missing.length ? `Ohne Losnummer: ${missing.map((s) => s.name).join(', ')}. ` : ''}
-      {gaps.length ? `Nicht vergeben: ${gaps.join(', ')}.` : ''}
+      {missing.length
+        ? t('Ohne Losnummer: {x}. ', { x: missing.map((s) => s.name).join(', ') })
+        : ''}
+      {gaps.length ? t('Nicht vergeben: {x}.', { x: gaps.join(', ') }) : ''}
     </p>
   )
 }
@@ -481,12 +502,12 @@ function ShooterRow({
     e.preventDefault()
     const n = lot(hat)
     if (n === null) {
-      setError('Bitte eine Zahl ab 1.')
+      setError(t('Bitte eine Zahl ab 1.'))
       return
     }
     const other = taken(n)
     if (other) {
-      setError(`Nummer ${n} hat schon ${other.name}.`)
+      setError(t('Nummer {n} hat schon {name}.', { n, name: other.name }))
       return
     }
     setError(null)
@@ -499,7 +520,7 @@ function ShooterRow({
       <span>
         {s.name}
         <span className="muted"> {s.unit_name || s.club}</span>
-        {winner ? <span className="badge"> Pfand</span> : null}
+        {winner ? <span className="badge"> {t('Pfand')}</span> : null}
         {s.presence ? <span className="badge"> {PRESENCE_LABELS[s.presence]}</span> : null}
       </span>
       {!closed && (
@@ -507,26 +528,26 @@ function ShooterRow({
           {lot(s.number) === null && (
             <form className="stand-hat" onSubmit={save}>
               <input
-                aria-label={`Losnummer aus dem Hut für ${s.name}`}
+                aria-label={t('Losnummer aus dem Hut für {name}', { name: s.name })}
                 inputMode="numeric"
                 placeholder="Nr."
                 value={hat}
                 onChange={(e) => setHat(e.target.value)}
               />
               <button type="submit" className="button button-ghost">
-                Eintragen
+                {t('Eintragen')}
               </button>
               <button
                 type="button"
                 className="button button-ghost"
                 onClick={() => onDraw(null, 'digital')}
               >
-                Nummer ziehen
+                {t('Nummer ziehen')}
               </button>
             </form>
           )}
           <select
-            aria-label={`Teilnahme von ${s.name}`}
+            aria-label={t('Teilnahme von {name}', { name: s.name })}
             value={s.presence}
             onChange={(e) => onPresence(e.target.value as Presence)}
           >
@@ -575,7 +596,11 @@ function AddShooter({
     const taken = new Set(starters.map((s) => s.membership).filter(Boolean))
     const found = members
       .filter((m) => !taken.has(m.membership))
-      .filter((m) => words.every((w) => foldName(`${m.name} ${m.unit_name}`).includes(w)))
+      .filter((m) =>
+        words.every((w) =>
+          foldName(t('{name} {unit_name}', { name: m.name, unit_name: m.unit_name })).includes(w),
+        ),
+      )
       .slice(0, 8)
       .map((m): Pick => ({ kind: 'member', member: m }))
     return [...found, { kind: 'guest', name: query.trim() }]
@@ -587,12 +612,12 @@ function AddShooter({
     if (how === 'hut') {
       number = lot(hat)
       if (number === null) {
-        setError('Bitte die Nummer aus dem Hut eintragen.')
+        setError(t('Bitte die Nummer aus dem Hut eintragen.'))
         return
       }
       const other = starters.find((s) => lot(s.number) === number)
       if (other) {
-        setError(`Nummer ${number} hat schon ${other.name}.`)
+        setError(t('Nummer {number} hat schon {name}.', { number, name: other.name }))
         return
       }
     }
@@ -639,13 +664,13 @@ function AddShooter({
         <p className="stand-chosen">
           <strong>{chosen.kind === 'member' ? chosen.member.name : chosen.name}</strong>
           {chosen.kind === 'member' && chosen.member.unit_name
-            ? ` · ${chosen.member.unit_name}`
+            ? t(' · {unit_name}', { unit_name: chosen.member.unit_name })
             : ''}
-          {chosen.kind === 'guest' ? ' · neuer Gast' : ''}
+          {chosen.kind === 'guest' ? t(' · neuer Gast') : ''}
         </p>
         {chosen.kind === 'guest' && (
           <label className="field">
-            <span>Verein oder Einheit (optional)</span>
+            <span>{t('Verein oder Einheit (optional)')}</span>
             <input
               className="stand-input"
               list="vogel-einheiten"
@@ -661,7 +686,7 @@ function AddShooter({
           </label>
         )}
         <label className="field">
-          <span>Nummer aus dem Hut</span>
+          <span>{t('Nummer aus dem Hut')}</span>
           <input
             className="stand-input"
             inputMode="numeric"
@@ -679,13 +704,13 @@ function AddShooter({
         {error && <p className="field-error">{error}</p>}
         <div className="button-row">
           <button type="button" className="button" onClick={() => add(hat.trim() ? 'hut' : null)}>
-            {hat.trim() ? 'Mit dieser Nummer hinzufügen' : 'Ohne Nummer hinzufügen'}
+            {hat.trim() ? t('Mit dieser Nummer hinzufügen') : t('Ohne Nummer hinzufügen')}
           </button>
           <button type="button" className="button button-ghost" onClick={() => add('digital')}>
-            Nummer ziehen
+            {t('Nummer ziehen')}
           </button>
           <button type="button" className="button button-ghost" onClick={() => setChosen(null)}>
-            Abbrechen
+            {t('Abbrechen')}
           </button>
         </div>
       </div>
@@ -693,7 +718,7 @@ function AddShooter({
   return (
     <div className="stand-entry">
       <label className="stand-label" htmlFor="vogel-suche">
-        Schütze hinzufügen (Name)
+        {t('Schütze hinzufügen (Name)')}
       </label>
       <input
         id="vogel-suche"
@@ -724,7 +749,7 @@ function AddShooter({
                   </>
                 ) : (
                   <>
-                    Neu: <strong>„{h.name}“</strong> als Gast hinzufügen
+                    {t('Neu:')} <strong>„{h.name}“</strong> {t('als Gast hinzufügen')}
                   </>
                 )}
               </button>

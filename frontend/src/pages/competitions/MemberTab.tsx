@@ -22,10 +22,14 @@ export function CompetitionsTab({ org, membership }: { org: number; membership: 
           {data.grants.map((g) => (
             <li key={g.id}>
               <strong>{g.full_title || g.trophy_name}</strong>
-              {g.place ? ` · ${t('Platz {n}', { n: g.place })}` : ''}
-              {g.competition_title ? ` · ${g.competition_title}` : ''}
+              {g.place ? t(' · {x}', { x: t('Platz {n}', { n: g.place }) }) : ''}
+              {g.competition_title
+                ? t(' · {competition_title}', { competition_title: g.competition_title })
+                : ''}
               {g.dignity_state === 'vorschlag' &&
-                ` · ${t('Vorschlag: {dignity} {year}', { dignity: g.dignity_name, year: g.year })}`}
+                t(' · {x}', {
+                  x: t('Vorschlag: {dignity} {year}', { dignity: g.dignity_name, year: g.year }),
+                })}
             </li>
           ))}
         </ul>

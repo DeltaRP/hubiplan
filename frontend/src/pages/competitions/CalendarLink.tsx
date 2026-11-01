@@ -11,12 +11,13 @@ import {
 import { confirmDialog } from '../../components/dialog.ts'
 import { errorMessage, formatDate, useLoad } from '../../components/forms.ts'
 import { Alert, SelectField } from '../../components/ui.tsx'
+import { t } from '../../i18n/index.ts'
 
 export function eventLabel(e: CompetitionEvent): string {
-  const when = `${formatDate(e.date)}${e.time ? `, ${e.time} Uhr` : ''}`
+  const when = `${formatDate(e.date)}${e.time ? t(', {time} Uhr', { time: e.time }) : ''}`
   const unit = e.unit_name ? ` (${e.unit_name})` : ''
-  const cancelled = e.is_cancelled ? ' – abgesagt' : ''
-  return `${when} · ${e.title}${unit}${cancelled}`
+  const cancelled = e.is_cancelled ? t(' – abgesagt') : ''
+  return t('{when} · {title}{unit}{cancelled}', { when, title: e.title, unit, cancelled })
 }
 
 export function eventHref(e: CompetitionEvent): string {
@@ -39,16 +40,16 @@ export function EventPicker({
   const events = data.data.events
   return (
     <SelectField
-      label="Termin im Kalender"
+      label={t('Termin im Kalender')}
       value={value}
-      hint="Ein bestehender Termin bringt Titel, Datum, Ort und Beschreibung mit."
+      hint={t('Ein bestehender Termin bringt Titel, Datum, Ort und Beschreibung mit.')}
       onChange={(e) => {
         const v = e.target.value
         onChange(v, events.find((x) => String(x.id) === v) ?? null)
       }}
     >
-      <option value="">kein Termin</option>
-      {data.data.can_create && <option value="neu">neuen Termin im Kalender anlegen</option>}
+      <option value="">{t('kein Termin')}</option>
+      {data.data.can_create && <option value="neu">{t('neuen Termin im Kalender anlegen')}</option>}
       {events.map((e) => (
         <option key={e.id} value={e.id} disabled={!!e.competition}>
           {eventLabel(e)}
@@ -97,8 +98,8 @@ export function EventCard({
       const res = await competitionsApi.startersFromEvent(org, comp.id)
       const text =
         res.added === 0
-          ? 'Alle Zusagen stehen schon in der Starterliste.'
-          : `${res.added} Starter aus den Zusagen übernommen.`
+          ? t('Alle Zusagen stehen schon in der Starterliste.')
+          : t('{added} Starter aus den Zusagen übernommen.', { added: res.added })
       setMessage({ kind: 'success', text })
       onChanged({ location: comp.location, description: comp.description })
     } catch (err) {
@@ -110,7 +111,7 @@ export function EventCard({
 
   return (
     <div className="card card-wide">
-      <h2>Termin im Kalender</h2>
+      <h2>{t('Termin im Kalender')}</h2>
       {event ? (
         <>
           <p>
@@ -119,17 +120,21 @@ export function EventCard({
           </p>
           {event.date !== comp.date && (
             <Alert kind="info">
-              Der Termin ist am {formatDate(event.date)}, der Wettbewerb am {formatDate(comp.date)}.
+              {t('Der Termin ist am {x}, der Wettbewerb am {x2}.', {
+                x: formatDate(event.date),
+                x2: formatDate(comp.date),
+              })}
             </Alert>
           )}
           {event.rsvp_enabled && (
             <p className="muted">
-              {event.yes_count} {event.yes_count === 1 ? 'Zusage' : 'Zusagen'} zum Termin.
+              {event.yes_count} {event.yes_count === 1 ? t('Zusage') : t('Zusagen')}{' '}
+              {t('zum Termin.')}
             </p>
           )}
         </>
       ) : (
-        <p className="muted">Der Wettbewerb ist mit keinem Termin verknüpft.</p>
+        <p className="muted">{t('Der Wettbewerb ist mit keinem Termin verknüpft.')}</p>
       )}
       {canManage && !closed && (
         <>
@@ -155,7 +160,7 @@ export function EventCard({
                 disabled={busy}
                 onClick={() => void takeStarters()}
               >
-                Zusagen als Starter übernehmen
+                {t('Zusagen als Starter übernehmen')}
               </button>
             )}
             {!choosing && (
@@ -165,7 +170,7 @@ export function EventCard({
                 disabled={busy}
                 onClick={() => setChoosing(true)}
               >
-                {event ? 'Anderen Termin wählen' : 'Termin wählen'}
+                {event ? t('Anderen Termin wählen') : t('Termin wählen')}
               </button>
             )}
             {!event && comp.calendar.can_create && (
@@ -177,7 +182,7 @@ export function EventCard({
                   void run(() => competitionsApi.setEvent(org, comp.id, { create: true }))
                 }
               >
-                Termin anlegen
+                {t('Termin anlegen')}
               </button>
             )}
             {event && (
@@ -187,14 +192,17 @@ export function EventCard({
                 disabled={busy}
                 onClick={async () => {
                   const ok = await confirmDialog({
-                    title: 'Verknüpfung lösen',
-                    message: `Den Wettbewerb vom Termin „${event.title}“ lösen? Der Termin bleibt im Kalender.`,
-                    confirmLabel: 'Lösen',
+                    title: t('Verknüpfung lösen'),
+                    message: t(
+                      'Den Wettbewerb vom Termin „{title}“ lösen? Der Termin bleibt im Kalender.',
+                      { title: event.title },
+                    ),
+                    confirmLabel: t('Lösen'),
                   })
                   if (ok) await run(() => competitionsApi.setEvent(org, comp.id, { event: null }))
                 }}
               >
-                Verknüpfung lösen
+                {t('Verknüpfung lösen')}
               </button>
             )}
           </div>

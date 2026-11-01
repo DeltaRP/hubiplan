@@ -3,6 +3,7 @@ import type { CustomTarget, ScoringMethod, TargetCatalog } from '../../api/compe
 import { Field, SelectField } from '../../components/ui.tsx'
 import { HowTo, Term, Why } from '../../learning/Aids.tsx'
 import { TargetPicker } from './TargetPicker.tsx'
+import { t } from '../../i18n/index.ts'
 
 export interface TargetValues {
   target: string
@@ -27,8 +28,8 @@ const EMPTY_CUSTOM: CustomTarget = {
 }
 
 const PRESET_LABELS: Record<string, string> = {
-  dsb: 'wie DSB (Auflage)',
-  bhds: 'wie BHDS',
+  dsb: t('wie DSB (Auflage)'),
+  bhds: t('wie BHDS'),
 }
 
 function num(v: string): string {
@@ -62,7 +63,7 @@ export function TargetSettings({
 
   return (
     <div className="stack">
-      <h4>Scheibe und Wertung</h4>
+      <h4>{t('Scheibe und Wertung')}</h4>
       <TargetPicker
         targets={catalog.targets}
         value={v.target}
@@ -78,10 +79,10 @@ export function TargetSettings({
       />
       <div className="grid-3">
         <SelectField
-          label="Wertungsart"
+          label={t('Wertungsart')}
           value={v.method}
           error={errors.method}
-          hint={v.target ? undefined : 'Ringe, Zehntel und Teiler brauchen eine Scheibe.'}
+          hint={v.target ? undefined : t('Ringe, Zehntel und Teiler brauchen eine Scheibe.')}
           onChange={(e) => set('method', e.target.value as ScoringMethod)}
         >
           {catalog.methods.map((m) => (
@@ -93,58 +94,63 @@ export function TargetSettings({
       </div>
       {chosen && (
         <p className="muted small">
-          Zehn {fmt(chosen.top_diameter)} mm, Ringe {fmt(chosen.ring_width)} mm breit, Ringe{' '}
-          {chosen.lowest} bis {chosen.top}
+          {t('Zehn {x} mm, Ringe {x2} mm breit, Ringe  {lowest} bis', {
+            x: fmt(chosen.top_diameter),
+            x2: fmt(chosen.ring_width),
+            lowest: chosen.lowest,
+          })}{' '}
+          {chosen.top}
           {chosen.inner_diameter ? (
             <>
-              , mit <Term k="comp_inner">Innenzehner</Term>
+              {t(', mit')} <Term k="comp_inner">{t('Innenzehner')}</Term>
             </>
           ) : (
             ''
           )}
-          , höchstens {chosen.max_decimal.replace('.', ',')} in{' '}
-          <Term k="comp_decimal">Zehnteln</Term>
+          {t(', höchstens')} {chosen.max_decimal.replace('.', ',')} in{' '}
+          <Term k="comp_decimal">{t('Zehnteln')}</Term>
           {chosen.black_diameter ? (
             <>
-              , <Term k="comp_spot">Spiegel</Term> {fmt(chosen.black_diameter)} mm
+              , <Term k="comp_spot">{t('Spiegel')}</Term> {fmt(chosen.black_diameter)} mm
             </>
           ) : (
             ''
           )}
-          ; der <Term k="comp_teiler">Teiler</Term> ist der Abstand in 1/100 mm. {chosen.note}
+          {t('; der')} <Term k="comp_teiler">{t('Teiler')}</Term>{' '}
+          {t('ist der Abstand in 1/100 mm.')} {chosen.note}
         </p>
       )}
       {chosen && <HowTo k="how_comp_score" />}
       {custom && (
         <div className="grid-3">
           <Field
-            label="Name der Scheibe"
+            label={t('Name der Scheibe')}
             value={ct.name ?? ''}
             onChange={(e) => setCustom({ name: e.target.value })}
           />
           <Field
-            label="Durchmesser höchster Ring (mm)"
+            label={t('Durchmesser höchster Ring (mm)')}
             inputMode="decimal"
             value={String(ct.top_diameter ?? '')}
             error={errors.top_diameter}
             onChange={(e) => setCustom({ top_diameter: num(e.target.value) })}
           />
           <Field
-            label="Ringbreite (mm)"
+            label={t('Ringbreite (mm)')}
             inputMode="decimal"
             value={String(ct.ring_width ?? '')}
             error={errors.ring_width}
             onChange={(e) => setCustom({ ring_width: num(e.target.value) })}
           />
           <Field
-            label="Kaliber (mm)"
+            label={t('Kaliber (mm)')}
             inputMode="decimal"
             value={String(ct.caliber ?? '')}
             error={errors.caliber}
             onChange={(e) => setCustom({ caliber: num(e.target.value) })}
           />
           <Field
-            label="Höchster Ring"
+            label={t('Höchster Ring')}
             type="number"
             min={1}
             max={20}
@@ -153,7 +159,7 @@ export function TargetSettings({
             onChange={(e) => setCustom({ top: Number(e.target.value) || 10 })}
           />
           <Field
-            label="Niedrigster Ring"
+            label={t('Niedrigster Ring')}
             type="number"
             min={1}
             max={20}
@@ -162,33 +168,33 @@ export function TargetSettings({
             onChange={(e) => setCustom({ lowest: Number(e.target.value) || 1 })}
           />
           <Field
-            label="Innenzehner (mm)"
+            label={t('Innenzehner (mm)')}
             inputMode="decimal"
-            hint="leer: gibt es nicht"
+            hint={t('leer: gibt es nicht')}
             value={String(ct.inner_diameter ?? '')}
             error={errors.inner_diameter}
             onChange={(e) => setCustom({ inner_diameter: num(e.target.value) || null })}
           />
           <SelectField
-            label="Innenzehner zählt, wenn …"
+            label={t('Innenzehner zählt, wenn …')}
             value={ct.inner_mode}
             onChange={(e) =>
               setCustom({ inner_mode: e.target.value as CustomTarget['inner_mode'] })
             }
           >
-            <option value="beruehren">der Lochrand ihn berührt</option>
-            <option value="wegschiessen">der Punkt ganz weggeschossen ist</option>
+            <option value="beruehren">{t('der Lochrand ihn berührt')}</option>
+            <option value="wegschiessen">{t('der Punkt ganz weggeschossen ist')}</option>
           </SelectField>
           <Field
-            label="Spiegel (mm)"
+            label={t('Spiegel (mm)')}
             inputMode="decimal"
-            hint="schwarze Fläche, nur zum Zeichnen"
+            hint={t('schwarze Fläche, nur zum Zeichnen')}
             value={String(ct.black_diameter ?? '')}
             error={errors.black_diameter}
             onChange={(e) => setCustom({ black_diameter: num(e.target.value) || null })}
           />
           <Field
-            label="Scheibenbilder je Karte"
+            label={t('Scheibenbilder je Karte')}
             type="number"
             min={1}
             max={20}
@@ -197,7 +203,7 @@ export function TargetSettings({
             onChange={(e) => setCustom({ spots: Number(e.target.value) || 1 })}
           />
           <Field
-            label="Teilerfaktor"
+            label={t('Teilerfaktor')}
             inputMode="decimal"
             value={String(ct.teiler_factor ?? 1)}
             error={errors.teiler_factor}
@@ -208,10 +214,11 @@ export function TargetSettings({
       {errors.custom_target && <p className="field-error">{errors.custom_target}</p>}
       {v.target && (
         <>
-          <h4>Bei Gleichstand</h4>
+          <h4>{t('Bei Gleichstand')}</h4>
           <p className="muted small">
-            Die Regeln gelten der Reihe nach, wenn für alle Gleichen Treffer erfasst sind. Bleibt es
-            gleich, teilen sie sich den Platz; auf Preisplätzen folgt ein Stechen.
+            {t(
+              'Die Regeln gelten der Reihe nach, wenn für alle Gleichen Treffer erfasst sind. Bleibt es gleich, teilen sie sich den Platz; auf Preisplätzen folgt ein Stechen.',
+            )}
           </p>
           <Why k="comp_tie_breaks" />
           {v.tie_breaks.length > 0 ? (
@@ -223,7 +230,7 @@ export function TargetSettings({
                     type="button"
                     className="link-button"
                     disabled={i === 0}
-                    aria-label={`${labels[key]} nach oben`}
+                    aria-label={t('{x} nach oben', { x: labels[key] })}
                     onClick={() => move(i, -1)}
                   >
                     ↑
@@ -232,7 +239,7 @@ export function TargetSettings({
                     type="button"
                     className="link-button"
                     disabled={i === v.tie_breaks.length - 1}
-                    aria-label={`${labels[key]} nach unten`}
+                    aria-label={t('{x} nach unten', { x: labels[key] })}
                     onClick={() => move(i, 1)}
                   >
                     ↓
@@ -253,19 +260,19 @@ export function TargetSettings({
               ))}
             </ol>
           ) : (
-            <p className="muted small">Keine Regeln: gleicher Wert, gleicher Platz.</p>
+            <p className="muted small">{t('Keine Regeln: gleicher Wert, gleicher Platz.')}</p>
           )}
           {errors.tie_breaks && <p className="field-error">{errors.tie_breaks}</p>}
           <div className="button-row">
             {unused.length > 0 && (
               <SelectField
-                label="Regel hinzufügen"
+                label={t('Regel hinzufügen')}
                 value=""
                 onChange={(e) =>
                   e.target.value && set('tie_breaks', [...v.tie_breaks, e.target.value])
                 }
               >
-                <option value="">wählen …</option>
+                <option value="">{t('wählen …')}</option>
                 {unused.map((tm) => (
                   <option key={tm.value} value={tm.value}>
                     {tm.label}
@@ -286,7 +293,7 @@ export function TargetSettings({
           </div>
           {v.tie_breaks.includes('serien') && (
             <Field
-              label="Schüsse je Serie"
+              label={t('Schüsse je Serie')}
               type="number"
               min={1}
               max={100}

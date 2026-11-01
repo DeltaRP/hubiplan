@@ -3,6 +3,7 @@
 // zeigen die übliche Anordnung (vier Ecken und Mitte).
 import type { TargetInfo } from '../../api/competitions.ts'
 import { TargetRings } from './TargetPad.tsx'
+import { t } from '../../i18n/index.ts'
 
 function spotOffsets(tm: TargetInfo): [number, number][] {
   const outer = (tm.rings[0]?.diameter ?? tm.top_diameter) / 2
@@ -62,11 +63,15 @@ function fmt(n: number): string {
 /** Kurzbeschreibung in Alltagssprache. */
 function targetSummary(tm: TargetInfo): string {
   const parts = [
-    tm.spots > 1 ? `${tm.spots} Spiegel auf einer Karte` : 'ein Spiegel je Karte',
-    tm.top_diameter <= 1 ? 'Zehn als kleiner Punkt' : `Zehn ${fmt(tm.top_diameter)} mm`,
-    `Ringe ${tm.lowest} bis ${tm.top}`,
+    tm.spots > 1
+      ? t('{spots} Spiegel auf einer Karte', { spots: tm.spots })
+      : t('ein Spiegel je Karte'),
+    tm.top_diameter <= 1
+      ? t('Zehn als kleiner Punkt')
+      : t('Zehn {x} mm', { x: fmt(tm.top_diameter) }),
+    t('Ringe {lowest} bis {top}', { lowest: tm.lowest, top: tm.top }),
   ]
-  if (tm.photo) parts.push('Foto möglich')
+  if (tm.photo) parts.push(t('Foto möglich'))
   return parts.join(' · ')
 }
 
@@ -87,7 +92,7 @@ export function TargetPicker({
   const name = 'scheibe'
   return (
     <fieldset className="target-picker">
-      <legend>Scheibe</legend>
+      <legend>{t('Scheibe')}</legend>
       <div className="target-tiles">
         <label className={`target-tile${value === '' ? ' target-tile-on' : ''}`}>
           <input
@@ -100,8 +105,8 @@ export function TargetPicker({
           <span className="target-tile-none" aria-hidden="true">
             Σ
           </span>
-          <span className="target-tile-name">keine Scheibe</span>
-          <span className="target-tile-note">nur die Summe eingeben</span>
+          <span className="target-tile-name">{t('keine Scheibe')}</span>
+          <span className="target-tile-note">{t('nur die Summe eingeben')}</span>
         </label>
       </div>
       {groups.map((g) => (
@@ -142,8 +147,8 @@ export function TargetPicker({
           <span className="target-tile-none" aria-hidden="true">
             ✎
           </span>
-          <span className="target-tile-name">Eigene Scheibe</span>
-          <span className="target-tile-note">Maße selbst eingeben</span>
+          <span className="target-tile-name">{t('Eigene Scheibe')}</span>
+          <span className="target-tile-note">{t('Maße selbst eingeben')}</span>
         </label>
       </div>
       {error && <p className="field-error">{error}</p>}

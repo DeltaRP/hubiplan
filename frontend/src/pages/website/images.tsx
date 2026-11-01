@@ -30,6 +30,7 @@ import {
   useImageUpload,
 } from './imageTools.ts'
 import type { ImageOrder } from './imageTools.ts'
+import { t, tn } from '../../i18n/index.ts'
 
 export interface Unit {
   id: number
@@ -42,7 +43,7 @@ const FULL: CropArea = { x: 0, y: 0, width: 100, height: 100, rotation: 0, aspec
 
 /** Knopf „Bilder hochladen“ (mehrere Dateien) samt Ziehen auf die Fläche */
 function UploadButton({
-  label = 'Bilder hochladen',
+  label = t('Bilder hochladen'),
   multiple = true,
   disabled,
   onFiles,
@@ -95,7 +96,11 @@ function matches(i: WebsiteImage, q: string, scope: Scope, state: State): boolea
   if (state === 'unused' && i.used !== false) return false
   if (state === 'no_alt' && !needsAlt(i)) return false
   if (q) {
-    const hay = `${i.caption} ${i.alt_text} ${i.department_name ?? ''}`.toLowerCase()
+    const hay = t('{caption} {alt_text} {x}', {
+      caption: i.caption,
+      alt_text: i.alt_text,
+      x: i.department_name ?? '',
+    }).toLowerCase()
     if (
       !q
         .toLowerCase()
@@ -116,7 +121,7 @@ function OrderField({
 }) {
   return (
     <SelectField
-      label="Sortieren"
+      label={t('Sortieren')}
       value={value}
       onChange={(e) => onChange(e.target.value as ImageOrder)}
     >
@@ -159,8 +164,10 @@ function ImageTiles({
               <span className="image-tile-label">{imageLabel(i)}</span>
               <span className="image-tile-tags">
                 {i.department_name && <small className="tag">{i.department_name}</small>}
-                {i.used === false && <small className="tag tag-muted">nicht verwendet</small>}
-                {needsAlt(i) && <small className="tag tag-warn">ohne Beschreibung</small>}
+                {i.used === false && (
+                  <small className="tag tag-muted">{t('nicht verwendet')}</small>
+                )}
+                {needsAlt(i) && <small className="tag tag-warn">{t('ohne Beschreibung')}</small>}
               </span>
             </button>
           </li>
@@ -218,20 +225,20 @@ export function ImagesPage() {
         if (files.length) void add(files)
       }}
     >
-      <h2>Bilder</h2>
+      <h2>{t('Bilder')}</h2>
       <div className="aid-row">
         <Why k="web_photos" />
         <Why k="web_alt_text" />
       </div>
       <p className="muted small">
-        Bilder werden beim Hochladen verkleinert, und Angaben wie Kamera oder Aufnahmeort werden
-        entfernt. Für Fotos mit Personen braucht es deren Einverständnis. Du kannst Bilder auch
-        hierher ziehen. Ein Klick auf ein Bild öffnet es zum Bearbeiten.
+        {t(
+          'Bilder werden beim Hochladen verkleinert, und Angaben wie Kamera oder Aufnahmeort werden entfernt. Für Fotos mit Personen braucht es deren Einverständnis. Du kannst Bilder auch hierher ziehen. Ein Klick auf ein Bild öffnet es zum Bearbeiten.',
+        )}
       </p>
       <RightsHint />
       <div className="image-filters">
         <Field
-          label="Suchen"
+          label={t('Suchen')}
           type="search"
           value={q}
           onChange={(e) => {
@@ -241,7 +248,7 @@ export function ImagesPage() {
         />
         {units.length > 0 && (
           <SelectField
-            label="Gehört zu"
+            label={t('Gehört zu')}
             value={scopeValue}
             onChange={(e) => {
               const v = e.target.value
@@ -250,7 +257,7 @@ export function ImagesPage() {
             }}
           >
             <option value="all">alle</option>
-            <option value="general">Verein allgemein</option>
+            <option value="general">{t('Verein allgemein')}</option>
             {units.map((u) => (
               <option key={u.id} value={u.id}>
                 {u.name}
@@ -259,7 +266,7 @@ export function ImagesPage() {
           </SelectField>
         )}
         <SelectField
-          label="Zustand"
+          label={t('Zustand')}
           value={state}
           onChange={(e) => {
             setState(e.target.value as State)
@@ -267,8 +274,8 @@ export function ImagesPage() {
           }}
         >
           <option value="all">alle</option>
-          <option value="unused">nicht verwendet</option>
-          <option value="no_alt">ohne Beschreibung</option>
+          <option value="unused">{t('nicht verwendet')}</option>
+          <option value="no_alt">{t('ohne Beschreibung')}</option>
         </SelectField>
         <OrderField value={order} onChange={setOrder} />
         <div className="button-row">
@@ -276,15 +283,15 @@ export function ImagesPage() {
         </div>
       </div>
       {uploader.dialog}
-      {uploader.busy && <p className="muted small">Wird hochgeladen …</p>}
+      {uploader.busy && <p className="muted small">{t('Wird hochgeladen …')}</p>}
       {uploader.error && <Alert kind="error">{uploader.error}</Alert>}
       {error && <LoadError message={error} onRetry={() => void reload()} />}
-      {data && all.length === 0 && <p className="muted">Noch keine Bilder hochgeladen.</p>}
+      {data && all.length === 0 && <p className="muted">{t('Noch keine Bilder hochgeladen.')}</p>}
       {data && all.length > 0 && (
         <p className="muted small" aria-live="polite">
           {filtered.length === all.length
-            ? `${all.length} ${all.length === 1 ? 'Bild' : 'Bilder'}`
-            : `${filtered.length} von ${all.length} Bildern`}
+            ? tn('{n} Bild', '{n} Bilder', all.length)
+            : t('{n} von {n2} Bildern', { n: filtered.length, n2: all.length })}
         </p>
       )}
       <ImageTiles images={filtered.slice(0, shown)} onClick={(i) => setOpen(i.id)} />
@@ -295,7 +302,7 @@ export function ImagesPage() {
             className="button button-ghost"
             onClick={() => setShown((n) => n + PAGE_SIZE)}
           >
-            Weitere laden
+            {t('Weitere laden')}
           </button>
         </div>
       )}
@@ -316,7 +323,7 @@ export function ImagesPage() {
 
 async function loadFile(url: string, name: string): Promise<File> {
   const res = await fetch(url, { credentials: 'same-origin' })
-  if (!res.ok) throw new Error('Das Original ließ sich nicht laden.')
+  if (!res.ok) throw new Error(t('Das Original ließ sich nicht laden.'))
   const blob = await res.blob()
   return new File([blob], name, { type: blob.type || 'image/jpeg' })
 }
@@ -340,9 +347,13 @@ export function ImageEditDialog({
   // „Schließen“ oben im Fenster wartet, bis die Angaben gespeichert sind
   const flush = useRef<(() => Promise<boolean>) | null>(null)
   return (
-    <Modal title="Bild bearbeiten" onClose={onClose} beforeClose={() => flush.current?.() ?? true}>
+    <Modal
+      title={t('Bild bearbeiten')}
+      onClose={onClose}
+      beforeClose={() => flush.current?.() ?? true}
+    >
       {error && <LoadError message={error} onRetry={() => void reload()} />}
-      {!data && !error && <p className="muted">Lädt …</p>}
+      {!data && !error && <p className="muted">{t('Lädt …')}</p>}
       {data && (
         <ImageEditForm
           key={data.id}
@@ -403,8 +414,8 @@ function ImageEditForm({
       flushRef.current = null
     }
   }, [flushRef, auto.flush])
-  const crop = useImageCrop({ title: 'Ausschnitt ändern' })
-  const replace = useImageCrop({ title: 'Neues Bild zuschneiden' })
+  const crop = useImageCrop({ title: t('Ausschnitt ändern') })
+  const replace = useImageCrop({ title: t('Neues Bild zuschneiden') })
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
@@ -461,56 +472,63 @@ function ImageEditForm({
     })
 
   return (
-    <form className="image-edit" onSubmit={(e) => e.preventDefault()} aria-label="Bild bearbeiten">
+    <form
+      className="image-edit"
+      onSubmit={(e) => e.preventDefault()}
+      aria-label={t('Bild bearbeiten')}
+    >
       <div className="image-edit-preview">
         <img src={image.url} alt={image.alt_text} />
         <div className="button-row">
           <button type="button" className="button" disabled={busy} onClick={() => void recrop()}>
-            Ausschnitt ändern
+            {t('Ausschnitt ändern')}
           </button>
         </div>
         <p className="muted small">
-          Der Ausschnitt wird aus dem Original neu gewählt; „Unverändert übernehmen“ zeigt wieder
-          das ganze Bild.
+          {t(
+            'Der Ausschnitt wird aus dem Original neu gewählt; „Unverändert übernehmen“ zeigt wieder das ganze Bild.',
+          )}
         </p>
       </div>
       <div className="image-edit-fields">
         <SaveStatus auto={auto} />
         <Field
-          label="Bildunterschrift"
+          label={t('Bildunterschrift')}
           value={v.caption}
           maxLength={300}
           error={errors.caption}
           onChange={(e) => set('caption', e.target.value)}
         />
         <Field
-          label="Alternativtext (was zu sehen ist)"
+          label={t('Alternativtext (was zu sehen ist)')}
           value={v.alt_text}
           maxLength={300}
           disabled={v.decorative}
           error={errors.alt_text}
           hint={
             !v.alt_text.trim() && !v.decorative
-              ? 'Ohne Beschreibung erfahren blinde Besucher nicht, was auf dem Bild zu sehen ist.'
+              ? t(
+                  'Ohne Beschreibung erfahren blinde Besucher nicht, was auf dem Bild zu sehen ist.',
+                )
               : undefined
           }
           onChange={(e) => set('alt_text', e.target.value)}
         />
         <Checkbox
-          label="Nur Schmuck, das Bild zeigt nichts Wichtiges"
-          hint="dann ohne Beschreibung"
+          label={t('Nur Schmuck, das Bild zeigt nichts Wichtiges')}
+          hint={t('dann ohne Beschreibung')}
           checked={v.decorative}
           onChange={(on) => set('decorative', on)}
         />
         {units.length > 0 && (
           <SelectField
-            label="Gehört zu"
+            label={t('Gehört zu')}
             value={v.department ?? ''}
             error={errors.department}
-            hint="Bei der Bildauswahl einer Untereinheit stehen ihre Bilder vorn."
+            hint={t('Bei der Bildauswahl einer Untereinheit stehen ihre Bilder vorn.')}
             onChange={(e) => set('department', e.target.value ? Number(e.target.value) : null)}
           >
-            <option value="">Verein allgemein</option>
+            <option value="">{t('Verein allgemein')}</option>
             {units.map((u) => (
               <option key={u.id} value={u.id}>
                 {u.name}
@@ -518,9 +536,9 @@ function ImageEditForm({
             ))}
           </SelectField>
         )}
-        <h3>Verwendet in</h3>
+        <h3>{t('Verwendet in')}</h3>
         {image.usage.length === 0 ? (
-          <p className="muted small">Noch in keinem Text.</p>
+          <p className="muted small">{t('Noch in keinem Text.')}</p>
         ) : (
           <>
             <ul className="plain-list small">
@@ -534,8 +552,9 @@ function ImageEditForm({
               ))}
             </ul>
             <p className="muted small">
-              Änderungen am Bild wirken sofort an allen Stellen, auch auf der veröffentlichten
-              Webseite.
+              {t(
+                'Änderungen am Bild wirken sofort an allen Stellen, auch auf der veröffentlichten Webseite.',
+              )}
             </p>
           </>
         )}
@@ -543,10 +562,10 @@ function ImageEditForm({
         {crop.dialog}
         {replace.dialog}
         <details className="image-edit-more">
-          <summary>Mehr</summary>
+          <summary>{t('Mehr')}</summary>
           <div className="button-row">
             <UploadButton
-              label="Datei ersetzen"
+              label={t('Datei ersetzen')}
               multiple={false}
               disabled={busy}
               onFiles={(files) => void replaceWith(files[0])}
@@ -557,7 +576,7 @@ function ImageEditForm({
               disabled={busy}
               onClick={() => void copy()}
             >
-              Als Kopie bearbeiten
+              {t('Als Kopie bearbeiten')}
             </button>
             <button
               type="button"
@@ -567,16 +586,16 @@ function ImageEditForm({
                 setCopied(true)
               }}
             >
-              {copied ? 'Schnipsel kopiert' : 'Schnipsel kopieren'}
+              {copied ? t('Schnipsel kopiert') : t('Schnipsel kopieren')}
             </button>
           </div>
           <p className="muted small">
-            „Datei ersetzen“ behält alle Stellen und Angaben. „Als Kopie bearbeiten“ legt ein
-            zweites Bild aus demselben Original an, z. B. breit für den Seitenkopf und quadratisch
-            fürs Karussell.
+            {t(
+              '„Datei ersetzen“ behält alle Stellen und Angaben. „Als Kopie bearbeiten“ legt ein zweites Bild aus demselben Original an, z. B. breit für den Seitenkopf und quadratisch fürs Karussell.',
+            )}
           </p>
           <p className="muted small">
-            {image.width} × {image.height} Pixel · hochgeladen am{' '}
+            {image.width} {t('× {height} Pixel · hochgeladen am', { height: image.height })}{' '}
             {formatDateTime(image.uploaded_at)}
             <br />
             <code>{image.markdown}</code>
@@ -589,7 +608,7 @@ function ImageEditForm({
             disabled={busy}
             onClick={() => void remove()}
           >
-            Löschen
+            {t('Löschen')}
           </button>
         </div>
       </div>
@@ -607,7 +626,7 @@ function ImageEditForm({
 export function ImagePicker({
   images,
   unit,
-  title = 'Bild wählen',
+  title = t('Bild wählen'),
   multiple = false,
   initial = [],
   max,
@@ -675,11 +694,11 @@ export function ImagePicker({
   return (
     <Modal title={title} onClose={onCancel}>
       <div className="image-filters">
-        <Field label="Suchen" type="search" value={q} onChange={(e) => setQ(e.target.value)} />
+        <Field label={t('Suchen')} type="search" value={q} onChange={(e) => setQ(e.target.value)} />
         <OrderField value={order} onChange={setOrder} />
         {(anyOther || unit) && (
           <fieldset className="image-scope">
-            <legend className="sr-only">Welche Bilder</legend>
+            <legend className="sr-only">{t('Welche Bilder')}</legend>
             {unit && (
               <label>
                 <input
@@ -698,7 +717,7 @@ export function ImagePicker({
                 checked={scope === 'suggested'}
                 onChange={() => setScope('suggested')}
               />{' '}
-              {unit ? `${unit.name} und Verein allgemein` : 'Verein allgemein'}
+              {unit ? t('{name} und Verein allgemein', { name: unit.name }) : t('Verein allgemein')}
             </label>
             <label>
               <input
@@ -707,7 +726,7 @@ export function ImagePicker({
                 checked={scope === 'all'}
                 onChange={() => setScope('all')}
               />{' '}
-              alle Bilder
+              {t('alle Bilder')}
             </label>
           </fieldset>
         )}
@@ -722,7 +741,7 @@ export function ImagePicker({
           <li>
             <label className="image-tile image-tile-new">
               <span aria-hidden="true">＋</span>
-              <span>{uploader.busy ? 'Wird hochgeladen …' : 'Neues Bild hochladen'}</span>
+              <span>{uploader.busy ? t('Wird hochgeladen …') : t('Neues Bild hochladen')}</span>
               <input
                 type="file"
                 accept={ACCEPT}
@@ -739,7 +758,7 @@ export function ImagePicker({
           </li>
         }
       />
-      {filtered.length === 0 && <p className="muted small">Keine passenden Bilder.</p>}
+      {filtered.length === 0 && <p className="muted small">{t('Keine passenden Bilder.')}</p>}
       {filtered.length > shown && (
         <div className="button-row">
           <button
@@ -747,7 +766,7 @@ export function ImagePicker({
             className="button button-ghost"
             onClick={() => setShown((n) => n + PAGE_SIZE)}
           >
-            Weitere laden
+            {t('Weitere laden')}
           </button>
         </div>
       )}
@@ -759,10 +778,11 @@ export function ImagePicker({
             className="button button-primary"
             onClick={() => onPick(chosen.map((id) => byId.get(id)).filter((i) => !!i))}
           >
-            Übernehmen{max !== undefined ? ` (${chosen.length} von ${max})` : ''}
+            {t('Übernehmen')}
+            {max !== undefined ? ` (${chosen.length} von ${max})` : ''}
           </button>
           <button type="button" className="button button-ghost" onClick={onCancel}>
-            Abbrechen
+            {t('Abbrechen')}
           </button>
         </div>
       )}
@@ -800,20 +820,20 @@ export function ImageChoice({
           <span>{imageLabel(image)}</span>
           <span className="button-row">
             <button type="button" className="button button-ghost" onClick={() => setPicking(true)}>
-              Ändern
+              {t('Ändern')}
             </button>
             <button type="button" className="button button-ghost" onClick={() => setEditing(true)}>
-              Bearbeiten
+              {t('Bearbeiten')}
             </button>
             <button type="button" className="button button-ghost" onClick={() => onChange(null)}>
-              Entfernen
+              {t('Entfernen')}
             </button>
           </span>
         </div>
       ) : (
         <div className="button-row">
           <button type="button" className="button button-ghost" onClick={() => setPicking(true)}>
-            Bild wählen
+            {t('Bild wählen')}
           </button>
         </div>
       )}

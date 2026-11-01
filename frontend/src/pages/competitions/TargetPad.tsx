@@ -6,6 +6,7 @@ import { useRef, useState } from 'react'
 import type { KeyboardEvent, PointerEvent } from 'react'
 import type { ScoringMethod, TargetInfo } from '../../api/competitions.ts'
 import { countedIndexes, scoreShot, shotLabel, totalText } from './targetMath.ts'
+import { t } from '../../i18n/index.ts'
 
 export interface PadHit {
   x: number
@@ -16,9 +17,9 @@ export interface PadHit {
 }
 
 const ZOOMS = [
-  { key: 'ganz', label: 'Ganze Scheibe' },
-  { key: 'spiegel', label: 'Spiegel' },
-  { key: 'mitte', label: 'Mitte' },
+  { key: 'ganz', label: t('Ganze Scheibe') },
+  { key: 'spiegel', label: t('Spiegel') },
+  { key: 'mitte', label: t('Mitte') },
 ] as const
 
 type Zoom = (typeof ZOOMS)[number]['key']
@@ -194,7 +195,7 @@ export function TargetPad({
 
   return (
     <div className="pad">
-      <div className="pad-toolbar" role="group" aria-label="Ansicht">
+      <div className="pad-toolbar" role="group" aria-label={t('Ansicht')}>
         {ZOOMS.filter((z) => z.key !== 'spiegel' || tm.black_diameter).map((z) => (
           <button
             key={z.key}
@@ -208,7 +209,7 @@ export function TargetPad({
         ))}
       </div>
       {multi && (
-        <div className="pad-toolbar" role="group" aria-label="Scheibenbild">
+        <div className="pad-toolbar" role="group" aria-label={t('Scheibenbild')}>
           {Array.from({ length: tm.spots }, (_, i) => i + 1).map((n) => (
             <button
               key={n}
@@ -217,7 +218,7 @@ export function TargetPad({
               aria-pressed={spot === n}
               onClick={() => setSpot(n)}
             >
-              Spiegel {n} ({hits.filter((h) => (h.spot ?? 1) === n).length})
+              {t('Spiegel {n} ({n2})', { n, n2: hits.filter((h) => (h.spot ?? 1) === n).length })}
             </button>
           ))}
         </div>
@@ -228,7 +229,10 @@ export function TargetPad({
           className="pad-svg"
           viewBox={`${-R} ${-R} ${2 * R} ${2 * R}`}
           role="img"
-          aria-label={`${tm.name}: ${hits.length} Treffer, antippen zum Setzen`}
+          aria-label={t('{name}: {n} Treffer, antippen zum Setzen', {
+            name: tm.name,
+            n: hits.length,
+          })}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
@@ -283,9 +287,14 @@ export function TargetPad({
       </div>
       <p className="pad-total" role="status">
         {hits.length}
-        {maxShots ? ` von ${maxShots}` : ''} Treffer
-        {total ? ` · ${method === 'teiler' ? 'Teiler' : 'Summe'} ${total.replace('.', ',')}` : ''}
-        {full ? ' · alle Schüsse gesetzt' : ''}
+        {maxShots ? t(' von {maxShots}', { maxShots }) : ''} {t('Treffer')}
+        {total
+          ? t(' · {x} {x2}', {
+              x: method === 'teiler' ? t('Teiler') : t('Summe'),
+              x2: total.replace('.', ','),
+            })
+          : ''}
+        {full ? t(' · alle Schüsse gesetzt') : ''}
       </p>
       {hits.length > 0 && (
         <ol className="pad-list">
@@ -296,7 +305,11 @@ export function TargetPad({
                 <button
                   type="button"
                   className={`link-button${i === selected ? ' active' : ''}`}
-                  aria-label={`Schuss ${i + 1}: ${shotLabel(method, s)}${s.inner ? ', Innenzehner' : ''}. Mit Pfeiltasten verschieben, Entf löscht.`}
+                  aria-label={t('Schuss {x}: {x2}{x3}. Mit Pfeiltasten verschieben, Entf löscht.', {
+                    x: i + 1,
+                    x2: shotLabel(method, s),
+                    x3: s.inner ? t(', Innenzehner') : '',
+                  })}
                   onClick={() => {
                     setSelected(i)
                     if (multi && h.spot) setSpot(h.spot)
@@ -306,13 +319,18 @@ export function TargetPad({
                   {i + 1}. {shotLabel(method, s)}
                   {s.inner ? ' (Innenzehner)' : ''}
                 </button>
-                {h.source === 'foto' && <span className="muted small"> aus Foto</span>}
-                {!keep.has(i) && <span className="muted small"> zählt nicht</span>}
-                {multi && <span className="muted small"> · Spiegel {h.spot ?? 1}</span>}{' '}
+                {h.source === 'foto' && <span className="muted small"> {t('aus Foto')}</span>}
+                {!keep.has(i) && <span className="muted small"> {t('zählt nicht')}</span>}
+                {multi && (
+                  <span className="muted small">
+                    {' '}
+                    {t('· Spiegel')} {h.spot ?? 1}
+                  </span>
+                )}{' '}
                 <button
                   type="button"
                   className="link-button"
-                  aria-label={`Schuss ${i + 1} entfernen`}
+                  aria-label={t('Schuss {x} entfernen', { x: i + 1 })}
                   onClick={() => remove(i)}
                 >
                   entfernen

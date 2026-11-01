@@ -2,6 +2,7 @@
 import { ApiError } from '../../api/client.ts'
 import type { PhotoResult } from '../../api/competitions.ts'
 import type { PadHit } from './TargetPad.tsx'
+import { t } from '../../i18n/index.ts'
 
 const MAX_SIDE = 1600
 
@@ -50,8 +51,8 @@ export function toSuggestion(r: PhotoResult): PhotoSuggestion {
 
 export function errorText(err: unknown): string {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-    return 'Ohne Verbindung geht die Fotoerkennung nicht. Bitte die Treffer antippen.'
+    return t('Ohne Verbindung geht die Fotoerkennung nicht. Bitte die Treffer antippen.')
   }
   const msg = err instanceof ApiError ? err.fieldErrors.photo || err.message : ''
-  return msg || 'Das Foto ließ sich nicht auswerten. Bitte die Treffer antippen.'
+  return msg || t('Das Foto ließ sich nicht auswerten. Bitte die Treffer antippen.')
 }

@@ -11,6 +11,7 @@ import type {
   SyncOp,
 } from '../../api/competitions.ts'
 import type { Local } from './standStore.ts'
+import { t } from '../../i18n/index.ts'
 
 /** Gerätekennung oder Nummer beim Server; noch nicht abgeglichene Stechen haben negative
  *  Nummern auf dem Gerät. */
@@ -115,12 +116,12 @@ export function queuedShootoffApi(
   const byEntry = (entryId: number) => {
     const so = current().find((x) => x.entries.some((e) => e.id === entryId))
     const entry = so?.entries.find((e) => e.id === entryId)
-    if (!so || !entry) throw new Error('Unbekannter Teilnehmer im Stechen.')
+    if (!so || !entry) throw new Error(t('Unbekannter Teilnehmer im Stechen.'))
     return { so, entry }
   }
   const result = (id: number) => {
     const so = current().find((x) => x.id === id)
-    if (!so) throw new Error('Unbekanntes Stechen.')
+    if (!so) throw new Error(t('Unbekanntes Stechen.'))
     return so
   }
   return {
@@ -176,7 +177,7 @@ export function queuedShootoffApi(
     remove: api.shootoffs.remove
       ? (id) =>
           id < 0
-            ? Promise.reject(new Error('Erst nach dem Abgleich mit dem Server entfernbar.'))
+            ? Promise.reject(new Error(t('Erst nach dem Abgleich mit dem Server entfernbar.')))
             : api.shootoffs.remove!(id)
       : undefined,
     printUrl: api.shootoffs.printUrl,

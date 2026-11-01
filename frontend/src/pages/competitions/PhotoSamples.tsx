@@ -7,6 +7,7 @@ import { confirmDialog } from '../../components/dialog.ts'
 import { errorMessage, useLoad } from '../../components/forms.ts'
 import { Alert, Checkbox } from '../../components/ui.tsx'
 import { Why } from '../../learning/Aids.tsx'
+import { t } from '../../i18n/index.ts'
 
 export function PhotoSamplesCard({ org }: { org: number }) {
   const { data, setData } = useLoad(() => competitionsApi.photoSamples(org), [org])
@@ -24,9 +25,11 @@ export function PhotoSamplesCard({ org }: { org: number }) {
 
   async function remove() {
     const ok = await confirmDialog({
-      title: 'Ausschnitte löschen',
-      message: `Alle ${data?.count} gesammelten Spiegelausschnitte endgültig löschen?`,
-      confirmLabel: 'Löschen',
+      title: t('Ausschnitte löschen'),
+      message: t('Alle {count} gesammelten Spiegelausschnitte endgültig löschen?', {
+        count: data?.count,
+      }),
+      confirmLabel: t('Löschen'),
     })
     if (!ok) return
     setError(null)
@@ -40,30 +43,28 @@ export function PhotoSamplesCard({ org }: { org: number }) {
   return (
     <section className="card card-wide">
       <h2>
-        Fotoerkennung verbessern{' '}
-        <span className="muted small">({data.enabled ? 'Sammeln an' : 'Sammeln aus'})</span>
+        {t('Fotoerkennung verbessern')}{' '}
+        <span className="muted small">({data.enabled ? t('Sammeln an') : t('Sammeln aus')})</span>
       </h2>
       <p className="muted small">
-        Wenn ihr Treffer aus einem Foto bestätigt, kann HUBIplan den Ausschnitt des Spiegels mit den
-        bestätigten Treffern aufbewahren. Damit lässt sich die Erkennung später an echten Scheiben
-        prüfen und verbessern. Gespeichert wird nur das entzerrte Schwarzweißbild eines Spiegels und
-        die Trefferlage, ohne Namen, ohne Wettbewerb und ohne Uhrzeit. Das ganze Foto wird nie
-        gespeichert.
+        {t(
+          'Wenn ihr Treffer aus einem Foto bestätigt, kann HUBIplan den Ausschnitt des Spiegels mit den bestätigten Treffern aufbewahren. Damit lässt sich die Erkennung später an echten Scheiben prüfen und verbessern. Gespeichert wird nur das entzerrte Schwarzweißbild eines Spiegels und die Trefferlage, ohne Namen, ohne Wettbewerb und ohne Uhrzeit. Das ganze Foto wird nie gespeichert.',
+        )}
       </p>
       <Checkbox
-        label="Bestätigte Spiegelausschnitte sammeln"
+        label={t('Bestätigte Spiegelausschnitte sammeln')}
         checked={data.enabled}
         disabled={!data.can_manage}
         onChange={(on) => void toggle(on)}
       />
       <p className="small">
-        Gesammelt: {data.count} {data.count === 1 ? 'Ausschnitt' : 'Ausschnitte'}.
-        {data.enabled ? '' : ' Ausschalten löscht nichts.'}
+        {t('Gesammelt:')} {data.count} {data.count === 1 ? t('Ausschnitt') : t('Ausschnitte')}.
+        {data.enabled ? '' : t(' Ausschalten löscht nichts.')}
       </p>
       {data.can_manage && data.count > 0 && (
         <div className="button-row">
           <button type="button" className="button button-ghost" onClick={() => void remove()}>
-            Alle Ausschnitte löschen
+            {t('Alle Ausschnitte löschen')}
           </button>
         </div>
       )}

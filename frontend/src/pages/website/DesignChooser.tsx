@@ -7,8 +7,9 @@ import type { ColorRoles, RoleColors, WebsiteData } from '../../api/website.ts'
 import { errorMessage } from '../../components/forms.ts'
 import { Alert, SelectField } from '../../components/ui.tsx'
 import { useActiveOrg } from '../../org/OrgContext.tsx'
+import { t } from '../../i18n/index.ts'
 
-const NEUTRAL: Record<string, string> = { light: 'Weiß', dark: 'Dunkel (fast Schwarz)' }
+const NEUTRAL: Record<string, string> = { light: t('Weiß'), dark: t('Dunkel (fast Schwarz)') }
 
 export function DesignChooser({
   data,
@@ -37,7 +38,7 @@ export function DesignChooser({
     try {
       const result = await websiteApi.openPreview(org.id)
       if (!result.url) {
-        setError('Für die Vorschau fehlt noch eine Domain.')
+        setError(t('Für die Vorschau fehlt noch eine Domain.'))
         return
       }
       const url = `${result.url}&design=${encodeURIComponent(key)}`
@@ -50,8 +51,11 @@ export function DesignChooser({
 
   const paletteName = (i: number) => {
     const p = palette[i]
-    const role = i === 0 ? 'Hauptfarbe' : i === 1 ? 'Zweitfarbe' : `${i + 1}. Farbe`
-    return p ? `${role}${p.name ? ` (${p.name})` : ''} ${p.color}` : role
+    const role =
+      i === 0 ? t('Hauptfarbe') : i === 1 ? t('Zweitfarbe') : t('{x}. Farbe', { x: i + 1 })
+    return p
+      ? t('{role}{x} {color}', { role, x: p.name ? ` (${p.name})` : '', color: p.color })
+      : role
   }
 
   function setRole(role: string, value: string) {
@@ -66,14 +70,16 @@ export function DesignChooser({
   return (
     <>
       <p className="muted small">
-        Das Design bestimmt, wie die Webseite aussieht: Kopf, Menü, Fuß und die Anordnung der
-        Startseite. Inhalte und Bausteine (unter{' '}
-        <Link to="/webseite/aufbau">Webseite › Menü und Bereiche</Link>) bleiben bei jedem Design
-        gleich. Die Farben selbst legst du unter{' '}
-        <Link to="/einstellungen/erscheinungsbild">Einstellungen › Erscheinungsbild</Link> fest.
+        {t(
+          'Das Design bestimmt, wie die Webseite aussieht: Kopf, Menü, Fuß und die Anordnung der Startseite. Inhalte und Bausteine (unter',
+        )}{' '}
+        <Link to="/webseite/aufbau">{t('Webseite › Menü und Bereiche')}</Link>
+        {t(') bleiben bei jedem Design gleich. Die Farben selbst legst du unter')}{' '}
+        <Link to="/einstellungen/erscheinungsbild">{t('Einstellungen › Erscheinungsbild')}</Link>{' '}
+        fest.
       </p>
       {error && <Alert kind="error">{error}</Alert>}
-      <div className="design-grid" role="radiogroup" aria-label="Design der Webseite">
+      <div className="design-grid" role="radiogroup" aria-label={t('Design der Webseite')}>
         {designs.map((d) => (
           <div key={d.key} className={`design-card${d.key === design ? ' selected' : ''}`}>
             <label>
@@ -93,26 +99,27 @@ export function DesignChooser({
               className="button button-ghost"
               onClick={() => void preview(d.key)}
             >
-              Vorschau ansehen
+              {t('Vorschau ansehen')}
             </button>
           </div>
         ))}
       </div>
       {opened && (
         <p className="muted small">
-          Kein neues Fenster?{' '}
+          {t('Kein neues Fenster?')}{' '}
           <a href={opened} target="_blank" rel="noopener noreferrer">
-            Vorschau hier öffnen
+            {t('Vorschau hier öffnen')}
           </a>
           . Die Vorschau übernimmt nichts; gewählt ist das markierte Design.
         </p>
       )}
       {current && (
         <details className="design-roles">
-          <summary>Farben für „{current.label}“ zuordnen</summary>
+          <summary>{t('Farben für „{label}“ zuordnen', { label: current.label })}</summary>
           <p className="muted small">
-            Welche Farbe das Design wo einsetzt. „Vorgabe“ nimmt die passende Farbe des Designs;
-            fehlt eine weitere Farbe, nimmt es die Haupt- oder Zweitfarbe.
+            {t(
+              'Welche Farbe das Design wo einsetzt. „Vorgabe“ nimmt die passende Farbe des Designs; fehlt eine weitere Farbe, nimmt es die Haupt- oder Zweitfarbe.',
+            )}
           </p>
           <div className="grid-2">
             {current.roles.map((r) => {
@@ -123,10 +130,10 @@ export function DesignChooser({
                   key={r.key}
                   label={r.label}
                   value={chosen === undefined ? '' : String(chosen)}
-                  hint={swatch ? `Jetzt: ${swatch}` : undefined}
+                  hint={swatch ? t('Jetzt: {swatch}', { swatch }) : undefined}
                   onChange={(e) => setRole(r.key, e.target.value)}
                 >
-                  <option value="">Vorgabe des Designs</option>
+                  <option value="">{t('Vorgabe des Designs')}</option>
                   {palette.map((_, i) => (
                     <option key={i} value={String(i)}>
                       {paletteName(i)}

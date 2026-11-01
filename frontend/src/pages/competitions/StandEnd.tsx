@@ -15,6 +15,7 @@ import { ShootoffBlock } from './Shootoffs.tsx'
 import { StandFinish } from './StandFinish.tsx'
 import { mergeShootoffs, queuedShootoffApi, withLocalShootoffs } from './standShootoffs.ts'
 import { useVersion, type Local } from './standStore.ts'
+import { t } from '../../i18n/index.ts'
 
 export function StandEnd({
   org,
@@ -92,11 +93,14 @@ export function StandEnd({
 
   async function endShooting() {
     const ok = await confirmDialog({
-      title: 'Schießen beenden',
+      title: t('Schießen beenden'),
       message: missing.length
-        ? `Noch ohne Ergebnis: ${missing.join(', ')}. Trotzdem beenden? Die Ergebnisse gelten dann als vorläufig; Nachträge und Stechen bleiben möglich.`
-        : 'Die Ergebnisse gelten dann als vorläufig; Nachträge und Stechen bleiben möglich.',
-      confirmLabel: 'Schießen beenden',
+        ? t(
+            'Noch ohne Ergebnis: {x}. Trotzdem beenden? Die Ergebnisse gelten dann als vorläufig; Nachträge und Stechen bleiben möglich.',
+            { x: missing.join(', ') },
+          )
+        : t('Die Ergebnisse gelten dann als vorläufig; Nachträge und Stechen bleiben möglich.'),
+      confirmLabel: t('Schießen beenden'),
       danger: false,
     })
     if (!ok || org === undefined) return
@@ -113,8 +117,8 @@ export function StandEnd({
   return (
     <>
       {ties.length > 0 && (
-        <section className="stand-block stand-end" aria-label="Stechen">
-          <h2 className="stand-h">Stechen</h2>
+        <section className="stand-block stand-end" aria-label={t('Stechen')}>
+          <h2 className="stand-h">{t('Stechen')}</h2>
           {ties.map((block) => (
             <div key={block.scoring} className="stand-shootoffs">
               <h3>{block.name}</h3>
@@ -130,19 +134,19 @@ export function StandEnd({
           ))}
         </section>
       )}
-      <section className="stand-block stand-end" aria-label="Abschluss">
-        <h2 className="stand-h">Abschluss</h2>
+      <section className="stand-block stand-end" aria-label={t('Abschluss')}>
+        <h2 className="stand-h">{t('Abschluss')}</h2>
         <p className="muted">
           {missing.length
-            ? `Noch ohne Ergebnis: ${missing.length} (${missing.join(', ')})`
-            : 'Alle Schützen haben ein Ergebnis.'}
-          {ended ? ' · Schießen beendet, Ergebnisse vorläufig.' : ''}
+            ? t('Noch ohne Ergebnis: {n} ({x})', { n: missing.length, x: missing.join(', ') })
+            : t('Alle Schützen haben ein Ergebnis.')}
+          {ended ? t(' · Schießen beendet, Ergebnisse vorläufig.') : ''}
         </p>
         {error && <p className="alert alert-error">{error}</p>}
         {org !== undefined && comp.can_manage && !ended && (
           <div className="button-row">
             <button type="button" className="button" onClick={() => void endShooting()}>
-              Schießen beenden
+              {t('Schießen beenden')}
             </button>
           </div>
         )}
@@ -150,7 +154,9 @@ export function StandEnd({
         {(ended || org === undefined) && (
           <>
             {data.standings.open_shootoffs > 0 && (
-              <p className="muted small">Erst die offenen Stechen entscheiden, dann abschließen.</p>
+              <p className="muted small">
+                {t('Erst die offenen Stechen entscheiden, dann abschließen.')}
+              </p>
             )}
             <StandFinish
               api={api}

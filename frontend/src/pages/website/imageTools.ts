@@ -7,9 +7,10 @@ import { confirmDialog } from '../../components/dialog.ts'
 import { errorMessage } from '../../components/forms.ts'
 import { useImageCrop } from '../../components/ImageCrop.tsx'
 import { useActiveOrg } from '../../org/OrgContext.tsx'
+import { t } from '../../i18n/index.ts'
 
 export function imageLabel(i: WebsiteImage): string {
-  return i.caption || i.alt_text || 'ohne Beschriftung'
+  return i.caption || i.alt_text || t('ohne Beschriftung')
 }
 
 export function needsAlt(i: WebsiteImage): boolean {
@@ -44,7 +45,7 @@ export function useImageUpload() {
           }),
         )
       } catch (err) {
-        setError(`${file.name}: ${errorMessage(err)}`)
+        setError(t('{name}: {x}', { name: file.name, x: errorMessage(err) }))
       } finally {
         setBusy(false)
       }
@@ -57,7 +58,7 @@ export function useImageUpload() {
 
 /** Löschen mit Rückfrage; wird das Bild verwendet, nennt die zweite Rückfrage die Stellen. */
 export async function removeImage(orgId: number, image: WebsiteImage): Promise<boolean> {
-  const ok = await confirmDialog({ title: 'Bild löschen?', confirmLabel: 'Löschen' })
+  const ok = await confirmDialog({ title: t('Bild löschen?'), confirmLabel: t('Löschen') })
   if (!ok) return false
   try {
     await contentApi.removeImage(orgId, image.id)
@@ -65,9 +66,9 @@ export async function removeImage(orgId: number, image: WebsiteImage): Promise<b
   } catch (err) {
     if (!(err instanceof ApiError) || err.status !== 409) throw err
     const again = await confirmDialog({
-      title: 'Bild trotzdem löschen?',
+      title: t('Bild trotzdem löschen?'),
       message: err.message,
-      confirmLabel: 'Trotzdem löschen',
+      confirmLabel: t('Trotzdem löschen'),
     })
     if (!again) return false
     await contentApi.removeImage(orgId, image.id, true)
@@ -78,10 +79,10 @@ export async function removeImage(orgId: number, image: WebsiteImage): Promise<b
 export type ImageOrder = 'newest' | 'oldest' | 'name' | 'changed'
 
 export const IMAGE_ORDERS: { value: ImageOrder; label: string }[] = [
-  { value: 'newest', label: 'neueste zuerst' },
-  { value: 'oldest', label: 'älteste zuerst' },
-  { value: 'name', label: 'nach Name' },
-  { value: 'changed', label: 'zuletzt bearbeitet' },
+  { value: 'newest', label: t('neueste zuerst') },
+  { value: 'oldest', label: t('älteste zuerst') },
+  { value: 'name', label: t('nach Name') },
+  { value: 'changed', label: t('zuletzt bearbeitet') },
 ]
 
 const byName = new Intl.Collator('de', { sensitivity: 'base', numeric: true })

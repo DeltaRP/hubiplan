@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { analyze, judge, toGray, type Aim, type Frame } from './aim.ts'
 import { cameraError } from './cameraError.ts'
+import { t } from '../../i18n/index.ts'
 
 const PROBE_W = 160
 const STEADY = 6 // so viele gute Bilder hintereinander, bevor ausgelöst wird
@@ -140,7 +141,7 @@ export function LiveCamera({
   }
 
   return (
-    <div className="live-camera" role="dialog" aria-modal="true" aria-label="Live-Kamera">
+    <div className="live-camera" role="dialog" aria-modal="true" aria-label={t('Live-Kamera')}>
       <div className={`live-frame${aim.ok ? ' live-ok' : ''}`}>
         <video ref={video} playsInline muted aria-hidden="true" />
         <svg className="live-guide" viewBox="0 0 100 100" aria-hidden="true">
@@ -152,15 +153,16 @@ export function LiveCamera({
         {aim.ok ? ` (${Math.min(steady, STEADY)}/${STEADY})` : ''}
       </p>
       <p className="muted small">
-        Scheibe auf eine helle Unterlage legen, Handy gerade darüber halten. Das Foto wird nur
-        ausgewertet, nicht gespeichert.
+        {t(
+          'Scheibe auf eine helle Unterlage legen, Handy gerade darüber halten. Das Foto wird nur ausgewertet, nicht gespeichert.',
+        )}
       </p>
       <div className="button-row">
         <button type="button" className="button" onClick={manual}>
-          Jetzt auslösen
+          {t('Jetzt auslösen')}
         </button>
         <button type="button" className="button button-ghost" onClick={onClose}>
-          Abbrechen
+          {t('Abbrechen')}
         </button>
       </div>
     </div>
