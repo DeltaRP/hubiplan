@@ -346,6 +346,7 @@ def _starter_data(s: Starter, value_by_scoring: dict | None = None) -> dict:
         "out_of_competition": s.out_of_competition,
         "presence": s.presence,
         "drawn_how": s.drawn_how,
+        "key": str(s.client_key) if s.client_key else None,
         "values": value_by_scoring or {},
     }
 

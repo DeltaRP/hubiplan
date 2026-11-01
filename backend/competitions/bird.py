@@ -172,6 +172,15 @@ def state(comp: Competition) -> dict:
             if last
             else None
         ),
+        # die letzten Schüsse: damit der Standmodus ohne Netz rechnen und zurücknehmen kann
+        "recent": [
+            {
+                "number": x.number,
+                "starter": x.starter_id,
+                "client_key": str(x.client_key) if x.client_key else None,
+            }
+            for x in shots[-50:]
+        ],
         "draw": draw_report(starters),
         "stats": {
             "shots": count,

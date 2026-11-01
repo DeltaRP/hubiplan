@@ -22,9 +22,15 @@ export interface Detail {
   value: string
 }
 
+export type CompetitionForm = 'rangliste' | 'vogel'
+
 export interface Competition {
   id: number
   title: string
+  form: CompetitionForm
+  /** false: fremder Wettbewerb (ein anderer richtet aus) */
+  own: boolean
+  organizer: string
   occasion: string
   discipline: string
   location: string
@@ -34,10 +40,13 @@ export interface Competition {
   status: CompetitionStatus
   status_label: string
   website: WebsiteMode
+  drop_out: boolean
+  fixed_order: boolean
+  total_shots: number | null
   starter_count: number
 }
 
-export type ScoringKind = 'einzel' | 'einheit'
+export type ScoringKind = 'einzel' | 'einheit' | 'mannschaft'
 export type TeamMode = 'beste' | 'summe' | 'durchschnitt'
 
 export interface Scoring {
@@ -58,12 +67,31 @@ export interface Scoring {
   prize_places: number
   shootoff_shots: number | null
   shootoff_counted: number | null
+  field_size: number | null
+}
+
+export interface PrizeSetup {
+  id: number
+  name: string
+  award: string
+  sort_order: number
 }
 
 export interface CompetitionDetail extends Competition {
   scorings: Scoring[]
   units: { id: number; name: string }[]
+  prizes: PrizeSetup[]
   can_manage: boolean
+  /** nur über einen Standzugang */
+  stand_access?: { label: string; expires_at: string }
+}
+
+export type Presence = '' | 'fehlt' | 'zurueckgezogen'
+
+export const PRESENCE_LABELS: Record<Presence, string> = {
+  '': 'dabei',
+  fehlt: 'fehlt kurz',
+  zurueckgezogen: 'zurückgezogen',
 }
 
 export interface Starter {
@@ -76,6 +104,10 @@ export interface Starter {
   unit_name: string
   number: string
   out_of_competition: boolean
+  presence: Presence
+  drawn_how: string
+  /** Gerätekennung, wenn im Standmodus angelegt (bleibt nach dem Abgleich gleich) */
+  key?: string | null
   /** Werte je Wertung (Nummer der Wertung → Wert als Text) */
   values: Record<string, string>
 }
@@ -108,6 +140,10 @@ export interface StandingRow {
   count?: number
   best?: string
   reason?: string
+  // fremder Wettbewerb
+  team?: number
+  members?: string[]
+  note?: string
 }
 
 export interface OpenTie {
@@ -125,6 +161,7 @@ export interface StandingBlock {
   rows: StandingRow[]
   open: OpenTie[]
   without_value: { key: string; name: string }[]
+  field_size?: number | null
 }
 
 export interface Stats {
@@ -148,11 +185,80 @@ export interface Stats {
   }[]
 }
 
+export interface BirdPrize {
+  id: number
+  name: string
+  sort_order: number
+  award: string
+  fallen: boolean
+  winner: number | null
+  winner_name: string
+  unit_name: string
+  club: string
+  number: string
+  shot_number: number | null
+  shots_for: number | null
+  live: boolean
+  fallen_at: string | null
+}
+
+export interface BirdShot {
+  number: number
+  starter: number | null
+  client_key: string | null
+}
+
+export interface BirdState {
+  prizes: BirdPrize[]
+  order: number[]
+  upcoming: number[]
+  shots: number
+  live_shots: number
+  since_last: number
+  round: number
+  last: {
+    number: number
+    starter: number | null
+    name: string
+    client_key: string | null
+    hits: number[]
+  } | null
+  recent: BirdShot[]
+  draw: { missing: string[]; duplicates: { number: number; names: string[] }[]; gaps: number[] }
+  stats: {
+    shots: number
+    starters: number
+    members: number
+    guests: number
+    rounds: number | null
+    duration_minutes: number | null
+    started: string | null
+    per_unit: { name: string; count: number }[]
+  }
+}
+
 export interface Standings {
   scorings: StandingBlock[]
   open_shootoffs: number
   stats: Stats | Record<string, never>
   status: CompetitionStatus
+  bird?: BirdState
+}
+
+export interface Team {
+  id: number
+  name: string
+  sort_order: number
+  members: number[]
+}
+
+export interface StandAccessInfo {
+  id: number
+  label: string
+  expires_at: string
+  active: boolean
+  created_at: string
+  token?: string
 }
 
 export interface ShootOffEntry {
@@ -190,14 +296,27 @@ export type SyncOp =
       unit?: number | null
       number?: string
       out_of_competition?: boolean
+      presence?: Presence
     }
   | { op: 'score'; starter: number | string; scoring: number; value: string | null; at: string }
+  | { op: 'shot'; starter: number | string; hits: number[]; client_key: string; at: string }
+  | { op: 'undo'; client_key: string | null }
+  | { op: 'draw'; starter: number | string; number: number | null; how: 'hut' | 'digital' }
 
 export interface SyncResult {
   results: ({ ok: true; starter?: number } | { ok: false; error: string })[]
-  conflicts: { starter: number; name: string; scoring: number; value: string }[]
+  conflicts: {
+    starter: number
+    name: string
+    scoring?: number
+    value?: string
+    number?: number
+    note?: string
+  }[]
   keys: Record<string, number>
   starters: Starter[]
+  status: CompetitionStatus
+  bird?: BirdState
 }
 
 const base = (org: number) => `/api/orgs/${org}/competitions/`
@@ -251,6 +370,87 @@ export const competitionsApi = {
   sync: (org: number, id: number, ops: SyncOp[]) =>
     api.post<SyncResult>(`${c(org, id)}sync/`, { ops }),
   exportUrl: (org: number, id: number, query: string) => `${c(org, id)}export/?${query}`,
+  // Vogelschießen
+  bird: (org: number, id: number) => api.get<BirdState>(`${c(org, id)}bird/`),
+  addPrize: (org: number, id: number, name: string) =>
+    api.post<BirdState>(`${c(org, id)}prizes/`, { name }),
+  updatePrize: (
+    org: number,
+    id: number,
+    prize: number,
+    data: Partial<{
+      name: string
+      award: string
+      sort_order: number
+      winner: number | null
+      shot_number: number | null
+      shots_for: number | null
+    }>,
+  ) => api.patch<BirdState>(`${c(org, id)}prizes/${prize}/`, data),
+  removePrize: (org: number, id: number, prize: number) => api.del(`${c(org, id)}prizes/${prize}/`),
+  draw: (org: number, id: number, starter: number, number: number | null) =>
+    api.post<{ number: number; note: string; state: BirdState }>(`${c(org, id)}draw/`, {
+      starter,
+      number,
+    }),
+  drawAll: (org: number, id: number) =>
+    api.post<{ count: number; state: BirdState }>(`${c(org, id)}draw-all/`, {}),
+  // Fremde Wettbewerbe
+  teams: (org: number, id: number) => api.get<Team[]>(`${c(org, id)}teams/`),
+  addTeam: (org: number, id: number, name = '') => api.post<Team>(`${c(org, id)}teams/`, { name }),
+  updateTeam: (org: number, id: number, team: number, data: Partial<Team>) =>
+    api.patch<Team>(`${c(org, id)}teams/${team}/`, data),
+  removeTeam: (org: number, id: number, team: number) => api.del(`${c(org, id)}teams/${team}/`),
+  setPlacing: (
+    org: number,
+    id: number,
+    data: {
+      scoring: number
+      starter?: number
+      team?: number
+      place: string
+      value: string
+      note: string
+    },
+  ) => api.put<{ place: number | null }>(`${c(org, id)}placings/`, data),
+  // Standzugang
+  standAccesses: (org: number, id: number) =>
+    api.get<StandAccessInfo[]>(`${c(org, id)}stand-access/`),
+  createStandAccess: (org: number, id: number, label: string) =>
+    api.post<StandAccessInfo>(`${c(org, id)}stand-access/`, { label }),
+  revokeStandAccess: (org: number, id: number, access: number) =>
+    api.del(`${c(org, id)}stand-access/${access}/`),
+}
+
+/** Was der Standmodus vom Server braucht: angemeldet oder über einen Standzugang. */
+export interface StandApi {
+  /** Schlüssel für den Speicher auf dem Gerät */
+  key: string
+  get: () => Promise<CompetitionDetail>
+  starters: () => Promise<Starter[]>
+  members: () => Promise<MemberChoice[]>
+  sync: (ops: SyncOp[]) => Promise<SyncResult>
+}
+
+export function orgStandApi(org: number, id: number): StandApi {
+  return {
+    key: `${org}.${id}`,
+    get: () => competitionsApi.get(org, id),
+    starters: () => competitionsApi.starters(org, id),
+    members: () => competitionsApi.members(org, id),
+    sync: (ops) => competitionsApi.sync(org, id, ops),
+  }
+}
+
+export function tokenStandApi(token: string): StandApi {
+  const b = `/api/public/stand/${encodeURIComponent(token)}/`
+  return {
+    key: `zugang.${token.slice(0, 12)}`,
+    get: () => api.get<CompetitionDetail>(b),
+    starters: () => api.get<Starter[]>(`${b}starters/`),
+    members: () => api.get<MemberChoice[]>(`${b}members/`),
+    sync: (ops) => api.post<SyncResult>(`${b}sync/`, { ops }),
+  }
 }
 
 /** Wert im Format der Wertung anzeigen (Komma statt Punkt, ohne überflüssige Nullen). */
