@@ -273,7 +273,9 @@ export const entriesApi = {
     api.get<Candidate[]>(
       `${c(org, id)}candidates/?suche=${encodeURIComponent(term)}${all ? '&alle=1' : ''}`,
     ),
-  entry: (org: Scope, id: number) => api.get<Entry | null>(e(org, id)),
+  // Ohne Meldung kommt null; ein leerer Rumpf (ältere Server) wird ebenfalls zu null
+  entry: (org: Scope, id: number) =>
+    api.get<Entry | null>(e(org, id)).then((r) => (r && 'status' in r ? r : null)),
   createEntry: (org: Scope, id: number) => api.post<Entry>(e(org, id), {}),
   updateEntry: (org: Scope, id: number, data: { note: string }) =>
     api.patch<Entry>(e(org, id), data),

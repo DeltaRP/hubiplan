@@ -558,7 +558,10 @@ class EntryView(_Mixin, APIView):
     def get(self, request, org_id: int, call_id: int):
         call = self.call(call_id)
         entry = self.find_entry(call)
-        return Response(_entry_detail(self, entry) if entry else None)
+        if entry is None:
+            # DRF schreibt für None einen leeren Rumpf; der Browser braucht ein echtes JSON-null
+            return HttpResponse(b"null", content_type="application/json")
+        return Response(_entry_detail(self, entry))
 
     @transaction.atomic
     def post(self, request, org_id: int, call_id: int):
