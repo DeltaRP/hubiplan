@@ -259,182 +259,184 @@ export function StandPanel({
 
   return (
     <div className={`stand${fullscreen ? ' stand-full' : ''}`}>
-      <p className={`stand-sync ${pending ? 'stand-sync-wait' : 'stand-sync-ok'}`} role="status">
-        {online ? '' : 'Kein Empfang · '}
-        {statusText}
-      </p>
-      {syncError && <p className="alert alert-error">{syncError}</p>}
-      {closed ? (
-        <p className="alert alert-info">Der Wettbewerb ist endgültig, Eingaben sind gesperrt.</p>
-      ) : (
-        <form className="stand-entry" onSubmit={submit}>
-          {!chosen ? (
-            <>
-              <label className="stand-label" htmlFor="stand-suche">
-                Schütze (Name oder Startnummer)
-              </label>
-              <input
-                id="stand-suche"
-                ref={searchRef}
-                className="stand-input"
-                autoFocus
-                autoComplete="off"
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value)
-                  setActive(0)
-                }}
-                onKeyDown={onSearchKey}
-                aria-controls="stand-treffer"
-              />
-              {hits.length > 0 && (
-                <ul id="stand-treffer" className="stand-hits" role="listbox">
-                  {hits.map((h, i) => (
-                    <li key={hitKey(h)} role="option" aria-selected={i === active}>
-                      <button
-                        type="button"
-                        className={`stand-hit${i === active ? ' active' : ''}`}
-                        onClick={() => choose(h)}
-                      >
-                        {hitLabel(h, scoring)}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </>
-          ) : (
-            <>
-              <p className="stand-chosen">
-                <strong>{hitName(chosen)}</strong>
-                {chosen.kind === 'member' && chosen.member.unit_name
-                  ? ` · ${chosen.member.unit_name}`
-                  : ''}
-                {chosen.kind === 'starter' && chosen.starter.unit_name
-                  ? ` · ${chosen.starter.unit_name}`
-                  : ''}
-                {chosen.kind === 'guest' ? ' · neuer Gast' : ''}
-              </p>
-              {chosen.kind === 'guest' && (
-                <>
-                  <label className="stand-label" htmlFor="stand-verein">
-                    Verein oder Einheit (optional)
-                  </label>
-                  <input
-                    id="stand-verein"
-                    className="stand-input"
-                    list="stand-einheiten"
-                    autoComplete="off"
-                    value={guestClub}
-                    onChange={(e) => setGuestClub(e.target.value)}
-                  />
-                  <datalist id="stand-einheiten">
-                    {comp.units.map((u) => (
-                      <option key={u.id} value={u.name} />
-                    ))}
-                  </datalist>
-                </>
-              )}
-              <label className="stand-label" htmlFor="stand-punkte">
-                {scoring.unit_label}
-                {scoring.counted_shots ? ` (${scoring.counted_shots} gewertete Schuss)` : ''}
-              </label>
-              <input
-                id="stand-punkte"
-                ref={pointsRef}
-                className="stand-input stand-points"
-                inputMode={scoring.decimals ? 'decimal' : 'numeric'}
-                autoComplete="off"
-                value={points}
-                onChange={(e) => setPoints(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape') {
-                    setChosen(null)
-                    setTimeout(() => searchRef.current?.focus(), 0)
-                  }
-                }}
-              />
-              <div className="button-row stand-buttons">
-                <button type="submit" className="button">
-                  Speichern
-                </button>
-                <button
-                  type="button"
-                  className="button button-ghost"
-                  onClick={() => {
-                    setChosen(null)
-                    setTimeout(() => searchRef.current?.focus(), 0)
+      <section className="stand-block" aria-label="Erfassen">
+        <p className={`stand-sync ${pending ? 'stand-sync-wait' : 'stand-sync-ok'}`} role="status">
+          {online ? '' : 'Kein Empfang · '}
+          {statusText}
+        </p>
+        {syncError && <p className="alert alert-error">{syncError}</p>}
+        {closed ? (
+          <p className="alert alert-info">Der Wettbewerb ist endgültig, Eingaben sind gesperrt.</p>
+        ) : (
+          <form className="stand-entry" onSubmit={submit}>
+            {!chosen ? (
+              <>
+                <label className="stand-label" htmlFor="stand-suche">
+                  Schütze (Name oder Startnummer)
+                </label>
+                <input
+                  id="stand-suche"
+                  ref={searchRef}
+                  className="stand-input"
+                  autoFocus
+                  autoComplete="off"
+                  value={query}
+                  onChange={(e) => {
+                    setQuery(e.target.value)
+                    setActive(0)
                   }}
-                >
-                  Abbrechen
-                </button>
-              </div>
-              {chosen.kind === 'starter' && (
+                  onKeyDown={onSearchKey}
+                  aria-controls="stand-treffer"
+                />
+                {hits.length > 0 && (
+                  <ul id="stand-treffer" className="stand-hits" role="listbox">
+                    {hits.map((h, i) => (
+                      <li key={hitKey(h)} role="option" aria-selected={i === active}>
+                        <button
+                          type="button"
+                          className={`stand-hit${i === active ? ' active' : ''}`}
+                          onClick={() => choose(h)}
+                        >
+                          {hitLabel(h, scoring)}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            ) : (
+              <>
+                <p className="stand-chosen">
+                  <strong>{hitName(chosen)}</strong>
+                  {chosen.kind === 'member' && chosen.member.unit_name
+                    ? ` · ${chosen.member.unit_name}`
+                    : ''}
+                  {chosen.kind === 'starter' && chosen.starter.unit_name
+                    ? ` · ${chosen.starter.unit_name}`
+                    : ''}
+                  {chosen.kind === 'guest' ? ' · neuer Gast' : ''}
+                </p>
+                {chosen.kind === 'guest' && (
+                  <>
+                    <label className="stand-label" htmlFor="stand-verein">
+                      Verein oder Einheit (optional)
+                    </label>
+                    <input
+                      id="stand-verein"
+                      className="stand-input"
+                      list="stand-einheiten"
+                      autoComplete="off"
+                      value={guestClub}
+                      onChange={(e) => setGuestClub(e.target.value)}
+                    />
+                    <datalist id="stand-einheiten">
+                      {comp.units.map((u) => (
+                        <option key={u.id} value={u.name} />
+                      ))}
+                    </datalist>
+                  </>
+                )}
+                <label className="stand-label" htmlFor="stand-punkte">
+                  {scoring.unit_label}
+                  {scoring.counted_shots ? ` (${scoring.counted_shots} gewertete Schuss)` : ''}
+                </label>
+                <input
+                  id="stand-punkte"
+                  ref={pointsRef}
+                  className="stand-input stand-points"
+                  inputMode={scoring.decimals ? 'decimal' : 'numeric'}
+                  autoComplete="off"
+                  value={points}
+                  onChange={(e) => setPoints(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      setChosen(null)
+                      setTimeout(() => searchRef.current?.focus(), 0)
+                    }
+                  }}
+                />
                 <div className="button-row stand-buttons">
-                  {!!chosen.starter.values[String(scoring.id)] && (
-                    <button
-                      type="button"
-                      className="button button-ghost"
-                      onClick={() => void clearValue(chosen.starter)}
-                    >
-                      Wert löschen
-                    </button>
-                  )}
+                  <button type="submit" className="button">
+                    Speichern
+                  </button>
                   <button
                     type="button"
                     className="button button-ghost"
-                    onClick={() => void removeStarter(chosen.starter)}
+                    onClick={() => {
+                      setChosen(null)
+                      setTimeout(() => searchRef.current?.focus(), 0)
+                    }}
                   >
-                    Aus dem Wettbewerb entfernen
+                    Abbrechen
                   </button>
                 </div>
-              )}
-            </>
-          )}
-        </form>
-      )}
-      {notice && (
-        <p className="stand-notice" role="status">
-          {notice}
-        </p>
-      )}
-      <details className="stand-section" open={!fullscreen || undefined}>
-        <summary>Zuletzt erfasst ({recent.length})</summary>
-        <ul className="stand-list">
-          {recent.map((r) => (
-            <li key={`${r.ref}-${r.at}`}>
-              <button
-                type="button"
-                className="link-button"
-                onClick={() => {
-                  const s = local.starters.find((x) => (x.key ?? x.id) === r.ref)
-                  if (s) choose({ kind: 'starter', starter: s })
-                }}
-              >
-                {r.name}
-              </button>{' '}
-              <span className="push-right">{showValue(r.value, scoring.decimals)}</span>
-            </li>
-          ))}
-        </ul>
-      </details>
-      <details className="stand-section">
-        <summary>Noch offen ({open.length})</summary>
-        <ul className="stand-list">
-          {open.map((s) => (
-            <li key={s.key ?? s.id}>
-              <button
-                type="button"
-                className="link-button"
-                onClick={() => choose({ kind: 'starter', starter: s })}
-              >
-                {s.name}
-              </button>
-              <span className="muted"> {s.unit_name || s.club}</span>
-            </li>
-          ))}
-        </ul>
-      </details>
+                {chosen.kind === 'starter' && (
+                  <div className="button-row stand-buttons">
+                    {!!chosen.starter.values[String(scoring.id)] && (
+                      <button
+                        type="button"
+                        className="button button-ghost"
+                        onClick={() => void clearValue(chosen.starter)}
+                      >
+                        Wert löschen
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="button button-ghost"
+                      onClick={() => void removeStarter(chosen.starter)}
+                    >
+                      Aus dem Wettbewerb entfernen
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </form>
+        )}
+        {notice && (
+          <p className="stand-notice" role="status">
+            {notice}
+          </p>
+        )}
+        <details className="stand-section" open={!fullscreen || undefined}>
+          <summary>Zuletzt erfasst ({recent.length})</summary>
+          <ul className="stand-list">
+            {recent.map((r) => (
+              <li key={`${r.ref}-${r.at}`}>
+                <button
+                  type="button"
+                  className="link-button"
+                  onClick={() => {
+                    const s = local.starters.find((x) => (x.key ?? x.id) === r.ref)
+                    if (s) choose({ kind: 'starter', starter: s })
+                  }}
+                >
+                  {r.name}
+                </button>{' '}
+                <span className="push-right">{showValue(r.value, scoring.decimals)}</span>
+              </li>
+            ))}
+          </ul>
+        </details>
+        <details className="stand-section">
+          <summary>Noch offen ({open.length})</summary>
+          <ul className="stand-list">
+            {open.map((s) => (
+              <li key={s.key ?? s.id}>
+                <button
+                  type="button"
+                  className="link-button"
+                  onClick={() => choose({ kind: 'starter', starter: s })}
+                >
+                  {s.name}
+                </button>
+                <span className="muted"> {s.unit_name || s.club}</span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      </section>
       {!closed && fullscreen ? (
         <StandEnd
           org={org}

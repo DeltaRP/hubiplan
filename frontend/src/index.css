@@ -3850,3 +3850,64 @@ label:has(> .file-input:focus-visible) {
   font-weight: normal;
   color: var(--color-text-muted);
 }
+/* Standmodus: helle Blöcke auf dunklem Grund (Ralf 2026-11-01). In den Blöcken gelten die
+   hellen Farben von HUBIplan; Link- und Fokusfarbe kommen von :root (applyTheme). */
+:root {
+  --stand-light-link: var(--color-link);
+  --stand-light-focus: var(--color-focus);
+}
+.stand-page .stand-block {
+  color-scheme: light;
+  --color-bg: #f5f6f4;
+  --color-surface: #ffffff;
+  --color-text: #1d2421;
+  --color-text-muted: #5d6763;
+  --color-border: #dde1de;
+  --color-input-border: #858e8a;
+  --color-link: var(--stand-light-link);
+  --color-focus: var(--stand-light-focus);
+  --color-error: #b3261e;
+  --color-error-bg: #fbe9e7;
+  --color-success: #1d6b46;
+  --color-success-bg: #e6f3ee;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-radius: var(--radius);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  padding: 1rem 1.1rem;
+}
+.stand-page .stand-block + .stand-block,
+.stand-page .stand-block + section,
+.stand-page .stand-live-block + .stand-live-block {
+  margin-top: 1rem;
+}
+.stand-page .stand-block :where(input, select, textarea) {
+  border-color: var(--color-input-border);
+}
+.stand-page .stand-block .alert-info {
+  background: #eef3fb;
+}
+.stand-page .stand-block .stand-h,
+.stand-page .stand-live-block h2 {
+  font-size: 1.15rem;
+  margin: 0 0 0.6rem;
+}
+.stand-page .stand-block .card {
+  box-shadow: none;
+  border: 1px solid var(--color-border);
+}
+/* Tabellen kompakt: Platz und Wert schmal, der Name nimmt den Rest */
+.stand-page .stand-live {
+  max-width: 34rem;
+}
+.stand-page .stand-live-block .table td:first-child,
+.stand-page .stand-live-block .table th:first-child,
+.stand-page .stand-live-block .table td:last-child,
+.stand-page .stand-live-block .table th:last-child {
+  width: 1%;
+  white-space: nowrap;
+}
+.stand-page .stand-live-block .table td:first-child,
+.stand-page .stand-live-block .table th:first-child {
+  text-align: left;
+}

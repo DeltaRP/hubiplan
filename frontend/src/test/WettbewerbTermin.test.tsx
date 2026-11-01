@@ -241,12 +241,13 @@ describe('Wettbewerb und Termin', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Schießen beenden' }))
     await waitFor(() => expect(calls.some((c) => c.key === `POST ${base}3/status/`)).toBe(true))
     // Stechen: Regeln vor Ort, vorbelegt aus „Einrichten“ (3 Schuss)
-    await user.click(within(end).getByRole('button', { name: 'Stechen anlegen …' }))
-    const shots = within(end).getByLabelText('Schüsse im Stechen')
+    const stechen = screen.getByRole('region', { name: 'Stechen' })
+    await user.click(within(stechen).getByRole('button', { name: 'Stechen anlegen …' }))
+    const shots = within(stechen).getByLabelText('Schüsse im Stechen')
     expect(shots).toHaveValue(3)
     await user.clear(shots)
     await user.type(shots, '1')
-    await user.click(within(end).getByRole('button', { name: 'Stechen anlegen' }))
+    await user.click(within(stechen).getByRole('button', { name: 'Stechen anlegen' }))
     await waitFor(() => {
       const post = calls.find((c) => c.key === `POST ${base}3/shootoffs/`)
       expect(JSON.parse(String(post?.init?.body))).toMatchObject({
