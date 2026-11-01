@@ -708,6 +708,16 @@ const DECISIONS_DATA = {
     phase: 'competitions',
     feature: 'competitions',
   },
+  comp_target: {
+    title: d('Wozu Scheibe und Wertungsart?'),
+    text: d(
+      'Kennt HUBIplan die Scheibe, rechnet es aus jedem Trefferpunkt Ring, Zehntel, Innenzehner und Teiler nach der DSB-Sportordnung: Berührt der Lochrand die Ringlinie, zählt der höhere Ring. Ohne erfasste Treffer bleibt alles wie bisher, ihr gebt die Summe ein, und bei Gleichstand entscheidet das Stechen. Die Ergebnisse sind vereinsintern, nicht amtlich.',
+    ),
+    sources: ['dsbSpo'],
+    place: d('Wettbewerb → Einrichten → Einzelwertung'),
+    phase: 'competitions',
+    feature: 'competitions',
+  },
   comp_team_mode: {
     title: d('Warum zählen nur die besten Schützen einer Einheit?'),
     text: d(

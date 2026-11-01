@@ -6,8 +6,8 @@ from decimal import ROUND_HALF_UP, Decimal
 
 from members.models import DepartmentMembership, Membership
 
-from . import ranking
-from .models import Competition, Scoring, ShootOff, Starter
+from . import ranking, targets, tiebreak
+from .models import Competition, Hit, Scoring, ShootOff, Starter
 
 
 def fmt(value: Decimal | None, decimals: int) -> str:
@@ -49,9 +49,48 @@ def _shootoffs(scoring: Scoring) -> list[tuple[int, dict]]:
     return out
 
 
+def target_of(scoring: Scoring) -> targets.Target | None:
+    return targets.get(scoring.target, scoring.custom_target) if scoring.target else None
+
+
+def shot_values(scoring: Scoring, hits) -> list[targets.ShotValue]:
+    """Wertung der Treffer (in Schussreihenfolge); ohne Scheibe leer."""
+    target = target_of(scoring)
+    if target is None:
+        return []
+    return [targets.score(target, float(h.x), float(h.y)) for h in hits]
+
+
+def hits_by_starter(scoring: Scoring) -> dict[int, list[Hit]]:
+    out: dict[int, list[Hit]] = {}
+    for h in Hit.objects.filter(scoring=scoring).order_by("starter_id", "number"):
+        out.setdefault(h.starter_id, []).append(h)
+    return out
+
+
+def _tiebreaks(scoring: Scoring, starters: list[Starter]) -> dict[int, tuple]:
+    """Vergleichswerte der Gleichstandskette je Starter (nur mit Scheibe und Treffern)."""
+    chain = scoring.tie_breaks or []
+    target = target_of(scoring)
+    if not chain or target is None:
+        return {}
+    method = scoring.method if scoring.method != targets.METHOD_FREE else targets.METHOD_RINGS
+    out = {}
+    for starter_id, hits in hits_by_starter(scoring).items():
+        shots = targets.counted_shots(
+            method, shot_values(scoring, hits), scoring.counted_shots or None
+        )
+        out[starter_id] = tiebreak.vector(chain, shots, target, method, scoring.series_size)
+    return out
+
+
 def _individual(scoring: Scoring, starters: list[Starter]) -> dict:
     values = {s.starter_id: s.value for s in scoring.scores.all()}
-    entries = [ranking.Entry(f"s{s.pk}", values.get(s.pk), s.out_of_competition) for s in starters]
+    tb = _tiebreaks(scoring, starters)
+    entries = [
+        ranking.Entry(f"s{s.pk}", values.get(s.pk), s.out_of_competition, tb.get(s.pk, ()))
+        for s in starters
+    ]
     res = ranking.rank(
         entries,
         higher_better=scoring.higher_better,
@@ -104,7 +143,18 @@ def _starter_row(s: Starter, p: ranking.Placed | None, scoring: Scoring) -> dict
         },
         "tie": p.tie if p else False,
         "prize": bool(p and p.place <= scoring.prize_places),
+        "decided_by": _decided_label(scoring, p),
     }
+
+
+def _decided_label(scoring: Scoring, p: ranking.Placed | None) -> str:
+    """Welche Gleichstandsregel den Platz entschieden hat (leer: keine)."""
+    if p is None or p.decided_by is None:
+        return ""
+    chain = scoring.tie_breaks or []
+    if p.decided_by >= len(chain):
+        return ""
+    return tiebreak.LABELS.get(chain[p.decided_by], "")
 
 
 def _open(t: ranking.OpenTie, by_key: dict, units: dict | None) -> dict:
@@ -365,6 +415,8 @@ def version(competition: Competition) -> str:
     from .models import Prize, Score, ShootOffEntry, Shot
 
     parts = [competition.status, competition.updated_at.isoformat()]
+    hits = Hit.objects.filter(scoring__competition=competition)
+    parts.append(str(hits.aggregate(n=Count("pk"), t=Max("updated_at"))))
     for qs in (
         Starter.objects.filter(competition=competition),
         Score.objects.filter(scoring__competition=competition),

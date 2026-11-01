@@ -30,6 +30,7 @@ from organizations.models import Department, Organization
 from . import bird, report, services
 from .models import (
     Competition,
+    Hit,
     Placing,
     Presence,
     Prize,
@@ -164,8 +165,83 @@ class ScoringSerializer(serializers.ModelSerializer):
             "shootoff_shots",
             "shootoff_counted",
             "field_size",
+            "target",
+            "custom_target",
+            "method",
+            "tie_breaks",
+            "series_size",
         ]
         read_only_fields = ["competition"]
+
+    def validate_target(self, value):
+        from . import targets
+
+        value = (value or "").strip()
+        if value and value != targets.CUSTOM and value not in targets.BY_KEY:
+            raise serializers.ValidationError("Unbekannte Scheibe.")
+        return value
+
+    def validate_custom_target(self, value):
+        from . import targets
+
+        if value in (None, {}, ""):
+            return {}
+        try:
+            return targets.clean_custom(value)
+        except targets.TargetError as exc:
+            label = targets.FIELD_LABELS.get(exc.field, "Scheibe")
+            raise serializers.ValidationError(f"{label}: {exc.message}") from exc
+
+    def validate_tie_breaks(self, value):
+        from . import tiebreak
+
+        try:
+            return tiebreak.clean(value)
+        except ValueError as exc:
+            raise serializers.ValidationError(str(exc)) from exc
+
+    def validate_series_size(self, value):
+        if value < 1 or value > 100:
+            raise serializers.ValidationError("Bitte 1 bis 100 Schüsse je Serie.")
+        return value
+
+    def _target_rules(self, attrs, get) -> None:
+        """Scheibe und Wertungsart: passende Nachkommastellen, Richtung und Höchstwert."""
+        from . import targets
+
+        target_key, method = get("target") or "", get("method") or Scoring.Method.FREE
+        if target_key == targets.CUSTOM and not get("custom_target"):
+            raise serializers.ValidationError(
+                {"custom_target": "Bitte die Maße der eigenen Scheibe angeben."}
+            )
+        kind = get("kind") or Scoring.Kind.INDIVIDUAL
+        if method != Scoring.Method.FREE and kind != Scoring.Kind.INDIVIDUAL:
+            raise serializers.ValidationError(
+                {"method": "Ringe, Zehntel oder Teiler gibt es nur in Einzelwertungen."}
+            )
+        if method != Scoring.Method.FREE and not target_key:
+            raise serializers.ValidationError(
+                {"target": "Für Ringe, Zehntel oder Teiler bitte eine Scheibe wählen."}
+            )
+        touched = {"target", "custom_target", "method"} & set(attrs)
+        if not touched or method == Scoring.Method.FREE:
+            return
+        target = targets.get(target_key, get("custom_target"))
+        if target is None:
+            return
+        if method == Scoring.Method.RINGS:
+            attrs.update(
+                decimals=0, higher_better=True, max_per_shot=Decimal(target.top), unit_label="Ringe"
+            )
+        elif method == Scoring.Method.DECIMAL:
+            attrs.update(
+                decimals=1,
+                higher_better=True,
+                max_per_shot=targets.max_decimal(target),
+                unit_label="Ringe",
+            )
+        else:
+            attrs.update(decimals=1, higher_better=False, max_per_shot=None, unit_label="Teiler")
 
     def validate_decimals(self, value):
         if value > 3:
@@ -223,6 +299,7 @@ class ScoringSerializer(serializers.ModelSerializer):
                 )
         else:
             attrs["source"] = None
+        self._target_rules(attrs, get)
         return attrs
 
 
@@ -350,6 +427,17 @@ class ScoringViewSet(_Mixin, AuditMixin, viewsets.ModelViewSet):
         comp = self.competition(self.kwargs["competition_id"])
         last = comp.scorings.aggregate(m=Max("sort_order"))["m"] or 0
         return {"organization": self.org, "competition": comp, "sort_order": last + 1}
+
+    def _update(self, serializer):
+        from . import target_views
+
+        inst = serializer.instance
+        keys = ("target", "custom_target", "method", "counted_shots")
+        before = {k: getattr(inst, k) for k in keys}
+        super()._update(serializer)
+        if any(getattr(serializer.instance, k) != before[k] for k in keys):
+            sc = serializer.instance
+            target_views.recompute_all(self.org, self.request.user, sc.competition, sc)
 
 
 # --- Starter ---
@@ -1039,6 +1127,7 @@ class ResetView(_Mixin, APIView):
             "Starter": 0 if keep else comp.starters.count(),
         }
         Score.objects.filter(scoring__competition=comp).delete()
+        Hit.objects.filter(scoring__competition=comp).delete()
         ShootOff.objects.filter(scoring__competition=comp).delete()
         Placing.objects.filter(scoring__competition=comp).delete()
         comp.prizes.update(

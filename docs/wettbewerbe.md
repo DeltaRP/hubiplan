@@ -42,6 +42,35 @@ Wettbewerb nicht endgültig abschließen. Ein Stechen gilt für die Gruppe, die 
 bleibt es gleich, folgt ein weiteres. Im Stechen der Untereinheiten schießt je Einheit ein
 Mitglied (vorgeschlagen: der beste Schütze der Einheit, jedes Mitglied wählbar).
 
+## Scheiben, Treffer und Gleichstandsregeln
+
+Schritt 1 der Schießscheiben-Auswertung (Konzept: `konzepte/schiessscheiben-recherche.md`,
+Abschnitt 6). Eine Einzelwertung kann eine **Scheibe** aus dem Katalog
+(`backend/competitions/targets.py`: LG 10 m DSB, LG Kyffhäuser auch mit 5 Spiegeln, UFOLEP,
+Laufende Scheibe, LP 10 m, KK 50 m und 100 m, Pistole 25 m) oder eine **eigene Scheibe**
+(Durchmesser höchster Ring, Ringbreite, Kaliber, Ringe, Innenzehner, Teilerfaktor) haben.
+
+- Wertung eines Treffers bei Abstand *d* zur Mitte: Grenze *g* = Radius höchster Ring +
+  Kaliber/2, Wert = höchster Ring + (*g* − *d*)/Ringbreite; Zehntel abgeschnitten, höchstens
+  x,9; Ring abgeschnitten, unter dem niedrigsten Ring 0. Innenzehner je Scheibe „berühren“
+  (LP, KK) oder „ganz weggeschossen“ (LG-Punkt). Teiler = *d* in 1/100 mm mal Teilerfaktor.
+- **Wertungsart**: „frei“ (wie bisher, Summe eingeben), Ringe, Zehntel oder Teiler. Bei
+  Ringe/Zehntel/Teiler stellt HUBIplan Nachkommastellen, Richtung und Höchstwert selbst ein.
+- **Treffer** (`Hit`, x/y in mm, y nach oben, Quelle angetippt/Foto/von Hand): `GET/PUT
+  competitions/<id>/hits/` ersetzt die Treffer eines Starters. Bei Ringe/Zehntel zählt die
+  Summe der besten „davon in der Wertung“, bei Teiler der beste Teiler (bzw. die Summe der
+  besten). Ändert sich Scheibe, Wertungsart oder Zahl der gewerteten Schüsse, rechnet HUBIplan
+  alle Werte mit Treffern neu. Ohne Treffer bleibt die eingegebene Summe.
+- **Gleichstandsregeln** (`tiebreak.py`), in einstellbarer Reihenfolge vor dem Stechen: Serien
+  von hinten, mehr 10er/9er …, Innenzehner, Zehntelsumme, bester Teiler, schlechtester Schuss
+  näher an der Mitte; Vorlagen „wie DSB“ und „wie BHDS“. Sie greifen nur, wenn alle Gleichen
+  Treffer haben; sonst bleibt der Platz geteilt (auf Preisplätzen: Stechen). Die Auswertung
+  nennt die Regel, die entschieden hat.
+- `GET competitions/targets/` liefert Katalog, Wertungsarten und Regeln für die Oberfläche.
+
+Ergebnisse sind vereinsintern, nicht amtlich. Die mit „prüfen“ markierten Maße in der Recherche
+sind vor ernsthafter Nutzung gegen die aktuelle Sportordnung zu lesen.
+
 ## Erfassen und Standmodus
 
 - Suchfeld immer aktiv: Name (auch „muel“ für „Müller“) oder Startnummer, Enter, Punkte,
@@ -167,4 +196,4 @@ genau eine volle Seite.
 ## Daten
 
 App `competitions`, Tabellen mit `organization` und RLS. Export und Datenübernahme
-enthalten alles (mitgliederbezogen); die Wettbewerbe kommen nach den Terminen (Verweis). Keine Dateifelder.
+enthalten alles (mitgliederbezogen, auch die Treffer); die Wettbewerbe kommen nach den Terminen (Verweis). Keine Dateifelder.

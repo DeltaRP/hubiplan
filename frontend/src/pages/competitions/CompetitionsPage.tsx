@@ -34,6 +34,7 @@ import { ManualPrizes, PrizesCard, StandAccessCard } from './BirdSetup.tsx'
 import { ForeignPanel } from './ForeignPanel.tsx'
 import { ResultsPanel } from './ResultsPanel.tsx'
 import { StandPanel } from './StandPanel.tsx'
+import { TargetSettings } from './TargetSettings.tsx'
 import { Term, Why } from '../../learning/Aids.tsx'
 import { Checklist } from '../../learning/Checklist.tsx'
 import { competitionFinishChecks } from '../../learning/checks.ts'
@@ -785,16 +786,38 @@ function ScoringCard({
     shootoff_shots: scoring.shootoff_shots,
     shootoff_counted: scoring.shootoff_counted,
     field_size: scoring.field_size,
+    target: scoring.target ?? '',
+    custom_target: scoring.custom_target ?? {},
+    method: scoring.method ?? 'frei',
+    tie_breaks: scoring.tie_breaks ?? [],
+    series_size: scoring.series_size ?? 10,
   })
   const { values: v, set, errors } = form
   const auto = useAutoSave(
     form,
     (changes) => competitionsApi.updateScoring(org, comp.id, scoring.id, changes),
-    { enabled: canManage },
+    {
+      enabled: canManage,
+      // Scheibe und Wertungsart stellen Nachkommastellen, Richtung und Höchstwert ein
+      onSaved: (result) => {
+        const r = result as Scoring | undefined
+        if (!r || r.method === 'frei') return
+        set('decimals', r.decimals)
+        set('higher_better', r.higher_better)
+        set('max_per_shot', r.max_per_shot)
+        set('unit_label', r.unit_label)
+      },
+    },
   )
   const unit = scoring.kind === 'einheit'
   const singles = comp.scorings.filter((s) => s.kind === 'einzel')
   const foreign = !comp.own
+  const single = !unit && !foreign
+  const catalog = useLoad(
+    () => (single ? competitionsApi.targets(org) : Promise.resolve(null)),
+    [org, single],
+  )
+  const fromHits = single && v.method !== 'frei'
 
   async function remove() {
     const ok = await confirmDialog({
@@ -914,36 +937,40 @@ function ScoringCard({
                 error={errors.counted_shots}
                 onChange={(e) => set('counted_shots', numOrNull(e.target.value))}
               />
-              <Field
-                label="Höchstwert je Schuss"
-                inputMode="decimal"
-                value={v.max_per_shot ?? ''}
-                error={errors.max_per_shot}
-                onChange={(e) => set('max_per_shot', e.target.value.replace(',', '.') || null)}
-              />
-              <Field
-                label="Einheit des Werts"
-                value={v.unit_label}
-                error={errors.unit_label}
-                onChange={(e) => set('unit_label', e.target.value)}
-              />
-              <SelectField
-                label="Nachkommastellen"
-                value={v.decimals}
-                onChange={(e) => set('decimals', Number(e.target.value))}
-              >
-                {[0, 1, 2, 3].map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </SelectField>
-              <Checkbox
-                label="Größer ist besser"
-                hint="aus bei Zeit oder Teiler"
-                checked={v.higher_better}
-                onChange={(on) => set('higher_better', on)}
-              />
+              {!fromHits && (
+                <>
+                  <Field
+                    label="Höchstwert je Schuss"
+                    inputMode="decimal"
+                    value={v.max_per_shot ?? ''}
+                    error={errors.max_per_shot}
+                    onChange={(e) => set('max_per_shot', e.target.value.replace(',', '.') || null)}
+                  />
+                  <Field
+                    label="Einheit des Werts"
+                    value={v.unit_label}
+                    error={errors.unit_label}
+                    onChange={(e) => set('unit_label', e.target.value)}
+                  />
+                  <SelectField
+                    label="Nachkommastellen"
+                    value={v.decimals}
+                    onChange={(e) => set('decimals', Number(e.target.value))}
+                  >
+                    {[0, 1, 2, 3].map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                  </SelectField>
+                  <Checkbox
+                    label="Größer ist besser"
+                    hint="aus bei Zeit oder Teiler"
+                    checked={v.higher_better}
+                    onChange={(on) => set('higher_better', on)}
+                  />
+                </>
+              )}
             </>
           )}
           <Field
@@ -980,7 +1007,19 @@ function ScoringCard({
           <p className="muted small">
             Mit <Term k="comp_counted">gewerteten Schüssen</Term> und Höchstwert prüft HUBIplan jede
             Eingabe.
+            {fromHits &&
+              (v.method === 'teiler'
+                ? ' Teiler: kleiner ist besser, es zählt der beste Teiler (bei mehreren gewerteten Schüssen ihre Summe).'
+                : ` Höchstwert je Schuss ${String(v.max_per_shot ?? '').replace('.', ',')}, ${v.decimals ? 'mit Zehnteln' : 'ganze Ringe'}.`)}
           </p>
+        )}
+        {single && catalog.data && (
+          <TargetSettings
+            catalog={catalog.data}
+            values={v}
+            set={(key, value) => set(key, value as (typeof v)[typeof key])}
+            errors={errors}
+          />
         )}
         {!foreign && (unit ? <Why k="comp_team_mode" /> : <Why k="comp_shots" />)}
         {!foreign && <Why k="comp_prize_places" />}

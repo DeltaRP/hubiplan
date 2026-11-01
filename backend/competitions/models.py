@@ -98,6 +98,12 @@ class Scoring(models.Model):
         # nur bei fremden Wettbewerben: die eigenen Mannschaften
         TEAM = "mannschaft", "Mannschaftswertung"
 
+    class Method(models.TextChoices):
+        FREE = "frei", "Wert frei eingeben"
+        RINGS = "ringe", "Ringe"
+        DECIMAL = "zehntel", "Zehntel"
+        TEILER = "teiler", "Teiler"
+
     class TeamMode(models.TextChoices):
         SUM_BEST = "beste", "Summe der besten"
         SUM_ALL = "summe", "Summe aller"
@@ -140,6 +146,16 @@ class Scoring(models.Model):
     )
     # Fremder Wettbewerb: Teilnehmer insgesamt („Platz 2 von 14“)
     field_size = models.PositiveIntegerField("Teilnehmer insgesamt", null=True, blank=True)
+    # Scheibe und Wertungsart (Schießscheiben Schritt 1): Schlüssel aus targets.CATALOG,
+    # „eigen“ mit den Maßen in ``custom_target`` oder leer (keine Scheibe).
+    target = models.CharField("Scheibe", max_length=30, blank=True)
+    custom_target = models.JSONField("eigene Scheibe", default=dict, blank=True)
+    method = models.CharField(
+        "Wertungsart", max_length=10, choices=Method.choices, default=Method.FREE
+    )
+    # Gleichstand: Kette von Regeln aus tiebreak.CRITERIA, der Reihe nach; erst danach Stechen
+    tie_breaks = models.JSONField("bei Gleichstand", default=list, blank=True)
+    series_size = models.PositiveSmallIntegerField("Schüsse je Serie", default=10)
 
     class Meta:
         verbose_name = "Wertung"
@@ -259,6 +275,45 @@ class Score(models.Model):
 
     def __str__(self) -> str:
         return f"{self.starter}: {self.value}"
+
+
+class Hit(models.Model):
+    """Trefferpunkt eines Schusses (x/y in mm von der Scheibenmitte, y nach oben).
+
+    Aus den Treffern rechnet HUBIplan Ringe, Zehntel, Innenzehner und Teiler
+    (``targets.score``) und daraus den Wert des Starters. Quelle: angetippt, aus einem
+    Foto erkannt oder von Hand eingegeben."""
+
+    class Source(models.TextChoices):
+        TAP = "tippen", "angetippt"
+        PHOTO = "foto", "aus Foto erkannt"
+        MANUAL = "hand", "von Hand"
+
+    organization = models.ForeignKey(
+        "organizations.Organization", on_delete=models.CASCADE, related_name="+"
+    )
+    scoring = models.ForeignKey(Scoring, on_delete=models.CASCADE, related_name="hits")
+    starter = models.ForeignKey(Starter, on_delete=models.CASCADE, related_name="hits")
+    number = models.PositiveSmallIntegerField("Schuss Nr.")
+    x = models.DecimalField("x (mm)", max_digits=8, decimal_places=3)
+    y = models.DecimalField("y (mm)", max_digits=8, decimal_places=3)
+    # Spiegel auf der Karte (bei mehreren Scheibenbildern), sonst leer
+    spot = models.PositiveSmallIntegerField("Spiegel", null=True, blank=True)
+    source = models.CharField("Quelle", max_length=10, choices=Source.choices, default=Source.TAP)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Treffer"
+        verbose_name_plural = "Treffer"
+        ordering = ["number"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["scoring", "starter", "number"], name="competitions_treffer_nr"
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"Treffer {self.number}"
 
 
 class ShootOff(models.Model):
