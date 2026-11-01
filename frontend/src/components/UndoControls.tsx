@@ -1,6 +1,7 @@
 // Rückgängig/Wiederherstellen in der Kopfleiste, Strg+Z / Strg+Y und ein kurzer Hinweis.
 import { useEffect, useRef, useState } from 'react'
 import { dismissNotice, groupSteps, redo, undo, useUndo } from './undo.ts'
+import { t } from '../i18n/index.ts'
 
 function isTyping(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false
@@ -30,7 +31,10 @@ function StepList({
             <button type="button" className="undo-step" onClick={() => onPick(g.upTo)}>
               <span>{g.label}</span>
               {g.count > 1 && (
-                <span className="undo-step-count" aria-label={`${g.count} Schritte`}>
+                <span
+                  className="undo-step-count"
+                  aria-label={t('{count} Schritte', { count: g.count })}
+                >
                   {g.count}×
                 </span>
               )}
@@ -86,20 +90,20 @@ export function UndoControls({ base }: { base: string }) {
   const setHoldNotice = (on: boolean) => setHeldNotice(on ? notice : null)
   useEffect(() => {
     if (!notice || holdNotice) return
-    const t = setTimeout(dismissNotice, 15000)
-    return () => clearTimeout(t)
+    const tm = setTimeout(dismissNotice, 15000)
+    return () => clearTimeout(tm)
   }, [notice, holdNotice])
 
   return (
     <>
-      <div className="undo-controls" role="group" aria-label="Rückgängig und Wiederherstellen">
+      <div className="undo-controls" role="group" aria-label={t('Rückgängig und Wiederherstellen')}>
         <button
           type="button"
           className="button button-ghost undo-button"
           onClick={() => void undo(base)}
           disabled={!canUndo}
-          title="Rückgängig (Strg+Z)"
-          aria-label="Letzte Änderung rückgängig machen"
+          title={t('Rückgängig (Strg+Z)')}
+          aria-label={t('Letzte Änderung rückgängig machen')}
         >
           ↶
         </button>
@@ -108,8 +112,8 @@ export function UndoControls({ base }: { base: string }) {
           className="button button-ghost undo-button"
           onClick={() => void redo(base)}
           disabled={!canRedo}
-          title="Wiederherstellen (Strg+Y)"
-          aria-label="Rückgängig Gemachtes wiederherstellen"
+          title={t('Wiederherstellen (Strg+Y)')}
+          aria-label={t('Rückgängig Gemachtes wiederherstellen')}
         >
           ↷
         </button>
@@ -120,15 +124,15 @@ export function UndoControls({ base }: { base: string }) {
             onClick={() => setOpen((o) => !o)}
             disabled={busy || (undoList.length === 0 && redoList.length === 0)}
             aria-expanded={open}
-            title="Letzte Schritte"
-            aria-label="Letzte Schritte"
+            title={t('Letzte Schritte')}
+            aria-label={t('Letzte Schritte')}
           >
             ▾
           </button>
           {open && (
             <div className="undo-history-panel">
               <StepList
-                head="Rückgängig machen bis einschließlich …"
+                head={t('Rückgängig machen bis einschließlich …')}
                 list={undoList}
                 onPick={(n) => {
                   setOpen(false)
@@ -136,7 +140,7 @@ export function UndoControls({ base }: { base: string }) {
                 }}
               />
               <StepList
-                head="Wiederherstellen bis einschließlich …"
+                head={t('Wiederherstellen bis einschließlich …')}
                 list={redoList}
                 onPick={(n) => {
                   setOpen(false)
@@ -161,19 +165,19 @@ export function UndoControls({ base }: { base: string }) {
           <span>{notice.text}</span>
           {notice.action === 'undo' && (
             <button type="button" className="link-button" onClick={() => void undo(base)}>
-              Rückgängig
+              {t('Rückgängig')}
             </button>
           )}
           {notice.action === 'redo' && (
             <button type="button" className="link-button" onClick={() => void redo(base)}>
-              Wiederherstellen
+              {t('Wiederherstellen')}
             </button>
           )}
           <button
             type="button"
             className="link-button undo-notice-close"
             onClick={dismissNotice}
-            aria-label="Hinweis schließen"
+            aria-label={t('Hinweis schließen')}
           >
             ×
           </button>

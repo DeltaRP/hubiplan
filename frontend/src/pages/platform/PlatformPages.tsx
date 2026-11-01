@@ -182,7 +182,7 @@ function PlatformOrgForm({
   const e = form.errors
   const [board, setBoard] = useState('')
   const [boardResult, setBoardResult] = useState<string | null>(null)
-  const t = buildTerms(v.label, v.label_plural, v.label_gender, v.label_genitive)
+  const tm = buildTerms(v.label, v.label_plural, v.label_gender, v.label_genitive)
   // Unter einer übergeordneten Einheit führen Einheiten immer eigene Mitglieder
   const underParent = v.federation !== null
   const switchable = org ? !!org.can_switch_members : !underParent
@@ -240,7 +240,7 @@ function PlatformOrgForm({
   return (
     <div className="stack">
       <form className="card card-wide" onSubmit={save}>
-        <h2>{org ? `${t.Sg} bearbeiten` : `${t.Sg} anlegen`}</h2>
+        <h2>{org ? `${tm.Sg} bearbeiten` : `${tm.Sg} anlegen`}</h2>
         {(!org || org.keeps_members) && (
           <SelectField
             label="Übergeordnete Einheit"
@@ -376,7 +376,7 @@ function PlatformOrgForm({
 
         {groupsUnits && (
           <>
-            <h3>Freigaben für {t.diese}</h3>
+            <h3>Freigaben für {tm.diese}</h3>
             <SelectField
               label="Zugriff auf Mitgliedsdaten der Untereinheiten"
               value={v.federation_member_access}
@@ -418,7 +418,7 @@ function PlatformOrgForm({
         ))}
         {org && (
           <Checkbox
-            label={`${t.Sg} ist aktiv`}
+            label={`${tm.Sg} ist aktiv`}
             checked={v.is_active}
             onChange={(val) => form.set('is_active', val)}
           />
@@ -439,7 +439,7 @@ function PlatformOrgForm({
         <form className="card card-wide" onSubmit={addBoard}>
           <h2>Vorstand festlegen</h2>
           <p className="muted small">
-            Die Person bekommt die Rolle „Vorstand“ mit allen Rechten in {t.diesem} und kann danach
+            Die Person bekommt die Rolle „Vorstand“ mit allen Rechten in {tm.diesem} und kann danach
             selbst Rollen und Benutzer verwalten.
           </p>
           <Field

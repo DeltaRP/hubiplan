@@ -9,12 +9,13 @@ import type { ImportPreview, TransferBase, TransferJob } from '../api/datatransf
 import { errorMessage, formatDateTime, useForm, useLoad, useUnmountSignal } from './forms.ts'
 import { Alert, Checkbox, Field, LoadError, SelectField } from './ui.tsx'
 import { fillTerms, useTerms } from '../org/terms.ts'
+import { t } from '../i18n/index.ts'
 
 const RUNNING = ['pending', 'running']
 
 function size(bytes: number): string {
-  if (bytes > 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`
-  return `${Math.max(1, Math.round(bytes / 1024))} KB`
+  if (bytes > 1024 * 1024) return t('{x} MB', { x: (bytes / 1024 / 1024).toFixed(1) })
+  return t('{x} KB', { x: Math.max(1, Math.round(bytes / 1024)) })
 }
 
 /** Export erstellen und frühere Exporte herunterladen. */
@@ -29,7 +30,7 @@ export function ExportSection({
   /** Plattform: Organisationen zur Auswahl */
   organizations?: { id: number; name: string; display_name?: string; type_label: string }[]
 }) {
-  const t = useTerms()
+  const tm = useTerms()
   const jobs = useLoad(() => transferApi.exports(base), [JSON.stringify(base)])
   const [withFiles, setWithFiles] = useState(false)
   const [target, setTarget] = useState('')
@@ -63,21 +64,21 @@ export function ExportSection({
 
   return (
     <div className="card card-wide">
-      <h2>Vollständiger Export</h2>
+      <h2>{t('Vollständiger Export')}</h2>
       <p className="muted small">
-        Alle Daten als eine Datei: Stammdaten, Rollen, Mitgliedsarten, Zusatzfelder, {t.pl},
-        Mitglieder mit allen Zeiträumen, Kasse, Beiträge und Rechnungen sowie die Satzung.
-        Benutzerkonten und Passwörter sind nicht enthalten. Jeder Export wird protokolliert, die
-        Datei wird nach 7 Tagen gelöscht.
+        {t(
+          'Alle Daten als eine Datei: Stammdaten, Rollen, Mitgliedsarten, Zusatzfelder, {pl}, Mitglieder mit allen Zeiträumen, Kasse, Beiträge und Rechnungen sowie die Satzung. Benutzerkonten und Passwörter sind nicht enthalten. Jeder Export wird protokolliert, die Datei wird nach 7 Tagen gelöscht.',
+          { pl: tm.pl },
+        )}
       </p>
       <div className="filters">
         {organizations && (
           <select
-            aria-label="Organisation"
+            aria-label={t('Organisation')}
             value={target}
             onChange={(e) => setTarget(e.target.value)}
           >
-            <option value="">Einheit wählen …</option>
+            <option value="">{t('Einheit wählen …')}</option>
             {organizations.map((o) => (
               <option key={o.id} value={o.id}>
                 {displayName(o)} ({o.type_label})
@@ -86,19 +87,23 @@ export function ExportSection({
           </select>
         )}
         {departments && departments.length > 0 && (
-          <select aria-label="Umfang" value={target} onChange={(e) => setTarget(e.target.value)}>
+          <select
+            aria-label={t('Umfang')}
+            value={target}
+            onChange={(e) => setTarget(e.target.value)}
+          >
             <option value="">
-              ganz{t.e_adj} {t.e_sg}
+              ganz{tm.e_adj} {tm.e_sg}
             </option>
             {departments.map((d) => (
               <option key={d.id} value={d.id}>
-                nur {t.sg} {unitName(d)}
+                nur {tm.sg} {unitName(d)}
               </option>
             ))}
           </select>
         )}
         <Checkbox
-          label="mit Dateien (Logos, Belege, Fotos, Satzung) als ZIP"
+          label={t('mit Dateien (Logos, Belege, Fotos, Satzung) als ZIP')}
           checked={withFiles}
           onChange={setWithFiles}
         />
@@ -108,23 +113,31 @@ export function ExportSection({
           disabled={busy || (!!organizations && !target)}
           onClick={() => void start()}
         >
-          {busy ? 'Wird erstellt …' : 'Export erstellen'}
+          {busy ? t('Wird erstellt …') : t('Export erstellen')}
         </button>
       </div>
       {error && <Alert kind="error">{error}</Alert>}
       {last?.status === 'done' && (
         <Alert kind="success">
-          Fertig.{' '}
+          {t('Fertig.')}{' '}
           <a href={transferApi.downloadUrl(base, last.id)}>{last.file_name} herunterladen</a>
         </Alert>
       )}
-      {last?.status === 'failed' && <Alert kind="error">Export fehlgeschlagen: {last.error}</Alert>}
+      {last?.status === 'failed' && (
+        <Alert kind="error">
+          {t('Export fehlgeschlagen:')} {last.error}
+        </Alert>
+      )}
       {last && RUNNING.includes(last.status) && (
-        <Alert kind="info">Der Export läuft noch im Hintergrund. Die Liste unten zeigt ihn.</Alert>
+        <Alert kind="info">
+          {t('Der Export läuft noch im Hintergrund. Die Liste unten zeigt ihn.')}
+        </Alert>
       )}
       {jobs.error && (
         <LoadError
-          message={`Die bisherigen Exporte konnten nicht geladen werden: ${jobs.error}`}
+          message={t('Die bisherigen Exporte konnten nicht geladen werden: {error}', {
+            error: jobs.error,
+          })}
           onRetry={() => void jobs.reload()}
         />
       )}
@@ -132,9 +145,9 @@ export function ExportSection({
         <table className="table">
           <thead>
             <tr>
-              <th>Erstellt</th>
-              <th>Inhalt</th>
-              <th>Datei</th>
+              <th>{t('Erstellt')}</th>
+              <th>{t('Inhalt')}</th>
+              <th>{t('Datei')}</th>
             </tr>
           </thead>
           <tbody>
@@ -145,8 +158,8 @@ export function ExportSection({
                   <div className="muted">{j.created_by}</div>
                 </td>
                 <td className="small">
-                  {j.subject?.name ?? j.department?.name ?? 'ganze Organisation'}
-                  {j.with_files ? ' · mit Dateien' : ''}
+                  {j.subject?.name ?? j.department?.name ?? t('ganze Organisation')}
+                  {j.with_files ? t(' · mit Dateien') : ''}
                 </td>
                 <td className="small">
                   {j.status === 'done' && j.has_file ? (
@@ -154,7 +167,7 @@ export function ExportSection({
                       {j.file_name} ({size(j.size)})
                     </a>
                   ) : j.status === 'done' ? (
-                    <span className="muted">gelöscht</span>
+                    <span className="muted">{t('gelöscht')}</span>
                   ) : (
                     <span className="muted">{j.status_label}</span>
                   )}
@@ -170,29 +183,35 @@ export function ExportSection({
 
 const TARGET_TEXT = {
   platform: {
-    title: 'Einheit importieren',
-    hint: 'Aus der Exportdatei einer Einheit (mit ihren Untereinheiten) entsteht eine neue Einheit direkt unter der Plattform.',
+    title: t('Einheit importieren'),
+    hint: t(
+      'Aus der Exportdatei einer Einheit (mit ihren Untereinheiten) entsteht eine neue Einheit direkt unter der Plattform.',
+    ),
   },
   federation: {
-    title: '{Sg} aus Datei anlegen',
-    hint: 'Aus der Exportdatei entsteht {ein} {e_im}. Personen, die es {e_im} schon gibt, werden erkannt.',
+    title: t('{Sg} aus Datei anlegen'),
+    hint: t(
+      'Aus der Exportdatei entsteht {ein} {e_im}. Personen, die es {e_im} schon gibt, werden erkannt.',
+    ),
   },
   club: {
-    title: '{Sg} aus Datei anlegen',
-    hint: 'Aus der Exportdatei entsteht {ein} mit Rollen und Mitgliedern. Wer schon Mitglied {e_im} ist, wird nur zugeordnet.',
+    title: t('{Sg} aus Datei anlegen'),
+    hint: t(
+      'Aus der Exportdatei entsteht {ein} mit Rollen und Mitgliedern. Wer schon Mitglied {e_im} ist, wird nur zugeordnet.',
+    ),
   },
 }
 
 const SUMMARY_LABELS: Record<string, string> = {
   clubs: '{Pl}',
-  departments: 'Untereinheiten',
-  roles: 'Rollen',
-  role_assignments: 'Rollenbesetzungen',
-  persons: 'Personen',
-  memberships: 'Mitgliedschaften',
-  already_members: 'schon Mitglied {e_im}',
-  table_rows: 'Kasse, Beiträge und Satzung (Einträge)',
-  files: 'Dateien',
+  departments: t('Untereinheiten'),
+  roles: t('Rollen'),
+  role_assignments: t('Rollenbesetzungen'),
+  persons: t('Personen'),
+  memberships: t('Mitgliedschaften'),
+  already_members: t('schon Mitglied {e_im}'),
+  table_rows: t('Kasse, Beiträge und Satzung (Einträge)'),
+  files: t('Dateien'),
 }
 
 /** Datei hochladen, Vorschau prüfen, Dubletten entscheiden, übernehmen. */
@@ -214,9 +233,9 @@ export function ImportSection({
   const [choices, setChoices] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const t = useTerms()
+  const tm = useTerms()
   const text = TARGET_TEXT[target]
-  const title = fillTerms(text.title, t)
+  const title = fillTerms(text.title, tm)
   const signal = useUnmountSignal()
   // Auftrag in der Adresse merken: nach Neuladen oder Rückkehr wieder erreichbar
   // (UI-Audit NAF-04)
@@ -273,7 +292,10 @@ export function ImportSection({
     } catch (err) {
       setError(
         started
-          ? `Die Verbindung wurde unterbrochen (${errorMessage(err)}). Der Auftrag kann trotzdem weiterlaufen; frag den Stand unten erneut ab.`
+          ? t(
+              'Die Verbindung wurde unterbrochen ({x}). Der Auftrag kann trotzdem weiterlaufen; frag den Stand unten erneut ab.',
+              { x: errorMessage(err) },
+            )
           : errorMessage(err),
       )
     } finally {
@@ -315,16 +337,28 @@ export function ImportSection({
       <div className="card card-wide">
         <h2>{title}</h2>
         <Alert kind="success">
-          „{result.organization?.name ?? result.department?.name}“ wurde angelegt.
-          {result.new_members ? ` ${result.new_members} neue Mitglieder ${t.e_im}.` : ''}
-          {result.invited ? ` ${result.invited} Einladungen verschickt.` : ''}
-          {result.renumbered ? ` ${result.renumbered} Verbandsnummern neu vergeben.` : ''}
+          „{result.organization?.name ?? result.department?.name}
+          {t('“ wurde angelegt.')}
+          {result.new_members
+            ? t(' {new_members} neue Mitglieder {e_im}.', {
+                new_members: result.new_members,
+                e_im: tm.e_im,
+              })
+            : ''}
+          {result.invited
+            ? t(' {invited} Einladungen verschickt.', { invited: result.invited })
+            : ''}
+          {result.renumbered
+            ? t(' {renumbered} Verbandsnummern neu vergeben.', { renumbered: result.renumbered })
+            : ''}
           {result.skipped_assignments
-            ? ` ${result.skipped_assignments} Rollenbesetzungen ohne Konto entfielen.`
+            ? t(' {skipped_assignments} Rollenbesetzungen ohne Konto entfielen.', {
+                skipped_assignments: result.skipped_assignments,
+              })
             : ''}
         </Alert>
         <button type="button" className="button button-ghost" onClick={reset}>
-          Weitere Datei importieren
+          {t('Weitere Datei importieren')}
         </button>
       </div>
     )
@@ -333,12 +367,14 @@ export function ImportSection({
   return (
     <div className="card card-wide">
       <h2>{title}</h2>
-      <p className="muted small">{fillTerms(text.hint, t)}</p>
+      <p className="muted small">{fillTerms(text.hint, tm)}</p>
       {job && RUNNING.includes(job.status) && (
         <div className="stack-sm">
           <Alert kind="info">
-            Auftrag {job.id} wird noch bearbeitet. Du kannst den Stand jederzeit erneut abfragen;
-            dabei entsteht kein neuer Auftrag.
+            {t(
+              'Auftrag {id} wird noch bearbeitet. Du kannst den Stand jederzeit erneut abfragen; dabei entsteht kein neuer Auftrag.',
+              { id: job.id },
+            )}
           </Alert>
           <div className="button-row">
             <button
@@ -347,20 +383,20 @@ export function ImportSection({
               disabled={busy}
               onClick={() => void act(() => transferApi.importJob(base, job.id))}
             >
-              {busy ? 'Wird abgefragt …' : 'Stand erneut abfragen'}
+              {busy ? t('Wird abgefragt …') : t('Stand erneut abfragen')}
             </button>
           </div>
         </div>
       )}
       {!job && (openJobs.data ?? []).some((j) => j.status !== 'done' && j.status !== 'failed') && (
         <div className="subcard stack-sm">
-          <h3>Offene Aufträge</h3>
+          <h3>{t('Offene Aufträge')}</h3>
           <ul className="plain-list">
             {(openJobs.data ?? [])
               .filter((j) => j.status !== 'done' && j.status !== 'failed')
               .map((j) => (
                 <li key={j.id}>
-                  {j.file_name || `Auftrag ${j.id}`}{' '}
+                  {j.file_name || t('Auftrag {id}', { id: j.id })}{' '}
                   <span className="muted small">
                     {formatDateTime(j.created_at)} · {j.status_label}
                   </span>{' '}
@@ -370,7 +406,7 @@ export function ImportSection({
                     disabled={busy}
                     onClick={() => void act(() => transferApi.importJob(base, j.id))}
                   >
-                    {j.status === 'checked' ? 'Auftrag weiter prüfen' : 'Stand ansehen'}
+                    {j.status === 'checked' ? t('Auftrag weiter prüfen') : t('Stand ansehen')}
                   </button>
                 </li>
               ))}
@@ -379,7 +415,9 @@ export function ImportSection({
       )}
       {!job && openJobs.error && (
         <LoadError
-          message={`Offene Aufträge konnten nicht geladen werden. ${openJobs.error}`}
+          message={t('Offene Aufträge konnten nicht geladen werden. {error}', {
+            error: openJobs.error,
+          })}
           onRetry={() => void openJobs.reload()}
         />
       )}
@@ -391,7 +429,7 @@ export function ImportSection({
           }}
         >
           <label className="field">
-            <span>Exportdatei (.json oder .zip)</span>
+            <span>{t('Exportdatei (.json oder .zip)')}</span>
             <input
               type="file"
               accept=".json,.zip,application/json,application/zip"
@@ -399,7 +437,7 @@ export function ImportSection({
             />
           </label>
           <button type="submit" className="button button-primary" disabled={!file || busy}>
-            {busy ? 'Wird geprüft …' : 'Hochladen und prüfen'}
+            {busy ? t('Wird geprüft …') : t('Hochladen und prüfen')}
           </button>
         </form>
       )}
@@ -407,7 +445,7 @@ export function ImportSection({
         <>
           <Alert kind="error">{job.error}</Alert>
           <button type="button" className="button button-ghost" onClick={reset}>
-            Andere Datei wählen
+            {t('Andere Datei wählen')}
           </button>
         </>
       )}
@@ -495,7 +533,7 @@ function ImportPreviewView({
   onRun: () => void
   onCancel: () => void
 }) {
-  const t = useTerms()
+  const tm = useTerms()
   const open = preview.duplicates.filter((d) => !d.fixed)
   const fixed = preview.duplicates.filter((d) => d.fixed)
   const counts = Object.entries(preview.summary).filter(
@@ -504,15 +542,18 @@ function ImportPreviewView({
   return (
     <div className="import-preview">
       <p>
-        Datei von <strong>{preview.source.name}</strong>
-        {preview.exported_at ? `, exportiert am ${formatDateTime(preview.exported_at)}` : ''}.
+        {t('Datei von')} <strong>{preview.source.name}</strong>
+        {preview.exported_at
+          ? t(', exportiert am {x}', { x: formatDateTime(preview.exported_at) })
+          : ''}
+        .
       </p>
       <ul className="small">
         {counts.map(([key, value]) => (
           <li key={key}>
             {fillTerms(
               key === 'departments' && target === 'club' ? '{Pl}' : (SUMMARY_LABELS[key] ?? key),
-              t,
+              tm,
             )}
             : {value}
           </li>
@@ -520,7 +561,7 @@ function ImportPreviewView({
       </ul>
       {preview.classes && Object.keys(preview.classes).length > 0 && (
         <details className="small">
-          <summary>Je Datenklasse</summary>
+          <summary>{t('Je Datenklasse')}</summary>
           <ul>
             {Object.entries(preview.classes).map(([label, n]) => (
               <li key={label}>
@@ -531,27 +572,31 @@ function ImportPreviewView({
         </details>
       )}
       {preview.not_included && preview.not_included.length > 0 && (
-        <p className="small muted">Nicht übernommen: {preview.not_included.join(', ')}.</p>
+        <p className="small muted">
+          {t('Nicht übernommen:')} {preview.not_included.join(', ')}.
+        </p>
       )}
       <Field
-        label={target === 'club' ? `Name ${t.gen}` : 'Name der neuen Einheit'}
+        label={target === 'club' ? t('Name {gen}', { gen: tm.gen }) : t('Name der neuen Einheit')}
         value={name}
         placeholder={preview.name}
         onChange={(e) => setName(e.target.value)}
-        hint="Leer lassen, um den Namen aus der Datei zu übernehmen."
+        hint={t('Leer lassen, um den Namen aus der Datei zu übernehmen.')}
       />
       {preview.kind === 'unit' && (
         <>
           <Alert kind="info">
-            Die Datei enthält eine Untereinheit. Sie wird hier eine eigene Einheit mit eigenen
-            Mitgliedern. Die Kennungen der Mitgliedschaften bleiben erhalten, damit der abgebende
-            Verein sie im Verbund wieder zuordnen kann.
+            {t(
+              'Die Datei enthält eine Untereinheit. Sie wird hier eine eigene Einheit mit eigenen Mitgliedern. Die Kennungen der Mitgliedschaften bleiben erhalten, damit der abgebende Verein sie im Verbund wieder zuordnen kann.',
+            )}
           </Alert>
           <p className="muted small">
-            Anschrift der neuen Einheit. Leer lassen, um die des abgebenden Vereins zu übernehmen.
+            {t(
+              'Anschrift der neuen Einheit. Leer lassen, um die des abgebenden Vereins zu übernehmen.',
+            )}
           </p>
           <Field
-            label="Straße und Hausnummer"
+            label={t('Straße und Hausnummer')}
             value={address.street}
             onChange={(e) => setAddress({ ...address, street: e.target.value })}
           />
@@ -561,7 +606,7 @@ function ImportPreviewView({
             onChange={(e) => setAddress({ ...address, postal_code: e.target.value })}
           />
           <Field
-            label="Ort"
+            label={t('Ort')}
             value={address.city}
             onChange={(e) => setAddress({ ...address, city: e.target.value })}
           />
@@ -570,15 +615,22 @@ function ImportPreviewView({
       {target !== 'club' && (
         <>
           <Field
-            label="Erster Vorstand (E-Mail, optional)"
+            label={t('Erster Vorstand (E-Mail, optional)')}
             type="email"
             value={boardEmail}
             onChange={(e) => setBoardEmail(e.target.value)}
-            hint="Bekommt die Rolle „Vorstand“. Ohne Konto wird eine Einladung verschickt."
+            hint={t('Bekommt die Rolle „Vorstand“. Ohne Konto wird eine Einladung verschickt.')}
           />
           {preview.users.total > 0 && (
             <Checkbox
-              label={`Rollenbesetzungen: ${preview.users.existing} von ${preview.users.total} E-Mail-Adressen haben schon ein Konto. Für die übrigen ${preview.users.new} Einladungen verschicken`}
+              label={t(
+                'Rollenbesetzungen: {existing} von {total} E-Mail-Adressen haben schon ein Konto. Für die übrigen {new} Einladungen verschicken',
+                {
+                  existing: preview.users.existing,
+                  total: preview.users.total,
+                  new: preview.users.new,
+                },
+              )}
               checked={invite}
               onChange={setInvite}
             />
@@ -587,15 +639,17 @@ function ImportPreviewView({
       )}
       {fixed.length > 0 && (
         <Alert kind="info">
-          Schon Mitglied {t.e_im}, werden nur zugeordnet: {fixed.map((d) => d.name).join('; ')}
+          {t('Schon Mitglied {e_im}, werden nur zugeordnet:', { e_im: tm.e_im })}{' '}
+          {fixed.map((d) => d.name).join('; ')}
         </Alert>
       )}
       {open.length > 0 && (
         <>
-          <h3>Mögliche Dubletten ({open.length})</h3>
+          <h3>{t('Mögliche Dubletten ({n})', { n: open.length })}</h3>
           <p className="muted small">
-            Diese Personen gibt es schon (gleicher Name, Vorname und Geburtsdatum). Zusammenführen
-            ist meist richtig.
+            {t(
+              'Diese Personen gibt es schon (gleicher Name, Vorname und Geburtsdatum). Zusammenführen ist meist richtig.',
+            )}
           </p>
           <table className="table">
             <tbody>
@@ -607,7 +661,7 @@ function ImportPreviewView({
                   </td>
                   <td>
                     <SelectField
-                      label="Übernehmen als"
+                      label={t('Übernehmen als')}
                       value={choices[String(d.person)] ?? d.choice}
                       onChange={(e) =>
                         setChoices({ ...choices, [String(d.person)]: e.target.value })
@@ -615,12 +669,14 @@ function ImportPreviewView({
                     >
                       {d.candidates.map((c) => (
                         <option key={c.id} value={String(c.id)}>
-                          zusammenführen mit {c.name}
+                          {t('zusammenführen mit')} {c.name}
                           {c.member_number ? ` (Nr. ${c.member_number})` : ''}
-                          {c.clubs.length ? ` – ${c.clubs.map((x) => x.name).join(', ')}` : ''}
+                          {c.clubs.length
+                            ? t(' – {x}', { x: c.clubs.map((x) => x.name).join(', ') })
+                            : ''}
                         </option>
                       ))}
-                      <option value="new">als neue Person anlegen</option>
+                      <option value="new">{t('als neue Person anlegen')}</option>
                     </SelectField>
                   </td>
                 </tr>
@@ -631,7 +687,7 @@ function ImportPreviewView({
       )}
       {preview.error_count > 0 && (
         <Alert kind="error">
-          {preview.error_count} Fehler, so wird nichts angelegt:
+          {preview.error_count} {t('Fehler, so wird nichts angelegt:')}
           <br />
           {preview.errors.map((e) => (
             <span key={e}>
@@ -643,7 +699,7 @@ function ImportPreviewView({
       )}
       {preview.warning_count > 0 && (
         <Alert kind="info">
-          {preview.warning_count} Hinweise:
+          {preview.warning_count} {t('Hinweise:')}
           <br />
           {preview.warnings.map((w) => (
             <span key={w}>
@@ -656,13 +712,13 @@ function ImportPreviewView({
       {runError && <Alert kind="error">{runError}</Alert>}
       <div className="button-row">
         <button type="button" className="button button-ghost" disabled={busy} onClick={onRecheck}>
-          Erneut prüfen
+          {t('Erneut prüfen')}
         </button>
         <button type="button" className="button button-primary" disabled={busy} onClick={onRun}>
-          {busy ? 'Bitte warten …' : 'Übernehmen'}
+          {busy ? t('Bitte warten …') : t('Übernehmen')}
         </button>
         <button type="button" className="link-button" disabled={busy} onClick={onCancel}>
-          Ansicht schließen (der geprüfte Auftrag bleibt unter „Offene Aufträge“)
+          {t('Ansicht schließen (der geprüfte Auftrag bleibt unter „Offene Aufträge“)')}
         </button>
       </div>
     </div>
@@ -677,7 +733,7 @@ export function ClubCreateForm({
   federationId: number
   onDone: () => void
 }) {
-  const t = useTerms()
+  const tm = useTerms()
   const form = useForm({
     name: '',
     founding_year: '',
@@ -697,7 +753,7 @@ export function ClubCreateForm({
           ...v,
           founding_year: v.founding_year ? Number(v.founding_year) : null,
         }),
-      fillTerms('{Nom} wurde angelegt.', t),
+      fillTerms(t('{Nom} wurde angelegt.'), tm),
     )
     if (result) {
       form.setValues({
@@ -715,17 +771,19 @@ export function ClubCreateForm({
 
   return (
     <form className="card card-wide" onSubmit={(e) => void save(e)}>
-      <h2>{t.Sg} von Hand anlegen</h2>
+      <h2>
+        {tm.Sg} {t('von Hand anlegen')}
+      </h2>
       <div className="grid-2">
         <Field
-          label="Name"
+          label={t('Name')}
           value={v.name}
           error={form.errors.name}
           onChange={(e) => form.set('name', e.target.value)}
           required
         />
         <Field
-          label="Gründungsjahr"
+          label={t('Gründungsjahr')}
           inputMode="numeric"
           value={v.founding_year}
           error={form.errors.founding_year}
@@ -733,7 +791,7 @@ export function ClubCreateForm({
           required
         />
         <Field
-          label="Straße und Hausnummer"
+          label={t('Straße und Hausnummer')}
           value={v.street}
           error={form.errors.street}
           onChange={(e) => form.set('street', e.target.value)}
@@ -747,31 +805,31 @@ export function ClubCreateForm({
           required
         />
         <Field
-          label="Ort"
+          label={t('Ort')}
           value={v.city}
           error={form.errors.city}
           onChange={(e) => form.set('city', e.target.value)}
           required
         />
         <Field
-          label={`E-Mail ${t.gen}`}
+          label={t('E-Mail {gen}', { gen: tm.gen })}
           type="email"
           value={v.contact_email}
           error={form.errors.contact_email}
           onChange={(e) => form.set('contact_email', e.target.value)}
         />
         <Field
-          label="Erster Vorstand (E-Mail, optional)"
+          label={t('Erster Vorstand (E-Mail, optional)')}
           type="email"
           value={v.board_email}
           error={form.errors.board_email}
           onChange={(e) => form.set('board_email', e.target.value)}
-          hint="Bekommt die Rolle „Vorstand“. Ohne Konto wird eine Einladung verschickt."
+          hint={t('Bekommt die Rolle „Vorstand“. Ohne Konto wird eine Einladung verschickt.')}
         />
       </div>
       {form.message && <Alert kind={form.message.kind}>{form.message.text}</Alert>}
       <button type="submit" className="button button-primary" disabled={form.busy}>
-        {t.Sg} anlegen
+        {tm.Sg} anlegen
       </button>
     </form>
   )

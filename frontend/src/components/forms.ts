@@ -3,10 +3,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiError } from '../api/client.ts'
 import { registerLeave } from './leaveGuard.ts'
 import { locale } from '../i18n/index.ts'
+import { t } from '../i18n/index.ts'
 
 export function errorMessage(err: unknown): string {
   if (err instanceof ApiError) return err.message
-  return 'Der Server ist nicht erreichbar.'
+  return t('Der Server ist nicht erreichbar.')
 }
 
 /** Lädt Daten und bietet reload() sowie Fehlerstatus. */
@@ -67,7 +68,7 @@ export function useForm<T extends object>(initial: T) {
 
   const set = <K extends keyof T>(key: K, value: T[K]) => setValues((v) => ({ ...v, [key]: value }))
 
-  async function submit(action: () => Promise<unknown>, success = 'Gespeichert.') {
+  async function submit(action: () => Promise<unknown>, success = t('Gespeichert.')) {
     // Formular merken, aus dem abgeschickt wurde: dort nach Fehlern das erste Feld fokussieren
     const form =
       typeof document !== 'undefined' ? (document.activeElement?.closest('form') ?? null) : null
@@ -276,9 +277,9 @@ export const DATE_PRECISION_WORD: Record<DatePrecision, string> = {
 }
 
 export const DATE_PRECISION_OPTIONS: { value: DatePrecision; label: string }[] = [
-  { value: 'day', label: 'tagesgenau (15.03.2001)' },
-  { value: 'month', label: 'monatsgenau (03/2001)' },
-  { value: 'year', label: 'jahresgenau (2001)' },
+  { value: 'day', label: t('tagesgenau (15.03.2001)') },
+  { value: 'month', label: t('monatsgenau (03/2001)') },
+  { value: 'year', label: t('jahresgenau (2001)') },
 ]
 
 // Mitgliedschaftsdatum in der eingestellten Genauigkeit: 15.03.2001, 03/2001 oder 2001.
@@ -296,14 +297,14 @@ export function formatMemberDate(
 // „am 15.03.2026“, „im März 2026“ bzw. „im Jahr 2026“ für Jubiläen.
 export function jubileeWhen(value: string, precision: DatePrecision | undefined): string {
   const m = /^(\d{4})-(\d{2})/.exec(value)
-  if (m && precision === 'year') return `im Jahr ${m[1]}`
+  if (m && precision === 'year') return t('im Jahr {x}', { x: m[1] })
   if (m && precision === 'month') {
     const month = new Date(Number(m[1]), Number(m[2]) - 1, 1).toLocaleDateString(locale(), {
       month: 'long',
     })
-    return `im ${month} ${m[1]}`
+    return t('im {month} {x}', { month, x: m[1] })
   }
-  return `am ${formatDate(value)}`
+  return t('am {x}', { x: formatDate(value) })
 }
 
 /**

@@ -21,6 +21,7 @@ import { DeliveryField } from './DeliveryField.tsx'
 import { RecipientPanel } from './RecipientPanel.tsx'
 import { useOptionalOrg } from '../../org/OrgContext.tsx'
 import { useTerms } from '../../org/terms.ts'
+import { t } from '../../i18n/index.ts'
 
 export function CircularsArea({ base, root }: { base: CircularBase; root: string }) {
   return (
@@ -49,7 +50,12 @@ function CircularList({ base, root }: { base: CircularBase; root: string }) {
   }
 
   async function removeTemplate(id: number, name: string) {
-    if (!(await confirmDialog({ message: `Vorlage „${name}“ löschen?`, confirmLabel: 'Löschen' })))
+    if (
+      !(await confirmDialog({
+        message: t('Vorlage „{name}“ löschen?', { name }),
+        confirmLabel: t('Löschen'),
+      }))
+    )
       return
     try {
       await circularApi.removeTemplate(base, id)
@@ -65,28 +71,30 @@ function CircularList({ base, root }: { base: CircularBase; root: string }) {
     <div className="stack">
       <div className="card card-wide">
         <div className="card-head">
-          <h2>Neues Rundschreiben</h2>
+          <h2>{t('Neues Rundschreiben')}</h2>
         </div>
         <p className="muted small">
-          Mitglieder mit E-Mail-Adresse bekommen eine Mail, alle anderen einen Brief zum Drucken.
+          {t(
+            'Mitglieder mit E-Mail-Adresse bekommen eine Mail, alle anderen einen Brief zum Drucken.',
+          )}
         </p>
         <div className="inline-add">
           {templates.data && templates.data.length > 0 && (
             <select
-              aria-label="Vorlage"
+              aria-label={t('Vorlage')}
               value={template}
               onChange={(e) => setTemplate(e.target.value)}
             >
-              <option value="">ohne Vorlage</option>
-              {templates.data.map((t) => (
-                <option key={t.id} value={t.id}>
-                  Vorlage: {t.name}
+              <option value="">{t('ohne Vorlage')}</option>
+              {templates.data.map((tmx) => (
+                <option key={tmx.id} value={tmx.id}>
+                  {t('Vorlage:')} {tmx.name}
                 </option>
               ))}
             </select>
           )}
           <button type="button" className="button button-primary" onClick={() => void create()}>
-            Rundschreiben verfassen
+            {t('Rundschreiben verfassen')}
           </button>
         </div>
         {error && <Alert kind="error">{error}</Alert>}
@@ -95,14 +103,14 @@ function CircularList({ base, root }: { base: CircularBase; root: string }) {
       {list.error && <Alert kind="error">{list.error}</Alert>}
       {drafts.length > 0 && (
         <div className="card card-wide">
-          <h2>Entwürfe</h2>
+          <h2>{t('Entwürfe')}</h2>
           <SummaryTable rows={drafts} root={root} />
         </div>
       )}
       <div className="card card-wide">
-        <h2>Versendet</h2>
+        <h2>{t('Versendet')}</h2>
         {list.data && sent.length === 0 ? (
-          <p className="muted">Noch keine Rundschreiben versendet.</p>
+          <p className="muted">{t('Noch keine Rundschreiben versendet.')}</p>
         ) : (
           <SummaryTable rows={sent} root={root} />
         )}
@@ -110,25 +118,25 @@ function CircularList({ base, root }: { base: CircularBase; root: string }) {
 
       {templates.data && templates.data.length > 0 && (
         <div className="card card-wide">
-          <h2>Vorlagen</h2>
+          <h2>{t('Vorlagen')}</h2>
           <ul className="plain-list">
-            {templates.data.map((t) => (
-              <li key={t.id}>
-                <strong>{t.name}</strong>{' '}
+            {templates.data.map((tmx) => (
+              <li key={tmx.id}>
+                <strong>{tmx.name}</strong>{' '}
                 <span className="muted small">
-                  {t.kind === 'notice'
-                    ? 'Offizielle Mitteilung'
-                    : t.kind === 'short'
-                      ? 'Kurzmitteilung'
-                      : 'Information'}
-                  {t.subject && ` · ${t.subject}`}
+                  {tmx.kind === 'notice'
+                    ? t('Offizielle Mitteilung')
+                    : tmx.kind === 'short'
+                      ? t('Kurzmitteilung')
+                      : t('Information')}
+                  {tmx.subject && t(' · {subject}', { subject: tmx.subject })}
                 </span>
                 <button
                   type="button"
                   className="link-button spaced"
-                  onClick={() => void removeTemplate(t.id, t.name)}
+                  onClick={() => void removeTemplate(tmx.id, tmx.name)}
                 >
-                  löschen
+                  {t('löschen')}
                 </button>
               </li>
             ))}
@@ -145,18 +153,20 @@ function SummaryTable({ rows, root }: { rows: CircularSummary[]; root: string })
       <table className="table">
         <thead>
           <tr>
-            <th>Betreff</th>
-            <th>Art</th>
-            <th className="col-optional">Absender</th>
-            <th>{rows.some((r) => r.sent_at) ? 'Versendet' : 'Geändert'}</th>
+            <th>{t('Betreff')}</th>
+            <th>{t('Art')}</th>
+            <th className="col-optional">{t('Absender')}</th>
+            <th>{rows.some((r) => r.sent_at) ? t('Versendet') : t('Geändert')}</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((c) => (
             <tr key={c.id}>
               <td>
-                <Link to={`${root}/${c.id}`}>{c.subject || 'ohne Betreff'}</Link>
-                {c.status === 'sending' && <span className="badge badge-open">wird versendet</span>}
+                <Link to={`${root}/${c.id}`}>{c.subject || t('ohne Betreff')}</Link>
+                {c.status === 'sending' && (
+                  <span className="badge badge-open">{t('wird versendet')}</span>
+                )}
               </td>
               <td>{c.kind_label}</td>
               <td className="col-optional">{c.department?.name ?? '–'}</td>
@@ -180,14 +190,16 @@ function CircularPage({ base, root }: { base: CircularBase; root: string }) {
   if (options.error)
     return (
       <LoadError
-        message={`Die Empfängerauswahl konnte nicht geladen werden (${options.error}).`}
+        message={t('Die Empfängerauswahl konnte nicht geladen werden ({error}).', {
+          error: options.error,
+        })}
         onRetry={options.reload}
       />
     )
-  if (!circular.data || !options.data) return <p className="muted">Wird geladen …</p>
+  if (!circular.data || !options.data) return <p className="muted">{t('Wird geladen …')}</p>
   const back = (
     <p>
-      <Link to={root}>← Alle Rundschreiben</Link>
+      <Link to={root}>{t('← Alle Rundschreiben')}</Link>
     </p>
   )
   if (!circular.data.can_edit)
@@ -274,7 +286,7 @@ function DraftEditor({
       if (!(await auto.flush())) {
         setNotice({
           kind: 'error',
-          text: 'Die Änderungen sind noch nicht gespeichert. Erst danach geht es weiter.',
+          text: t('Die Änderungen sind noch nicht gespeichert. Erst danach geht es weiter.'),
         })
         return
       }
@@ -298,13 +310,14 @@ function DraftEditor({
 
   async function sendNow() {
     if (byList && !v.mailing_list) {
-      await alertDialog('Bitte unter „An“ einen Verteiler wählen.')
+      await alertDialog(t('Bitte unter „An“ einen Verteiler wählen.'))
       return
     }
     if (!byList && emptySelections(v.filters).length > 0) {
       await alertDialog(
-        'Bei „nur ausgewählte“ fehlt noch eine Auswahl. Bitte mindestens einen Eintrag anhaken ' +
-          'oder „alle“ wählen, bevor ihr versendet.',
+        t(
+          'Bei „nur ausgewählte“ fehlt noch eine Auswahl. Bitte mindestens einen Eintrag anhaken ',
+        ) + t('oder „alle“ wählen, bevor ihr versendet.'),
       )
       return
     }
@@ -314,19 +327,24 @@ function DraftEditor({
       const app = r.counts.app ?? 0
       const portal = r.counts.portal ?? 0
       if (app + mail + letter + portal === 0) {
-        await alertDialog('Für diese Auswahl gibt es keine Empfänger.')
+        await alertDialog(t('Für diese Auswahl gibt es keine Empfänger.'))
         return
       }
       const parts = [
-        app ? `${app} per App` : '',
-        mail ? `${mail} ${mail === 1 ? 'E-Mail' : 'E-Mails'}` : '',
-        letter ? `${letter} ${letter === 1 ? 'Brief' : 'Briefe'} zum Drucken` : '',
-        portal ? `${portal} nur im Mitgliederbereich` : '',
+        app ? t('{app} per App', { app }) : '',
+        mail ? t('{mail} {x}', { mail, x: mail === 1 ? 'E-Mail' : 'E-Mails' }) : '',
+        letter
+          ? t('{letter} {x} zum Drucken', { letter, x: letter === 1 ? 'Brief' : 'Briefe' })
+          : '',
+        portal ? t('{portal} nur im Mitgliederbereich', { portal }) : '',
       ].filter(Boolean)
       const ok = await confirmDialog({
-        title: 'Rundschreiben versenden?',
-        message: `„${v.subject}“ geht jetzt raus: ${parts.join(' und ')}. Versendete Mails lassen sich nicht zurückholen.`,
-        confirmLabel: 'Jetzt versenden',
+        title: t('Rundschreiben versenden?'),
+        message: t(
+          '„{subject}“ geht jetzt raus: {x}. Versendete Mails lassen sich nicht zurückholen.',
+          { subject: v.subject, x: parts.join(' und ') },
+        ),
+        confirmLabel: t('Jetzt versenden'),
         danger: false,
       })
       if (!ok) return
@@ -348,27 +366,29 @@ function DraftEditor({
       win?.close()
       setNotice({
         kind: 'error',
-        text: 'Die Vorschau wurde noch nicht erstellt. Bitte zuerst die Änderungen speichern.',
+        text: t('Die Vorschau wurde noch nicht erstellt. Bitte zuerst die Änderungen speichern.'),
       })
     }
   }
 
   async function saveTemplate() {
     const name = await promptDialog({
-      title: 'Als Vorlage speichern',
-      label: 'Name der Vorlage',
+      title: t('Als Vorlage speichern'),
+      label: t('Name der Vorlage'),
       defaultValue: v.subject,
     })
     if (!name) return
     await act(
       () =>
         circularApi.saveTemplate(base, { name, kind: v.kind, subject: v.subject, body: v.body }),
-      `Vorlage „${name}“ gespeichert.`,
+      t('Vorlage „{name}“ gespeichert.', { name }),
     )
   }
 
   async function remove() {
-    if (!(await confirmDialog({ message: 'Diesen Entwurf löschen?', confirmLabel: 'Löschen' })))
+    if (
+      !(await confirmDialog({ message: t('Diesen Entwurf löschen?'), confirmLabel: t('Löschen') }))
+    )
       return
     await act(async () => {
       await circularApi.remove(base, initial.id)
@@ -380,22 +400,25 @@ function DraftEditor({
     <div className="stack">
       <div className="card card-wide">
         <div className="card-head">
-          <h2>Rundschreiben verfassen</h2>
+          <h2>{t('Rundschreiben verfassen')}</h2>
           <span className="push-right">
             <SaveStatus auto={auto} />
           </span>
         </div>
         <div className="grid-2">
           <SelectField
-            label="Art"
+            label={t('Art')}
             value={v.kind}
             onChange={(e) => set('kind', e.target.value as DraftValues['kind'])}
             hint={
               v.kind === 'info'
-                ? 'Mitglieder können sich von Informationen abmelden.'
+                ? t('Mitglieder können sich von Informationen abmelden.')
                 : v.kind === 'short'
-                  ? `Kurz und ohne Anhang (bis ${shortMax} Zeichen), z. B. „Antreten heute 18 Uhr am Zelt“. Nie als Brief.`
-                  : 'Geht an alle, auch an Abgemeldete (z. B. Einladung zur Versammlung).'
+                  ? t(
+                      'Kurz und ohne Anhang (bis {shortMax} Zeichen), z. B. „Antreten heute 18 Uhr am Zelt“. Nie als Brief.',
+                      { shortMax },
+                    )
+                  : t('Geht an alle, auch an Abgemeldete (z. B. Einladung zur Versammlung).')
             }
           >
             {options.kinds.map((k) => (
@@ -411,12 +434,12 @@ function DraftEditor({
               error={errors.mailing_list}
               hint={
                 chosenList
-                  ? 'Empfänger wie im Verteiler eingestellt.'
-                  : 'Bitte einen Verteiler wählen.'
+                  ? t('Empfänger wie im Verteiler eingestellt.')
+                  : t('Bitte einen Verteiler wählen.')
               }
               onChange={(e) => set('mailing_list', e.target.value ? Number(e.target.value) : null)}
             >
-              <option value="">Verteiler wählen …</option>
+              <option value="">{t('Verteiler wählen …')}</option>
               {lists.map((l) => (
                 <option key={l.id} value={l.id}>
                   {l.name}
@@ -443,7 +466,7 @@ function DraftEditor({
           )}
         </div>
         <Field
-          label="Betreff"
+          label={t('Betreff')}
           value={v.subject}
           error={errors.subject}
           maxLength={200}
@@ -451,14 +474,14 @@ function DraftEditor({
         />
         <div className="card-head">
           <span className="small">
-            <strong>Text</strong>
+            <strong>{t('Text')}</strong>
           </span>
           <button
             type="button"
             className="link-button push-right"
             onClick={() => setPreview((p) => !p)}
           >
-            {preview ? 'Bearbeiten' : 'Vorschau'}
+            {preview ? t('Bearbeiten') : t('Vorschau')}
           </button>
         </div>
         {preview ? (
@@ -473,7 +496,7 @@ function DraftEditor({
         )}
         {short && (
           <p className={v.body.length > shortMax ? 'field-error small' : 'muted small'}>
-            {v.body.length} von {shortMax} Zeichen
+            {v.body.length} {t('von {shortMax} Zeichen', { shortMax })}
           </p>
         )}
         <DeliveryField
@@ -485,15 +508,15 @@ function DraftEditor({
           }}
         />
         <Field
-          label="Antworten gehen an"
+          label={t('Antworten gehen an')}
           type="email"
           value={v.reply_to}
           error={errors.reply_to}
           placeholder={options.reply_to}
-          hint="Leer: deine E-Mail-Adresse."
+          hint={t('Leer: deine E-Mail-Adresse.')}
           onChange={(e) => set('reply_to', e.target.value)}
         />
-        {!short && <h3>Anhänge (PDF)</h3>}
+        {!short && <h3>{t('Anhänge (PDF)')}</h3>}
         {!short && attachments.length > 0 && (
           <ul className="plain-list">
             {attachments.map((a) => (
@@ -525,7 +548,7 @@ function DraftEditor({
               type="file"
               accept="application/pdf"
               hidden
-              aria-label="PDF anhängen"
+              aria-label={t('PDF anhängen')}
               onChange={(e) => void upload(e)}
             />
             <button
@@ -533,11 +556,13 @@ function DraftEditor({
               className="button button-ghost"
               onClick={() => fileInput.current?.click()}
             >
-              PDF anhängen
+              {t('PDF anhängen')}
             </button>
             <p className="muted small">
-              Bis {options.max_attachment_mb} MB je Datei. In Briefen stehen Anhänge als „Anlagen“
-              und werden separat gedruckt.
+              {t(
+                'Bis {max_attachment_mb} MB je Datei. In Briefen stehen Anhänge als „Anlagen“ und werden separat gedruckt.',
+                { max_attachment_mb: options.max_attachment_mb },
+              )}
             </p>
           </>
         )}
@@ -545,8 +570,8 @@ function DraftEditor({
 
       {byList && !chosenList ? (
         <div className="card card-wide">
-          <h2>Empfänger</h2>
-          <p className="muted">Bitte oben unter „An“ einen Verteiler wählen.</p>
+          <h2>{t('Empfänger')}</h2>
+          <p className="muted">{t('Bitte oben unter „An“ einen Verteiler wählen.')}</p>
         </div>
       ) : (
         <RecipientPanel
@@ -564,7 +589,7 @@ function DraftEditor({
       <div className="card card-wide">
         <div className="button-row">
           <button type="button" className="button button-primary" onClick={() => void sendNow()}>
-            Versenden …
+            {t('Versenden …')}
           </button>
           <button
             type="button"
@@ -572,24 +597,27 @@ function DraftEditor({
             onClick={() =>
               void act(async () => {
                 const r = await circularApi.test(base, initial.id)
-                setNotice({ kind: 'success', text: `Probemail an ${r.sent_to} geschickt.` })
+                setNotice({
+                  kind: 'success',
+                  text: t('Probemail an {sent_to} geschickt.', { sent_to: r.sent_to }),
+                })
               })
             }
           >
-            Probemail an mich
+            {t('Probemail an mich')}
           </button>
           <button type="button" className="button button-ghost" onClick={() => void letters()}>
-            Briefvorschau (PDF)
+            {t('Briefvorschau (PDF)')}
           </button>
           <button type="button" className="button button-ghost" onClick={() => void saveTemplate()}>
-            Als Vorlage speichern
+            {t('Als Vorlage speichern')}
           </button>
           <button
             type="button"
             className="button button-danger push-right"
             onClick={() => void remove()}
           >
-            Entwurf löschen
+            {t('Entwurf löschen')}
           </button>
         </div>
         {notice && <Alert kind={notice.kind}>{notice.text}</Alert>}
@@ -649,10 +677,11 @@ function SentView({
     const open = (counts?.failed ?? 0) + (counts?.unclear ?? 0)
     const question =
       (counts?.unclear ?? 0) > 0
-        ? `${open} E-Mails erneut senden? Bei „Versand unklar“ ist offen, ob die Mail schon ` +
-          'ankam; sie kann dann doppelt ankommen.'
-        : `${open} fehlgeschlagene E-Mails erneut senden?`
-    if (!(await confirmDialog({ message: question, confirmLabel: 'Erneut senden' }))) return
+        ? t('{open} E-Mails erneut senden? Bei „Versand unklar“ ist offen, ob die Mail schon ', {
+            open,
+          }) + t('ankam; sie kann dann doppelt ankommen.')
+        : t('{open} fehlgeschlagene E-Mails erneut senden?', { open })
+    if (!(await confirmDialog({ message: question, confirmLabel: t('Erneut senden') }))) return
     try {
       await circularApi.resend(base, circular.id)
       setError(null)
@@ -670,18 +699,18 @@ function SentView({
         <div className="card-head">
           <h2>{circular.subject}</h2>
           <span className="badge">{circular.kind_label}</span>
-          {sending && <span className="badge badge-open">wird versendet</span>}
+          {sending && <span className="badge badge-open">{t('wird versendet')}</span>}
         </div>
         <p className="muted small">
-          {circular.sent_at && `Versendet am ${formatDateTime(circular.sent_at)}`}
-          {circular.sent_by && ` von ${circular.sent_by}`}
-          {circular.department && ` · ${circular.department.name}`}
-          {circular.reply_to && ` · Antworten an ${circular.reply_to}`}
+          {circular.sent_at && t('Versendet am {x}', { x: formatDateTime(circular.sent_at) })}
+          {circular.sent_by && t(' von {sent_by}', { sent_by: circular.sent_by })}
+          {circular.department && t(' · {name}', { name: circular.department.name })}
+          {circular.reply_to && t(' · Antworten an {reply_to}', { reply_to: circular.reply_to })}
         </p>
         <MarkupPreview text={circular.body} />
         {circular.attachments.length > 0 && (
           <p>
-            Anhänge:{' '}
+            {t('Anhänge:')}{' '}
             {circular.attachments.map((a, i) => (
               <span key={a.id}>
                 {i > 0 && ', '}
@@ -700,34 +729,36 @@ function SentView({
               target="_blank"
               rel="noreferrer"
             >
-              {counts.letter} {counts.letter === 1 ? 'Brief' : 'Briefe'} drucken (PDF)
+              {counts.letter} {counts.letter === 1 ? t('Brief') : t('Briefe')} {t('drucken (PDF)')}
             </a>
           )}
           <button type="button" className="button button-ghost" onClick={() => void reuse()}>
-            Erneut verwenden
+            {t('Erneut verwenden')}
           </button>
         </div>
         {error && <Alert kind="error">{error}</Alert>}
       </div>
 
       <div className="card card-wide">
-        <h2>Versandprotokoll</h2>
+        <h2>{t('Versandprotokoll')}</h2>
         {counts && (
           <p>
-            {(counts.app ?? 0) > 0 && `${counts.app} per App · `}
-            {counts.mail} E-Mails
-            {counts.sent !== undefined && `: ${counts.sent} gesendet`}
+            {(counts.app ?? 0) > 0 && t('{app} per App · ', { app: counts.app })}
+            {counts.mail} {t('E-Mails')}
+            {counts.sent !== undefined && t(': {sent} gesendet', { sent: counts.sent })}
             {counts.pending > 0 && ` (${counts.pending} noch offen)`}
-            {counts.failed > 0 && `, ${counts.failed} fehlgeschlagen`}
-            {(counts.unclear ?? 0) > 0 && `, ${counts.unclear} Versand unklar`} · {counts.letter}{' '}
-            Briefe
-            {(counts.portal ?? 0) > 0 && ` · ${counts.portal} nur im Mitgliederbereich`}
+            {counts.failed > 0 && t(', {failed} fehlgeschlagen', { failed: counts.failed })}
+            {(counts.unclear ?? 0) > 0 &&
+              t(', {unclear} Versand unklar', { unclear: counts.unclear })}{' '}
+            {t('· {letter}  Briefe', { letter: counts.letter })}
+            {(counts.portal ?? 0) > 0 &&
+              t(' · {portal} nur im Mitgliederbereich', { portal: counts.portal })}
           </p>
         )}
         {retryable > 0 && (
           <p>
             <button type="button" className="button button-ghost" onClick={() => void resend()}>
-              {retryable} {retryable === 1 ? 'E-Mail' : 'E-Mails'} erneut senden
+              {retryable} {retryable === 1 ? t('E-Mail') : t('E-Mails')} {t('erneut senden')}
             </button>
           </p>
         )}
@@ -737,10 +768,10 @@ function SentView({
             <table className="table">
               <thead>
                 <tr>
-                  <th>Name</th>
+                  <th>{t('Name')}</th>
                   <th className="col-optional">{activeType === 'federation' ? tm.Sg : tm.e_Sg}</th>
-                  <th>Weg</th>
-                  <th>Stand</th>
+                  <th>{t('Weg')}</th>
+                  <th>{t('Stand')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -748,7 +779,7 @@ function SentView({
                   <tr key={r.key}>
                     <td>
                       {r.last_name}
-                      {r.first_name && `, ${r.first_name}`}
+                      {r.first_name && t(', {first_name}', { first_name: r.first_name })}
                       {r.email && <div className="muted small">{r.email}</div>}
                     </td>
                     <td className="col-optional">{r.club}</td>

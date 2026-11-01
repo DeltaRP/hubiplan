@@ -84,7 +84,7 @@ export function EventsPage() {
 }
 
 function CategoriesPanel({ base }: { base: CalendarBase }) {
-  const t = useTerms()
+  const tm = useTerms()
   const { data, error, reload } = useLoad(() => eventApi.categories(base), [base])
   const [name, setName] = useState('')
   const [color, setColor] = useState('#2f6f4f')
@@ -115,8 +115,8 @@ function CategoriesPanel({ base }: { base: CalendarBase }) {
   return (
     <div className="card card-wide stack">
       <p className="muted small">
-        Kategorien gliedern den Kalender, z. B. Versammlung, Fest oder Umzug. {t.pl} nutzen die
-        Kategorien {t.e_gen}.
+        Kategorien gliedern den Kalender, z. B. Versammlung, Fest oder Umzug. {tm.pl} nutzen die
+        Kategorien {tm.e_gen}.
       </p>
       {message && <Alert kind={message.kind}>{message.text}</Alert>}
       <ul className="plain-list category-list">
@@ -207,7 +207,7 @@ export function SharingPanel({ base }: { base: CalendarBase }) {
   const { data, error, setData } = useLoad(() => eventApi.sharing(base), [base])
   const [message, setMessage] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const t = useTerms()
+  const tm = useTerms()
 
   async function save(change: Parameters<typeof eventApi.updateSharing>[1]) {
     setBusy(true)
@@ -259,14 +259,14 @@ export function SharingPanel({ base }: { base: CalendarBase }) {
       )}
       {data.units.length > 0 && (
         <div className="stack-sm">
-          <h3>Termine der {t.pl}</h3>
+          <h3>Termine der {tm.pl}</h3>
           <p className="small muted">
             Ohne eigene Verwaltung des Kalenders entscheidest du hier für sie.
           </p>
           <table className="table">
             <thead>
               <tr>
-                <th>{t.Sg}</th>
+                <th>{tm.Sg}</th>
                 <th>nach oben</th>
                 <th>nach unten</th>
               </tr>

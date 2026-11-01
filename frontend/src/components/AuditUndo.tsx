@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import type { AuditEntry } from '../api/orgs.ts'
 import { undoFromLog } from './undo.ts'
+import { t } from '../i18n/index.ts'
 
 export function AuditUndo({
   entry,
@@ -17,10 +18,12 @@ export function AuditUndo({
   if (!undo) return null
   return (
     <div className="audit-actions small">
-      {undo.is_undo && <span className="muted">durch Rückgängig · </span>}
-      {undo.state === 'done' && <span className="muted">rückgängig gemacht</span>}
+      {undo.is_undo && <span className="muted">{t('durch Rückgängig ·')} </span>}
+      {undo.state === 'done' && <span className="muted">{t('rückgängig gemacht')}</span>}
       {undo.state === 'blocked' && showAction && (
-        <span className="muted">nicht rückgängig zu machen: {undo.reason}</span>
+        <span className="muted">
+          {t('nicht rückgängig zu machen:')} {undo.reason}
+        </span>
       )}
       {undo.state === 'possible' && showAction && (
         <button
@@ -33,7 +36,7 @@ export function AuditUndo({
             setBusy(false)
           }}
         >
-          {entry.action === 'delete' ? 'Wiederherstellen' : 'Rückgängig'}
+          {entry.action === 'delete' ? t('Wiederherstellen') : t('Rückgängig')}
         </button>
       )}
     </div>

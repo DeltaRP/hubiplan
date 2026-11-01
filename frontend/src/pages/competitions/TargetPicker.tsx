@@ -4,11 +4,11 @@
 import type { TargetInfo } from '../../api/competitions.ts'
 import { TargetRings } from './TargetPad.tsx'
 
-function spotOffsets(t: TargetInfo): [number, number][] {
-  const outer = (t.rings[0]?.diameter ?? t.top_diameter) / 2
-  if (t.spots <= 1) return [[0, 0]]
+function spotOffsets(tm: TargetInfo): [number, number][] {
+  const outer = (tm.rings[0]?.diameter ?? tm.top_diameter) / 2
+  if (tm.spots <= 1) return [[0, 0]]
   const gap = 2 * outer + 4
-  if (t.spots === 5) {
+  if (tm.spots === 5) {
     const p = gap / Math.SQRT2
     return [
       [-p, p],
@@ -19,17 +19,17 @@ function spotOffsets(t: TargetInfo): [number, number][] {
     ]
   }
   const cols = 3
-  const rows = Math.ceil(t.spots / cols)
-  return Array.from({ length: t.spots }, (_, i) => [
+  const rows = Math.ceil(tm.spots / cols)
+  return Array.from({ length: tm.spots }, (_, i) => [
     ((i % cols) - (cols - 1) / 2) * gap,
     ((rows - 1) / 2 - Math.floor(i / cols)) * gap,
   ])
 }
 
 /** Kleines Bild der Karte (Maße in mm). */
-export function TargetPreview({ t }: { t: TargetInfo }) {
-  const outer = (t.rings[0]?.diameter ?? t.top_diameter) / 2
-  const offsets = spotOffsets(t)
+export function TargetPreview({ t: tm }: { t: TargetInfo }) {
+  const outer = (tm.rings[0]?.diameter ?? tm.top_diameter) / 2
+  const offsets = spotOffsets(tm)
   const extent = Math.max(...offsets.map(([x, y]) => Math.max(Math.abs(x), Math.abs(y)))) + outer
   const half = extent * 1.12
   return (
@@ -48,7 +48,7 @@ export function TargetPreview({ t }: { t: TargetInfo }) {
       />
       {offsets.map(([x, y], i) => (
         <g key={i} transform={`translate(${x} ${-y})`}>
-          <TargetRings t={t} />
+          <TargetRings t={tm} />
         </g>
       ))}
     </svg>
@@ -60,13 +60,13 @@ function fmt(n: number): string {
 }
 
 /** Kurzbeschreibung in Alltagssprache. */
-function targetSummary(t: TargetInfo): string {
+function targetSummary(tm: TargetInfo): string {
   const parts = [
-    t.spots > 1 ? `${t.spots} Spiegel auf einer Karte` : 'ein Spiegel je Karte',
-    t.top_diameter <= 1 ? 'Zehn als kleiner Punkt' : `Zehn ${fmt(t.top_diameter)} mm`,
-    `Ringe ${t.lowest} bis ${t.top}`,
+    tm.spots > 1 ? `${tm.spots} Spiegel auf einer Karte` : 'ein Spiegel je Karte',
+    tm.top_diameter <= 1 ? 'Zehn als kleiner Punkt' : `Zehn ${fmt(tm.top_diameter)} mm`,
+    `Ringe ${tm.lowest} bis ${tm.top}`,
   ]
-  if (t.photo) parts.push('Foto möglich')
+  if (tm.photo) parts.push('Foto möglich')
   return parts.join(' · ')
 }
 
@@ -83,7 +83,7 @@ export function TargetPicker({
   onChange: (key: string) => void
   error?: string
 }) {
-  const groups = [...new Set(targets.map((t) => t.group))]
+  const groups = [...new Set(targets.map((tm) => tm.group))]
   const name = 'scheibe'
   return (
     <fieldset className="target-picker">
@@ -109,22 +109,22 @@ export function TargetPicker({
           <p className="target-group">{g}</p>
           <div className="target-tiles">
             {targets
-              .filter((t) => t.group === g)
-              .map((t) => (
+              .filter((tm) => tm.group === g)
+              .map((tm) => (
                 <label
-                  key={t.key}
-                  className={`target-tile${value === t.key ? ' target-tile-on' : ''}`}
+                  key={tm.key}
+                  className={`target-tile${value === tm.key ? ' target-tile-on' : ''}`}
                 >
                   <input
                     type="radio"
                     name={name}
-                    value={t.key}
-                    checked={value === t.key}
-                    onChange={() => onChange(t.key)}
+                    value={tm.key}
+                    checked={value === tm.key}
+                    onChange={() => onChange(tm.key)}
                   />
-                  <TargetPreview t={t} />
-                  <span className="target-tile-name">{t.name}</span>
-                  <span className="target-tile-note">{targetSummary(t)}</span>
+                  <TargetPreview t={tm} />
+                  <span className="target-tile-name">{tm.name}</span>
+                  <span className="target-tile-note">{targetSummary(tm)}</span>
                 </label>
               ))}
           </div>

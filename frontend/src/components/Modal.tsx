@@ -7,6 +7,7 @@
 import { useEffect, useId, useRef } from 'react'
 import type { KeyboardEvent, ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { t } from '../i18n/index.ts'
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -96,7 +97,7 @@ export function Modal({
               className="button button-ghost"
               onClick={() => void requestClose()}
             >
-              Schließen
+              {t('Schließen')}
             </button>
           </div>
           {children}

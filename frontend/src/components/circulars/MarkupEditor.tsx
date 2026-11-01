@@ -3,11 +3,12 @@
 import { useRef } from 'react'
 import { promptDialog } from '../dialog.ts'
 import { renderMarkup } from './markup.tsx'
+import { t } from '../../i18n/index.ts'
 
 export function MarkupPreview({ text }: { text: string }) {
   return (
     <div className="markup-preview">
-      {text.trim() ? renderMarkup(text) : <p className="muted">Noch kein Text.</p>}
+      {text.trim() ? renderMarkup(text) : <p className="muted">{t('Noch kein Text.')}</p>}
     </div>
   )
 }
@@ -56,10 +57,10 @@ export function MarkupEditor({
     const el = area.current
     const selected = el ? value.slice(el.selectionStart, el.selectionEnd) : ''
     const url = await promptDialog({
-      title: 'Link einfügen',
-      label: 'Adresse (https://…)',
+      title: t('Link einfügen'),
+      label: t('Adresse (https://…)'),
       defaultValue: 'https://',
-      confirmLabel: 'Einfügen',
+      confirmLabel: t('Einfügen'),
       danger: false,
     })
     if (!url || url === 'https://') return
@@ -69,28 +70,28 @@ export function MarkupEditor({
 
   return (
     <div className={`field markup-editor${error ? ' field-invalid' : ''}`}>
-      <div className="markup-toolbar" role="toolbar" aria-label="Formatierung">
-        <button type="button" title="Fett" onClick={() => wrap('**', 'fett')}>
+      <div className="markup-toolbar" role="toolbar" aria-label={t('Formatierung')}>
+        <button type="button" title={t('Fett')} onClick={() => wrap('**', 'fett')}>
           <strong>F</strong>
         </button>
-        <button type="button" title="Kursiv" onClick={() => wrap('*', 'kursiv')}>
+        <button type="button" title={t('Kursiv')} onClick={() => wrap('*', 'kursiv')}>
           <em>K</em>
         </button>
-        <button type="button" title="Liste" onClick={list}>
-          • Liste
+        <button type="button" title={t('Liste')} onClick={list}>
+          {t('• Liste')}
         </button>
-        <button type="button" title="Link" onClick={() => void link()}>
-          Link
+        <button type="button" title={t('Link')} onClick={() => void link()}>
+          {t('Link')}
         </button>
         <select
-          aria-label="Platzhalter einfügen"
+          aria-label={t('Platzhalter einfügen')}
           value=""
           onChange={(e) => {
             const name = e.target.value
             if (name) replace(() => `{${name}}`)
           }}
         >
-          <option value="">Platzhalter …</option>
+          <option value="">{t('Platzhalter …')}</option>
           {placeholders.map((p) => (
             <option key={p.name} value={p.name} title={p.label}>
               {`{${p.name}}`} – {p.label}
@@ -100,7 +101,7 @@ export function MarkupEditor({
       </div>
       <textarea
         ref={area}
-        aria-label="Text"
+        aria-label={t('Text')}
         rows={12}
         value={value}
         aria-invalid={!!error}
@@ -110,8 +111,8 @@ export function MarkupEditor({
         <small className="field-error">{error}</small>
       ) : (
         <small className="muted">
-          **fett**, *kursiv*, Zeilen mit „- “ werden zur Liste. Platzhalter wie {'{Vorname}'} werden
-          für jeden Empfänger ersetzt.
+          {t('**fett**, *kursiv*, Zeilen mit „- “ werden zur Liste. Platzhalter wie')} {'{Vorname}'}{' '}
+          {t('werden für jeden Empfänger ersetzt.')}
         </small>
       )}
     </div>

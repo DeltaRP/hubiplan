@@ -41,13 +41,13 @@ export function GlossaryPage() {
       (Object.keys(TERMS) as TermKey[])
         .filter((k) => has(TERMS[k].feature))
         .filter((k) => {
-          const t = TERMS[k]
+          const tm = TERMS[k]
           return matches(
             query,
-            'symbol' in t ? t.symbol : undefined,
-            tr(t.name),
-            tr(t.meaning),
-            tr(t.example),
+            'symbol' in tm ? tm.symbol : undefined,
+            tr(tm.name),
+            tr(tm.meaning),
+            tr(tm.example),
           )
         }),
     [query, has],
@@ -113,21 +113,21 @@ export function GlossaryPage() {
           <h2>{tr(SECTIONS[s.key])}</h2>
           <dl className="glossary-list">
             {s.items.map((k) => {
-              const t = TERMS[k]
+              const tm = TERMS[k]
               return (
                 <div key={k} id={termAnchor(k)} className="glossary-entry">
                   <dt>
-                    {'symbol' in t && t.symbol ? (
+                    {'symbol' in tm && tm.symbol ? (
                       <>
-                        <strong>{t.symbol}</strong> · {tr(t.name)}
+                        <strong>{tm.symbol}</strong> · {tr(tm.name)}
                       </>
                     ) : (
-                      <strong>{tr(t.name)}</strong>
+                      <strong>{tr(tm.name)}</strong>
                     )}
                   </dt>
                   <dd>
-                    {tr(t.meaning)}
-                    <span className="glossary-example muted">{tr(t.example)}</span>
+                    {tr(tm.meaning)}
+                    <span className="glossary-example muted">{tr(tm.example)}</span>
                   </dd>
                 </div>
               )

@@ -29,6 +29,7 @@ import {
   parseMarkdown,
   toMarkdown,
 } from './markdown.ts'
+import { t } from '../../i18n/index.ts'
 
 const MODE_KEY = 'hubiplan.texteditor.markdown'
 
@@ -149,7 +150,7 @@ function linkRange(state: EditorState): { from: number; to: number; href: string
 }
 
 function imageLabel(i: WebsiteImage): string {
-  return i.caption || i.alt_text || `Bild ${i.key}`
+  return i.caption || i.alt_text || t('Bild {key}', { key: i.key })
 }
 
 function makeState(doc: PmNode, onLink: () => void): EditorState {
@@ -172,11 +173,11 @@ function makeNodeViews(
       const current = image ? image.alt_text || (image.decorative ? '' : image.caption) : ''
       const alt = current || String(node.attrs.alt || '')
       const ok = !!alt || !!image?.decorative
-      img.alt = alt || (image ? imageLabel(image) : 'Bild')
+      img.alt = alt || (image ? imageLabel(image) : t('Bild'))
       img.className = ok ? 'texteditor-image' : 'texteditor-image texteditor-image-noalt'
       img.title = ok
         ? alt
-        : 'Ohne Beschreibung für blinde Besucher; unter Webseite › Bilder ergänzen.'
+        : t('Ohne Beschreibung für blinde Besucher; unter Webseite › Bilder ergänzen.')
       return { dom: img }
     },
   }
@@ -375,7 +376,7 @@ export function TextEditor({
     } else {
       const mark = m.link.create({ href })
       if (s.selection.empty && !range) {
-        const target = linkTargets?.find((t) => t.href === href)
+        const target = linkTargets?.find((tm) => tm.href === href)
         const text = target ? target.label.replace(/ \(noch nicht veröffentlicht\)$/, '') : href
         const from = s.selection.from
         tr = tr.insertText(text, from).addMark(from, from + text.length, mark)
@@ -438,59 +439,59 @@ export function TextEditor({
     : [
         {
           key: 'undo',
-          label: 'Rückgängig (Strg+Z)',
+          label: t('Rückgängig (Strg+Z)'),
           text: '↶',
           disabled: !state || undoDepth(state) === 0,
         },
         {
           key: 'redo',
-          label: 'Wiederholen (Strg+Y)',
+          label: t('Wiederholen (Strg+Y)'),
           text: '↷',
           disabled: !state || redoDepth(state) === 0,
         },
         {
           key: 'h2',
-          label: 'Überschrift',
-          text: 'Ü1',
+          label: t('Überschrift'),
+          text: t('Ü1'),
           pressed: !!state && blockLevel(state) === 2,
           gapBefore: true,
         },
         {
           key: 'h3',
-          label: 'Zwischenüberschrift',
-          text: 'Ü2',
+          label: t('Zwischenüberschrift'),
+          text: t('Ü2'),
           pressed: !!state && blockLevel(state) === 3,
         },
         {
           key: 'strong',
-          label: 'Fett (Strg+B)',
+          label: t('Fett (Strg+B)'),
           text: <strong>F</strong>,
           pressed: !!state && markActive(state, m.strong),
           gapBefore: true,
         },
         {
           key: 'em',
-          label: 'Kursiv (Strg+I)',
+          label: t('Kursiv (Strg+I)'),
           text: <em>K</em>,
           pressed: !!state && markActive(state, m.em),
         },
         {
           key: 'bullet',
-          label: 'Aufzählung',
-          text: '• Liste',
+          label: t('Aufzählung'),
+          text: t('• Liste'),
           pressed: !!state && listType(state) === n.bullet_list,
           gapBefore: true,
         },
         {
           key: 'ordered',
-          label: 'Nummerierte Liste',
-          text: '1. Liste',
+          label: t('Nummerierte Liste'),
+          text: t('1. Liste'),
           pressed: !!state && listType(state) === n.ordered_list,
         },
         {
           key: 'link',
-          label: 'Link (Strg+K)',
-          text: 'Link',
+          label: t('Link (Strg+K)'),
+          text: t('Link'),
           pressed: !!state && !!linkRange(state),
           gapBefore: true,
         },
@@ -498,16 +499,16 @@ export function TextEditor({
           ? [
               {
                 key: 'image' as const,
-                label: 'Bild einfügen',
-                text: 'Bild',
+                label: t('Bild einfügen'),
+                text: t('Bild'),
               },
             ]
           : []),
       ]
   tools.push({
     key: 'source',
-    label: 'Markdown anzeigen',
-    text: 'Markdown',
+    label: t('Markdown anzeigen'),
+    text: t('Markdown'),
     pressed: markdownMode,
     gapBefore: !markdownMode,
   })
@@ -525,11 +526,11 @@ export function TextEditor({
     else switchMode()
   }
 
-  const enabled = tools.filter((t) => !t.disabled)
-  const tabStop = enabled.some((t) => t.key === focusKey) ? focusKey : enabled[0]?.key
+  const enabled = tools.filter((tm) => !tm.disabled)
+  const tabStop = enabled.some((tm) => tm.key === focusKey) ? focusKey : enabled[0]?.key
 
   function onToolbarKey(e: KeyboardEvent<HTMLDivElement>) {
-    const keys = enabled.map((t) => t.key)
+    const keys = enabled.map((tm) => tm.key)
     const index = keys.indexOf(tabStop!)
     let next = -1
     if (e.key === 'ArrowRight') next = (index + 1) % keys.length
@@ -550,34 +551,35 @@ export function TextEditor({
       <div
         className="texteditor-toolbar"
         role="toolbar"
-        aria-label={`Formatierung: ${label}`}
+        aria-label={t('Formatierung: {label}', { label })}
         aria-controls={markdownMode ? sourceId : undefined}
         onKeyDown={onToolbarKey}
       >
-        {tools.map((t) => (
+        {tools.map((tm) => (
           <button
-            key={t.key}
+            key={tm.key}
             type="button"
-            data-tool={t.key}
-            className={t.gapBefore ? 'texteditor-gap' : undefined}
-            aria-label={t.label}
-            title={t.label}
-            aria-pressed={t.pressed === undefined ? undefined : t.pressed}
-            disabled={t.disabled}
-            tabIndex={t.key === tabStop ? 0 : -1}
+            data-tool={tm.key}
+            className={tm.gapBefore ? 'texteditor-gap' : undefined}
+            aria-label={tm.label}
+            title={tm.label}
+            aria-pressed={tm.pressed === undefined ? undefined : tm.pressed}
+            disabled={tm.disabled}
+            tabIndex={tm.key === tabStop ? 0 : -1}
             // Auswahl im Text behalten
             onMouseDown={(e) => e.preventDefault()}
-            onFocus={() => setFocusKey(t.key)}
-            onClick={() => act(t.key)}
+            onFocus={() => setFocusKey(tm.key)}
+            onClick={() => act(tm.key)}
           >
-            {t.text}
+            {tm.text}
           </button>
         ))}
       </div>
       {unsupported && (
         <p className="small muted" role="status">
-          Dieser Text enthält Gestaltung, die der Editor nicht anzeigen kann (z. B. eine Tabelle).
-          Du bearbeitest ihn deshalb als Markdown; dabei geht nichts verloren.
+          {t(
+            'Dieser Text enthält Gestaltung, die der Editor nicht anzeigen kann (z. B. eine Tabelle). Du bearbeitest ihn deshalb als Markdown; dabei geht nichts verloren.',
+          )}
         </p>
       )}
       {markdownMode ? (
@@ -667,14 +669,17 @@ function LinkDialog({
   const [url, setUrl] = useState(isPage ? '' : current)
   const [error, setError] = useState<string | null>(null)
   const pageOptions =
-    isPage && !targets.some((t) => t.href === current)
-      ? [...targets, { href: current, label: `${current.slice(PAGE_PREFIX.length)} (unbekannt)` }]
+    isPage && !targets.some((tm) => tm.href === current)
+      ? [
+          ...targets,
+          { href: current, label: t('{x} (unbekannt)', { x: current.slice(PAGE_PREFIX.length) }) },
+        ]
       : targets
 
   function submit() {
     if (kind === 'page') {
       if (!page) {
-        setError('Bitte eine Seite wählen.')
+        setError(t('Bitte eine Seite wählen.'))
         return
       }
       onApply(page)
@@ -682,14 +687,14 @@ function LinkDialog({
     }
     const href = normalizeHref(url)
     if (!href) {
-      setError('Bitte eine Adresse wie https://www.beispiel.de oder name@beispiel.de angeben.')
+      setError(t('Bitte eine Adresse wie https://www.beispiel.de oder name@beispiel.de angeben.'))
       return
     }
     onApply(href)
   }
 
   return (
-    <Modal title={current ? 'Link ändern' : 'Link einfügen'} onClose={onCancel}>
+    <Modal title={current ? t('Link ändern') : t('Link einfügen')} onClose={onCancel}>
       <form
         onSubmit={(e) => {
           e.preventDefault()
@@ -699,7 +704,7 @@ function LinkDialog({
       >
         {targets.length > 0 && (
           <fieldset className="texteditor-linkkind">
-            <legend>Ziel</legend>
+            <legend>{t('Ziel')}</legend>
             <label>
               <input
                 type="radio"
@@ -707,7 +712,7 @@ function LinkDialog({
                 checked={kind === 'page'}
                 onChange={() => setKind('page')}
               />{' '}
-              Seite unserer Webseite
+              {t('Seite unserer Webseite')}
             </label>
             <label>
               <input
@@ -716,22 +721,22 @@ function LinkDialog({
                 checked={kind === 'url'}
                 onChange={() => setKind('url')}
               />{' '}
-              andere Adresse oder E-Mail
+              {t('andere Adresse oder E-Mail')}
             </label>
           </fieldset>
         )}
         {kind === 'page' && targets.length > 0 ? (
-          <SelectField label="Seite" value={page} onChange={(e) => setPage(e.target.value)}>
-            <option value="">Seite wählen …</option>
-            {pageOptions.map((t) => (
-              <option key={t.href} value={t.href}>
-                {t.label}
+          <SelectField label={t('Seite')} value={page} onChange={(e) => setPage(e.target.value)}>
+            <option value="">{t('Seite wählen …')}</option>
+            {pageOptions.map((tm) => (
+              <option key={tm.href} value={tm.href}>
+                {tm.label}
               </option>
             ))}
           </SelectField>
         ) : (
           <Field
-            label="Adresse (https://… oder E-Mail)"
+            label={t('Adresse (https://… oder E-Mail)')}
             value={url}
             autoFocus
             onChange={(e) => setUrl(e.target.value)}
@@ -740,15 +745,15 @@ function LinkDialog({
         {error && <Alert kind="error">{error}</Alert>}
         <div className="button-row">
           <button type="submit" className="button button-primary">
-            {current ? 'Übernehmen' : 'Einfügen'}
+            {current ? t('Übernehmen') : t('Einfügen')}
           </button>
           {current && (
             <button type="button" className="button button-ghost" onClick={() => onApply(null)}>
-              Link entfernen
+              {t('Link entfernen')}
             </button>
           )}
           <button type="button" className="button button-ghost" onClick={onCancel}>
-            Abbrechen
+            {t('Abbrechen')}
           </button>
         </div>
       </form>
@@ -786,9 +791,9 @@ function ImageDialog({
   }
 
   return (
-    <Modal title="Bild einfügen" onClose={onCancel}>
+    <Modal title={t('Bild einfügen')} onClose={onCancel}>
       {images.length === 0 ? (
-        <p className="muted">Noch keine Bilder hochgeladen.</p>
+        <p className="muted">{t('Noch keine Bilder hochgeladen.')}</p>
       ) : (
         <ul className="texteditor-images">
           {images.map((i) => (
@@ -797,7 +802,7 @@ function ImageDialog({
                 <img src={i.small_url} alt="" width={120} />
                 <span>{imageLabel(i)}</span>
                 {!i.alt_text && !i.decorative && (
-                  <small className="field-error">ohne Beschreibung</small>
+                  <small className="field-error">{t('ohne Beschreibung')}</small>
                 )}
               </button>
             </li>
@@ -806,9 +811,9 @@ function ImageDialog({
       )}
       {onUpload && (
         <fieldset className="texteditor-upload">
-          <legend>Neues Bild hochladen</legend>
+          <legend>{t('Neues Bild hochladen')}</legend>
           <label className="field">
-            <span>Datei</span>
+            <span>{t('Datei')}</span>
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"
@@ -818,12 +823,14 @@ function ImageDialog({
             <RightsHint />
           </label>
           <Field
-            label="Was ist zu sehen? (Alternativtext)"
+            label={t('Was ist zu sehen? (Alternativtext)')}
             value={alt}
             maxLength={300}
             hint={
               file && !alt.trim()
-                ? 'Ohne Beschreibung erfahren blinde Besucher nicht, was auf dem Bild zu sehen ist.'
+                ? t(
+                    'Ohne Beschreibung erfahren blinde Besucher nicht, was auf dem Bild zu sehen ist.',
+                  )
                 : undefined
             }
             onChange={(e) => setAlt(e.target.value)}
@@ -836,7 +843,7 @@ function ImageDialog({
               disabled={!file || busy}
               onClick={() => void upload()}
             >
-              Hochladen und einfügen
+              {t('Hochladen und einfügen')}
             </button>
           </div>
         </fieldset>

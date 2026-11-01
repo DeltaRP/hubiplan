@@ -158,8 +158,8 @@ function targets(call: CallDetail, entry: Entry): Target[] {
   const out: Target[] = []
   for (const b of call.blocks) {
     if (b.kind === 'mannschaften')
-      for (const t of entry.teams.filter((x) => x.block === b.id))
-        out.push({ key: `t${t.id}`, label: t.name, block: b.id, team: t.id })
+      for (const tm of entry.teams.filter((x) => x.block === b.id))
+        out.push({ key: `t${tm.id}`, label: tm.name, block: b.id, team: tm.id })
     else if (b.kind === 'personen')
       out.push({ key: `b${b.id}`, label: b.label, block: b.id, team: null })
   }
@@ -211,11 +211,11 @@ export function InterestCard({
               person={r}
               targets={list}
               disabled={locked}
-              onAdd={(t) =>
+              onAdd={(tm) =>
                 run(() =>
                   entriesApi.addPerson(org, call.id, {
-                    block: t.block,
-                    team: t.team,
+                    block: tm.block,
+                    team: tm.team,
                     membership: r.membership,
                   }),
                 )
@@ -242,10 +242,10 @@ function InterestRow({
   person: Interested
   targets: Target[]
   disabled: boolean
-  onAdd: (t: Target) => Promise<boolean>
+  onAdd: (tm: Target) => Promise<boolean>
 }) {
   const [target, setTarget] = useState('')
-  const chosen = list.find((t) => t.key === target) ?? list[0]
+  const chosen = list.find((tm) => tm.key === target) ?? list[0]
   const details = [r.unit_name, r.birth_year ? `geb. ${r.birth_year}` : '', r.note]
     .filter(Boolean)
     .join(' · ')
@@ -267,9 +267,9 @@ function InterestRow({
                 value={chosen.key}
                 onChange={(e) => setTarget(e.target.value)}
               >
-                {list.map((t) => (
-                  <option key={t.key} value={t.key}>
-                    {t.label}
+                {list.map((tm) => (
+                  <option key={tm.key} value={tm.key}>
+                    {tm.label}
                   </option>
                 ))}
               </select>

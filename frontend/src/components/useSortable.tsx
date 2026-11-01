@@ -6,6 +6,7 @@ import type { KeyboardEvent, PointerEvent, ReactNode } from 'react'
 import { errorMessage } from './forms.ts'
 import { Alert } from './ui.tsx'
 import { GripIcon } from './Sortable.tsx'
+import { t } from '../i18n/index.ts'
 
 export interface SortableOptions<T> {
   items: T[]
@@ -68,7 +69,11 @@ export function useSortable<T>({
       await onReorder(next)
       if (item)
         setAnnounce(
-          `${label(item)} steht jetzt an Stelle ${next.indexOf(pk) + 1} von ${next.length}.`,
+          t('{x} steht jetzt an Stelle {x2} von {n}.', {
+            x: label(item),
+            x2: next.indexOf(pk) + 1,
+            n: next.length,
+          }),
         )
     } catch (err) {
       setPreview(null)
@@ -156,9 +161,9 @@ export function useSortable<T>({
           if (el) handles.current.set(pk, el)
           else handles.current.delete(pk)
         }}
-        aria-label={`${label(item)} verschieben`}
-        aria-roledescription="Griff zum Verschieben"
-        title="Ziehen zum Verschieben (oder Pfeiltasten)"
+        aria-label={t('{x} verschieben', { x: label(item) })}
+        aria-roledescription={t('Griff zum Verschieben')}
+        title={t('Ziehen zum Verschieben (oder Pfeiltasten)')}
         onPointerDown={(e) => onPointerDown(e, pk)}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}

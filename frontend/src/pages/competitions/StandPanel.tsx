@@ -249,7 +249,7 @@ export function StandPanel({
     return { ref: key, name }
   }
 
-  async function submitHits(t: NonNullable<typeof target>) {
+  async function submitHits(tm: NonNullable<typeof target>) {
     if (!chosen || !scoring) return
     const max = scoring.shots
     if (max && padHits.length > max) {
@@ -270,7 +270,7 @@ export function StandPanel({
     }
     const value = totalText(
       scoring.method,
-      padHits.map((h) => scoreShot(t, h.x, h.y)),
+      padHits.map((h) => scoreShot(tm, h.x, h.y)),
       scoring.counted_shots,
     )
     if (same && chosen.kind === 'starter') {
@@ -739,8 +739,8 @@ function hitLabel(h: Hit, scoring: Scoring) {
 }
 
 /** Spiegel / äußerster Ring für die Live-Kamera; nur bei Karten mit einem Spiegel. */
-function blackShare(t: TargetInfo): number | null {
-  return t.black_diameter && t.rings[0] && t.spots === 1
-    ? t.black_diameter / t.rings[0].diameter
+function blackShare(tm: TargetInfo): number | null {
+  return tm.black_diameter && tm.rings[0] && tm.spots === 1
+    ? tm.black_diameter / tm.rings[0].diameter
     : null
 }

@@ -136,12 +136,12 @@ function DeptMemberList({ dept }: { dept: DeptSummary }) {
   const query = `${term}|${page}`
 
   useEffect(() => {
-    const t = setTimeout(() => {
+    const tm = setTimeout(() => {
       if (search === term) return
       setTerm(search)
       setPage(1)
     }, 300)
-    return () => clearTimeout(t)
+    return () => clearTimeout(tm)
   }, [search, term])
 
   useEffect(() => {

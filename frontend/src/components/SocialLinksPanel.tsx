@@ -5,6 +5,7 @@ import type { SocialKind, SocialLink } from '../api/orgs.ts'
 import { confirmDialog } from './dialog.ts'
 import { errorMessage, useLoad } from './forms.ts'
 import { Alert, Field, SelectField } from './ui.tsx'
+import { t } from '../i18n/index.ts'
 
 /** Social-Media-Kanäle einer Einheit (Stammdaten, z. B. für Briefvorlage und Webseite). */
 export function SocialLinksPanel({ orgId, editable }: { orgId: number; editable: boolean }) {
@@ -42,8 +43,11 @@ export function SocialLinksPanel({ orgId, editable }: { orgId: number; editable:
   }
 
   async function remove(link: SocialLink) {
-    const title = `${link.kind_label} „${link.display}“ entfernen?`
-    if (!(await confirmDialog({ title, confirmLabel: 'Entfernen' }))) return
+    const title = t('{kind_label} „{display}“ entfernen?', {
+      kind_label: link.kind_label,
+      display: link.display,
+    })
+    if (!(await confirmDialog({ title, confirmLabel: t('Entfernen') }))) return
     await run(() => orgApi.deleteSocialLink(orgId, link.id))
   }
 
@@ -59,14 +63,15 @@ export function SocialLinksPanel({ orgId, editable }: { orgId: number; editable:
 
   return (
     <div className="card card-wide">
-      <h2>Social Media</h2>
+      <h2>{t('Social Media')}</h2>
       <p className="muted small">
-        Kanäle dieser Einheit. Sie können in der Fußzeile der Briefvorlage erscheinen, wenn das
-        unter Einstellungen › Briefbogen eingeschaltet ist.
+        {t(
+          'Kanäle dieser Einheit. Sie können in der Fußzeile der Briefvorlage erscheinen, wenn das unter Einstellungen › Briefbogen eingeschaltet ist.',
+        )}
       </p>
       {error && <Alert kind="error">{error}</Alert>}
       {message && <Alert kind="error">{message}</Alert>}
-      {links.length === 0 && data && <p className="muted">Noch keine Kanäle eingetragen.</p>}
+      {links.length === 0 && data && <p className="muted">{t('Noch keine Kanäle eingetragen.')}</p>}
       {links.length > 0 && (
         <ul className="plain-list">
           {links.map((link, i) => (
@@ -81,7 +86,7 @@ export function SocialLinksPanel({ orgId, editable }: { orgId: number; editable:
                     type="button"
                     className="link-button"
                     disabled={busy || i === 0}
-                    aria-label={`${link.kind_label} nach oben`}
+                    aria-label={t('{kind_label} nach oben', { kind_label: link.kind_label })}
                     onClick={() => void move(link, -1)}
                   >
                     ↑
@@ -90,7 +95,7 @@ export function SocialLinksPanel({ orgId, editable }: { orgId: number; editable:
                     type="button"
                     className="link-button"
                     disabled={busy || i === links.length - 1}
-                    aria-label={`${link.kind_label} nach unten`}
+                    aria-label={t('{kind_label} nach unten', { kind_label: link.kind_label })}
                     onClick={() => void move(link, 1)}
                   >
                     ↓
@@ -99,10 +104,10 @@ export function SocialLinksPanel({ orgId, editable }: { orgId: number; editable:
                     type="button"
                     className="link-button"
                     disabled={busy}
-                    aria-label={`${link.kind_label} entfernen`}
+                    aria-label={t('{kind_label} entfernen', { kind_label: link.kind_label })}
                     onClick={() => void remove(link)}
                   >
-                    Entfernen
+                    {t('Entfernen')}
                   </button>
                 </span>
               )}
@@ -113,7 +118,7 @@ export function SocialLinksPanel({ orgId, editable }: { orgId: number; editable:
       {editable && (
         <form className="grid-3" onSubmit={add}>
           <SelectField
-            label="Kanal"
+            label={t('Kanal')}
             value={kind}
             onChange={(e) => setKind(e.target.value as SocialKind)}
           >
@@ -124,21 +129,21 @@ export function SocialLinksPanel({ orgId, editable }: { orgId: number; editable:
             ))}
           </SelectField>
           <Field
-            label="Adresse"
+            label={t('Adresse')}
             type="url"
             placeholder="https://"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
           />
           <Field
-            label="Anzeigename (optional)"
-            placeholder="z. B. @name"
+            label={t('Anzeigename (optional)')}
+            placeholder={t('z. B. @name')}
             value={label}
             onChange={(e) => setLabel(e.target.value)}
           />
           <div className="button-row">
             <button type="submit" className="button" disabled={busy || !url.trim()}>
-              Kanal hinzufügen
+              {t('Kanal hinzufügen')}
             </button>
           </div>
         </form>

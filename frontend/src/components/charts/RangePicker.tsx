@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { PRESETS, month, monthsBack } from './range.ts'
 import type { useRange } from './range.ts'
+import { t } from '../../i18n/index.ts'
 
 export function RangePicker({
   range,
@@ -15,7 +16,7 @@ export function RangePicker({
   return (
     <div className="card card-wide filters range-picker">
       <select
-        aria-label="Zeitraum"
+        aria-label={t('Zeitraum')}
         value={preset}
         onChange={(e) => {
           const key = e.target.value
@@ -58,13 +59,13 @@ export function RangePicker({
             />
           </label>
           <select
-            aria-label="Einteilung"
+            aria-label={t('Einteilung')}
             value={custom.raster ?? ''}
             onChange={(e) => set({ raster: e.target.value })}
           >
             <option value="">automatisch</option>
-            <option value="monat">nach Monaten</option>
-            <option value="jahr">nach Jahren</option>
+            <option value="monat">{t('nach Monaten')}</option>
+            <option value="jahr">{t('nach Jahren')}</option>
           </select>
         </>
       )}

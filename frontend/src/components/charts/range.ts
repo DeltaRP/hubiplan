@@ -3,17 +3,18 @@
 // Finanzen die letzten 12 Monate.
 import { useSearchParams } from 'react-router-dom'
 import type { RangeQuery } from '../../api/statistics.ts'
+import { t } from '../../i18n/index.ts'
 
 export const PRESETS = [
-  { key: '12m', label: 'Letzte 12 Monate' },
-  { key: '24m', label: 'Letzte 24 Monate' },
-  { key: 'jahr', label: 'Dieses Jahr' },
-  { key: 'vorjahr', label: 'Letztes Jahr' },
-  { key: '3j', label: 'Letzte 3 Jahre' },
-  { key: '5j', label: 'Letzte 5 Jahre' },
-  { key: '10j', label: 'Letzte 10 Jahre' },
-  { key: 'alles', label: 'Gesamter Zeitraum' },
-  { key: 'eigen', label: 'Eigener Zeitraum' },
+  { key: '12m', label: t('Letzte 12 Monate') },
+  { key: '24m', label: t('Letzte 24 Monate') },
+  { key: 'jahr', label: t('Dieses Jahr') },
+  { key: 'vorjahr', label: t('Letztes Jahr') },
+  { key: '3j', label: t('Letzte 3 Jahre') },
+  { key: '5j', label: t('Letzte 5 Jahre') },
+  { key: '10j', label: t('Letzte 10 Jahre') },
+  { key: 'alles', label: t('Gesamter Zeitraum') },
+  { key: 'eigen', label: t('Eigener Zeitraum') },
 ] as const
 
 export type Preset = (typeof PRESETS)[number]['key']

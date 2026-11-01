@@ -11,6 +11,7 @@ import { useForm } from './forms.ts'
 import { Alert, Checkbox, Field } from './ui.tsx'
 import { SortHint } from './Sortable.tsx'
 import { useSortable } from './useSortable.tsx'
+import { t } from '../i18n/index.ts'
 
 /** Angaben einer Rolle; nicht jede Einheit kennt alle. */
 function holderText(holders: number | string[]): ReactNode {
@@ -24,7 +25,7 @@ function PermissionSummary({ codes, catalog }: { codes: string[]; catalog: Catal
   const areas = permissionAreas(codes, catalog)
   return (
     <>
-      <ul className="chips role-areas" aria-label="Bereiche">
+      <ul className="chips role-areas" aria-label={t('Bereiche')}>
         {areas.map((a) => (
           <li
             key={a.label}
@@ -37,7 +38,7 @@ function PermissionSummary({ codes, catalog }: { codes: string[]; catalog: Catal
         ))}
       </ul>
       <details className="role-details">
-        <summary>Einzelne Rechte</summary>
+        <summary>{t('Einzelne Rechte')}</summary>
         <ul>
           {areas.map((a) => (
             <li key={a.label}>
@@ -55,7 +56,7 @@ export function RoleTable({
   catalog,
   holderLabel = 'vergeben',
   onEdit,
-  editLabel = 'Bearbeiten',
+  editLabel = t('Bearbeiten'),
   noPermissions = 'keine',
   showPermissions = true,
   onReorder,
@@ -82,7 +83,7 @@ export function RoleTable({
     onReorder: onReorder ?? (async () => undefined),
     enabled: !!onReorder,
   })
-  if (roles.length === 0) return <p className="muted small">Noch keine Rollen.</p>
+  if (roles.length === 0) return <p className="muted small">{t('Noch keine Rollen.')}</p>
   return (
     <>
       {sort.active && <SortHint website={website} />}
@@ -91,11 +92,11 @@ export function RoleTable({
           <tr>
             {sort.active && (
               <th className="drag-cell">
-                <span className="sr-only">Reihenfolge</span>
+                <span className="sr-only">{t('Reihenfolge')}</span>
               </th>
             )}
-            <th>Rolle</th>
-            {showPermissions && <th>Berechtigungen</th>}
+            <th>{t('Rolle')}</th>
+            {showPermissions && <th>{t('Berechtigungen')}</th>}
             <th className={roles.some((r) => typeof r.holders !== 'number') ? '' : 'num'}>
               {holderLabel}
             </th>
@@ -217,7 +218,10 @@ export function RoleForm({
     if (!role || !onDelete) return
     const ok = confirmDelete
       ? await confirmDelete()
-      : await confirmDialog({ title: `Rolle „${role.name}“ löschen?`, confirmLabel: 'Löschen' })
+      : await confirmDialog({
+          title: t('Rolle „{name}“ löschen?', { name: role.name }),
+          confirmLabel: t('Löschen'),
+        })
     if (!ok) return
     const done = await form.submit(onDelete)
     if (done !== undefined) onDone()
@@ -225,20 +229,20 @@ export function RoleForm({
 
   return (
     <form className="subcard" onSubmit={save}>
-      <h3>{role ? `Rolle „${role.name}“ bearbeiten` : 'Neue Rolle'}</h3>
+      <h3>{role ? t('Rolle „{name}“ bearbeiten', { name: role.name }) : t('Neue Rolle')}</h3>
       <fieldset disabled={readOnly}>
         <div className="grid-2">
           <Field
-            label="Name"
+            label={t('Name')}
             required
             value={v.name}
             error={form.errors.name}
-            placeholder="z. B. Kassierer oder Schriftführer"
+            placeholder={t('z. B. Kassierer oder Schriftführer')}
             onChange={(e) => form.set('name', e.target.value)}
           />
           {has('description') && (
             <Field
-              label="Beschreibung"
+              label={t('Beschreibung')}
               value={v.description}
               error={form.errors.description}
               onChange={(e) => form.set('description', e.target.value)}
@@ -247,45 +251,49 @@ export function RoleForm({
         </div>
         {has('is_board') && (
           <Checkbox
-            label="Vorstandsrolle (kann Kontakt der Organisation sein)"
+            label={t('Vorstandsrolle (kann Kontakt der Organisation sein)')}
             checked={v.is_board}
             onChange={(val) => form.set('is_board', val)}
           />
         )}
         {has('represents') && (
           <Checkbox
-            label="vertritt die Einheit (§ 26 BGB): Inhaber stehen im Impressum"
+            label={t('vertritt die Einheit (§ 26 BGB): Inhaber stehen im Impressum')}
             checked={v.represents}
             onChange={(val) => form.set('represents', val)}
           />
         )}
         {has('on_letterhead') && (
           <Checkbox
-            label="auf dem Briefbogen nennen: Inhaber stehen in der Fußzeile der Briefvorlage"
+            label={t('auf dem Briefbogen nennen: Inhaber stehen in der Fußzeile der Briefvorlage')}
             checked={v.on_letterhead}
             onChange={(val) => form.set('on_letterhead', val)}
           />
         )}
         {has('contact_email') && (
           <Field
-            label="Funktionsadresse (E-Mail, optional)"
+            label={t('Funktionsadresse (E-Mail, optional)')}
             type="email"
             value={v.contact_email}
             error={form.errors.contact_email}
-            hint="z. B. kassierer@… – Inhaber können sie in der Briefvorlage angeben."
+            hint={t('z. B. kassierer@… – Inhaber können sie in der Briefvorlage angeben.')}
             onChange={(e) => form.set('contact_email', e.target.value)}
           />
         )}
         {web && (
           <Checkbox
-            label="auf der Webseite zeigen: Inhaber erscheinen unter Vorstand und Ansprechpartner"
+            label={t(
+              'auf der Webseite zeigen: Inhaber erscheinen unter Vorstand und Ansprechpartner',
+            )}
             checked={v.on_website}
             onChange={(val) => form.set('on_website', val)}
           />
         )}
         {hasWebsite && has('in_chronicle') && (
           <Checkbox
-            label="unter „Ämter“ zeigen: heutige und frühere Inhaber erscheinen auf der Webseite unter Geschichte › Ämter (z. B. Vorsitzende seit …)"
+            label={t(
+              'unter „Ämter“ zeigen: heutige und frühere Inhaber erscheinen auf der Webseite unter Geschichte › Ämter (z. B. Vorsitzende seit …)',
+            )}
             checked={v.in_chronicle}
             onChange={(val) => form.set('in_chronicle', val)}
           />
@@ -297,13 +305,13 @@ export function RoleForm({
         {!showPermissions ? null : permissionsOptional ? (
           <details className="permission-details" open={(role?.permissions.length ?? 0) > 0}>
             <summary>
-              Rechte für Zugänge (optional)
-              {v.permissions.length > 0 && ` · ${v.permissions.length} gewählt`}
+              {t('Rechte für Zugänge (optional)')}
+              {v.permissions.length > 0 && t(' · {n} gewählt', { n: v.permissions.length })}
             </summary>
             <p className="muted small">
-              Ohne Rechte ist die Rolle nur ein Amt: Die Inhaber brauchen kein Konto und bekommen
-              keine E-Mail. Rechte braucht es nur, wenn ein Inhaber selbst in HUBIplan arbeiten
-              soll.
+              {t(
+                'Ohne Rechte ist die Rolle nur ein Amt: Die Inhaber brauchen kein Konto und bekommen keine E-Mail. Rechte braucht es nur, wenn ein Inhaber selbst in HUBIplan arbeiten soll.',
+              )}
             </p>
             {permissionGrid}
           </details>
@@ -316,15 +324,15 @@ export function RoleForm({
       <div className="button-row">
         {!readOnly && (
           <button type="submit" className="button button-primary" disabled={form.busy}>
-            Speichern
+            {t('Speichern')}
           </button>
         )}
         <button type="button" className="button button-ghost" onClick={onCancel}>
-          {readOnly ? 'Schließen' : 'Abbrechen'}
+          {readOnly ? t('Schließen') : t('Abbrechen')}
         </button>
         {role && onDelete && !readOnly && (
           <button type="button" className="button button-danger push-right" onClick={remove}>
-            Löschen
+            {t('Löschen')}
           </button>
         )}
       </div>

@@ -111,18 +111,18 @@ export function BookingsPage() {
   }
 
   useEffect(() => {
-    const t = setTimeout(() => {
+    const tm = setTimeout(() => {
       if ((params.get('suche') ?? '') !== search) setFilter('suche', search)
     }, 300)
-    return () => clearTimeout(t)
+    return () => clearTimeout(tm)
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [search])
 
   useEffect(() => {
-    const t = setTimeout(() => {
+    const tm = setTimeout(() => {
       if ((params.get('partner') ?? '') !== partner.trim()) setFilter('partner', partner.trim())
     }, 400)
-    return () => clearTimeout(t)
+    return () => clearTimeout(tm)
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [partner])
 
@@ -536,7 +536,7 @@ function BookingForm({
   onSaved: (b: Booking, again: boolean) => void
   onClose: () => void
 }) {
-  const t = useTerms()
+  const tm = useTerms()
   const activeAccounts = accounts.filter((a) => a.is_active || a.id === booking?.account)
   const usable = categories.filter(
     (c) => (c.is_active || c.id === booking?.category) && (c.kind === 'both' || c.kind === kind),
@@ -882,13 +882,13 @@ function BookingForm({
           {kind !== 'transfer' && isClub && (
             <details className="booking-assign" open={assignedOpen}>
               <summary>
-                Mitglied oder {t.sg} zuordnen <span className="muted">(optional)</span>
+                Mitglied oder {tm.sg} zuordnen <span className="muted">(optional)</span>
               </summary>
               <div className="grid-2">
                 <MemberPicker orgId={orgId} value={member} onChange={pickMember} />
                 {departments.length > 0 && (
                   <SelectField
-                    label={`${t.sg} (optional)`}
+                    label={`${tm.sg} (optional)`}
                     value={v.department}
                     onChange={(e) => set('department', e.target.value)}
                   >

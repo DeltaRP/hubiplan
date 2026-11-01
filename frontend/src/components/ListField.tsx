@@ -28,7 +28,7 @@ export function ListInput<T>({
 }: Props<T>) {
   const [state, setState] = useState(() => ({ text: value.join(', '), synced: value }))
   const text = state.text
-  const setText = (t: string) => setState({ text: t, synced: value })
+  const setText = (tm: string) => setState({ text: tm, synced: value })
 
   // Wert von außen geändert (z. B. Rückgängig oder Neuladen): Text nachziehen.
   if (!same(value, state.synced)) {

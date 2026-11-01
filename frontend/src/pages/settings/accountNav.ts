@@ -1,11 +1,12 @@
+import { t } from '../../i18n/index.ts'
 // Mein Konto: Unterpunkte in der Seitenleiste (wie bei „Mitglieder“).
 export const ACCOUNT_PATH = '/mein-konto'
 
 export const ACCOUNT_SECTIONS = [
-  { to: '/mein-konto', label: 'Profil' },
-  { to: '/mein-konto/anmeldung', label: 'Anmeldung & Sicherheit' },
-  { to: '/mein-konto/app', label: 'App & andere Instanzen' },
-  { to: '/mein-konto/briefvorlage', label: 'Briefvorlage & Unterschrift' },
+  { to: '/mein-konto', label: t('Profil') },
+  { to: '/mein-konto/anmeldung', label: t('Anmeldung & Sicherheit') },
+  { to: '/mein-konto/app', label: t('App & andere Instanzen') },
+  { to: '/mein-konto/briefvorlage', label: t('Briefvorlage & Unterschrift') },
 ] as const
 
 /** Gehört der Pfad zu „Mein Konto“? */

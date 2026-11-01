@@ -5,11 +5,12 @@ import { rolePreviewApi } from '../api/orgs.ts'
 import type { OrgSummary, RolePreviewRole } from '../api/orgs.ts'
 import { ApiError } from '../api/client.ts'
 import { alertDialog } from './dialog.ts'
+import { t } from '../i18n/index.ts'
 
 async function report(err: unknown) {
   await alertDialog({
-    title: 'Ansicht als Rolle',
-    message: err instanceof ApiError ? err.message : 'Das hat nicht geklappt.',
+    title: t('Ansicht als Rolle'),
+    message: err instanceof ApiError ? err.message : t('Das hat nicht geklappt.'),
   })
 }
 
@@ -56,17 +57,17 @@ export function RolePreviewSelect({
 
   return (
     <label className="org-switch role-preview-switch">
-      <span className="sr-only">Ansicht als Rolle</span>
+      <span className="sr-only">{t('Ansicht als Rolle')}</span>
       <select
         value={active ? String(active.id) : ''}
         onChange={(e) => void choose(e.target.value)}
-        aria-label="Ansicht als Rolle"
+        aria-label={t('Ansicht als Rolle')}
         disabled={busy}
       >
-        <option value="">Eigene Ansicht</option>
+        <option value="">{t('Eigene Ansicht')}</option>
         {roles.map((r) => (
           <option key={r.id} value={String(r.id)}>
-            Ansicht als {r.name}
+            {t('Ansicht als')} {r.name}
           </option>
         ))}
       </select>
@@ -101,11 +102,13 @@ export function RolePreviewBanner({
   return (
     <div className="role-preview-banner" role="status">
       <p>
-        <strong>Ansicht als „{active.name}“</strong>: So sieht jemand mit dieser Rolle HUBIplan,
-        soweit du die Rechte selbst hast. Ändern ist ausgeschaltet.
+        <strong>{t('Ansicht als „{name}“', { name: active.name })}</strong>
+        {t(
+          ': So sieht jemand mit dieser Rolle HUBIplan, soweit du die Rechte selbst hast. Ändern ist ausgeschaltet.',
+        )}
       </p>
       <button type="button" className="button" onClick={() => void end()} disabled={busy}>
-        Ansicht beenden
+        {t('Ansicht beenden')}
       </button>
     </div>
   )

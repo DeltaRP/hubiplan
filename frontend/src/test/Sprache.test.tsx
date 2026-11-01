@@ -3,9 +3,14 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { lang, locale, setCatalogForTest, t, tc, tn } from '../i18n/index.ts'
+import type { Catalog } from '../i18n/index.ts'
+import { MemoryRouter } from 'react-router-dom'
+import App from '../App.tsx'
+import { AuthProvider } from '../auth/AuthContext.tsx'
+import { OrgProvider } from '../org/OrgContext.tsx'
 import { LanguageCard, LanguageSwitch } from '../i18n/LanguageControls.tsx'
 import en from '../i18n/en.json'
-import { fakeApi } from './fakeApi.ts'
+import { fakeApi, testOrg, testUser } from './fakeApi.ts'
 
 const BOTH = {
   languages: [
@@ -88,5 +93,54 @@ describe('Sprache wählen', () => {
     render(<LanguageSwitch />)
     const button = await screen.findByRole('button', { name: 'English' })
     expect(button).toHaveAttribute('lang', 'en')
+  })
+})
+
+function renderApp(path: string) {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <AuthProvider>
+        <OrgProvider>
+          <App />
+        </OrgProvider>
+      </AuthProvider>
+    </MemoryRouter>,
+  )
+}
+
+// Stichprobe gegen vergessene Texte: sichtbarer Text ohne deutsche Umlaute
+function expectNoGerman(root: HTMLElement) {
+  const text = (root.textContent ?? '').replace(/\s+/g, ' ')
+  expect(text).not.toMatch(/[äöüßÄÖÜ]/)
+}
+
+describe('Rahmen auf Englisch', () => {
+  it('zeigt die Anmeldung auf Englisch', async () => {
+    setCatalogForTest('en', en as Catalog)
+    fakeApi({
+      'GET /_allauth/browser/v1/auth/session': () => ({
+        status: 401,
+        body: { status: 401, data: { flows: [] } },
+      }),
+    })
+    const { container } = renderApp('/anmelden')
+    expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Password')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Forgot password?' })).toBeInTheDocument()
+    expectNoGerman(container)
+  })
+
+  it('zeigt Navigation und Profil auf Englisch', async () => {
+    setCatalogForTest('en', en as Catalog)
+    fakeApi({
+      'GET /_allauth/browser/v1/auth/session': () => ({
+        status: 200,
+        body: { status: 200, data: { user: testUser } },
+      }),
+      'GET /api/me/organizations/': () => ({ status: 200, body: [testOrg()] }),
+    })
+    renderApp('/mein-konto')
+    expect(await screen.findByRole('heading', { name: 'Profile' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Learning aids' })).toBeInTheDocument()
   })
 })

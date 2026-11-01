@@ -7,6 +7,7 @@ import { MarkupPreview } from '../components/circulars/MarkupEditor.tsx'
 import { errorMessage } from '../components/forms.ts'
 import { Logo } from '../components/Logo.tsx'
 import { Alert } from '../components/ui.tsx'
+import { t } from '../i18n/index.ts'
 
 /** Bestätigungslink aus der Mail an den Absender eines Verteilers (ohne Anmeldung).
  *  Erst der Knopf versendet: Virenscanner öffnen Links in Mails oft vorab. */
@@ -53,12 +54,12 @@ export function PublicCircularConfirmPage() {
         <div className="login-logo">
           <Logo name={info?.organization || 'HUBIplan'} logoUrl={null} />
         </div>
-        <h1>Rundschreiben bestätigen</h1>
-        {invalid && <Alert kind="error">Dieser Link ist ungültig oder abgelaufen.</Alert>}
+        <h1>{t('Rundschreiben bestätigen')}</h1>
+        {invalid && <Alert kind="error">{t('Dieser Link ist ungültig oder abgelaufen.')}</Alert>}
         {unavailable && (
           <>
             <Alert kind="error">
-              Die Seite kann gerade nicht geladen werden. Bitte später erneut versuchen.
+              {t('Die Seite kann gerade nicht geladen werden. Bitte später erneut versuchen.')}
             </Alert>
             <div className="button-row">
               <button
@@ -69,26 +70,30 @@ export function PublicCircularConfirmPage() {
                   setAttempt((n) => n + 1)
                 }}
               >
-                Erneut versuchen
+                {t('Erneut versuchen')}
               </button>
             </div>
           </>
         )}
-        {!info && !invalid && !unavailable && <p className="muted">Lädt …</p>}
+        {!info && !invalid && !unavailable && <p className="muted">{t('Lädt …')}</p>}
         {info && (
           <>
             <p>
               <strong>{info.subject}</strong>
               <br />
               <span className="muted small">
-                an den Verteiler {info.list} ({info.address})
+                {t('an den Verteiler {list} ({address})', {
+                  list: info.list,
+                  address: info.address,
+                })}
               </span>
             </p>
             {counts && (
               <p>
-                Empfänger: {'app' in counts && counts.app ? `${counts.app} per App, ` : ''}
-                {counts.mail} per E-Mail
-                {counts.letter ? `, ${counts.letter} per Brief` : ''}
+                {t('Empfänger:')}{' '}
+                {'app' in counts && counts.app ? t('{app} per App, ', { app: counts.app }) : ''}
+                {counts.mail} {t('per E-Mail')}
+                {counts.letter ? t(', {letter} per Brief', { letter: counts.letter }) : ''}
               </p>
             )}
             {info.body && (
@@ -97,7 +102,9 @@ export function PublicCircularConfirmPage() {
               </div>
             )}
             {info.attachments.length > 0 && (
-              <p className="small">Anhänge: {info.attachments.join(', ')}</p>
+              <p className="small">
+                {t('Anhänge:')} {info.attachments.join(', ')}
+              </p>
             )}
             {info.status === 'waiting' ? (
               <div className="button-row">
@@ -107,7 +114,7 @@ export function PublicCircularConfirmPage() {
                   disabled={busy}
                   onClick={() => void act('send')}
                 >
-                  Jetzt versenden
+                  {t('Jetzt versenden')}
                 </button>
                 <button
                   type="button"
@@ -115,14 +122,16 @@ export function PublicCircularConfirmPage() {
                   disabled={busy}
                   onClick={() => void act('discard')}
                 >
-                  Verwerfen
+                  {t('Verwerfen')}
                 </button>
               </div>
             ) : (
               <Alert kind={info.status === 'sent' ? 'success' : 'info'}>
                 {info.status === 'sent'
-                  ? 'Das Rundschreiben wird versendet. Briefe für Mitglieder ohne E-Mail findest du in HUBIplan unter Rundschreiben.'
-                  : `Stand: ${info.status_label}.`}
+                  ? t(
+                      'Das Rundschreiben wird versendet. Briefe für Mitglieder ohne E-Mail findest du in HUBIplan unter Rundschreiben.',
+                    )
+                  : t('Stand: {status_label}.', { status_label: info.status_label })}
               </Alert>
             )}
           </>

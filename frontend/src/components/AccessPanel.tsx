@@ -7,6 +7,7 @@ import { errorMessage, formatDateTime, useLoad } from './forms.ts'
 import { Alert } from './ui.tsx'
 import { confirmDialog } from './dialog.ts'
 import { useTerms } from '../org/terms.ts'
+import { t } from '../i18n/index.ts'
 
 export function AccessPanel({
   access,
@@ -26,7 +27,7 @@ export function AccessPanel({
   onSend: (transfer?: boolean) => Promise<{ sent: 'link' | 'password' }>
   onRemove: () => Promise<unknown>
 }) {
-  const t = useTerms()
+  const tm = useTerms()
   const [message, setMessage] = useState<{ kind: 'success' | 'error'; text: string } | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -48,45 +49,56 @@ export function AccessPanel({
   async function transfer() {
     if (!access) return
     const ok = await confirmDialog({
-      title: 'Zugang auf neue Adresse übertragen?',
+      title: t('Zugang auf neue Adresse übertragen?'),
       message:
-        `Der Zugang hängt bisher an ${access.email}. Danach meldet sich das Mitglied mit ` +
-        `${contactEmail ?? 'der neuen Adresse'} an; die bisherige Adresse bekommt eine ` +
-        'Mitteilung. Nur übertragen, wenn sicher ist, dass die neue Adresse dem Mitglied gehört.',
-      confirmLabel: 'Übertragen',
+        t('Der Zugang hängt bisher an {email}. Danach meldet sich das Mitglied mit ', {
+          email: access.email,
+        }) +
+        t('{x} an; die bisherige Adresse bekommt eine ', {
+          x: contactEmail ?? 'der neuen Adresse',
+        }) +
+        t(
+          'Mitteilung. Nur übertragen, wenn sicher ist, dass die neue Adresse dem Mitglied gehört.',
+        ),
+      confirmLabel: t('Übertragen'),
     })
     if (!ok) return
     void run(async () => {
       await onSend(true)
-      return 'Zugang übertragen; Link an die neue Adresse gesendet.'
+      return t('Zugang übertragen; Link an die neue Adresse gesendet.')
     })
   }
 
   return (
     <div className="card card-wide">
-      <h2>Zugang</h2>
+      <h2>{t('Zugang')}</h2>
       {access ? (
         <p>
-          Zugang mit <strong>{access.email}</strong> seit {formatDateTime(access.created_at)}
+          {t('Zugang mit')} <strong>{access.email}</strong> seit {formatDateTime(access.created_at)}
           <br />
           <span className="muted small">
             {access.last_login
-              ? `zuletzt angemeldet ${formatDateTime(access.last_login)}`
-              : 'noch nicht angemeldet'}{' '}
-            · Anmeldung {access.login === 'link' ? 'per Anmeldelink oder Passwort' : 'mit Passwort'}
+              ? t('zuletzt angemeldet {x}', { x: formatDateTime(access.last_login) })
+              : t('noch nicht angemeldet')}{' '}
+            {t('· Anmeldung')}{' '}
+            {access.login === 'link' ? t('per Anmeldelink oder Passwort') : t('mit Passwort')}
           </span>
         </p>
       ) : (
         <p className="muted">
-          Noch kein Zugang. Mit einem Zugang sieht das Mitglied seine Daten und kann Änderungen
-          melden; Inhaber von Rollen {t.im} arbeiten damit in {t.ihrem}.
+          {t(
+            'Noch kein Zugang. Mit einem Zugang sieht das Mitglied seine Daten und kann Änderungen melden; Inhaber von Rollen {im} arbeiten damit in {ihrem}.',
+            { im: tm.im, ihrem: tm.ihrem },
+          )}
         </p>
       )}
       {disabledHint && <Alert kind="info">{disabledHint}</Alert>}
       {moved && canManage && (
         <Alert kind="info">
-          Die Kontakt-Adresse ist jetzt {contactEmail}. Der Zugang bleibt bei {access?.email}, bis
-          ihr ihn ausdrücklich überträgt.
+          {t(
+            'Die Kontakt-Adresse ist jetzt {contactEmail}. Der Zugang bleibt bei {email}, bis ihr ihn ausdrücklich überträgt.',
+            { contactEmail, email: access?.email },
+          )}
         </Alert>
       )}
       {canManage && !disabledHint && (
@@ -99,14 +111,14 @@ export function AccessPanel({
               void run(async () => {
                 const r = await onSend(false)
                 return r.sent === 'link'
-                  ? 'Anmeldelink per E-Mail gesendet.'
-                  : 'Link zum Festlegen des Passworts gesendet (Konto mit Rollenrechten).'
+                  ? t('Anmeldelink per E-Mail gesendet.')
+                  : t('Link zum Festlegen des Passworts gesendet (Konto mit Rollenrechten).')
               })
             }
           >
             {access
-              ? `Neuen Link senden${moved ? ` an ${access.email}` : ''}`
-              : 'Zugang einrichten und Link senden'}
+              ? t('Neuen Link senden{x}', { x: moved ? ` an ${access.email}` : '' })
+              : t('Zugang einrichten und Link senden')}
           </button>
           {moved && (
             <button
@@ -115,7 +127,7 @@ export function AccessPanel({
               disabled={busy}
               onClick={() => void transfer()}
             >
-              Zugang auf neue Adresse übertragen
+              {t('Zugang auf neue Adresse übertragen')}
             </button>
           )}
           {access && (
@@ -126,25 +138,29 @@ export function AccessPanel({
               onClick={async () => {
                 if (
                   await confirmDialog({
-                    title: 'Zugang entfernen?',
-                    message: 'Die Person kann sich danach nicht mehr mit diesem Zugang anmelden.',
-                    confirmLabel: 'Entfernen',
+                    title: t('Zugang entfernen?'),
+                    message: t(
+                      'Die Person kann sich danach nicht mehr mit diesem Zugang anmelden.',
+                    ),
+                    confirmLabel: t('Entfernen'),
                   })
                 ) {
                   void run(async () => {
                     await onRemove()
-                    return 'Zugang entfernt.'
+                    return t('Zugang entfernt.')
                   })
                 }
               }}
             >
-              Zugang entfernen
+              {t('Zugang entfernen')}
             </button>
           )}
         </div>
       )}
       {!hasEmail && canManage && (
-        <p className="muted small">Für einen Zugang braucht das Mitglied eine E-Mail-Adresse.</p>
+        <p className="muted small">
+          {t('Für einen Zugang braucht das Mitglied eine E-Mail-Adresse.')}
+        </p>
       )}
       {message && <Alert kind={message.kind}>{message.text}</Alert>}
     </div>
@@ -165,7 +181,7 @@ export function MemberAccessSection({
   contactEmail?: string
   canManage: boolean
 }) {
-  const t = useTerms()
+  const tm = useTerms()
   const { data, error, setData } = useLoad(
     () => portalApi.memberAccess(orgId, memberId),
     [orgId, memberId],
@@ -182,12 +198,12 @@ export function MemberAccessSection({
       disabledHint={
         enabled || data.access ? undefined : (
           <>
-            Zugänge sind ausgeschaltet. Den Mitgliederbereich schaltet ihr unter{' '}
+            {t('Zugänge sind ausgeschaltet. Den Mitgliederbereich schaltet ihr unter')}{' '}
             <Link to="/mitglieder/einrichtung/mitgliederbereich">
-              Mitglieder → Einrichtung → Mitgliederbereich & Fotos
+              {t('Mitglieder → Einrichtung → Mitgliederbereich & Fotos')}
             </Link>{' '}
-            ein, den Zugang für {t.pl} unter{' '}
-            <Link to="/einstellungen/organisation">Einstellungen → Organisation</Link>.
+            {t('ein, den Zugang für {pl} unter', { pl: tm.pl })}{' '}
+            <Link to="/einstellungen/organisation">{t('Einstellungen → Organisation')}</Link>.
           </>
         )
       }

@@ -8,6 +8,7 @@ import { useAuth } from '../auth/AuthContext.tsx'
 import { errorMessage, useLoad } from '../components/forms.ts'
 import { Logo } from '../components/Logo.tsx'
 import { Alert } from '../components/ui.tsx'
+import { t } from '../i18n/index.ts'
 
 function Frame({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -44,7 +45,7 @@ export function RemoteLoginChoices({ target }: { target: string }) {
   }
   return (
     <div className="remote-login">
-      <p className="muted small">Oder mit deinem Zugang einer gekoppelten Instanz:</p>
+      <p className="muted small">{t('Oder mit deinem Zugang einer gekoppelten Instanz:')}</p>
       {choices.map((c) => (
         <button
           key={c.instance_id}
@@ -52,7 +53,7 @@ export function RemoteLoginChoices({ target }: { target: string }) {
           className="button button-block"
           onClick={() => void go(c.instance_id)}
         >
-          Anmelden mit {c.base_url.replace(/^https:\/\//, '')}
+          {t('Anmelden mit')} {c.base_url.replace(/^https:\/\//, '')}
         </button>
       ))}
       {error && <Alert kind="error">{error}</Alert>}
@@ -75,16 +76,16 @@ export function VerbundStartPage() {
       .catch((e) => setError(errorMessage(e)))
   }, [search])
   return (
-    <Frame title="Anmelden">
+    <Frame title={t('Anmelden')}>
       {error ? (
         <>
           <Alert kind="error">{error}</Alert>
           <p className="small">
-            <Link to="/anmelden">Mit Passwort anmelden</Link>
+            <Link to="/anmelden">{t('Mit Passwort anmelden')}</Link>
           </p>
         </>
       ) : (
-        <p className="muted">Weiter zur Anmeldung …</p>
+        <p className="muted">{t('Weiter zur Anmeldung …')}</p>
       )}
     </Frame>
   )
@@ -135,35 +136,40 @@ export function VerbundConfirmPage() {
 
   const host = data?.base_url.replace(/^https:\/\//, '') ?? ''
   return (
-    <Frame title={purpose === 'link' ? 'Zugang verknüpfen' : 'Anmelden'}>
+    <Frame title={purpose === 'link' ? t('Zugang verknüpfen') : t('Anmelden')}>
       {error && <Alert kind="error">{error}</Alert>}
       {data && (
         <>
           <p>
             {purpose === 'link' ? (
               <>
-                <strong>{host}</strong> möchte deinen Zugang <strong>{user?.email}</strong> mit
-                deinem Konto dort verknüpfen. Danach kannst du dich dort mit diesem Zugang anmelden.
+                <strong>{host}</strong> {t('möchte deinen Zugang')} <strong>{user?.email}</strong>{' '}
+                {t(
+                  'mit deinem Konto dort verknüpfen. Danach kannst du dich dort mit diesem Zugang anmelden.',
+                )}
               </>
             ) : (
               <>
-                Bei <strong>{host}</strong> als <strong>{user?.email}</strong> anmelden?
+                {t('Bei')} <strong>{host}</strong> als <strong>{user?.email}</strong> anmelden?
               </>
             )}
           </p>
           <p className="muted small">
-            Es geht nur die Bestätigung deiner Anmeldung dorthin (Name, E-Mail-Adresse, wie und wann
-            du dich angemeldet hast), verschlüsselt und unterschrieben. Rechte vergibt {host}{' '}
-            selbst. Fingerabdruck {host}: <code>{data.fingerprint}</code>
+            {t(
+              'Es geht nur die Bestätigung deiner Anmeldung dorthin (Name, E-Mail-Adresse, wie und wann du dich angemeldet hast), verschlüsselt und unterschrieben. Rechte vergibt {host}  selbst. Fingerabdruck {host2}:',
+              { host, host2: host },
+            )}{' '}
+            <code>{data.fingerprint}</code>
           </p>
           {reauth && (
             <>
               <Alert kind="info">
-                Zur Sicherheit bitte hier dein Passwort
-                {reauth.needsCode && ' und den Code aus deiner Authenticator-App'} bestätigen.
+                {t('Zur Sicherheit bitte hier dein Passwort')}
+                {reauth.needsCode && t(' und den Code aus deiner Authenticator-App')}{' '}
+                {t('bestätigen.')}
               </Alert>
               <label className="field">
-                <span>Passwort</span>
+                <span>{t('Passwort')}</span>
                 <input
                   type="password"
                   value={password}
@@ -173,7 +179,7 @@ export function VerbundConfirmPage() {
               </label>
               {reauth.needsCode && (
                 <label className="field">
-                  <span>Code</span>
+                  <span>{t('Code')}</span>
                   <input
                     value={code}
                     inputMode="numeric"
@@ -191,10 +197,10 @@ export function VerbundConfirmPage() {
             disabled={busy || (reauth !== null && (!password || (reauth.needsCode && !code)))}
             onClick={() => void confirm()}
           >
-            {purpose === 'link' ? 'Verknüpfen' : `Bei ${host} anmelden`}
+            {purpose === 'link' ? t('Verknüpfen') : t('Bei {host} anmelden', { host })}
           </button>
           <p className="small">
-            <Link to="/">Abbrechen</Link>
+            <Link to="/">{t('Abbrechen')}</Link>
           </p>
         </>
       )}
@@ -252,22 +258,23 @@ export function VerbundFinishPage() {
   }
 
   return (
-    <Frame title="Anmelden">
+    <Frame title={t('Anmelden')}>
       {error ? (
         <>
           <Alert kind="error">{error}</Alert>
           <p className="small">
-            <Link to="/anmelden">Zur Anmeldung</Link>
+            <Link to="/anmelden">{t('Zur Anmeldung')}</Link>
           </p>
         </>
       ) : needsCode ? (
         <>
           <p>
-            Dein Konto hat hier Vorstands-, Kassen- oder Prüferrechte. Bitte zusätzlich den Code aus
-            deiner Authenticator-App für diese Instanz eingeben.
+            {t(
+              'Dein Konto hat hier Vorstands-, Kassen- oder Prüferrechte. Bitte zusätzlich den Code aus deiner Authenticator-App für diese Instanz eingeben.',
+            )}
           </p>
           <label className="field">
-            <span>Code</span>
+            <span>{t('Code')}</span>
             <input
               value={code}
               inputMode="numeric"
@@ -281,11 +288,11 @@ export function VerbundFinishPage() {
             disabled={busy || !code.trim()}
             onClick={() => void sendCode()}
           >
-            Anmelden
+            {t('Anmelden')}
           </button>
         </>
       ) : (
-        <p className="muted">Anmeldung wird geprüft …</p>
+        <p className="muted">{t('Anmeldung wird geprüft …')}</p>
       )}
     </Frame>
   )

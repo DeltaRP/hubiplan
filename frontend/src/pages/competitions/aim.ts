@@ -39,18 +39,18 @@ function otsu(gray: Uint8Array): number {
   let wB = 0
   let best = 0
   let level = 127
-  for (let t = 0; t < 256; t++) {
-    wB += hist[t]
+  for (let tm = 0; tm < 256; tm++) {
+    wB += hist[tm]
     if (!wB) continue
     const wF = total - wB
     if (!wF) break
-    sumB += t * hist[t]
+    sumB += tm * hist[tm]
     const mB = sumB / wB
     const mF = (sum - sumB) / wF
     const between = wB * wF * (mB - mF) ** 2
     if (between > best) {
       best = between
-      level = t
+      level = tm
     }
   }
   return level

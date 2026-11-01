@@ -129,11 +129,11 @@ export function MemberListPage() {
 
   // Suche erst nach kurzer Tipp-Pause auslösen
   useEffect(() => {
-    const t = setTimeout(
+    const tm = setTimeout(
       () => setParams((p) => ((p.suche ?? '') === search ? p : { ...p, suche: search, page: 1 })),
       300,
     )
-    return () => clearTimeout(t)
+    return () => clearTimeout(tm)
   }, [search])
 
   const [attempt, setAttempt] = useState(0)
@@ -240,9 +240,9 @@ export function MemberListPage() {
           onChange={(e) => setParams((p) => ({ ...p, art: e.target.value, page: 1 }))}
         >
           <option value="">alle Mitgliedsarten</option>
-          {types.data?.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
+          {types.data?.map((tm) => (
+            <option key={tm.id} value={tm.id}>
+              {tm.name}
             </option>
           ))}
         </select>
@@ -281,10 +281,10 @@ export function MemberListPage() {
           >
             <option value="">alle (mit und ohne Ehrung)</option>
             <option value="mit">mit Ehrung</option>
-            {titles.data.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.own ? t.name : `${t.name} (${t.owner_name})`}
-                {t.is_archived ? ' (archiviert)' : ''}
+            {titles.data.map((tm) => (
+              <option key={tm.id} value={tm.id}>
+                {tm.own ? tm.name : `${tm.name} (${tm.owner_name})`}
+                {tm.is_archived ? ' (archiviert)' : ''}
               </option>
             ))}
           </select>

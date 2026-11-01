@@ -1,3 +1,4 @@
+import { t } from '../../i18n/index.ts'
 // Farben und Rechenhilfen der Diagramme.
 
 /** Feste Reihenfolge für Kategorien (farbfehlsichtigkeitsgeprüft), nie zyklisch. */
@@ -57,7 +58,7 @@ export function foldSeries(
   if (rest.length > 0)
     out.push({
       key: 'weitere',
-      name: `Weitere (${rest.length})`,
+      name: t('Weitere ({n})', { n: rest.length }),
       color: REST_COLOR,
       values: rest[0].values.map((_, i) => rest.reduce((sum, s) => sum + (s.values[i] ?? 0), 0)),
     })
@@ -95,9 +96,9 @@ export function niceTicks(min: number, max: number, count = 4, zero = true): num
   const mag = 10 ** Math.floor(Math.log10(raw))
   const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw) ?? raw
   const ticks: number[] = []
-  for (let t = Math.floor(lo / step) * step; t < hi + step * 0.999; t += step) {
-    ticks.push(Math.round(t * 1e6) / 1e6)
-    if (t >= hi) break
+  for (let tm = Math.floor(lo / step) * step; tm < hi + step * 0.999; tm += step) {
+    ticks.push(Math.round(tm * 1e6) / 1e6)
+    if (tm >= hi) break
   }
   return ticks
 }

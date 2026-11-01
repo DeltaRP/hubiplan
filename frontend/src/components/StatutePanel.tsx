@@ -7,6 +7,7 @@ import type { StatuteKind } from '../api/statutes.ts'
 import { errorMessage, useLoad } from './forms.ts'
 import { Alert, Checkbox, Field } from './ui.tsx'
 import { confirmDialog } from './dialog.ts'
+import { t } from '../i18n/index.ts'
 
 const MAX_BYTES = 20 * 1024 * 1024
 
@@ -17,8 +18,8 @@ function formatDate(iso: string): string {
 
 function formatSize(bytes: number): string {
   return bytes >= 1024 * 1024
-    ? `${(bytes / 1024 / 1024).toFixed(1).replace('.', ',')} MB`
-    : `${Math.max(1, Math.round(bytes / 1024))} KB`
+    ? t('{x} MB', { x: (bytes / 1024 / 1024).toFixed(1).replace('.', ',') })
+    : t('{x} KB', { x: Math.max(1, Math.round(bytes / 1024)) })
 }
 
 /** Bezeichnungen je Dokumentart; Beitragsordnung und Gründungsurkunde sind optional (Ralf 31.10.). */
@@ -27,27 +28,30 @@ const STATUTE_TEXTS: Record<
   { title: string; none: string; uploaded: string; intro: string; date?: string; version?: string }
 > = {
   statute: {
-    title: 'Satzung',
-    none: 'Noch keine Satzung hinterlegt.',
-    uploaded: 'Die Satzung wurde hochgeladen.',
-    intro:
+    title: t('Satzung'),
+    none: t('Noch keine Satzung hinterlegt.'),
+    uploaded: t('Die Satzung wurde hochgeladen.'),
+    intro: t(
       'Die Satzung hat in HUBIplan keine Funktion. Sie lässt sich hier ablegen und bei Bedarf öffentlich abrufen, z. B. für die eigene Webseite.',
+    ),
   },
   fee_rules: {
-    title: 'Beitragsordnung',
-    none: 'Keine Beitragsordnung hinterlegt (optional).',
-    uploaded: 'Die Beitragsordnung wurde hochgeladen.',
-    intro:
+    title: t('Beitragsordnung'),
+    none: t('Keine Beitragsordnung hinterlegt (optional).'),
+    uploaded: t('Die Beitragsordnung wurde hochgeladen.'),
+    intro: t(
       'Die Beitragsordnung ist freiwillig und hat in HUBIplan keine Funktion (die Beiträge selbst werden davon nicht berechnet). Sie lässt sich hier ablegen und bei Bedarf öffentlich abrufen, z. B. für die eigene Webseite.',
+    ),
   },
   founding_deed: {
-    title: 'Gründungsurkunde',
-    none: 'Keine Gründungsurkunde hinterlegt (optional).',
-    uploaded: 'Die Gründungsurkunde wurde hochgeladen.',
-    intro:
+    title: t('Gründungsurkunde'),
+    none: t('Keine Gründungsurkunde hinterlegt (optional).'),
+    uploaded: t('Die Gründungsurkunde wurde hochgeladen.'),
+    intro: t(
       'Die Gründungsurkunde ist freiwillig und hat in HUBIplan keine Funktion. Sie lässt sich hier ablegen (z. B. als eingescannte PDF) und bei Bedarf öffentlich abrufen, etwa für die eigene Webseite.',
-    date: 'ausgestellt am',
-    version: 'Urkunde vom',
+    ),
+    date: t('ausgestellt am'),
+    version: t('Urkunde vom'),
   },
 }
 
@@ -92,7 +96,7 @@ export function StatutePanel({
     e.preventDefault()
     if (!file || !validFrom) return
     if (file.size > MAX_BYTES) {
-      setMessage({ kind: 'error', text: 'Die Datei ist größer als 20 MB.' })
+      setMessage({ kind: 'error', text: t('Die Datei ist größer als 20 MB.') })
       return
     }
     await run(async () => {
@@ -105,15 +109,15 @@ export function StatutePanel({
   }
 
   if (error) return <Alert kind="error">{error}</Alert>
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
   const pub = data.publication
 
   async function copyLink(url: string) {
     try {
       await navigator.clipboard.writeText(url)
-      setMessage({ kind: 'success', text: 'Link kopiert.' })
+      setMessage({ kind: 'success', text: t('Link kopiert.') })
     } catch {
-      setMessage({ kind: 'error', text: 'Kopieren ging nicht. Bitte den Link markieren.' })
+      setMessage({ kind: 'error', text: t('Kopieren ging nicht. Bitte den Link markieren.') })
     }
   }
 
@@ -129,21 +133,22 @@ export function StatutePanel({
             <li key={v.id}>
               <div>
                 <strong>
-                  {texts.version ?? 'Fassung vom'} {formatDate(v.valid_from)}
+                  {texts.version ?? t('Fassung vom')} {formatDate(v.valid_from)}
                 </strong>
                 {v.is_current && <span className="badge"> aktuell</span>}
                 {v.note && <span className="muted"> · {v.note}</span>}
                 <div className="muted small">
-                  {v.name} · {formatSize(v.size)} · hochgeladen am {formatDate(v.uploaded_at)}
-                  {v.uploaded_by && ` von ${v.uploaded_by}`}
+                  {v.name} {t('· {x} · hochgeladen am', { x: formatSize(v.size) })}{' '}
+                  {formatDate(v.uploaded_at)}
+                  {v.uploaded_by && t(' von {uploaded_by}', { uploaded_by: v.uploaded_by })}
                 </div>
               </div>
               <div className="button-row">
                 <a className="button button-ghost" href={v.url} target="_blank" rel="noreferrer">
-                  Ansehen
+                  {t('Ansehen')}
                 </a>
                 <a className="button button-ghost" href={`${v.url}?download=1`}>
-                  Herunterladen
+                  {t('Herunterladen')}
                 </a>
                 {data.can_manage && (
                   <button
@@ -153,18 +158,18 @@ export function StatutePanel({
                     onClick={async () => {
                       if (
                         await confirmDialog({
-                          title: `Fassung vom ${formatDate(v.valid_from)} löschen?`,
-                          confirmLabel: 'Löschen',
+                          title: t('Fassung vom {x} löschen?', { x: formatDate(v.valid_from) }),
+                          confirmLabel: t('Löschen'),
                         })
                       ) {
                         void run(async () => {
                           await statuteApi.remove(orgId, v.id)
                           await reload()
-                        }, 'Die Fassung wurde gelöscht.')
+                        }, t('Die Fassung wurde gelöscht.'))
                       }
                     }}
                   >
-                    Löschen
+                    {t('Löschen')}
                   </button>
                 )}
               </div>
@@ -177,38 +182,38 @@ export function StatutePanel({
         <form onSubmit={upload} className="inline-form">
           <div className="grid-3">
             <label className="field">
-              <span>PDF-Datei (höchstens 20 MB)</span>
+              <span>{t('PDF-Datei (höchstens 20 MB)')}</span>
               <input
                 key={inputKey}
                 type="file"
                 accept="application/pdf,.pdf"
                 required
-                aria-label={`${texts.title} als PDF`}
+                aria-label={t('{title} als PDF', { title: texts.title })}
                 onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               />
             </label>
             <Field
-              label={texts.date ?? 'gültig ab / beschlossen am'}
+              label={texts.date ?? t('gültig ab / beschlossen am')}
               type="date"
               required
               value={validFrom}
               onChange={(e) => setValidFrom(e.target.value)}
             />
             <Field
-              label="Bemerkung (optional)"
+              label={t('Bemerkung (optional)')}
               value={note}
               maxLength={500}
               onChange={(e) => setNote(e.target.value)}
             />
           </div>
           <button type="submit" className="button button-primary" disabled={busy || !file}>
-            Neue Fassung hochladen
+            {t('Neue Fassung hochladen')}
           </button>
         </form>
       )}
 
       <Checkbox
-        label={`${texts.title} öffentlich abrufbar (ohne Anmeldung)`}
+        label={t('{title} öffentlich abrufbar (ohne Anmeldung)', { title: texts.title })}
         checked={pub.is_public}
         disabled={!data.can_manage || busy}
         onChange={(on) =>
@@ -226,10 +231,12 @@ export function StatutePanel({
             className="button button-ghost"
             onClick={() => void copyLink(pub.pdf_url!)}
           >
-            Link kopieren
+            {t('Link kopieren')}
           </button>
           <p className="muted small">
-            Der Link zeigt immer die aktuelle Fassung. Angaben zu allen Fassungen für Webseiten:{' '}
+            {t(
+              'Der Link zeigt immer die aktuelle Fassung. Angaben zu allen Fassungen für Webseiten:',
+            )}{' '}
             {pub.info_url && (
               <a href={pub.info_url} target="_blank" rel="noreferrer">
                 JSON

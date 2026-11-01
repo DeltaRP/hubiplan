@@ -175,7 +175,7 @@ function ProjectForm({
   onClose: () => void
 }) {
   const org = useActiveOrg()
-  const t = useTerms()
+  const tm = useTerms()
   const departments = useLoad(
     () => (org.type === 'club' ? orgApi.departments(org.id) : Promise.resolve([])),
     [org.id, org.type],
@@ -315,7 +315,7 @@ function ProjectForm({
             </SelectField>
             {(departments.data?.length ?? 0) > 0 && (
               <SelectField
-                label={`${t.sg} (optional)`}
+                label={`${tm.sg} (optional)`}
                 value={v.department}
                 error={errors.department}
                 onChange={(e) => set('department', e.target.value)}
@@ -400,7 +400,7 @@ function ProjectDetail() {
     }
   }
 
-  const t = d.totals
+  const tm = d.totals
   return (
     <div className="stack">
       <p className="small">
@@ -475,16 +475,16 @@ function ProjectDetail() {
       <div className="tiles tiles-figures">
         <div className="card tile">
           <h2>Einnahmen</h2>
-          <p className="amount-big amount-in">{euro(t.income)}</p>
+          <p className="amount-big amount-in">{euro(tm.income)}</p>
         </div>
         <div className="card tile">
           <h2>Ausgaben</h2>
-          <p className="amount-big amount-out">{euro(t.expense)}</p>
+          <p className="amount-big amount-out">{euro(tm.expense)}</p>
         </div>
         <div className="card tile">
-          <h2>{Number(t.result) < 0 ? 'Fehlbetrag' : 'Überschuss'}</h2>
-          <p className={`amount-big ${Number(t.result) < 0 ? 'amount-out' : 'amount-in'}`}>
-            {euro(t.result)}
+          <h2>{Number(tm.result) < 0 ? 'Fehlbetrag' : 'Überschuss'}</h2>
+          <p className={`amount-big ${Number(tm.result) < 0 ? 'amount-out' : 'amount-in'}`}>
+            {euro(tm.result)}
           </p>
           <span className="muted small">{d.booking_count} Buchungen</span>
         </div>
@@ -527,10 +527,10 @@ function ProjectDetail() {
             <tfoot>
               <tr>
                 <th>Summe</th>
-                <th className="num">{euro(t.income)}</th>
-                <th className="num">{euro(t.expense)}</th>
+                <th className="num">{euro(tm.income)}</th>
+                <th className="num">{euro(tm.expense)}</th>
                 <th className="num">
-                  <Result value={t.result} />
+                  <Result value={tm.result} />
                 </th>
               </tr>
             </tfoot>

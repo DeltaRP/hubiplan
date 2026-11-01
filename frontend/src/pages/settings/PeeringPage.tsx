@@ -1486,8 +1486,8 @@ function TransferCard({ coupling, onChange }: { coupling: Coupling; onChange: ()
     }
   }
 
-  const active = (types ?? []).filter((t) => t.active && !t.is_archived)
-  const passive = (types ?? []).filter((t) => !t.active && !t.is_archived)
+  const active = (types ?? []).filter((tm) => tm.active && !tm.is_archived)
+  const passive = (types ?? []).filter((tm) => !tm.active && !tm.is_archived)
   return (
     <div>
       <h4>Wechselanfragen über {coupling.remote.name}</h4>
@@ -1498,14 +1498,14 @@ function TransferCard({ coupling, onChange }: { coupling: Coupling; onChange: ()
       </p>
       {coupling.transfers.length > 0 && (
         <ul className="plain-list">
-          {coupling.transfers.map((t) => (
+          {coupling.transfers.map((tm) => (
             <TransferRow
-              key={t.id}
-              t={t}
+              key={tm.id}
+              t={tm}
               passive={passive}
               disabled={busy || !canEdit}
               onDecide={(data) =>
-                void run(() => peeringApi.decideTransfer(org.id, coupling.id, t.id, data))
+                void run(() => peeringApi.decideTransfer(org.id, coupling.id, tm.id, data))
               }
             />
           ))}
@@ -1549,9 +1549,9 @@ function TransferCard({ coupling, onChange }: { coupling: Coupling; onChange: ()
               onChange={(e) => setForm({ ...form, member_type: e.target.value })}
             >
               <option value="">bitte wählen</option>
-              {active.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
+              {active.map((tm) => (
+                <option key={tm.id} value={tm.id}>
+                  {tm.name}
                 </option>
               ))}
             </select>
@@ -1589,7 +1589,7 @@ function TransferCard({ coupling, onChange }: { coupling: Coupling; onChange: ()
 }
 
 function TransferRow({
-  t,
+  t: tm,
   passive,
   disabled,
   onDecide,
@@ -1605,17 +1605,17 @@ function TransferRow({
 }) {
   const [type, setType] = useState('')
   const [response, setResponse] = useState('')
-  const outgoing = t.role === 'to'
+  const outgoing = tm.role === 'to'
   return (
     <li>
-      <strong>{t.name}</strong>{' '}
+      <strong>{tm.name}</strong>{' '}
       {outgoing
-        ? `· Aufnahme als ${t.member_type_name || 'aktives Mitglied'}`
-        : `· möchte zu ${t.to_unit} wechseln (${t.member_type_name})`}
-      {t.entry_date && ` ab ${formatDate(t.entry_date)}`} · {t.status_label}
-      {t.message && <span className="muted small"> · „{t.message}“</span>}
-      {t.response && <span className="muted small"> · Antwort: {t.response}</span>}
-      {!outgoing && t.status === 'pending' && (
+        ? `· Aufnahme als ${tm.member_type_name || 'aktives Mitglied'}`
+        : `· möchte zu ${tm.to_unit} wechseln (${tm.member_type_name})`}
+      {tm.entry_date && ` ab ${formatDate(tm.entry_date)}`} · {tm.status_label}
+      {tm.message && <span className="muted small"> · „{tm.message}“</span>}
+      {tm.response && <span className="muted small"> · Antwort: {tm.response}</span>}
+      {!outgoing && tm.status === 'pending' && (
         <div className="button-row">
           <button
             type="button"

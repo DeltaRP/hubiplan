@@ -4,6 +4,7 @@ import * as api from '../api/auth.ts'
 import type { User } from '../api/auth.ts'
 import { bindUndoToUser, clearUndo } from '../components/undo.ts'
 import { lang, switchLanguage } from '../i18n/index.ts'
+import { t } from '../i18n/index.ts'
 
 interface AuthState {
   user: User | null
@@ -57,6 +58,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 // oxlint-disable-next-line react/only-export-components
 export function useAuth(): AuthState {
   const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth muss innerhalb von AuthProvider genutzt werden.')
+  if (!ctx) throw new Error(t('useAuth muss innerhalb von AuthProvider genutzt werden.'))
   return ctx
 }

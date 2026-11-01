@@ -4,6 +4,7 @@ import { orgApi } from '../api/orgs.ts'
 import type { OrgSummary } from '../api/orgs.ts'
 import { LoadError } from './ui.tsx'
 import { useLoad } from './forms.ts'
+import { t } from '../i18n/index.ts'
 
 export function OpenTasksTile({ org }: { org: OrgSummary }) {
   const { data, error, reload } = useLoad(() => orgApi.openTasks(org.id), [org.id])
@@ -11,21 +12,26 @@ export function OpenTasksTile({ org }: { org: OrgSummary }) {
   return (
     <div className="card tile">
       <h2>
-        Offene Aufgaben
+        {t('Offene Aufgaben')}
         {items.length > 0 && <span className="badge"> {items.length}</span>}
       </h2>
       {error && (
-        <LoadError message="Die offenen Aufgaben konnten nicht geladen werden." onRetry={reload} />
+        <LoadError
+          message={t('Die offenen Aufgaben konnten nicht geladen werden.')}
+          onRetry={reload}
+        />
       )}
-      {data && items.length === 0 && <p className="muted">Zurzeit ist nichts zu entscheiden.</p>}
+      {data && items.length === 0 && (
+        <p className="muted">{t('Zurzeit ist nichts zu entscheiden.')}</p>
+      )}
       {items.length > 0 && (
         <ul className="plain-list task-list">
-          {items.map((t, i) => (
-            <li key={`${t.kind}-${i}`}>
-              <span className="muted small">{t.kind_label}</span>
+          {items.map((tm, i) => (
+            <li key={`${tm.kind}-${i}`}>
+              <span className="muted small">{tm.kind_label}</span>
               <div>
-                <Link to={t.link}>{t.title}</Link>
-                <span className="muted small"> · {t.detail}</span>
+                <Link to={tm.link}>{tm.title}</Link>
+                <span className="muted small"> · {tm.detail}</span>
               </div>
             </li>
           ))}

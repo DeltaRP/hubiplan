@@ -43,7 +43,7 @@ export function StandEnd({
 }) {
   const [error, setError] = useState<string | null>(null)
   const [tick, setTick] = useState(0)
-  useVersion(api, () => setTick((t) => t + 1))
+  useVersion(api, () => setTick((tm) => tm + 1))
   const localRef = useRef(local)
   const pushRef = useRef(push)
   useEffect(() => {
@@ -78,7 +78,7 @@ export function StandEnd({
   if (status === 'endgueltig' || !standings) return null
   const shootoffs = mergeShootoffs(local)
   const data = { standings, shootoffs }
-  const reload = () => setTick((t) => t + 1)
+  const reload = () => setTick((tm) => tm + 1)
   const blocks = standings.scorings.map((b) => withLocalShootoffs(b, shootoffs))
   const missing = [
     ...new Set(

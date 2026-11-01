@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { Alert, Checkbox } from '../components/ui.tsx'
 import { errorMessage } from '../components/forms.ts'
 import { useLearning } from './LearningContext.tsx'
+import { t } from '../i18n/index.ts'
 
 export function LearningCard() {
   const learning = useLearning()
@@ -22,38 +23,39 @@ export function LearningCard() {
 
   return (
     <div className="card card-wide">
-      <h2>Lernhilfen</h2>
+      <h2>{t('Lernhilfen')}</h2>
       {learning.loadFailed && (
         <Alert kind="error">
-          Die Einstellung konnte nicht geladen werden.{' '}
+          {t('Die Einstellung konnte nicht geladen werden.')}{' '}
           <button type="button" className="link-button" onClick={learning.reload}>
-            Erneut laden
+            {t('Erneut laden')}
           </button>
         </Alert>
       )}
       <Checkbox
-        label="Lernhilfen zeigen"
+        label={t('Lernhilfen zeigen')}
         checked={learning.enabled}
         onChange={(v) => void run(() => learning.setEnabled(v))}
       />
       <p className="muted small">
-        Zeigt ein „?“ an Fachbegriffen und Grundlagen-Erklärungen „Warum?“ an Entscheidungen.
-        Abwägungen bei echten Wahlmöglichkeiten erscheinen immer. Alle Begriffe stehen im{' '}
-        <Link to="/glossar">Glossar</Link>.
+        {t(
+          'Zeigt ein „?“ an Fachbegriffen und Grundlagen-Erklärungen „Warum?“ an Entscheidungen. Abwägungen bei echten Wahlmöglichkeiten erscheinen immer. Alle Begriffe stehen im',
+        )}{' '}
+        <Link to="/glossar">{t('Glossar')}</Link>.
       </p>
       {hiddenCount > 0 && (
         <div className="learning-hidden">
           <p className="small">
             {hiddenCount === 1
-              ? '1 Erklärung „Warum?“ ausgeblendet.'
-              : `${hiddenCount} Erklärungen „Warum?“ ausgeblendet.`}
+              ? t('1 Erklärung „Warum?“ ausgeblendet.')
+              : t('{hiddenCount} Erklärungen „Warum?“ ausgeblendet.', { hiddenCount })}
           </p>
           <button
             type="button"
             className="button button-ghost"
             onClick={() => void run(() => learning.resetHidden())}
           >
-            Ausgeblendete Erklärungen wieder zeigen
+            {t('Ausgeblendete Erklärungen wieder zeigen')}
           </button>
         </div>
       )}

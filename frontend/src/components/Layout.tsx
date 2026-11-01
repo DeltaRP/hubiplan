@@ -24,12 +24,13 @@ import { AccountMenu } from './AccountMenu.tsx'
 import { RolePreviewBanner, RolePreviewSelect } from './RolePreview.tsx'
 import { rolePreviewApi } from '../api/orgs.ts'
 import { locale } from '../i18n/index.ts'
+import { t } from '../i18n/index.ts'
 
 // Seiten außerhalb der Bereiche in der Seitenleiste
 const OTHER_PAGES: Record<string, string> = {
-  '/mein-konto': 'Mein Konto',
-  '/glossar': 'Glossar',
-  '/briefvorlage': 'Briefvorlage',
+  '/mein-konto': t('Mein Konto'),
+  '/glossar': t('Glossar'),
+  '/briefvorlage': t('Briefvorlage'),
 }
 
 export function Layout() {
@@ -182,9 +183,10 @@ export function Layout() {
       await logout()
     } catch {
       await alertDialog({
-        title: 'Abmelden hat nicht geklappt',
-        message:
+        title: t('Abmelden hat nicht geklappt'),
+        message: t(
           'Der Server hat die Abmeldung nicht bestätigt. Sie sind noch angemeldet. Bitte erneut versuchen.',
+        ),
       })
       return
     }
@@ -231,7 +233,7 @@ export function Layout() {
       .sort((a, b) => b.path.length - a.path.length)[0]
     if (!mod) {
       const section = accountSectionLabel(pathname)
-      if (section && pathname !== ACCOUNT_PATH) return `${section} · Mein Konto`
+      if (section && pathname !== ACCOUNT_PATH) return t('{section} · Mein Konto', { section })
       return OTHER_PAGES[pathname] ?? null
     }
     const sub = mod
@@ -242,7 +244,7 @@ export function Layout() {
       mod.id === 'abteilung' && activeDept
         ? activeDept.label
         : (mod.labelFor?.(active) ?? mod.label)
-    return sub ? `${sub.label} · ${modLabel}` : modLabel
+    return sub ? t('{label} · {modLabel}', { label: sub.label, modLabel }) : modLabel
   })()
   const titleOverride = useTitleOverride()
   useEffect(() => {
@@ -275,14 +277,14 @@ export function Layout() {
       <LearningProvider off={!active && !activeDept}>
         <div className={`app-shell${navOpen ? ' nav-open' : ''}`}>
           <a href="#inhalt" className="skip-link">
-            Zum Inhalt springen
+            {t('Zum Inhalt springen')}
           </a>
           <header className="topbar" inert={navOpen || undefined}>
             <button
               type="button"
               className="nav-toggle"
               ref={toggleRef}
-              aria-label={navOpen ? 'Navigation schließen' : 'Navigation öffnen'}
+              aria-label={navOpen ? t('Navigation schließen') : t('Navigation öffnen')}
               aria-expanded={navOpen}
               aria-controls="hauptnavigation"
               onClick={() => setNavOpen((o) => !o)}
@@ -299,11 +301,11 @@ export function Layout() {
               {active && <RolePreviewSelect org={active} onChanged={previewChanged} />}
               {contextCount > 1 && (
                 <label className="org-switch">
-                  <span className="sr-only">Organisation wechseln</span>
+                  <span className="sr-only">{t('Organisation wechseln')}</span>
                   <select
                     value={activeKey ?? ''}
                     onChange={(e) => void switchOrg(e.target.value)}
-                    aria-label="Organisation wechseln"
+                    aria-label={t('Organisation wechseln')}
                   >
                     {orgs.map((o) => (
                       <option key={o.id} value={String(o.id)}>
@@ -318,14 +320,15 @@ export function Layout() {
                     ))}
                     {portal.map((p) => (
                       <option key={`p${p.id}`} value={`p:${p.id}`}>
-                        Meine Daten: {p.first_name} ({p.club_display_name || p.club_name})
+                        {t('Meine Daten: {first_name} (', { first_name: p.first_name })}
+                        {p.club_display_name || p.club_name})
                       </option>
                     ))}
                     {remoteAccounts.length > 0 && (
-                      <optgroup label="Auf anderen Instanzen">
+                      <optgroup label={t('Auf anderen Instanzen')}>
                         {remoteAccounts.map((a) => (
                           <option key={`r${a.id}`} value={`r:${a.id}`}>
-                            {a.base_url.replace(/^https:\/\//, '')} öffnen
+                            {a.base_url.replace(/^https:\/\//, '')} {t('öffnen')}
                           </option>
                         ))}
                       </optgroup>
@@ -336,14 +339,14 @@ export function Layout() {
               <span className="topbar-email">{user?.email}</span>
               <AccountMenu />
               <button type="button" className="button button-ghost" onClick={handleLogout}>
-                Abmelden
+                {t('Abmelden')}
               </button>
             </div>
           </header>
 
-          <nav className="sidebar" id="hauptnavigation" aria-label="Module" ref={navRef}>
+          <nav className="sidebar" id="hauptnavigation" aria-label={t('Module')} ref={navRef}>
             <button type="button" className="sidebar-close" onClick={closeNav}>
-              <span aria-hidden="true">×</span> Navigation schließen
+              <span aria-hidden="true">×</span> {t('Navigation schließen')}
             </button>
             <ul>
               {visible.map((m) => (
@@ -385,7 +388,7 @@ export function Layout() {
                   <circle cx="12" cy="12" r="9" />
                   <path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5h.01" />
                 </svg>
-                <span>Hilfe &amp; Glossar</span>
+                <span>{t('Hilfe & Glossar')}</span>
               </NavLink>
             </div>
           </nav>
@@ -398,14 +401,14 @@ export function Layout() {
             )}
             {loading ? (
               <p className="muted" role="status">
-                Lädt …
+                {t('Lädt …')}
               </p>
             ) : (
               <PageErrorBoundary resetKey={pathname}>
                 <Suspense
                   fallback={
                     <p className="muted" role="status">
-                      Lädt …
+                      {t('Lädt …')}
                     </p>
                   }
                 >
@@ -427,9 +430,14 @@ function MfaNotice({ by, overdue }: { by: string; overdue: boolean }) {
   return (
     <div className={overdue ? 'alert alert-error' : 'alert alert-info'} role="status">
       {overdue
-        ? 'Rollenverwaltung, vollständige Exporte und das Buchen in der Kasse ruhen, bis du die Zwei-Faktor-Anmeldung einrichtest. '
-        : `Für deine Rechte (Rollen, Exporte oder Kasse) brauchst du ab dem ${date} die Zwei-Faktor-Anmeldung. `}
-      <NavLink to="/mein-konto/anmeldung">Jetzt einrichten</NavLink>
+        ? t(
+            'Rollenverwaltung, vollständige Exporte und das Buchen in der Kasse ruhen, bis du die Zwei-Faktor-Anmeldung einrichtest. ',
+          )
+        : t(
+            'Für deine Rechte (Rollen, Exporte oder Kasse) brauchst du ab dem {date} die Zwei-Faktor-Anmeldung. ',
+            { date },
+          )}
+      <NavLink to="/mein-konto/anmeldung">{t('Jetzt einrichten')}</NavLink>
     </div>
   )
 }

@@ -8,6 +8,7 @@ import { useAuth } from '../auth/AuthContext.tsx'
 import { rememberedTarget, rememberTarget } from '../auth/loginTarget.ts'
 import { Logo } from '../components/Logo.tsx'
 import { Alert, Field } from '../components/ui.tsx'
+import { t } from '../i18n/index.ts'
 
 function Frame({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -40,24 +41,25 @@ export function LoginLinkRequestPage() {
       rememberTarget(location.state)
       setDone(await requestLoginLink(email.trim()))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Der Server ist nicht erreichbar.')
+      setError(err instanceof Error ? err.message : t('Der Server ist nicht erreichbar.'))
     } finally {
       setBusy(false)
     }
   }
 
   return (
-    <Frame title="Anmeldelink anfordern">
+    <Frame title={t('Anmeldelink anfordern')}>
       {done ? (
         <Alert kind="success">{done}</Alert>
       ) : (
         <form onSubmit={submit}>
           <p className="muted small">
-            Für Mitglieder mit Zugang: Wir schicken dir einen Link, mit dem du dich ohne Passwort
-            anmeldest. Der Link gilt 7 Tage und nur einmal.
+            {t(
+              'Für Mitglieder mit Zugang: Wir schicken dir einen Link, mit dem du dich ohne Passwort anmeldest. Der Link gilt 7 Tage und nur einmal.',
+            )}
           </p>
           <Field
-            label="E-Mail-Adresse"
+            label={t('E-Mail-Adresse')}
             type="email"
             required
             autoComplete="username"
@@ -66,13 +68,13 @@ export function LoginLinkRequestPage() {
           />
           {error && <Alert kind="error">{error}</Alert>}
           <button type="submit" className="button button-primary button-block" disabled={busy}>
-            Link senden
+            {t('Link senden')}
           </button>
         </form>
       )}
       <p className="small">
         <Link to="/anmelden" state={location.state}>
-          Zur Anmeldung mit Passwort
+          {t('Zur Anmeldung mit Passwort')}
         </Link>
       </p>
     </Frame>
@@ -99,15 +101,15 @@ export function LoginLinkRedeemPage() {
         setError(result.message)
       }
     } catch {
-      setError('Der Server ist nicht erreichbar.')
+      setError(t('Der Server ist nicht erreichbar.'))
     } finally {
       setBusy(false)
     }
   }
 
   return (
-    <Frame title="Anmelden">
-      <p className="muted small">Mit diesem Link meldest du dich ohne Passwort an.</p>
+    <Frame title={t('Anmelden')}>
+      <p className="muted small">{t('Mit diesem Link meldest du dich ohne Passwort an.')}</p>
       {error && <Alert kind="error">{error}</Alert>}
       <button
         type="button"
@@ -115,11 +117,11 @@ export function LoginLinkRedeemPage() {
         disabled={busy}
         onClick={() => void redeem()}
       >
-        {busy ? 'Anmelden …' : 'Jetzt anmelden'}
+        {busy ? t('Anmelden …') : t('Jetzt anmelden')}
       </button>
       <p className="small">
-        <Link to="/anmelden/link">Neuen Link anfordern</Link> ·{' '}
-        <Link to="/anmelden">Mit Passwort anmelden</Link>
+        <Link to="/anmelden/link">{t('Neuen Link anfordern')}</Link> ·{' '}
+        <Link to="/anmelden">{t('Mit Passwort anmelden')}</Link>
       </p>
     </Frame>
   )
@@ -137,37 +139,42 @@ export function EmailConfirmPage() {
     try {
       const r = await confirmEmail(token)
       if (r.ok) {
-        setResult({ kind: 'success', text: `Bestätigt. Du meldest dich jetzt mit ${r.email} an.` })
+        setResult({
+          kind: 'success',
+          text: t('Bestätigt. Du meldest dich jetzt mit {email} an.', { email: r.email }),
+        })
         if (user) setUser({ ...user, email: r.email })
       } else {
         setResult({ kind: 'error', text: r.message })
       }
     } catch {
-      setResult({ kind: 'error', text: 'Der Server ist nicht erreichbar.' })
+      setResult({ kind: 'error', text: t('Der Server ist nicht erreichbar.') })
     } finally {
       setBusy(false)
     }
   }
 
   return (
-    <Frame title="Neue E-Mail-Adresse">
+    <Frame title={t('Neue E-Mail-Adresse')}>
       {result ? (
         <Alert kind={result.kind}>{result.text}</Alert>
       ) : (
         <>
-          <p className="muted small">Bitte bestätige, dass dies deine neue Anmelde-E-Mail ist.</p>
+          <p className="muted small">
+            {t('Bitte bestätige, dass dies deine neue Anmelde-E-Mail ist.')}
+          </p>
           <button
             type="button"
             className="button button-primary button-block"
             disabled={busy}
             onClick={() => void confirm()}
           >
-            Bestätigen
+            {t('Bestätigen')}
           </button>
         </>
       )}
       <p className="small">
-        <Link to="/">Zur Startseite</Link>
+        <Link to="/">{t('Zur Startseite')}</Link>
       </p>
     </Frame>
   )

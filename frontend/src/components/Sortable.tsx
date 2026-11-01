@@ -2,6 +2,7 @@
 import type { ReactNode } from 'react'
 import { useSortable } from './useSortable.tsx'
 import type { SortableOptions } from './useSortable.tsx'
+import { t } from '../i18n/index.ts'
 
 export function GripIcon() {
   return (
@@ -45,8 +46,9 @@ export function SortableList<T>({
 export function SortHint({ website = false }: { website?: boolean }) {
   return (
     <p className="muted small sort-hint">
-      Reihenfolge ändern: am Griff <GripIcon /> ziehen oder den Griff anklicken und die Pfeiltasten
-      nutzen.{website && ' Sie gilt auch für die Webseite.'}
+      {t('Reihenfolge ändern: am Griff')} <GripIcon />{' '}
+      {t('ziehen oder den Griff anklicken und die Pfeiltasten nutzen.')}
+      {website && t(' Sie gilt auch für die Webseite.')}
     </p>
   )
 }

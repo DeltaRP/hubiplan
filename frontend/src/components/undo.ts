@@ -13,6 +13,7 @@ import {
 } from '../api/client.ts'
 import type { AuditEntry } from '../api/orgs.ts'
 import { alertDialog, confirmDialog } from './dialog.ts'
+import { t } from '../i18n/index.ts'
 
 // base: API-Pfad des Bereichs, z. B. /api/orgs/7 oder /api/depts/3
 type Entry = { base: string; setId: string; label: string }
@@ -79,9 +80,9 @@ function baseOf(url: string): string | null {
 }
 
 const KIND_TEXT: Record<string, string> = {
-  create: 'Angelegt.',
-  delete: 'Gelöscht.',
-  'create,delete': 'Gespeichert.',
+  create: t('Angelegt.'),
+  delete: t('Gelöscht.'),
+  'create,delete': t('Gespeichert.'),
 }
 
 /** Merkt sich eine ändernde Anfrage (aufgerufen vom API-Client). */
@@ -91,7 +92,7 @@ export function noteChange(url: string, status: number, headers: Headers) {
   if (!setId || base === null || status >= 400 || url.includes('/changes/')) return
   if (headers.get('X-Change-Undoable') !== '1') return
   const kind = headers.get('X-Change-Kind') ?? 'update'
-  let label = 'Änderung'
+  let label = t('Änderung')
   try {
     label = decodeURIComponent(headers.get('X-Change-Label') ?? '') || label
   } catch {
@@ -123,9 +124,11 @@ async function revert(base: string, setId: string): Promise<string | null> {
   let res = await request<UndoResponse>('POST', url, {})
   if (res.status === 409 && res.body.can_force) {
     const ok = await confirmDialog({
-      title: 'Trotzdem zurücknehmen?',
-      message: `${(res.body.problems ?? []).join(' ')} Dabei gehen diese späteren Änderungen verloren.`,
-      confirmLabel: 'Trotzdem zurücknehmen',
+      title: t('Trotzdem zurücknehmen?'),
+      message: t('{x} Dabei gehen diese späteren Änderungen verloren.', {
+        x: (res.body.problems ?? []).join(' '),
+      }),
+      confirmLabel: t('Trotzdem zurücknehmen'),
     })
     if (!ok) return null
     res = await request<UndoResponse>('POST', url, { force: true })
@@ -133,8 +136,8 @@ async function revert(base: string, setId: string): Promise<string | null> {
   if (res.status >= 400) {
     const problems = res.body.problems?.join(' ')
     await alertDialog({
-      title: 'Das lässt sich nicht zurücknehmen',
-      message: problems || res.body.detail || 'Das hat nicht geklappt.',
+      title: t('Das lässt sich nicht zurücknehmen'),
+      message: problems || res.body.detail || t('Das hat nicht geklappt.'),
     })
     return null
   }
@@ -178,8 +181,8 @@ async function walk(base: string, steps: number, direction: 'undo' | 'redo') {
       } catch {
         if (stale()) return
         await alertDialog({
-          title: 'Das hat nicht geklappt',
-          message: 'Der Server ist nicht erreichbar. Bitte später erneut versuchen.',
+          title: t('Das hat nicht geklappt'),
+          message: t('Der Server ist nicht erreichbar. Bitte später erneut versuchen.'),
         })
         break
       }
@@ -203,11 +206,11 @@ function finishWalk(base: string, direction: 'undo' | 'redo', done: number) {
   const text =
     direction === 'undo'
       ? done > 1
-        ? `${done} Schritte rückgängig gemacht.`
-        : 'Rückgängig gemacht.'
+        ? t('{done} Schritte rückgängig gemacht.', { done })
+        : t('Rückgängig gemacht.')
       : done > 1
-        ? `${done} Schritte wiederhergestellt.`
-        : 'Wiederhergestellt.'
+        ? t('{done} Schritte wiederhergestellt.', { done })
+        : t('Wiederhergestellt.')
   update({
     busy: false,
     ...(done > 0
@@ -234,11 +237,11 @@ export async function undoFromLog(base: string, setId: string): Promise<boolean>
     if (generation !== currentAuthGeneration()) return false
     if (!next) return false
     update({
-      undo: [...state.undo, { base, setId: next, label: 'Rückgängig aus dem Protokoll' }].slice(
+      undo: [...state.undo, { base, setId: next, label: t('Rückgängig aus dem Protokoll') }].slice(
         -LIMIT,
       ),
       version: state.version + 1,
-      notice: { id: ++noticeId, base, text: 'Rückgängig gemacht.', action: null },
+      notice: { id: ++noticeId, base, text: t('Rückgängig gemacht.'), action: null },
     })
     return true
   } finally {

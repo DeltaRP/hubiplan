@@ -6,6 +6,7 @@ import type { KeyboardEvent, ReactNode } from 'react'
 import './charts.css'
 import { PREVIOUS, niceTicks } from './chartData.ts'
 import type { Series } from './chartData.ts'
+import { t } from '../../i18n/index.ts'
 
 function useWidth(fallback = 640) {
   const ref = useRef<HTMLDivElement>(null)
@@ -66,7 +67,7 @@ function ToggleLegend({
   }
   return (
     <div className="chart-legend-toggle">
-      <ul className="chart-legend" aria-label="Reihen ein- und ausblenden">
+      <ul className="chart-legend" aria-label={t('Reihen ein- und ausblenden')}>
         {series.map((s) => {
           const on = !hidden.has(s.key)
           return (
@@ -95,7 +96,7 @@ function ToggleLegend({
           disabled={hidden.size === 0}
           onClick={() => onChange(new Set())}
         >
-          Alle zeigen
+          {t('Alle zeigen')}
         </button>
         <button
           type="button"
@@ -103,7 +104,7 @@ function ToggleLegend({
           disabled={hidden.size === series.length}
           onClick={() => onChange(new Set(series.map((s) => s.key)))}
         >
-          Alle ausblenden
+          {t('Alle ausblenden')}
         </button>
       </p>
     </div>
@@ -123,8 +124,8 @@ function ValueTable({
 }) {
   return (
     <details className="chart-table">
-      <summary>Werte als Tabelle</summary>
-      <div className="table-scroll" tabIndex={0} role="region" aria-label="Werte als Tabelle">
+      <summary>{t('Werte als Tabelle')}</summary>
+      <div className="table-scroll" tabIndex={0} role="region" aria-label={t('Werte als Tabelle')}>
         <table className="table table-keep">
           <thead>
             <tr>
@@ -181,7 +182,7 @@ export function TimeChart({
   format,
   axisFormat = format,
   height = 220,
-  tableHead = 'Zeitraum',
+  tableHead = t('Zeitraum'),
   toggleable = false,
 }: {
   title: string
@@ -210,8 +211,8 @@ export function TimeChart({
     all.length === 0 ? [0, 1] : niceTicks(Math.min(...all), Math.max(...all), 4, kind === 'bar')
   const lo = ticks[0]
   const hi = ticks[ticks.length - 1]
-  const tickText = ticks.map((t) => axisFormat(t))
-  const left = Math.min(110, 10 + Math.max(...tickText.map((t) => t.length)) * 7)
+  const tickText = ticks.map((tm) => axisFormat(tm))
+  const left = Math.min(110, 10 + Math.max(...tickText.map((tm) => tm.length)) * 7)
   const top = 10
   const bottom = 26
   const right = 10
@@ -272,7 +273,7 @@ export function TimeChart({
         className="chart-plot"
         tabIndex={0}
         role="group"
-        aria-label={`${title}. Mit den Pfeiltasten durch die Werte gehen.`}
+        aria-label={t('{title}. Mit den Pfeiltasten durch die Werte gehen.', { title })}
         aria-describedby={active === null ? undefined : tipId}
         onKeyDown={move}
         onMouseLeave={() => setActive(null)}
@@ -291,16 +292,16 @@ export function TimeChart({
               <rect width="4" height="6" fill={PREVIOUS} />
             </pattern>
           </defs>
-          {ticks.map((t, i) => (
-            <g key={t}>
+          {ticks.map((tm, i) => (
+            <g key={tm}>
               <line
                 x1={left}
                 x2={left + plotW}
-                y1={y(t)}
-                y2={y(t)}
-                className={t === 0 ? 'chart-zero' : 'chart-grid'}
+                y1={y(tm)}
+                y2={y(tm)}
+                className={tm === 0 ? 'chart-zero' : 'chart-grid'}
               />
-              <text x={left - 6} y={y(t)} dy="0.32em" textAnchor="end" className="chart-axis">
+              <text x={left - 6} y={y(tm)} dy="0.32em" textAnchor="end" className="chart-axis">
                 {tickText[i]}
               </text>
             </g>

@@ -64,25 +64,29 @@ export function ShootoffBlock({
   return (
     <>
       {error && <Alert kind="error">{error}</Alert>}
-      {block.open.map((t) => (
-        <div key={t.keys.join()} className="alert alert-info">
+      {block.open.map((tm) => (
+        <div key={tm.keys.join()} className="alert alert-info">
           <p>
-            Platz {t.place}: {t.names.join(', ')}{' '}
-            {t.shootoff ? `– ${t.shootoff}. Stechen läuft` : '– Stechen nötig'}
+            Platz {tm.place}: {tm.names.join(', ')}{' '}
+            {tm.shootoff ? `– ${tm.shootoff}. Stechen läuft` : '– Stechen nötig'}
           </p>
-          {!t.shootoff &&
+          {!tm.shootoff &&
             !closed &&
-            (creating === t.keys.join() ? (
+            (creating === tm.keys.join() ? (
               <RulesForm
                 initial={proposal}
                 unit={unit}
                 submitLabel="Stechen anlegen"
-                onSubmit={(rules) => void create(t.keys, rules)}
+                onSubmit={(rules) => void create(tm.keys, rules)}
                 onCancel={() => setCreating(null)}
               />
             ) : (
               <div className="button-row">
-                <button type="button" className="button" onClick={() => setCreating(t.keys.join())}>
+                <button
+                  type="button"
+                  className="button"
+                  onClick={() => setCreating(tm.keys.join())}
+                >
                   Stechen anlegen …
                 </button>
               </div>

@@ -19,6 +19,7 @@ import {
   today,
   daysOf,
 } from './time.ts'
+import { t } from '../../i18n/index.ts'
 
 type View = 'month' | 'list'
 
@@ -123,7 +124,7 @@ export function CalendarView({
           <button
             type="button"
             className="button button-ghost"
-            aria-label={view === 'month' ? 'Vorheriger Monat' : 'Früher'}
+            aria-label={view === 'month' ? t('Vorheriger Monat') : t('Früher')}
             onClick={() => setMonth(addMonths(month, -1))}
           >
             ‹
@@ -133,31 +134,31 @@ export function CalendarView({
             className="button button-ghost"
             onClick={() => setMonth(monthStart(todayIso))}
           >
-            Heute
+            {t('Heute')}
           </button>
           <button
             type="button"
             className="button button-ghost"
-            aria-label={view === 'month' ? 'Nächster Monat' : 'Später'}
+            aria-label={view === 'month' ? t('Nächster Monat') : t('Später')}
             onClick={() => setMonth(addMonths(month, 1))}
           >
             ›
           </button>
           <strong className="calendar-title" aria-live="polite">
             {view === 'month'
-              ? `${MONTHS[Number(month.slice(5, 7)) - 1]} ${year}`
-              : `ab ${MONTHS[Number(month.slice(5, 7)) - 1]} ${year}`}
+              ? t('{x} {year}', { x: MONTHS[Number(month.slice(5, 7)) - 1], year })
+              : t('ab {x} {year}', { x: MONTHS[Number(month.slice(5, 7)) - 1], year })}
           </strong>
         </div>
         <div className="button-row">
-          <div className="segmented" role="group" aria-label="Ansicht">
+          <div className="segmented" role="group" aria-label={t('Ansicht')}>
             <button
               type="button"
               className={`button button-ghost${view === 'month' ? ' is-active' : ''}`}
               aria-pressed={view === 'month'}
               onClick={() => setView('month')}
             >
-              Monat
+              {t('Monat')}
             </button>
             <button
               type="button"
@@ -165,7 +166,7 @@ export function CalendarView({
               aria-pressed={view === 'list'}
               onClick={() => setView('list')}
             >
-              Liste
+              {t('Liste')}
             </button>
           </div>
           <a
@@ -174,7 +175,7 @@ export function CalendarView({
             target="_blank"
             rel="noreferrer"
           >
-            Jahresprogramm {year} (PDF)
+            {t('Jahresprogramm {year} (PDF)', { year })}
           </a>
           {data?.can_manage && (
             <button
@@ -182,7 +183,7 @@ export function CalendarView({
               className="button button-primary"
               onClick={() => setCreating(month === monthStart(todayIso) ? todayIso : month)}
             >
-              Neuer Termin
+              {t('Neuer Termin')}
             </button>
           )}
         </div>
@@ -190,19 +191,19 @@ export function CalendarView({
 
       {error && (
         <LoadError
-          message={`Die Termine konnten nicht geladen werden (${error}).`}
+          message={t('Die Termine konnten nicht geladen werden ({error}).', { error })}
           onRetry={() => void reload()}
         />
       )}
       {!data && !error && (
         <p className="muted" role="status">
-          Termine {view === 'month' ? 'für' : 'ab'} {MONTHS[Number(month.slice(5, 7)) - 1]} {year}{' '}
-          werden geladen …
+          {t('Termine')} {view === 'month' ? t('für') : 'ab'}{' '}
+          {MONTHS[Number(month.slice(5, 7)) - 1]} {year} {t('werden geladen …')}
         </p>
       )}
 
       {data && view === 'month' && (
-        <div className="calendar-grid" role="group" aria-label="Monatsansicht">
+        <div className="calendar-grid" role="group" aria-label={t('Monatsansicht')}>
           {WEEKDAYS.map((w) => (
             <div key={w} className="calendar-weekday" aria-hidden="true">
               {w}
@@ -226,7 +227,7 @@ export function CalendarView({
                     <button
                       type="button"
                       className="calendar-add"
-                      aria-label={`Neuer Termin am ${formatDay(day)}`}
+                      aria-label={t('Neuer Termin am {x}', { x: formatDay(day) })}
                       onClick={() => setCreating(day)}
                     >
                       +
@@ -256,7 +257,7 @@ export function CalendarView({
       {data && view === 'list' && (
         <div className="calendar-list">
           {data.items.length === 0 && (
-            <p className="muted">{emptyHint ?? 'Keine Termine in diesem Zeitraum.'}</p>
+            <p className="muted">{emptyHint ?? t('Keine Termine in diesem Zeitraum.')}</p>
           )}
           <ul className="plain-list">
             {data.items.map((o) => {
@@ -265,13 +266,15 @@ export function CalendarView({
               const range =
                 s.date === e.date
                   ? formatDay(s.date)
-                  : `${formatDay(s.date)} – ${formatDay(e.date)}`
+                  : t('{x} – {x2}', { x: formatDay(s.date), x2: formatDay(e.date) })
               return (
                 <li key={o.key}>
                   <button type="button" className={itemClass(o)} onClick={() => setSelected(o)}>
                     <span className="calendar-list-date">
                       {range}
-                      {!o.all_day && <span className="muted"> · {s.time} Uhr</span>}
+                      {!o.all_day && (
+                        <span className="muted"> {t('· {time} Uhr', { time: s.time })}</span>
+                      )}
                     </span>
                     <span className="calendar-list-main">
                       <span
@@ -281,7 +284,9 @@ export function CalendarView({
                       <strong className="event-title">{o.title}</strong>{' '}
                       <VisibilityBadge visibility={o.visibility} />
                       {o.is_cancelled && <span className="badge badge-cancelled">abgesagt</span>}
-                      {o.changed_at && !o.is_cancelled && <span className="badge">geändert</span>}
+                      {o.changed_at && !o.is_cancelled && (
+                        <span className="badge">{t('geändert')}</span>
+                      )}
                       <RsvpBadge o={o} />
                       <span className="muted small">
                         {' '}

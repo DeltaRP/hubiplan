@@ -50,7 +50,7 @@ export function MemberFilePage() {
   const { data, error, setData, reload } = useLoad(() => memberApi.detail(org.id, id), [org.id, id])
   // Bereich steht in der Adresse: Zurück, Neuladen und Links öffnen ihn wieder (NMF-07)
   const [params] = useSearchParams()
-  const tab: Tab = TABS.find((t) => t.id === params.get('bereich'))?.id ?? 'stammdaten'
+  const tab: Tab = TABS.find((tmx) => tmx.id === params.get('bereich'))?.id ?? 'stammdaten'
   const canEdit = org.permissions.includes(PERM.membersEdit)
 
   if (error) return <LoadError message={error} onRetry={() => void reload()} />
@@ -77,14 +77,14 @@ export function MemberFilePage() {
         </div>
       </div>
       <nav className="tabs" aria-label="Bereiche der Mitgliedsakte">
-        {TABS.map((t) => (
+        {TABS.map((tmx) => (
           <Link
-            key={t.id}
-            to={t.id === 'stammdaten' ? '.' : `?bereich=${t.id}`}
-            className={`tab${tab === t.id ? ' active' : ''}`}
-            aria-current={tab === t.id ? 'page' : undefined}
+            key={tmx.id}
+            to={tmx.id === 'stammdaten' ? '.' : `?bereich=${tmx.id}`}
+            className={`tab${tab === tmx.id ? ' active' : ''}`}
+            aria-current={tab === tmx.id ? 'page' : undefined}
           >
-            {t.label}
+            {tmx.label}
           </Link>
         ))}
       </nav>
@@ -409,13 +409,15 @@ function MembershipTab({
 
       <Section title="Mitgliedsarten">
         <ul className="plain-list">
-          {member.type_history.map((t) => (
-            <li key={t.id}>
-              <strong>{t.member_type_name}</strong> · {formatMemberDate(t.valid_from, precision)} –{' '}
-              {t.valid_until ? formatMemberDate(t.valid_until, precision) : 'heute'}
+          {member.type_history.map((tmx) => (
+            <li key={tmx.id}>
+              <strong>{tmx.member_type_name}</strong> ·{' '}
+              {formatMemberDate(tmx.valid_from, precision)} –{' '}
+              {tmx.valid_until ? formatMemberDate(tmx.valid_until, precision) : 'heute'}
               <span className="muted small">
                 {' '}
-                ({t.active ? 'aktiv' : 'nicht aktiv'}, {t.reported ? 'gemeldet' : 'nicht gemeldet'})
+                ({tmx.active ? 'aktiv' : 'nicht aktiv'},{' '}
+                {tmx.reported ? 'gemeldet' : 'nicht gemeldet'})
               </span>
             </li>
           ))}
@@ -645,9 +647,9 @@ function AddPeriod({
         onChange={(e) => form.set('member_type', e.target.value)}
       >
         <option value="">– unbekannt –</option>
-        {types.data?.map((t) => (
-          <option key={t.id} value={t.id}>
-            {t.name}
+        {types.data?.map((tmx) => (
+          <option key={tmx.id} value={tmx.id}>
+            {tmx.name}
           </option>
         ))}
       </SelectField>

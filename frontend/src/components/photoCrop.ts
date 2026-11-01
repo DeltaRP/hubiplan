@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.ts'
 // Zuschnitt im Browser: Bild drehen, spiegeln und den gewählten Ausschnitt als JPEG ausgeben.
 // Der Server prüft und verarbeitet das Ergebnis noch einmal (Metadaten weg, feste Größen).
 
@@ -18,7 +19,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image()
     img.onload = () => resolve(img)
-    img.onerror = () => reject(new Error('Bild konnte nicht geladen werden.'))
+    img.onerror = () => reject(new Error(t('Bild konnte nicht geladen werden.')))
     img.src = src
   })
 }
@@ -60,7 +61,7 @@ export async function cropImage(
   stage.width = Math.round(bbox.width)
   stage.height = Math.round(bbox.height)
   const ctx = stage.getContext('2d')
-  if (!ctx) throw new Error('Canvas wird nicht unterstützt.')
+  if (!ctx) throw new Error(t('Canvas wird nicht unterstützt.'))
   ctx.translate(stage.width / 2, stage.height / 2)
   ctx.rotate((rotation * Math.PI) / 180)
   ctx.scale(flip ? -1 : 1, 1)
@@ -73,7 +74,7 @@ export async function cropImage(
   out.width = Math.round(area.width * scale)
   out.height = Math.round(area.height * scale)
   const octx = out.getContext('2d')
-  if (!octx) throw new Error('Canvas wird nicht unterstützt.')
+  if (!octx) throw new Error(t('Canvas wird nicht unterstützt.'))
   let type = 'image/jpeg'
   if (options.keepTransparency) {
     octx.drawImage(stage, area.x, area.y, area.width, area.height, 0, 0, out.width, out.height)
@@ -93,7 +94,7 @@ export async function cropImage(
 
   return new Promise((resolve, reject) =>
     out.toBlob(
-      (blob) => (blob ? resolve(blob) : reject(new Error('Export fehlgeschlagen.'))),
+      (blob) => (blob ? resolve(blob) : reject(new Error(t('Export fehlgeschlagen.')))),
       type,
       0.9,
     ),
@@ -103,7 +104,7 @@ export async function cropImage(
 /** Wie stark ein Bild vor der Bearbeitung verkleinert wird (1 = gar nicht). */
 export function editScale(width: number, height: number): number {
   if (width * height > MAX_PIXELS) {
-    throw new Error('Das Bild hat zu viele Pixel (höchstens 50 Megapixel).')
+    throw new Error(t('Das Bild hat zu viele Pixel (höchstens 50 Megapixel).'))
   }
   return Math.min(1, EDIT_MAX_SIDE / Math.max(width, height))
 }
@@ -124,12 +125,12 @@ export async function prepareImage(file: Blob, keepTransparency = false): Promis
     canvas.width = Math.round(image.naturalWidth * scale)
     canvas.height = Math.round(image.naturalHeight * scale)
     const ctx = canvas.getContext('2d')
-    if (!ctx) throw new Error('Canvas wird nicht unterstützt.')
+    if (!ctx) throw new Error(t('Canvas wird nicht unterstützt.'))
     ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
     const small = await new Promise<Blob>((resolve, reject) =>
       canvas.toBlob(
         (blob) =>
-          blob ? resolve(blob) : reject(new Error('Bild konnte nicht verkleinert werden.')),
+          blob ? resolve(blob) : reject(new Error(t('Bild konnte nicht verkleinert werden.'))),
         keepTransparency ? 'image/png' : 'image/jpeg',
         0.92,
       ),

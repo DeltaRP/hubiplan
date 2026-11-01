@@ -86,17 +86,17 @@ export function HonoraryTitlesPage() {
   }
 
   const columns: Column<HonoraryTitle>[] = [
-    { key: 'name', label: 'Ehrung', value: (t) => t.name },
+    { key: 'name', label: 'Ehrung', value: (tmx) => tmx.name },
     {
       key: 'fee',
       label: federation ? 'Verbandsbeitrag' : 'Beitrag',
-      value: (t) => t.fee_text || 'unverändert',
+      value: (tmx) => tmx.fee_text || 'unverändert',
       filter: true,
     },
     {
       key: 'status',
       label: 'Status',
-      value: (t) => (t.is_archived ? 'archiviert' : 'aktiv'),
+      value: (tmx) => (tmx.is_archived ? 'archiviert' : 'aktiv'),
       filter: { initial: 'aktiv' },
     },
   ]
@@ -107,7 +107,7 @@ export function HonoraryTitlesPage() {
         <h2>Ehrungen</h2>
         {editable && editing === null && (
           <div className="button-row push-right">
-            {data.filter((t) => !t.is_archived).length > 1 && (
+            {data.filter((tmx) => !tmx.is_archived).length > 1 && (
               <button
                 type="button"
                 className="button button-ghost"
@@ -158,14 +158,14 @@ export function HonoraryTitlesPage() {
           <SortHint website={org.modules.includes('website')} />
           <SortableList
             ariaLabel="Reihenfolge der Ehrungen"
-            items={data.filter((t) => !t.is_archived)}
-            id={(t) => t.id}
-            label={(t) => t.name}
+            items={data.filter((tmx) => !tmx.is_archived)}
+            id={(tmx) => tmx.id}
+            label={(tmx) => tmx.name}
             onReorder={(ids) =>
               memberApi
                 .reorderHonoraryTitles(org.id, [
                   ...ids,
-                  ...data.filter((t) => t.is_archived).map((t) => t.id),
+                  ...data.filter((tmx) => tmx.is_archived).map((tmx) => tmx.id),
                 ])
                 .then(() => reload())
             }
@@ -175,36 +175,36 @@ export function HonoraryTitlesPage() {
         <DataTable
           label="Ehrungen"
           rows={data}
-          rowKey={(t) => t.id}
+          rowKey={(tmx) => tmx.id}
           columns={columns}
           emptyText="Noch keine Ehrungen angelegt."
-          rowClassName={(t) => (t.is_archived ? 'inactive' : undefined)}
+          rowClassName={(tmx) => (tmx.is_archived ? 'inactive' : undefined)}
           actions={
             editable
-              ? (t) =>
-                  t.is_archived ? (
+              ? (tmx) =>
+                  tmx.is_archived ? (
                     <IconButton
-                      label={`${t.name} wiederherstellen`}
+                      label={`${tmx.name} wiederherstellen`}
                       icon={<RestoreIcon />}
                       onClick={() =>
                         void run(
-                          () => memberApi.restoreHonoraryTitle(org.id, t.id),
-                          `„${t.name}“ ist wieder verfügbar.`,
+                          () => memberApi.restoreHonoraryTitle(org.id, tmx.id),
+                          `„${tmx.name}“ ist wieder verfügbar.`,
                         )
                       }
                     />
                   ) : (
                     <>
                       <IconButton
-                        label={`${t.name} bearbeiten`}
+                        label={`${tmx.name} bearbeiten`}
                         icon={<EditIcon />}
-                        onClick={() => setEditing(t)}
+                        onClick={() => setEditing(tmx)}
                       />
                       <IconButton
-                        label={`${t.name} löschen`}
+                        label={`${tmx.name} löschen`}
                         icon={<DeleteIcon />}
                         danger
-                        onClick={() => void remove(t)}
+                        onClick={() => void remove(tmx)}
                       />
                     </>
                   )

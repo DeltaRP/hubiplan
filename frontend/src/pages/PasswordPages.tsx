@@ -5,12 +5,13 @@ import { rememberedTarget, rememberTarget } from '../auth/loginTarget.ts'
 import { request } from '../api/client.ts'
 import { Logo } from '../components/Logo.tsx'
 import { Alert, Field } from '../components/ui.tsx'
+import { t } from '../i18n/index.ts'
 
 const BASE = '/_allauth/browser/v1/auth/password'
 
 function messages(body: unknown): string {
   const errors = (body as { errors?: { message: string }[] }).errors
-  return errors?.map((e) => e.message).join(' ') || 'Das hat nicht geklappt.'
+  return errors?.map((e) => e.message).join(' ') || t('Das hat nicht geklappt.')
 }
 
 /** „Passwort vergessen“: Link per E-Mail anfordern. */
@@ -30,9 +31,9 @@ export function PasswordRequestPage() {
       rememberTarget(location.state)
       const { status, body } = await request('POST', `${BASE}/request`, { email: email.trim() })
       if (status === 200) setSent(true)
-      else setError(status === 429 ? 'Zu viele Versuche. Bitte später erneut.' : messages(body))
+      else setError(status === 429 ? t('Zu viele Versuche. Bitte später erneut.') : messages(body))
     } catch {
-      setError('Der Server ist nicht erreichbar.')
+      setError(t('Der Server ist nicht erreichbar.'))
     } finally {
       setBusy(false)
     }
@@ -44,19 +45,20 @@ export function PasswordRequestPage() {
         <div className="login-logo">
           <Logo />
         </div>
-        <h1>Passwort vergessen</h1>
+        <h1>{t('Passwort vergessen')}</h1>
         {sent ? (
           <Alert kind="success">
-            Falls ein Konto mit dieser E-Mail-Adresse besteht, haben wir einen Link zum Zurücksetzen
-            geschickt.
+            {t(
+              'Falls ein Konto mit dieser E-Mail-Adresse besteht, haben wir einen Link zum Zurücksetzen geschickt.',
+            )}
           </Alert>
         ) : (
           <form onSubmit={submit}>
             <p className="muted small">
-              Wir schicken dir einen Link, mit dem du ein neues Passwort festlegst.
+              {t('Wir schicken dir einen Link, mit dem du ein neues Passwort festlegst.')}
             </p>
             <Field
-              label="E-Mail-Adresse"
+              label={t('E-Mail-Adresse')}
               type="email"
               required
               autoComplete="username"
@@ -65,13 +67,13 @@ export function PasswordRequestPage() {
             />
             {error && <Alert kind="error">{error}</Alert>}
             <button type="submit" className="button button-primary button-block" disabled={busy}>
-              Link anfordern
+              {t('Link anfordern')}
             </button>
           </form>
         )}
         <p className="small">
           <Link to="/anmelden" state={location.state}>
-            Zur Anmeldung
+            {t('Zur Anmeldung')}
           </Link>
         </p>
       </div>
@@ -91,7 +93,7 @@ export function PasswordResetPage() {
   async function submit(e: FormEvent) {
     e.preventDefault()
     if (password !== repeat) {
-      setError('Die Passwörter stimmen nicht überein.')
+      setError(t('Die Passwörter stimmen nicht überein.'))
       return
     }
     setBusy(true)
@@ -102,7 +104,7 @@ export function PasswordResetPage() {
       if (status === 200 || status === 401) setDone(true)
       else setError(messages(body))
     } catch {
-      setError('Der Server ist nicht erreichbar.')
+      setError(t('Der Server ist nicht erreichbar.'))
     } finally {
       setBusy(false)
     }
@@ -114,22 +116,22 @@ export function PasswordResetPage() {
         <div className="login-logo">
           <Logo />
         </div>
-        <h1>Neues Passwort</h1>
+        <h1>{t('Neues Passwort')}</h1>
         {done ? (
           <>
-            <Alert kind="success">Dein Passwort ist gesetzt.</Alert>
+            <Alert kind="success">{t('Dein Passwort ist gesetzt.')}</Alert>
             <Link
               to="/anmelden"
               state={{ from: rememberedTarget() }}
               className="button button-primary button-block"
             >
-              Zur Anmeldung
+              {t('Zur Anmeldung')}
             </Link>
           </>
         ) : (
           <form onSubmit={submit}>
             <Field
-              label="Neues Passwort"
+              label={t('Neues Passwort')}
               type="password"
               required
               autoComplete="new-password"
@@ -138,7 +140,7 @@ export function PasswordResetPage() {
               onChange={(e) => setPassword(e.target.value)}
             />
             <Field
-              label="Passwort wiederholen"
+              label={t('Passwort wiederholen')}
               type="password"
               required
               autoComplete="new-password"
@@ -147,7 +149,7 @@ export function PasswordResetPage() {
             />
             {error && <Alert kind="error">{error}</Alert>}
             <button type="submit" className="button button-primary button-block" disabled={busy}>
-              Passwort speichern
+              {t('Passwort speichern')}
             </button>
           </form>
         )}

@@ -8,6 +8,7 @@ import { PhotoEditor } from '../components/PhotoEditor.tsx'
 import { Alert } from '../components/ui.tsx'
 import { usePublicImprint } from '../components/publicImprint.ts'
 import { applyTheme } from '../theme/theme.ts'
+import { t } from '../i18n/index.ts'
 
 /** Öffentliche Seite des persönlichen Upload-Links (ohne Anmeldung). */
 export function PublicPhotoPage() {
@@ -33,7 +34,7 @@ export function PublicPhotoPage() {
           applyTheme(body.theme)
           setState('ready')
         } else if (status === 429) {
-          setError('Zu viele Aufrufe. Bitte später erneut versuchen.')
+          setError(t('Zu viele Aufrufe. Bitte später erneut versuchen.'))
           setState('invalid')
         } else if (status === 404 || status === 410) {
           setState('invalid')
@@ -49,7 +50,7 @@ export function PublicPhotoPage() {
 
   async function upload(blob: Blob) {
     if (!consent) {
-      setError('Bitte bestätigen Sie Ihre Einwilligung.')
+      setError(t('Bitte bestätigen Sie Ihre Einwilligung.'))
       return
     }
     setBusy(true)
@@ -58,10 +59,10 @@ export function PublicPhotoPage() {
       const { status, body } = await photoApi.publicUpload(token, blob)
       if (status === 201) setState(body.status === 'pending' ? 'pending' : 'done')
       else if (status === 404) setState('invalid')
-      else if (status === 429) setError('Zu viele Versuche. Bitte später erneut versuchen.')
-      else setError(Object.values(body).flat().join(' ') || 'Das hat nicht geklappt.')
+      else if (status === 429) setError(t('Zu viele Versuche. Bitte später erneut versuchen.'))
+      else setError(Object.values(body).flat().join(' ') || t('Das hat nicht geklappt.'))
     } catch {
-      setError('Der Server ist nicht erreichbar.')
+      setError(t('Der Server ist nicht erreichbar.'))
     } finally {
       setBusy(false)
     }
@@ -73,17 +74,19 @@ export function PublicPhotoPage() {
         <div className="login-logo">
           <Logo name={info?.organization ?? 'HUBIplan'} logoUrl={info?.logo_url ?? null} />
         </div>
-        {state === 'loading' && <p className="muted">Lädt …</p>}
+        {state === 'loading' && <p className="muted">{t('Lädt …')}</p>}
         {state === 'invalid' && (
           <Alert kind="error">
-            {error ?? 'Dieser Link ist nicht (mehr) gültig. Bitte wenden Sie sich an den Vorstand.'}
+            {error ??
+              t('Dieser Link ist nicht (mehr) gültig. Bitte wenden Sie sich an den Vorstand.')}
           </Alert>
         )}
         {state === 'unavailable' && (
           <>
             <Alert kind="error">
-              Die Seite kann gerade nicht geladen werden. Bitte Verbindung prüfen und erneut
-              versuchen.
+              {t(
+                'Die Seite kann gerade nicht geladen werden. Bitte Verbindung prüfen und erneut versuchen.',
+              )}
             </Alert>
             <div className="button-row">
               <button
@@ -94,28 +97,32 @@ export function PublicPhotoPage() {
                   setAttempt((n) => n + 1)
                 }}
               >
-                Erneut versuchen
+                {t('Erneut versuchen')}
               </button>
             </div>
           </>
         )}
-        {state === 'done' && <Alert kind="success">Danke! Ihr Foto ist gespeichert.</Alert>}
+        {state === 'done' && <Alert kind="success">{t('Danke! Ihr Foto ist gespeichert.')}</Alert>}
         {state === 'pending' && (
           <Alert kind="success">
-            Danke! Ihr Foto ist eingegangen und wird vom Vorstand noch freigegeben.
+            {t('Danke! Ihr Foto ist eingegangen und wird vom Vorstand noch freigegeben.')}
           </Alert>
         )}
         {state === 'ready' && info && (
           <>
-            <h1>Hallo {info.first_name}!</h1>
+            <h1>{t('Hallo {first_name}!', { first_name: info.first_name })}</h1>
             <p>
-              Hier können Sie ein Foto für {info.organization} hochladen. Sie können es drehen,
-              spiegeln und den Ausschnitt wählen.
+              {t(
+                'Hier können Sie ein Foto für {organization} hochladen. Sie können es drehen, spiegeln und den Ausschnitt wählen.',
+                { organization: info.organization },
+              )}
             </p>
             <p className="muted small">
-              Der Link ist gültig bis {formatDate(info.expires_at)} und nur einmal nutzbar.
+              {t('Der Link ist gültig bis {x} und nur einmal nutzbar.', {
+                x: formatDate(info.expires_at),
+              })}
             </p>
-            <PhotoEditor busy={busy} submitLabel="Foto hochladen" onDone={upload}>
+            <PhotoEditor busy={busy} submitLabel={t('Foto hochladen')} onDone={upload}>
               <label className="checkbox">
                 <input
                   type="checkbox"
@@ -123,10 +130,10 @@ export function PublicPhotoPage() {
                   onChange={(e) => setConsent(e.target.checked)}
                 />
                 <span>
-                  Ich willige ein, dass {info.organization} dieses Foto für die Mitgliederverwaltung
-                  und für meinen digitalen Mitgliedsausweis verwendet. Wer den QR-Code oder Link
-                  meines Ausweises öffnet, sieht dort auch das Foto. Ich kann die Einwilligung
-                  jederzeit beim Vorstand widerrufen; das Foto wird dann gelöscht.
+                  {t(
+                    'Ich willige ein, dass {organization} dieses Foto für die Mitgliederverwaltung und für meinen digitalen Mitgliedsausweis verwendet. Wer den QR-Code oder Link meines Ausweises öffnet, sieht dort auch das Foto. Ich kann die Einwilligung jederzeit beim Vorstand widerrufen; das Foto wird dann gelöscht.',
+                    { organization: info.organization },
+                  )}
                 </span>
               </label>
             </PhotoEditor>

@@ -12,6 +12,7 @@ import type { Area } from 'react-easy-crop'
 import { Modal } from './Modal.tsx'
 import { croppedName, cropImage, prepareImage } from './photoCrop.ts'
 import { Alert } from './ui.tsx'
+import { t } from '../i18n/index.ts'
 
 /** Gewählter Ausschnitt in Prozent des (gedrehten) Originals, zum späteren Neuwählen */
 export interface CropArea {
@@ -43,12 +44,12 @@ export interface CropSettings {
 }
 
 const ASPECTS: { key: string; label: string; value: number | null }[] = [
-  { key: 'original', label: 'wie das Original', value: null },
-  { key: '1', label: 'quadratisch (1:1)', value: 1 },
-  { key: '4:3', label: 'quer (4:3)', value: 4 / 3 },
-  { key: '3:2', label: 'quer (3:2)', value: 3 / 2 },
-  { key: '16:9', label: 'breit (16:9)', value: 16 / 9 },
-  { key: '3:4', label: 'hoch (3:4)', value: 3 / 4 },
+  { key: 'original', label: t('wie das Original'), value: null },
+  { key: '1', label: t('quadratisch (1:1)'), value: 1 },
+  { key: '4:3', label: t('quer (4:3)'), value: 4 / 3 },
+  { key: '3:2', label: t('quer (3:2)'), value: 3 / 2 },
+  { key: '16:9', label: t('breit (16:9)'), value: 16 / 9 },
+  { key: '3:4', label: t('hoch (3:4)'), value: 3 / 4 },
 ]
 
 const TRANSPARENT_TYPES = ['image/png', 'image/webp']
@@ -104,7 +105,7 @@ export function ImageCropDialog({
       },
       (err: unknown) => {
         if (alive)
-          setError(err instanceof Error ? err.message : 'Bild konnte nicht geladen werden.')
+          setError(err instanceof Error ? err.message : t('Bild konnte nicht geladen werden.'))
       },
     )
     return () => {
@@ -145,13 +146,13 @@ export function ImageCropDialog({
         : null
       onDone(new File([blob], croppedName(file.name, blob.type), { type: blob.type }), chosen)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Das hat nicht geklappt.')
+      setError(err instanceof Error ? err.message : t('Das hat nicht geklappt.'))
       setBusy(false)
     }
   }
 
   return (
-    <Modal title={settings.title ?? 'Bildausschnitt festlegen'} onClose={onCancel}>
+    <Modal title={settings.title ?? t('Bildausschnitt festlegen')} onClose={onCancel}>
       <div className="photo-editor">
         <div className={`crop-area${transparent ? ' crop-area-checker' : ''}`}>
           {src ? (
@@ -173,12 +174,12 @@ export function ImageCropDialog({
               onMediaLoaded={(m) => setNatural(m.naturalWidth / m.naturalHeight)}
             />
           ) : (
-            !error && <p className="crop-loading">Bild wird geladen …</p>
+            !error && <p className="crop-loading">{t('Bild wird geladen …')}</p>
           )}
         </div>
         <div className="photo-tools">
           <label className="inline-label">
-            Zoom
+            {t('Zoom')}
             <input
               type="range"
               min={1}
@@ -186,13 +187,13 @@ export function ImageCropDialog({
               step={0.05}
               value={zoom}
               onChange={(e) => setZoom(Number(e.target.value))}
-              aria-label="Zoom"
+              aria-label={t('Zoom')}
             />
           </label>
           <label className="inline-label">
-            Format
+            {t('Format')}
             <select
-              aria-label="Seitenverhältnis"
+              aria-label={t('Seitenverhältnis')}
               value={aspectChoice}
               onChange={(e) => {
                 setAspectChoice(e.target.value)
@@ -209,18 +210,18 @@ export function ImageCropDialog({
           <button
             type="button"
             className="button button-ghost"
-            aria-label="nach links drehen"
+            aria-label={t('nach links drehen')}
             onClick={() => setRotation((r) => (r + 270) % 360)}
           >
-            ⟲ Drehen
+            {t('⟲ Drehen')}
           </button>
           <button
             type="button"
             className="button button-ghost"
-            aria-label="nach rechts drehen"
+            aria-label={t('nach rechts drehen')}
             onClick={() => setRotation((r) => (r + 90) % 360)}
           >
-            ⟳ Drehen
+            {t('⟳ Drehen')}
           </button>
           <button
             type="button"
@@ -232,12 +233,13 @@ export function ImageCropDialog({
               setAspectChoice(aspectKey(settings.aspect))
             }}
           >
-            Zurücksetzen
+            {t('Zurücksetzen')}
           </button>
         </div>
         <p className="muted small">
-          Ausschnitt mit der Maus oder dem Finger verschieben; zoomen mit dem Regler, dem Mausrad
-          oder zwei Fingern. Nur der helle Bereich wird gespeichert.
+          {t(
+            'Ausschnitt mit der Maus oder dem Finger verschieben; zoomen mit dem Regler, dem Mausrad oder zwei Fingern. Nur der helle Bereich wird gespeichert.',
+          )}
         </p>
         {error && <Alert kind="error">{error}</Alert>}
         <div className="button-row">
@@ -247,7 +249,7 @@ export function ImageCropDialog({
             disabled={!src || !area || busy}
             onClick={() => void apply()}
           >
-            {busy ? 'Wird zugeschnitten …' : 'Ausschnitt übernehmen'}
+            {busy ? t('Wird zugeschnitten …') : t('Ausschnitt übernehmen')}
           </button>
           <button
             type="button"
@@ -255,10 +257,10 @@ export function ImageCropDialog({
             disabled={busy}
             onClick={() => onDone(file, null)}
           >
-            Unverändert übernehmen
+            {t('Unverändert übernehmen')}
           </button>
           <button type="button" className="button button-ghost" onClick={onCancel}>
-            Abbrechen
+            {t('Abbrechen')}
           </button>
         </div>
       </div>

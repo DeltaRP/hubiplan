@@ -21,14 +21,14 @@ export function MemberTypesPage() {
   const [removing, setRemoving] = useState<{ type: MemberType; usage: TypeUsage } | null>(null)
   const [message, setMessage] = useState<{ kind: 'error' | 'success'; text: string } | null>(null)
   const [busy, setBusy] = useState(false)
-  const current = (data ?? []).filter((t) => !t.is_archived)
-  const archived = (data ?? []).filter((t) => t.is_archived)
+  const current = (data ?? []).filter((tm) => !tm.is_archived)
+  const archived = (data ?? []).filter((tm) => tm.is_archived)
   const sort = useSortable({
     items: current,
-    id: (t) => t.id,
-    label: (t) => t.name,
+    id: (tm) => tm.id,
+    label: (tm) => tm.name,
     onReorder: (ids) =>
-      memberApi.reorderTypes(org.id, [...ids, ...archived.map((t) => t.id)]).then(() => reload()),
+      memberApi.reorderTypes(org.id, [...ids, ...archived.map((tm) => tm.id)]).then(() => reload()),
     enabled: editable,
   })
 
@@ -172,24 +172,24 @@ export function MemberTypesPage() {
           </tr>
         </thead>
         <tbody>
-          {sort.ordered.map((t) => (
-            <tr key={t.id} {...sort.rowProps(t)}>
-              {sort.active && <td className="drag-cell">{sort.handle(t)}</td>}
-              <td>{t.name}</td>
-              {fed && <td>{t.reported ? 'ja' : 'nein'}</td>}
-              <td>{t.active ? 'ja' : 'nein'}</td>
-              <td>{t.counts_for_duration ? 'ja' : 'nein'}</td>
+          {sort.ordered.map((tm) => (
+            <tr key={tm.id} {...sort.rowProps(tm)}>
+              {sort.active && <td className="drag-cell">{sort.handle(tm)}</td>}
+              <td>{tm.name}</td>
+              {fed && <td>{tm.reported ? 'ja' : 'nein'}</td>}
+              <td>{tm.active ? 'ja' : 'nein'}</td>
+              <td>{tm.counts_for_duration ? 'ja' : 'nein'}</td>
               <td className="actions">
                 {editable && (
                   <>
-                    <button type="button" className="link-button" onClick={() => setEditing(t)}>
+                    <button type="button" className="link-button" onClick={() => setEditing(tm)}>
                       Bearbeiten
                     </button>{' '}
                     <button
                       type="button"
                       className="link-button"
-                      aria-label={`${t.name} löschen`}
-                      onClick={() => void askRemove(t)}
+                      aria-label={`${tm.name} löschen`}
+                      onClick={() => void askRemove(tm)}
                     >
                       Löschen
                     </button>
@@ -209,9 +209,9 @@ export function MemberTypesPage() {
             Nicht mehr für neue Einträge wählbar, in Historie und Auswertungen weiter sichtbar.
           </p>
           <ul className="role-list">
-            {archived.map((t) => (
-              <li key={t.id} className="role-row">
-                <strong>{t.name}</strong>
+            {archived.map((tm) => (
+              <li key={tm.id} className="role-row">
+                <strong>{tm.name}</strong>
                 {editable && (
                   <button
                     type="button"
@@ -219,8 +219,8 @@ export function MemberTypesPage() {
                     disabled={busy}
                     onClick={() =>
                       void run(
-                        () => memberApi.restoreType(org.id, t.id),
-                        `„${t.name}“ ist wieder verfügbar.`,
+                        () => memberApi.restoreType(org.id, tm.id),
+                        `„${tm.name}“ ist wieder verfügbar.`,
                       )
                     }
                   >

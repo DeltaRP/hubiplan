@@ -5,6 +5,7 @@ import { HowTo } from '../../learning/Aids.tsx'
 import { confirmDialog } from '../../components/dialog.ts'
 import type { AppDevice, PairingCode } from '../../api/devices.ts'
 import { locale } from '../../i18n/index.ts'
+import { t } from '../../i18n/index.ts'
 
 function formatDate(value: string): string {
   return new Date(value).toLocaleString(locale(), { dateStyle: 'medium', timeStyle: 'short' })
@@ -52,7 +53,7 @@ export function AppDevicesCard() {
       if (Number.isFinite(expires) && Date.now() > expires) {
         window.clearInterval(timer)
         setPairing(null)
-        setError('Der QR-Code ist abgelaufen. Bitte bei Bedarf einen neuen erzeugen.')
+        setError(t('Der QR-Code ist abgelaufen. Bitte bei Bedarf einen neuen erzeugen.'))
         return
       }
       busy = true
@@ -60,7 +61,7 @@ export function AppDevicesCard() {
         .pairingStatus(pairing.id)
         .then(async (status) => {
           if (!active || !status.used) return
-          setConnected(status.device ?? 'unbekanntes Gerät')
+          setConnected(status.device ?? t('unbekanntes Gerät'))
           setPairing(null)
           await load()
         })
@@ -91,7 +92,9 @@ export function AppDevicesCard() {
 
   async function remove(device: AppDevice) {
     if (
-      !(await confirmDialog(`„${device.name}“ abmelden? Die App dort muss neu verbunden werden.`))
+      !(await confirmDialog(
+        t('„{name}“ abmelden? Die App dort muss neu verbunden werden.', { name: device.name }),
+      ))
     )
       return
     setError(null)
@@ -115,10 +118,11 @@ export function AppDevicesCard() {
 
   return (
     <div className="card">
-      <h2>App auf dem Telefon</h2>
+      <h2>{t('App auf dem Telefon')}</h2>
       <p className="muted small">
-        Mit der HUBIplan-App für Android siehst du Termine im Kalender deines Telefons, sagst mit
-        einem Fingertipp zu oder ab und bekommst Mitteilungen deines Vereins.
+        {t(
+          'Mit der HUBIplan-App für Android siehst du Termine im Kalender deines Telefons, sagst mit einem Fingertipp zu oder ab und bekommst Mitteilungen deines Vereins.',
+        )}
       </p>
       <HowTo k="how_app_devices" />
       {error && (
@@ -128,50 +132,54 @@ export function AppDevicesCard() {
       )}
       {connected && (
         <p className="alert alert-success" role="status">
-          Verbunden: <strong>{connected}</strong>. Warst du das nicht? Dann das Gerät unten sofort
-          abmelden.
+          {t('Verbunden:')} <strong>{connected}</strong>. Warst du das nicht? Dann das Gerät unten
+          sofort abmelden.
         </p>
       )}
       {pairing ? (
         <div className="totp-setup">
           <QRCodeSVG value={pairing.url} size={200} marginSize={2} />
           <p className="muted">
-            In der App auf „Mit QR-Code verbinden“ tippen und diesen Code scannen. Er gilt bis{' '}
-            {formatDate(pairing.expires_at)} Uhr und nur einmal.
+            {t(
+              'In der App auf „Mit QR-Code verbinden“ tippen und diesen Code scannen. Er gilt bis  {x} Uhr und nur einmal.',
+              { x: formatDate(pairing.expires_at) },
+            )}
           </p>
           <button type="button" className="button button-ghost" onClick={() => setPairing(null)}>
-            Schließen
+            {t('Schließen')}
           </button>
         </div>
       ) : (
         <button type="button" className="button button-primary" onClick={() => void createCode()}>
-          App verbinden
+          {t('App verbinden')}
         </button>
       )}
-      <h3>Angemeldete Geräte</h3>
+      <h3>{t('Angemeldete Geräte')}</h3>
       {devices.length === 0 ? (
-        <p className="muted">Noch kein Gerät verbunden.</p>
+        <p className="muted">{t('Noch kein Gerät verbunden.')}</p>
       ) : (
         <ul className="plain-list">
           {devices.map((d) => (
             <li key={d.id}>
               <strong>{d.name}</strong>{' '}
-              <span className="muted small">zuletzt aktiv {formatDate(d.last_seen_at)}</span>{' '}
+              <span className="muted small">
+                {t('zuletzt aktiv')} {formatDate(d.last_seen_at)}
+              </span>{' '}
               <button type="button" className="button button-ghost" onClick={() => void remove(d)}>
-                Abmelden
+                {t('Abmelden')}
               </button>
               {d.admin_until && (
                 <>
                   <br />
                   <span className="small">
-                    Verwaltung freigeschaltet bis {formatDate(d.admin_until)}
+                    {t('Verwaltung freigeschaltet bis')} {formatDate(d.admin_until)}
                   </span>{' '}
                   <button
                     type="button"
                     className="button button-ghost"
                     onClick={() => void lockAdmin(d)}
                   >
-                    Verwaltung sperren
+                    {t('Verwaltung sperren')}
                   </button>
                 </>
               )}
