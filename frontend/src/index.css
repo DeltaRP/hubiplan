@@ -4008,6 +4008,26 @@ label:has(> .file-input:focus-visible) {
 .pad-list .active {
   font-weight: 700;
 }
+/* Fotoerkennung (Schießscheiben Schritt 4) */
+.pad-photo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.pad-photo .error {
+  margin: 0;
+}
+.pad-photo-note {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-success-bg);
+}
+.pad-photo-review {
+  background: var(--color-error-bg);
+  border-color: var(--color-error);
+}
 .pad-lens-right {
   left: auto;
   right: 0.5rem;

@@ -137,6 +137,8 @@ export interface TargetInfo {
   note: string
   rings: { ring: number; diameter: number }[]
   max_decimal: string
+  /** Fotoerkennung möglich (schwarzer Spiegel, ein Spiegel je Scheibe) */
+  photo?: boolean
 }
 
 export interface TargetCatalog {
@@ -151,6 +153,15 @@ export interface HitInput {
   x: number | string
   y: number | string
   spot?: number | null
+  source?: HitValue['source']
+}
+
+/** Vorschlag der Fotoerkennung (Schießscheiben Schritt 4); gespeichert wird erst beim Bestätigen. */
+export interface PhotoResult {
+  scoring: number
+  hits: { x: string; y: string; source: 'foto' }[]
+  needs_review: boolean
+  note: string
 }
 
 export interface HitValue {
@@ -221,7 +232,10 @@ export interface Starter {
   /** Werte je Wertung (Nummer der Wertung → Wert als Text) */
   values: Record<string, string>
   /** Trefferpunkte je Wertung (mm, Text mit Punkt) */
-  hits?: Record<string, { x: string | number; y: string | number; spot: number | null }[]>
+  hits?: Record<
+    string,
+    { x: string | number; y: string | number; spot: number | null; source?: HitValue['source'] }[]
+  >
 }
 
 export interface MemberChoice {
@@ -421,7 +435,7 @@ export type SyncOp =
       op: 'hits'
       starter: number | string
       scoring: number
-      hits: { x: number; y: number; spot?: number | null }[]
+      hits: { x: number; y: number; spot?: number | null; source?: HitValue['source'] }[]
       at: string
     }
   | { op: 'shot'; starter: number | string; hits: number[]; client_key: string; at: string }
@@ -541,6 +555,8 @@ export const competitionsApi = {
     id: number,
     data: { scoring: number; starter: number; hits: HitInput[]; source?: HitValue['source'] },
   ) => api.put<StarterHits>(`${c(org, id)}hits/`, data),
+  photo: (org: number, id: number, scoring: number, photo: Blob) =>
+    api.post<PhotoResult>(`${c(org, id)}photo/`, photoForm(scoring, photo)),
   starters: (org: number, id: number) => api.get<Starter[]>(`${c(org, id)}starters/`),
   addStarter: (
     org: number,
@@ -643,6 +659,15 @@ export interface StandApi {
   finish?: () => Promise<unknown>
   /** Stechen anlegen und erfassen (angemeldet und per Standzugang) */
   shootoffs: ShootoffApi
+  /** Treffer auf einem Foto der Scheibe vorschlagen (braucht Verbindung) */
+  photo: (scoring: number, photo: Blob) => Promise<PhotoResult>
+}
+
+function photoForm(scoring: number, photo: Blob): FormData {
+  const form = new FormData()
+  form.append('scoring', String(scoring))
+  form.append('photo', photo, 'scheibe.jpg')
+  return form
 }
 
 type Rules = { shots?: number | null; counted_shots?: number | null }
@@ -686,6 +711,7 @@ export function orgStandApi(org: number, id: number): StandApi {
     version: () => api.get<{ version: string }>(`${c(org, id)}version/`),
     finish: () => competitionsApi.setStatus(org, id, 'endgueltig'),
     shootoffs: orgShootoffApi(org, id),
+    photo: (scoring, photo) => competitionsApi.photo(org, id, scoring, photo),
   }
 }
 
@@ -708,6 +734,7 @@ export function tokenStandApi(token: string): StandApi {
       unitMembers: (unit) =>
         api.get<{ membership: number; name: string }[]>(`${b}unit-members/?unit=${unit}`),
     },
+    photo: (scoring, photo) => api.post<PhotoResult>(`${b}photo/`, photoForm(scoring, photo)),
   }
 }
 

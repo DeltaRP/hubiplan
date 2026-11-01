@@ -86,6 +86,35 @@ sind vor ernsthafter Nutzung gegen die aktuelle Sportordnung zu lesen.
   richtig, Ringe richtig, Summe richtig, „bitte prüfen“ (und ob zu Recht) und vor allem
   „unbemerkt falsch“. Nur erfundene Daten; echte Probefotos bleiben auf Ralfs PC.
 
+**Fotoerkennung** (Schritt 4, `competitions/vision/detect.py`, OpenCV ohne Oberfläche): Im
+  Standmodus nimmt „Foto der Scheibe“ ein Bild auf (Handy: Rückkamera), verkleinert es im
+  Browser und schickt es an `POST competitions/<id>/photo/` bzw. über den Standzugang an
+  `…/stand/<schlüssel>/photo/` (`scoring`, `photo`). Zurück kommt nur ein **Vorschlag**
+  (`hits` mit Quelle „foto“, `needs_review`, `note`); er erscheint im Antipp-Bild, wird dort
+  geprüft und verschoben und erst mit „Speichern“ wie angetippte Treffer gespeichert (Quelle
+  bleibt „foto“, bis jemand den Treffer verschiebt). Das Foto wird **nur im Speicher**
+  ausgewertet und nie abgelegt; höchstens 15 MB und 60 Fotos je 10 Minuten und Konto bzw.
+  Standzugang. Ohne Empfang geht die Fotoerkennung nicht, Antippen geht immer.
+  - Ablauf: Spiegel als Ellipse finden, dann Spiegelrand und Ringlinien entlang von Strahlen
+    suchen und die volle Abbildung schätzen (Schräge, Lichtverlauf); Löcher als deutliche
+    Abweichung von der örtlichen Helligkeit, vor hellem Hintergrund über den geschlossenen
+    Lochrand; überlappende Löcher über Fläche und bekannte Schusszahl, Kreise mit Kaliber
+    eingepasst.
+  - „Bitte prüfen“, wenn die Schusszahl nicht passt, eine Fläche nicht eindeutig ist, drei
+    oder mehr Löcher ineinander liegen (der Umriss lässt die Lage dann offen), ein Treffer
+    0,1 mm oder näher an einer Ringlinie liegt oder der Spiegel unsicher erkannt wurde.
+  - Bisher nur Scheiben mit schwarzem Spiegel und einem Spiegel je Karte (`photo` in
+    `target_info`); Fünf-Spiegel-Karte folgt.
+  - Stand der Messlatte (01.11.2026, künstliche Fotos, je 60, LG DSB und Kyffhäuser, Schwierigkeit
+    leicht / mittel / schwer): Schusszahl richtig 93 / 87 / 85 %, alle Ringe richtig 68 / 52 /
+    43 %, unbemerkt falsch 0 / 1,7 / 1,7 %, „bitte prüfen“ 87 / 88 / 88 %. Einzelne Löcher
+    liegen meist auf 0,03–0,1 mm genau; Fehler kommen fast nur aus dichten Gruppen (dann
+    „bitte prüfen“). Die Mitte der Scheibe findet die Erkennung auf etwa 0,06 mm.
+  - Grenzen: Ein Loch im Schwarzen auf dunkler Unterlage ist kaum zu sehen; die Scheibe also
+    auf eine helle Unterlage legen oder gegen das Licht halten. Echte Fotos können anders
+    aussehen als die künstlichen; die Werte zeigen nur, ob die Erkennung besser oder
+    schlechter wird.
+
 ## Erfassen und Standmodus
 
 - Suchfeld immer aktiv: Name (auch „muel“ für „Müller“) oder Startnummer, Enter, Punkte,
