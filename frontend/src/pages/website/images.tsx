@@ -2,7 +2,7 @@
 // Fenster „Bild bearbeiten“ (Ausschnitt neu wählen, Angaben, Zuordnung zu einer
 // Untereinheit, ersetzen, kopieren, löschen) und ein Auswahl-Dialog für Texte, der
 // auf Seiten einer Untereinheit zuerst deren Bilder zeigt.
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { DragEvent, ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { contentApi } from '../../api/website.ts'
@@ -337,8 +337,10 @@ export function ImageEditDialog({
 }) {
   const org = useActiveOrg()
   const { data, error, reload, setData } = useLoad(() => contentApi.image(org.id, id), [org.id, id])
+  // „Schließen“ oben im Fenster wartet, bis die Angaben gespeichert sind
+  const flush = useRef<(() => Promise<boolean>) | null>(null)
   return (
-    <Modal title="Bild bearbeiten" onClose={onClose}>
+    <Modal title="Bild bearbeiten" onClose={onClose} beforeClose={() => flush.current?.() ?? true}>
       {error && <LoadError message={error} onRetry={() => void reload()} />}
       {!data && !error && <p className="muted">Lädt …</p>}
       {data && (
@@ -359,6 +361,7 @@ export function ImageEditDialog({
             onClose()
           }}
           onClose={onClose}
+          flushRef={flush}
         />
       )}
     </Modal>
@@ -372,6 +375,7 @@ function ImageEditForm({
   onCopied,
   onDeleted,
   onClose,
+  flushRef,
 }: {
   image: WebsiteImageDetail
   units: Unit[]
@@ -379,6 +383,8 @@ function ImageEditForm({
   onCopied: (copy: WebsiteImage) => void
   onDeleted: () => void
   onClose: () => void
+  /** zum Speichern vor dem Schließen des Fensters */
+  flushRef: { current: (() => Promise<boolean>) | null }
 }) {
   const org = useActiveOrg()
   const form = useForm({
@@ -391,6 +397,12 @@ function ImageEditForm({
   const auto = useAutoSave(form, (changes) => contentApi.saveImage(org.id, image.id, changes), {
     onSaved: (saved) => onChanged(saved as WebsiteImage),
   })
+  useEffect(() => {
+    flushRef.current = auto.flush
+    return () => {
+      flushRef.current = null
+    }
+  }, [flushRef, auto.flush])
   const crop = useImageCrop({ title: 'Ausschnitt ändern' })
   const replace = useImageCrop({ title: 'Neues Bild zuschneiden' })
   const [busy, setBusy] = useState(false)
@@ -578,13 +590,6 @@ function ImageEditForm({
             onClick={() => void remove()}
           >
             Löschen
-          </button>
-          <button
-            type="button"
-            className="button button-ghost"
-            onClick={() => void auto.flush().then((ok) => ok && onClose())}
-          >
-            Schließen
           </button>
         </div>
       </div>
