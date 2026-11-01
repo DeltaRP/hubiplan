@@ -8,7 +8,7 @@ import pytest
 from audit.models import AuditEntry
 from finance.models import Account, Booking, Category, Receipt
 
-from .factories import give_role, make_member, make_user
+from .factories import audit_with, give_role, make_member, make_user
 
 pytestmark = pytest.mark.django_db
 JSON = "application/json"
@@ -138,9 +138,7 @@ class TestKategorienLoeschen:
 
         resp = c.post(f"{base}/categories/{kat}/archive/")
         assert resp.status_code == 200 and resp.json()["is_active"] is False
-        assert AuditEntry.objects.filter(
-            action="update", object_repr="Beiträge", changes__archiviert=[False, True]
-        ).exists()
+        assert audit_with("archiviert", [False, True], action="update", object_repr="Beiträge")
         # Buchung und Kassenbericht unverändert
         b = c.get(f"{base}/bookings/{booking_id}/").json()
         assert b["category"] == kat and b["category_name"] == "Beiträge"

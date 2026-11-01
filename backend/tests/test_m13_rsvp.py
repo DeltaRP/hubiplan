@@ -9,12 +9,11 @@ from django.test import Client
 from django.utils import timezone
 from openpyxl import load_workbook
 
-from audit.models import AuditEntry
 from events import notify
 from events.models import Event, EventResponse, PersonalCalendar
 from members.models import MembershipPeriod
 
-from .factories import make_member
+from .factories import audit_with, make_member
 from .test_m12_events import (  # noqa: F401  (Fixtures)
     JSON,
     at,
@@ -123,7 +122,7 @@ class TestMitglied:
         assert EventResponse.objects.count() == 1
         resp = c.delete(f"{portal(access)}events/{data['id']}/response/")
         assert resp.json()["rsvp"]["mine"] is None
-        assert AuditEntry.objects.filter(changes__has_key="Rückmeldung Muster, Erika").count() == 3
+        assert len(audit_with("Rückmeldung Muster, Erika")) == 3
 
     def test_begleitung_nur_wenn_erlaubt(self, cal, board_a, api):
         _, user, access = member_with_access(cal["a"], "Erika")

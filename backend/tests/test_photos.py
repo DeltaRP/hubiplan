@@ -10,12 +10,11 @@ from django.core.cache import cache
 from PIL import Image
 
 from access.models import Role
-from audit.models import AuditEntry
 from members.models import MemberPhoto, Membership, PhotoUploadLink
 from members.photo_models import hash_token
 from members.workflows import purge_expired
 
-from .factories import give_role, make_user
+from .factories import audit_with, give_role, make_user
 from .test_m2_members import admit, make_types
 
 pytestmark = pytest.mark.django_db
@@ -115,7 +114,7 @@ class TestVorstand:
         rows = c.get(f"/api/orgs/{orgs['a'].pk}/members/").json()["results"]
         version = photo["url"].split("v=")[1]
         assert rows[0]["photo_url"].endswith(f"size=thumb&v={version}")
-        assert AuditEntry.objects.filter(changes__has_key="Foto").exists()
+        assert audit_with("Foto")
 
     def test_exif_ausrichtung_wird_angewendet(self, api, orgs, member, board_a):
         c = api(board_a)
@@ -286,7 +285,7 @@ class TestUploadLink:
             == 404
         )
         assert client.get(self.public(link)).status_code == 404
-        assert AuditEntry.objects.filter(changes__has_key="Foto-Einwilligung").exists()
+        assert audit_with("Foto-Einwilligung")
 
     def test_freigabe_wenn_eingestellt(self, client, api, orgs, member, board_a):
         orgs["a"].photo_approval_required = True

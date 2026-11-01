@@ -61,7 +61,10 @@ def test_aenderung_und_loeschung_fallen_auf(c, fin, club, setup):
     entries = eintraege(club)
     with rls_bypass():
         AuditEntry.objects.filter(pk=entries[1].pk).update(user_email="jemand@example.org")
-        AuditEntry.objects.filter(pk=entries[2].pk).update(changes={"Betrag": ["1", "2"]})
+        # Wer die Datenbank ändert, kann einen gültig verschlüsselten Inhalt einsetzen
+        original = entries[2].changes
+        entries[2].changes = {"Betrag": ["1", "2"]}
+        entries[2].save(update_fields=["changes"])
     result = verify(club.pk)
     assert not result["ok"]
     assert any("Angaben wurden nachträglich geändert" in p for p in result["problems"])
@@ -69,7 +72,8 @@ def test_aenderung_und_loeschung_fallen_auf(c, fin, club, setup):
 
     with rls_bypass():
         AuditEntry.objects.filter(pk=entries[1].pk).update(user_email=entries[1].user_email)
-        AuditEntry.objects.filter(pk=entries[2].pk).update(changes=entries[2].changes)
+        entries[2].changes = original
+        entries[2].save(update_fields=["changes"])
     assert verify(club.pk)["ok"]
     with rls_bypass():
         AuditEntry.objects.filter(pk=entries[1].pk).delete()

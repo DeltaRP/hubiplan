@@ -6,6 +6,12 @@ Mails gehen nirgendwohin, sondern lassen sich in der Oberfläche ansehen.
 
 from django.db import models
 
+from core.encfields import EncryptedTextField
+
+# Text einer Mail nach Ablauf der Aufbewahrung (bleibt lesbar, damit die Löschung
+# danach filtern kann)
+EMPTIED = "(Inhalt nach Ablauf der Aufbewahrungsfrist entfernt)"
+
 
 class OutgoingMail(models.Model):
     class Status(models.TextChoices):
@@ -24,7 +30,8 @@ class OutgoingMail(models.Model):
     to = models.TextField("Empfänger")
     reply_to = models.CharField("Antwort an", max_length=300, blank=True)
     subject = models.CharField("Betreff", max_length=300)
-    body = models.TextField("Text")
+    # Verschlüsselt mit dem Schlüssel des Vereins (ohne Verein: der Plattform)
+    body = EncryptedTextField("Text", plain_values=(EMPTIED,))
     # [{"name": ..., "path": ..., "size": ..., "content_type": ...}]
     attachments = models.JSONField("Anhänge", default=list, blank=True)
     kind = models.CharField("Art", max_length=50, blank=True)
@@ -39,3 +46,10 @@ class OutgoingMail(models.Model):
 
     def __str__(self) -> str:
         return f"{self.subject} → {self.to}"
+
+    def encryption_org_id(self) -> int:
+        if self.organization_id is not None:
+            return self.organization_id
+        from organizations.models import Organization
+
+        return Organization.platform().pk

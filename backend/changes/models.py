@@ -15,6 +15,8 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
+from core.encfields import EncryptedJSONField
+
 RETENTION_DAYS = 30
 
 
@@ -63,8 +65,9 @@ class ChangeRecord(models.Model):
     model = models.CharField(max_length=100)  # app_label.model_name
     object_id = models.CharField(max_length=50)
     operation = models.CharField(max_length=10, choices=Operation.choices)
-    before = models.JSONField(null=True, blank=True)
-    after = models.JSONField(null=True, blank=True)
+    # Verschlüsselt mit dem Schlüssel des Vereins
+    before = EncryptedJSONField(null=True, blank=True)
+    after = EncryptedJSONField(null=True, blank=True)
     # Betroffene Person (zum Löschen nach Ablauf der Löschfrist)
     person_id = models.BigIntegerField(null=True, blank=True, db_index=True)
 

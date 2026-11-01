@@ -9,12 +9,12 @@ import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
 
-from audit.models import AuditEntry
 from billing.models import Invoice, Payment
 from finance import services
 from finance.models import Booking, Category, Donation, Receipt
 from organizations.models import Organization
 
+from .factories import audit_with
 from .test_m9_billing import _private, base, c, club, members, setup, start_run, zug  # noqa: F401
 
 pytestmark = pytest.mark.django_db
@@ -104,7 +104,7 @@ class TestFestschreibung:
             c.patch(f"{fin}/settings/", {"locked_until": tomorrow}, content_type=JSON).status_code
             == 400
         )
-        assert AuditEntry.objects.filter(changes__has_key="Kasse festgeschrieben bis").exists()
+        assert audit_with("Kasse festgeschrieben bis")
         # Heute erfasste Buchungen danach bleiben änderbar
         today = book(c, fin, account=setup["bank"], category=cats["fest"])
         assert c.get(f"{fin}/bookings/{today.pk}/").json()["fixed"] is False
@@ -157,7 +157,7 @@ class TestStorno:
         # Ursprüngliche Buchung unverändert
         b2 = Booking.objects.get(pk=b.pk)
         assert (b2.amount, b2.kind, b2.text) == (b.amount, b.kind, b.text)
-        assert AuditEntry.objects.filter(changes__has_key="Storno").exists()
+        assert audit_with("Storno")
         # Kein zweites Storno, kein Storno vom Storno, Gegenbuchung nicht löschbar
         again = c.post(f"{fin}/bookings/{b.pk}/storno/", {"reason": "nochmal"}, content_type=JSON)
         assert again.status_code == 400

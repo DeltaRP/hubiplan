@@ -87,3 +87,20 @@ def make_member(
                 "departments": list(departments),
             },
         )
+
+
+_ANY = object()
+
+
+def audit_with(key: str, value=_ANY, **filters) -> list:
+    """Protokolleinträge mit diesem Schlüssel in den Änderungen (verschlüsselt, daher
+    nicht in der Datenbank abfragbar)."""
+    from audit.models import AuditEntry
+
+    return [
+        entry
+        for entry in AuditEntry.objects.filter(**filters)
+        if isinstance(entry.changes, dict)
+        and key in entry.changes
+        and (value is _ANY or entry.changes[key] == value)
+    ]
