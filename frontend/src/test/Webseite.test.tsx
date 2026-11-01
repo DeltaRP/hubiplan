@@ -460,6 +460,46 @@ describe('Inhalte der Webseite', () => {
     expect(screen.getByText('1 von 3 Bildern')).toBeVisible()
   })
 
+  it('sortiert die Bilder nach Hochladedatum, Name oder letzter Änderung', async () => {
+    renderApp(
+      {
+        [`GET ${base}`]: () => ({ status: 200, body: data(website()) }),
+        [`GET ${base}texts/`]: () => ({ status: 200, body: { texts: [], units: [] } }),
+        [`GET ${base}images/`]: () => ({
+          status: 200,
+          body: [
+            img(1, 'Bühne', {
+              uploaded_at: '2026-10-01T10:00:00Z',
+              updated_at: '2026-10-30T10:00:00Z',
+            }),
+            img(2, 'Zelt', {
+              uploaded_at: '2026-10-20T10:00:00Z',
+              updated_at: '2026-10-20T10:00:00Z',
+            }),
+            img(3, 'Abzeichen', {
+              uploaded_at: '2026-10-10T10:00:00Z',
+              updated_at: '2026-10-10T10:00:00Z',
+            }),
+          ],
+        }),
+      },
+      '/webseite/bilder',
+    )
+    const user = userEvent.setup()
+    await screen.findByText('3 Bilder')
+    const order = () =>
+      screen
+        .getAllByRole('button', { name: /Bühne|Zelt|Abzeichen/ })
+        .map((b) => b.textContent?.match(/Bühne|Zelt|Abzeichen/)?.[0])
+    expect(order()).toEqual(['Zelt', 'Abzeichen', 'Bühne'])
+    await user.selectOptions(screen.getByLabelText('Sortieren'), 'oldest')
+    expect(order()).toEqual(['Bühne', 'Abzeichen', 'Zelt'])
+    await user.selectOptions(screen.getByLabelText('Sortieren'), 'name')
+    expect(order()).toEqual(['Abzeichen', 'Bühne', 'Zelt'])
+    await user.selectOptions(screen.getByLabelText('Sortieren'), 'changed')
+    expect(order()).toEqual(['Bühne', 'Zelt', 'Abzeichen'])
+  })
+
   it('ändert Angaben und Zuordnung eines Bildes im Fenster „Bild bearbeiten“', async () => {
     const image = img(3, 'Gruppenbild')
     const calls = renderApp(
@@ -660,6 +700,9 @@ describe('Inhalte der Webseite', () => {
     const picker = await screen.findByRole('dialog', { name: 'Bild der Untereinheit' })
     expect(within(picker).getByRole('button', { name: /Vereinsfahne/ })).toBeVisible()
     expect(within(picker).queryByRole('button', { name: /Zug drei/ })).toBeNull()
+    await user.click(within(picker).getByLabelText('nur Zweiter Zug'))
+    expect(within(picker).queryByRole('button', { name: /Vereinsfahne/ })).toBeNull()
+    expect(within(picker).getByRole('button', { name: /Zug zwei/ })).toBeVisible()
     await user.click(within(picker).getByLabelText('alle Bilder'))
     expect(within(picker).getByRole('button', { name: /Zug drei/ })).toBeVisible()
     await user.click(within(picker).getByRole('button', { name: /Zug zwei/ }))
