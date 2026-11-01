@@ -105,10 +105,19 @@ def facts(website: Website) -> dict:
         or website.block_on("offices")
         or website.block_on("honorary"),
         "contact": website.block_on("contact"),
+        # Wettbewerbsergebnisse (nur mit Modul Wettbewerbe)
+        "results": website.block_on("results") and "competitions" in (org.enabled_modules or []),
         "function_mail": has_function_mail,
         "social": social,
         "pages": has_pages,
         "posts": posts,
+        # Wettbewerbsergebnisse (nur mit Modul Wettbewerbe); nur wenn zutreffend im Stand,
+        # damit bestehende Texte nicht als veraltet gelten
+        **(
+            {"results": True}
+            if website.block_on("results") and "competitions" in (org.enabled_modules or [])
+            else {}
+        ),
     }
 
 
@@ -227,6 +236,13 @@ def website_privacy(website: Website) -> str:
             "Würdenträger und Chronik (z. B. Könige, frühere Vorsitzende, Ehrenmitglieder): "
             "Name, Jahr bzw. Zeitraum und Würde, wie im Schützenwesen üblich (berechtigtes "
             "Interesse, Art. 6 Abs. 1 lit. f DSGVO); Fotos nur mit Einwilligung"
+        )
+    if f.get("results"):
+        people.append(
+            "Ergebnisse von Wettbewerben (z. B. Preis- und Vogelschießen): Name, Platz, Wert und "
+            "Untereinheit, wie bei öffentlichen Wettbewerben üblich (berechtigtes Interesse, "
+            "Art. 6 Abs. 1 lit. f DSGVO); bei Teilnehmern unter 18 Jahren nur mit Einwilligung "
+            "(Art. 6 Abs. 1 lit. a DSGVO), sonst erscheint der Platz ohne Namen"
         )
     if people:
         sections.append(

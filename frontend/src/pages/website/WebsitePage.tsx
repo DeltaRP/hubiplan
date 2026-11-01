@@ -486,7 +486,9 @@ function HomeSections({
       </p>
       <ol className="home-sections">
         {value.map((s, index) => {
-          const label = labels[s.key] ?? s.key
+          // Bausteine ohne Bezeichnung gibt es hier nicht (z. B. Ergebnisse ohne Modul)
+          if (!labels[s.key]) return null
+          const label = labels[s.key]
           const needs = data.home_needs_block?.[s.key]
           const blockOff = needs ? blocks[needs] === false : false
           const hint = blockOff

@@ -28,6 +28,7 @@ BLOCKS = {
     "board": "Vorstand",
     "units": "Untereinheiten",
     "honors": "Majestäten",
+    "results": "Ergebnisse",
     "history": "Chronik",
     "offices": "Ämter",
     "statutes": "Dokumente",
@@ -40,6 +41,7 @@ BLOCK_HINTS = {
     "board": "Vorstand und Ansprechpartner",
     "units": "Seiten der Untereinheiten",
     "honors": "aktuelle und frühere Würdenträger",
+    "results": "Wettbewerbe mit „auf der Webseite“, Reihen und Wanderpokale",
     "history": "Textseite zur Geschichte des Vereins (Webseite › Texte)",
     "offices": "heutige und frühere Inhaber der Rollen mit „unter Ämter zeigen“",
     "statutes": "Satzung, Beitragsordnung und Gründungsurkunde zum Herunterladen",
@@ -64,6 +66,7 @@ HOME_SECTIONS = {
     "events": "Nächste Termine",
     "honors": "Majestäten",
     "units": "Untereinheiten",
+    "results": "Aktuelle Ergebnisse",
     "instagram": "Instagram-Beiträge",
     "facebook": "Facebook-Beiträge",
 }
@@ -73,12 +76,14 @@ HOME_HINTS = {
     "events": "die nächsten drei öffentlichen Termine",
     "honors": "die aktuellen Majestäten",
     "units": "Kacheln mit Links zu den Seiten der Untereinheiten",
+    "results": "die neuesten Wettbewerbe mit den Siegern, live mit Zwischenstand",
     "instagram": "neueste Beiträge, sobald ein Kanal verbunden ist",
     "facebook": "neueste Beiträge, sobald ein Kanal verbunden ist",
 }
 # Welcher Bereich der Webseite eingeschaltet sein muss, damit der Baustein erscheint
-HOME_NEEDS_BLOCK = {"events": "events", "honors": "honors", "units": "units"}
-DEFAULT_HOME_OFF = {"instagram", "facebook"}
+HOME_NEEDS_BLOCK = {"events": "events", "honors": "honors", "units": "units", "results": "results"}
+# „Aktuelle Ergebnisse“ ist ein möglicher Block (Ralf 01.11.): erst an, wenn gewählt
+DEFAULT_HOME_OFF = {"instagram", "facebook", "results"}
 
 
 def default_home_sections() -> list:
@@ -326,6 +331,8 @@ class PublicationConsent(models.Model):
         PHONE = "phone", "Telefonnummer"
         HONORS = "honors", "Würden und Chronik"
         JUBILEES = "jubilees", "Jubiläen"
+        RESULTS = "results", "Wettbewerbsergebnisse"
+        RESULTS_MINOR = "minor_res", "Wettbewerbsergebnisse unter 18"
 
     class Source(models.TextChoices):
         BOARD = "board", "Vorstand"
@@ -334,7 +341,9 @@ class PublicationConsent(models.Model):
 
     # Name und Würden erscheinen aus berechtigtem Interesse, solange kein
     # Widerspruch vorliegt; alles andere nur mit Einwilligung.
-    OBJECTION_CATEGORIES = frozenset({Category.NAME, Category.HONORS})
+    # Wettbewerbsergebnisse ebenso (Teilnahme an einem öffentlichen Wettbewerb); unter 18
+    # nur mit ausdrücklicher Einwilligung (Kategorie „Wettbewerbsergebnisse unter 18“)
+    OBJECTION_CATEGORIES = frozenset({Category.NAME, Category.HONORS, Category.RESULTS})
 
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE, related_name="+"

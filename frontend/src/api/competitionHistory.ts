@@ -164,6 +164,9 @@ export const historyApi = {
     decide: (org: number, id: number, decision: 'bestaetigen' | 'ablehnen') =>
       api.post<Grant>(`${base(org)}grants/${id}/dignity/`, { decision }),
   },
+  /** Mitgliederbereich und App: „Meine Ergebnisse“ */
+  mine: (access: number) =>
+    api.get<Omit<MemberHistory, 'can_open'>>(`/api/portal/${access}/results/`),
   member: (org: number, membership: number) =>
     api.get<MemberHistory>(`${base(org)}member/${membership}/`),
 }
