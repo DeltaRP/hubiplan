@@ -1,0 +1,35 @@
+{
+  "_hinweis": "Bildschirmfotos der Hilfe, erzeugt mit scripts/hilfe-bilder.sh aus den Demodaten (seed_testdata). zugang: Demozugang ohne Domain; ausschnitt: CSS-Auswahl des Bereichs (leer: Inhalt der Seite).",
+  "bilder": [
+    {
+      "name": "konto-passwort",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/mein-konto/anmeldung",
+      "ausschnitt": ".card:has(input[autocomplete=\"new-password\"])"
+    },
+    {
+      "name": "konto-zwei-faktor",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/mein-konto/anmeldung",
+      "ausschnitt": ".card:has(.totp-setup)"
+    },
+    {
+      "name": "konto-sprache",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/mein-konto",
+      "ausschnitt": ".card:has(select)"
+    },
+    {
+      "name": "mitglieder-liste",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/mitglieder",
+      "ausschnitt": ""
+    },
+    {
+      "name": "mitglieder-aufnehmen",
+      "zugang": "vorstand@hubertus-grimlinghausen.test",
+      "seite": "/mitglieder/neu",
+      "ausschnitt": ""
+    }
+  ]
+}

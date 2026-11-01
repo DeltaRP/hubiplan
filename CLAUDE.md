@@ -14,6 +14,9 @@ Feste Regeln von Ralf:
 - Auf dem Testserver nur erfundene Daten.
 - **Jeder neue Text gleich auch auf Englisch** (Oberfläche `t()` + `src/i18n/en.json`, Backend
   `gettext` + `locale/en`); `scripts/test.sh` schlägt sonst fehl. Siehe [docs/uebersetzung.md](docs/uebersetzung.md).
+- **Hilfe mitpflegen**: Wer eine Seite oder einen Ablauf ändert, passt die Hilfe (`frontend/src/help/`,
+  Deutsch und Englisch) im selben PR an; bei sichtbaren Änderungen Bilder mit `scripts/hilfe-bilder.sh`
+  neu erzeugen. Siehe [docs/hilfe.md](docs/hilfe.md).
 - CI (GitHub Actions) läuft nur von Hand (workflow_dispatch); keine automatischen Auslöser.
 
 Details: [docs/testserver.md](docs/testserver.md), [docs/betrieb.md](docs/betrieb.md).

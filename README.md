@@ -90,7 +90,7 @@ Zu HUBIplan gehören drei Repositories:
 - Schnittstelle für die [Android-App](https://github.com/hubiplan/hubiplan-android):
   Verbinden per QR-Code, Geräteschlüssel je Gerät, Push über Web-Push/UnifiedPush
 
-**Barrierearm und mit Lernhilfen**: Erklärungen und Glossar direkt in der Oberfläche,
+**Barrierearm, mit Hilfe und Lernhilfen**: Anleitungen mit Bildern, Hilfe zu jeder Seite, Erklärungen und Glossar direkt in der Oberfläche,
 Prüflisten für wiederkehrende Aufgaben ([docs/lernhilfen.md](docs/lernhilfen.md)).
 
 ## Aufbau
@@ -282,11 +282,12 @@ frontend/
   src/api/         Aufrufe ans Backend
   src/components/  gemeinsame Bausteine, Layout mit Navigation
   src/pages/       Seiten, nach Bereichen gegliedert
+  src/help/        Hilfe: Anleitungen und Seitenhilfen (Markdown, de/en)
   src/learning/    Lernhilfen und Glossar
   src/theme/       Farben und Logo als CSS-Variablen
   lizenzen/        erzeugt die Lizenzliste der Browser-Bibliotheken
 deploy/            Caddy, Ausrollen, Servereinrichtung, Backup, HestiaCP-Vorlagen
-scripts/           test.sh (vollständiger Test), testplatz.sh (Testplätze)
+scripts/           test.sh (vollständiger Test), testplatz.sh (Testplätze), hilfe-bilder.sh (Bilder der Hilfe)
 docs/              Betrieb und Beschreibungen einzelner Bereiche
 ```
 
@@ -312,6 +313,7 @@ docs/              Betrieb und Beschreibungen einzelner Bereiche
 | [docs/ehrungen.md](docs/ehrungen.md), [docs/wuerden.md](docs/wuerden.md), [docs/aemter.md](docs/aemter.md) | Ehrungen, Würden, Ämter |
 | [docs/impressum.md](docs/impressum.md) | Impressum und Datenschutzhinweise |
 | [docs/social-media-beitraege.md](docs/social-media-beitraege.md) | Social-Media-Beiträge auf der Webseite |
+| [docs/hilfe.md](docs/hilfe.md) | Hilfe: Anleitungen, Seitenhilfen, Bildschirmfotos |
 | [docs/lernhilfen.md](docs/lernhilfen.md) | Lernhilfen, Glossar, Prüflisten |
 | [docs/lizenzen.md](docs/lizenzen.md) | Lizenzen der Abhängigkeiten, Pflichten bei der Weitergabe |
 
