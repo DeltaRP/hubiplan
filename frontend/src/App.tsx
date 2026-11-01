@@ -23,6 +23,7 @@ import { PublicCardPage } from './pages/PublicCardPage.tsx'
 import { PublicPhotoPage } from './pages/PublicPhotoPage.tsx'
 import { PublicOptOutPage } from './pages/PublicOptOutPage.tsx'
 import { PublicCircularConfirmPage } from './pages/PublicCircularConfirmPage.tsx'
+import { NextcloudLoginPage } from './pages/NextcloudLoginPage.tsx'
 import { lazyPage } from './lazyPages.ts'
 import { NoLearningAids } from './learning/LearningContext.tsx'
 import { LeaveGuard } from './components/leaveGuard.ts'
@@ -47,6 +48,7 @@ const DepartmentArea = lazyPage(
 const PortalPage = lazyPage(() => import('./pages/portal/PortalPage.tsx'), 'PortalPage')
 const OutboxPage = lazyPage(() => import('./pages/settings/OutboxPage.tsx'), 'OutboxPage')
 const PeeringPage = lazyPage(() => import('./pages/settings/PeeringPage.tsx'), 'PeeringPage')
+const NextcloudPage = lazyPage(() => import('./pages/settings/NextcloudPage.tsx'), 'NextcloudPage')
 const CircularsPage = lazyPage(() => import('./pages/circulars/CircularsPage.tsx'), 'CircularsPage')
 const MembersPage = lazyPage(() => import('./pages/MembersPage.tsx'), 'MembersPage')
 const FinanzenPage = lazyPage(() => import('./pages/finanzen/FinanzenPage.tsx'), 'FinanzenPage')
@@ -179,6 +181,14 @@ export default function App() {
             element={
               <RequireAuth>
                 <VerbundConfirmPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/oidc/anmelden"
+            element={
+              <RequireAuth>
+                <NextcloudLoginPage />
               </RequireAuth>
             }
           />
@@ -375,6 +385,14 @@ export default function App() {
               element={
                 <RequireOrg permission={PERM.peeringManage}>
                   <PeeringPage />
+                </RequireOrg>
+              }
+            />
+            <Route
+              path="nextcloud"
+              element={
+                <RequireOrg permission={PERM.rolesManage}>
+                  <NextcloudPage />
                 </RequireOrg>
               }
             />

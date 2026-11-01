@@ -520,6 +520,7 @@ NOT_INCLUDED = [
     "Vorlagen für Rundschreiben",
     "Änderungsprotokoll (bleibt auf der alten Instanz)",
     "Zugangsdaten für Instagram/Facebook (neu verbinden)",
+    "Anmeldung an der Nextcloud (neu eintragen, neues Geheimnis)",
     "Benutzerkonten und Passwörter",
 ]
 

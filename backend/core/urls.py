@@ -30,6 +30,8 @@ from members import (
 )
 from members import honorary as honorary_views
 from members import views as member_views
+from oidc import urls as oidc_urls
+from oidc import views as oidc_views
 from organizations import imprint_views, social_views
 from organizations import views as org_views
 from outbox import views as outbox_views
@@ -91,6 +93,7 @@ org_router.register(
     "export-templates", exchange_views.ExportTemplateViewSet, basename="export-template"
 )
 org_router.register("imports", exchange_views.ImportJobViewSet, basename="import")
+org_router.register("nextcloud", oidc_views.ClientViewSet, basename="oidc-client")
 org_router.register(
     "import-templates", exchange_views.ImportTemplateViewSet, basename="import-template"
 )
@@ -632,6 +635,7 @@ urlpatterns = [
         name="public-photo-upload",
     ),
     path("", include(peering_urls)),
+    path("", include(oidc_urls)),
     path("public/card/<str:token>/", card_views.PublicCardView.as_view(), name="public-card"),
     *competition_urls.public_patterns,
     path(
