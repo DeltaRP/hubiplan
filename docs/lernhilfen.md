@@ -14,7 +14,7 @@ angemeldete Bearbeitende, nicht im Mitgliederbereich und nicht auf öffentlichen
 | **?** an Begriffen | an Fachwörtern in Überschriften, Tabellenköpfen und Texten | nur mit eingeschalteten Lernhilfen; einfache Begriffe nur beim ersten Vorkommen pro Seite |
 | **Wie gerechnet?** / **So funktioniert es:** | an berechneten Werten und Abläufen | immer |
 | **Prüfliste** | vor dem Beitragslauf, dem Lastschriftlauf, dem Jahresabschluss, den Jahresbestätigungen für Zuwendungen und dem endgültigen Abschluss eines Wettbewerbs | immer; blockiert nie |
-| **Glossar** | `/glossar`, verlinkt aus „Mein Konto“ und aus jeder „?“-Box | immer |
+| **Glossar** | `/glossar`, verlinkt aus „Mein Konto“, aus jeder „?“-Box und aus der Hilfe (`/hilfe`, [hilfe.md](hilfe.md)) | immer |
 
 Hilfen zu Funktionen, die eine Einheit nicht freigeschaltet hat (Beiträge, Finanzen,
 Termine, Webseite, Wettbewerbe), erscheinen weder an der Stelle noch im Glossar.

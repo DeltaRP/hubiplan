@@ -1,5 +1,5 @@
 // Barrierefreiheit 30.10.2026 (Bericht audit/barrierefreiheit-3010.md): H-01 bis H-13, X-01.
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import axe from 'axe-core'
 import { MemoryRouter } from 'react-router-dom'
@@ -129,8 +129,10 @@ describe('H-03 Seitenwechsel', () => {
     renderApp('/einstellungen/xyz')
     const user = userEvent.setup()
     await screen.findByRole('heading', { level: 1 })
-    const glossar = screen.getByRole('link', { name: /Hilfe & Glossar/ })
-    await user.click(glossar)
+    const hilfe = within(screen.getByRole('navigation', { name: 'Module' })).getByRole('link', {
+      name: 'Hilfe',
+    })
+    await user.click(hilfe)
     await waitFor(() => expect(document.activeElement?.tagName).toBe('H1'))
     expect(document.activeElement).toHaveAttribute('tabindex', '-1')
   })
