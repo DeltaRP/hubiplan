@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { ACCOUNT_SECTIONS, isAccountPath } from '../pages/settings/accountNav.ts'
+import { t } from '../i18n/index.ts'
 
 export function AccountMenu() {
   const [open, setOpen] = useState(false)
@@ -38,10 +39,10 @@ export function AccountMenu() {
         aria-controls="konto-menue"
         onClick={() => setOpen((o) => !o)}
       >
-        Mein Konto <span aria-hidden="true">▾</span>
+        {t('Mein Konto')} <span aria-hidden="true">▾</span>
       </button>
       {open && (
-        <nav id="konto-menue" className="account-menu-list" aria-label="Mein Konto">
+        <nav id="konto-menue" className="account-menu-list" aria-label={t('Mein Konto')}>
           <ul>
             {ACCOUNT_SECTIONS.map((s) => (
               <li key={s.to}>

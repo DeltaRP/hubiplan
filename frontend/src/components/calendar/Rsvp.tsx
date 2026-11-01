@@ -13,12 +13,13 @@ import { Alert, Field } from '../ui.tsx'
 import { berlin, formatDay } from './time.ts'
 import { confirmDialog } from '../dialog.ts'
 import { useTerms } from '../../org/terms.ts'
+import { t } from '../../i18n/index.ts'
 
-const STATUS_LABEL: Record<ResponseStatus, string> = { yes: 'Zusage', no: 'Absage' }
+const STATUS_LABEL: Record<ResponseStatus, string> = { yes: t('Zusage'), no: t('Absage') }
 
 function deadlineText(iso: string): string {
   const d = berlin(iso)
-  return `${formatDay(d.date)}, ${d.time} Uhr`
+  return t('{x}, {time} Uhr', { x: formatDay(d.date), time: d.time })
 }
 
 /** Kennzeichen in Listen: eigene Rückmeldung oder „Rückmeldung offen“. */
@@ -26,7 +27,8 @@ export function RsvpBadge({ o }: { o: Occurrence }) {
   if (!o.rsvp_enabled || o.is_cancelled) return null
   if (o.my_response === 'yes') return <span className="badge badge-yes">zugesagt</span>
   if (o.my_response === 'no') return <span className="badge">abgesagt</span>
-  if (o.my_response === null) return <span className="badge badge-open">Rückmeldung offen</span>
+  if (o.my_response === null)
+    return <span className="badge badge-open">{t('Rückmeldung offen')}</span>
   return null
 }
 
@@ -70,26 +72,34 @@ export function MyResponsePanel({
 
   return (
     <div className="subcard stack-sm rsvp-panel">
-      <strong>Ihre Rückmeldung</strong>
+      <strong>{t('Ihre Rückmeldung')}</strong>
       {mine ? (
         <p>
           <span className={mine.status === 'yes' ? 'badge badge-yes' : 'badge'}>
             {STATUS_LABEL[mine.status]}
           </span>
-          {mine.guests > 0 && ` mit ${mine.guests} Begleitperson${mine.guests > 1 ? 'en' : ''}`}
+          {mine.guests > 0 &&
+            t(' mit {guests} Begleitperson{x}', {
+              guests: mine.guests,
+              x: mine.guests > 1 ? 'en' : '',
+            })}
           {mine.source === 'board' && (
             <span className="muted small"> (vom Vorstand eingetragen)</span>
           )}
         </p>
       ) : (
-        <p className="muted">Sie haben sich noch nicht zurückgemeldet.</p>
+        <p className="muted">{t('Sie haben sich noch nicht zurückgemeldet.')}</p>
       )}
       {info.deadline && (
-        <p className="muted small">Anmeldeschluss: {deadlineText(info.deadline)}</p>
+        <p className="muted small">
+          {t('Anmeldeschluss:')} {deadlineText(info.deadline)}
+        </p>
       )}
       {info.free !== undefined && (
         <p className="muted small">
-          {info.free > 0 ? `Noch ${info.free} Plätze frei.` : 'Alle Plätze sind vergeben.'}
+          {info.free > 0
+            ? t('Noch {free} Plätze frei.', { free: info.free })
+            : t('Alle Plätze sind vergeben.')}
         </p>
       )}
       {error && <Alert kind="error">{error}</Alert>}
@@ -98,7 +108,7 @@ export function MyResponsePanel({
           <div className="grid-2">
             {info.guests_allowed && (
               <Field
-                label="Begleitpersonen"
+                label={t('Begleitpersonen')}
                 type="number"
                 min={0}
                 max={info.max_guests}
@@ -107,7 +117,7 @@ export function MyResponsePanel({
               />
             )}
             <Field
-              label="Bemerkung (optional)"
+              label={t('Bemerkung (optional)')}
               value={note}
               maxLength={200}
               onChange={(e) => setNote(e.target.value)}
@@ -120,7 +130,7 @@ export function MyResponsePanel({
               disabled={busy}
               onClick={() => void send('yes')}
             >
-              Zusagen
+              {t('Zusagen')}
             </button>
             <button
               type="button"
@@ -128,7 +138,7 @@ export function MyResponsePanel({
               disabled={busy}
               onClick={() => void send('no')}
             >
-              Absagen
+              {t('Absagen')}
             </button>
             {mine && (
               <button
@@ -137,7 +147,7 @@ export function MyResponsePanel({
                 disabled={busy}
                 onClick={() => void run(() => eventApi.withdraw(base, event.id))}
               >
-                Rückmeldung zurücknehmen
+                {t('Rückmeldung zurücknehmen')}
               </button>
             )}
           </div>
@@ -178,8 +188,8 @@ export function ResponsesPanel({ base, event }: { base: CalendarBase; event: Eve
   async function remove(row: ResponseRow) {
     if (
       !(await confirmDialog({
-        title: `Rückmeldung von ${row.name} entfernen?`,
-        confirmLabel: 'Entfernen',
+        title: t('Rückmeldung von {name} entfernen?', { name: row.name }),
+        confirmLabel: t('Entfernen'),
       }))
     )
       return
@@ -198,19 +208,22 @@ export function ResponsesPanel({ base, event }: { base: CalendarBase; event: Eve
   }, [data, filter])
 
   if (error) return <Alert kind="error">{error}</Alert>
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
   const s = data.summary
   return (
     <div className="stack-sm responses">
       <div className="responses-head">
-        <strong>Rückmeldungen{data.scope === 'department' ? ' deiner Zugmitglieder' : ''}</strong>
+        <strong>
+          {t('Rückmeldungen')}
+          {data.scope === 'department' ? t(' deiner Zugmitglieder') : ''}
+        </strong>
         <span className="button-row">
           <a
             className="button button-ghost"
             href={eventApi.exportUrl(base, event.id, 'xlsx')}
             download
           >
-            Excel
+            {t('Excel')}
           </a>
           <a
             className="button button-ghost"
@@ -223,10 +236,14 @@ export function ResponsesPanel({ base, event }: { base: CalendarBase; event: Eve
         </span>
       </div>
       <p className="small">
-        {s.yes} Zusagen
-        {s.guests > 0 && ` + ${s.guests} Begleitpersonen = ${s.persons} Personen`}
-        {data.capacity ? ` (höchstens ${data.capacity})` : ''} · {s.no} Absagen · {s.open} noch
-        offen
+        {s.yes} {t('Zusagen')}
+        {s.guests > 0 &&
+          t(' + {guests} Begleitpersonen = {persons} Personen', {
+            guests: s.guests,
+            persons: s.persons,
+          })}
+        {data.capacity ? ` (höchstens ${data.capacity})` : ''}{' '}
+        {t('· {no} Absagen · {open} noch offen', { no: s.no, open: s.open })}
       </p>
       {message && <Alert kind={message.kind}>{message.text}</Alert>}
       {data.items.length > 0 && (
@@ -234,10 +251,10 @@ export function ResponsesPanel({ base, event }: { base: CalendarBase; event: Eve
           <table className="table">
             <thead>
               <tr>
-                <th>Name</th>
+                <th>{t('Name')}</th>
                 <th>{tm.sg}</th>
-                <th>Rückmeldung</th>
-                <th>Bemerkung</th>
+                <th>{t('Rückmeldung')}</th>
+                <th>{t('Bemerkung')}</th>
                 {canEnter && <th />}
               </tr>
             </thead>
@@ -248,7 +265,7 @@ export function ResponsesPanel({ base, event }: { base: CalendarBase; event: Eve
                   <td>{r.departments}</td>
                   <td>
                     {r.status && STATUS_LABEL[r.status]}
-                    {r.guests > 0 && ` + ${r.guests}`}
+                    {r.guests > 0 && t(' + {guests}', { guests: r.guests })}
                     {r.source === 'board' && <span className="muted small"> (Vorstand)</span>}
                   </td>
                   <td>{r.note}</td>
@@ -268,11 +285,11 @@ export function ResponsesPanel({ base, event }: { base: CalendarBase; event: Eve
       {data.open.length > 0 && (
         <details className="responses-open">
           <summary>
-            Noch keine Rückmeldung ({data.open.length})
-            {canEnter && ' – hier für Mitglieder ohne Zugang eintragen'}
+            {t('Noch keine Rückmeldung ({n})', { n: data.open.length })}
+            {canEnter && t(' – hier für Mitglieder ohne Zugang eintragen')}
           </summary>
           <Field
-            label="Mitglied suchen"
+            label={t('Mitglied suchen')}
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
           />
@@ -288,18 +305,18 @@ export function ResponsesPanel({ base, event }: { base: CalendarBase; event: Eve
                     <button
                       type="button"
                       className="link-button"
-                      aria-label={`Zusage für ${r.name} eintragen`}
+                      aria-label={t('Zusage für {name} eintragen', { name: r.name })}
                       onClick={() => void enter(r.membership_id, 'yes')}
                     >
-                      Zusage
+                      {t('Zusage')}
                     </button>
                     <button
                       type="button"
                       className="link-button"
-                      aria-label={`Absage für ${r.name} eintragen`}
+                      aria-label={t('Absage für {name} eintragen', { name: r.name })}
                       onClick={() => void enter(r.membership_id, 'no')}
                     >
-                      Absage
+                      {t('Absage')}
                     </button>
                   </span>
                 )}
@@ -307,7 +324,9 @@ export function ResponsesPanel({ base, event }: { base: CalendarBase; event: Eve
             ))}
           </ul>
           {open.length > 200 && (
-            <p className="muted small">Weitere {open.length - 200} – bitte die Suche nutzen.</p>
+            <p className="muted small">
+              {t('Weitere')} {open.length - 200} {t('– bitte die Suche nutzen.')}
+            </p>
           )}
         </details>
       )}
@@ -337,21 +356,20 @@ export function FeedPanel({ base }: { base: CalendarBase }) {
   async function copy(url: string) {
     try {
       await navigator.clipboard.writeText(url)
-      setMessage({ kind: 'success', text: 'Link kopiert.' })
+      setMessage({ kind: 'success', text: t('Link kopiert.') })
     } catch {
-      setMessage({ kind: 'error', text: 'Kopieren ging nicht. Bitte den Link markieren.' })
+      setMessage({ kind: 'error', text: t('Kopieren ging nicht. Bitte den Link markieren.') })
     }
   }
 
   if (error) return <Alert kind="error">{error}</Alert>
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
   return (
     <div className="card card-wide stack">
       <p className="muted small">
-        Mit diesem persönlichen Link erscheinen Ihre Termine im Kalender von Handy oder Outlook
-        („Kalender abonnieren“ bzw. „Kalender aus dem Internet hinzufügen“). Der Link ist nur für
-        Sie. Geben Sie ihn nicht weiter. Sie können ihn jederzeit erneuern, dann gilt der alte nicht
-        mehr.
+        {t(
+          'Mit diesem persönlichen Link erscheinen Ihre Termine im Kalender von Handy oder Outlook („Kalender abonnieren“ bzw. „Kalender aus dem Internet hinzufügen“). Der Link ist nur für Sie. Geben Sie ihn nicht weiter. Sie können ihn jederzeit erneuern, dann gilt der alte nicht mehr.',
+        )}
       </p>
       {message && <Alert kind={message.kind}>{message.text}</Alert>}
       {data.ics_url ? (
@@ -363,7 +381,7 @@ export function FeedPanel({ base }: { base: CalendarBase }) {
               className="button button-ghost"
               onClick={() => copy(data.ics_url!)}
             >
-              Link kopieren
+              {t('Link kopieren')}
             </button>
           </div>
           <div className="button-row">
@@ -374,25 +392,27 @@ export function FeedPanel({ base }: { base: CalendarBase }) {
               onClick={async () => {
                 if (
                   await confirmDialog({
-                    title: 'Neuen Link erstellen?',
-                    message: 'Der alte Link gilt dann nicht mehr.',
-                    confirmLabel: 'Neuen Link erstellen',
+                    title: t('Neuen Link erstellen?'),
+                    message: t('Der alte Link gilt dann nicht mehr.'),
+                    confirmLabel: t('Neuen Link erstellen'),
                     danger: false,
                   })
                 ) {
-                  void run(() => eventApi.renewFeed(base), 'Neuer Link erstellt.')
+                  void run(() => eventApi.renewFeed(base), t('Neuer Link erstellt.'))
                 }
               }}
             >
-              Neuen Link erstellen
+              {t('Neuen Link erstellen')}
             </button>
             <button
               type="button"
               className="button button-ghost"
               disabled={busy}
-              onClick={() => void run(() => eventApi.removeFeed(base), 'Das Abo ist abgeschaltet.')}
+              onClick={() =>
+                void run(() => eventApi.removeFeed(base), t('Das Abo ist abgeschaltet.'))
+              }
             >
-              Abo abschalten
+              {t('Abo abschalten')}
             </button>
           </div>
         </>
@@ -401,9 +421,9 @@ export function FeedPanel({ base }: { base: CalendarBase }) {
           type="button"
           className="button button-primary"
           disabled={busy}
-          onClick={() => void run(() => eventApi.renewFeed(base), 'Ihr Link ist bereit.')}
+          onClick={() => void run(() => eventApi.renewFeed(base), t('Ihr Link ist bereit.'))}
         >
-          Persönlichen Link erstellen
+          {t('Persönlichen Link erstellen')}
         </button>
       )}
     </div>

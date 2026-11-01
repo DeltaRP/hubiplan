@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { memberApi } from '../api/members.ts'
 import type { MemberRow, PickedMember } from '../api/members.ts'
+import { t } from '../i18n/index.ts'
 
 /** Mitglied per Suche auswählen (auch bei vielen Mitgliedern schnell).
  *  `search` ersetzt die Suche in der Mitgliederliste, z. B. für Untereinheiten. */
@@ -8,7 +9,7 @@ export function MemberPicker<T extends PickedMember = MemberRow>({
   orgId,
   value,
   onChange,
-  label = 'Mitglied (optional)',
+  label = t('Mitglied (optional)'),
   search,
 }: {
   orgId: number
@@ -50,15 +51,15 @@ export function MemberPicker<T extends PickedMember = MemberRow>({
   const current = !short && results?.term === term ? results.rows : null
   const status = short
     ? term.trim()
-      ? 'Mindestens 2 Zeichen eingeben.'
+      ? t('Mindestens 2 Zeichen eingeben.')
       : ''
     : failed === term
-      ? 'Suche nicht möglich.'
+      ? t('Suche nicht möglich.')
       : !current
-        ? 'Suche läuft …'
+        ? t('Suche läuft …')
         : current.length === 0
-          ? 'Keine Mitglieder gefunden.'
-          : `${current.length} Treffer`
+          ? t('Keine Mitglieder gefunden.')
+          : t('{n} Treffer', { n: current.length })
 
   if (value) {
     return (
@@ -80,7 +81,7 @@ export function MemberPicker<T extends PickedMember = MemberRow>({
       <input
         type="search"
         aria-label={label}
-        placeholder="Name eingeben …"
+        placeholder={t('Name eingeben …')}
         value={term}
         onChange={(e) => setTerm(e.target.value)}
       />
@@ -90,7 +91,7 @@ export function MemberPicker<T extends PickedMember = MemberRow>({
           <>
             {' '}
             <button type="button" className="link-button" onClick={() => setAttempt((n) => n + 1)}>
-              Erneut versuchen
+              {t('Erneut versuchen')}
             </button>
           </>
         )}

@@ -23,6 +23,7 @@ function ImprintHint({ org }: { org: OrgSummary }) {
   return data ? <ImprintMissing missing={data.missing} /> : null
 }
 import { PortalTasks } from './portal/PortalPage.tsx'
+import { t } from '../i18n/index.ts'
 
 /** Rechte, mit denen es offene Aufgaben geben kann (Entscheidungen) */
 const TASK_PERMS = [PERM.membersEdit, PERM.photosManage, PERM.eventsManage]
@@ -45,10 +46,12 @@ export function HomePage() {
           <div className="card tile">
             <h2>{activeDept.label}</h2>
             <p>
-              <Link to="/abteilung">Mitglieder der {activeDept.label} ansehen</Link>
+              <Link to="/abteilung">
+                {t('Mitglieder der {label} ansehen', { label: activeDept.label })}
+              </Link>
             </p>
             <p>
-              <Link to="/briefvorlage">Briefvorlage erstellen</Link>
+              <Link to="/briefvorlage">{t('Briefvorlage erstellen')}</Link>
             </p>
           </div>
           {activeDept.events_enabled && <UpcomingTile base={calendarBase.dept(activeDept.id)} />}
@@ -60,7 +63,9 @@ export function HomePage() {
   if (!active && activePortal) {
     return (
       <section>
-        <h1>Hallo {activePortal.first_name}</h1>
+        <h1>
+          {t('Hallo')} {activePortal.first_name}
+        </h1>
         <PortalTasks entry={activePortal} />
         {activePortal.events_enabled && (
           <div className="tiles">
@@ -74,12 +79,18 @@ export function HomePage() {
   if (!active) {
     return (
       <section>
-        <h1>Willkommen</h1>
+        <h1>{t('Willkommen')}</h1>
         <div className="card">
-          <p>Deinem Konto ({user?.email}) ist noch keine Organisation zugeordnet.</p>
+          <p>
+            {t('Deinem Konto ({email}) ist noch keine Organisation zugeordnet.', {
+              email: user?.email,
+            })}
+          </p>
           <p className="muted small">
-            Bitte wende dich an deinen Vorstand. Dein Konto und die Zwei-Faktor-Anmeldung kannst du
-            unter <Link to="/mein-konto/anmeldung">Mein Konto › Anmeldung &amp; Sicherheit</Link>{' '}
+            {t(
+              'Bitte wende dich an deinen Vorstand. Dein Konto und die Zwei-Faktor-Anmeldung kannst du unter',
+            )}{' '}
+            <Link to="/mein-konto/anmeldung">{t('Mein Konto › Anmeldung & Sicherheit')}</Link>{' '}
             verwalten.
           </p>
         </div>
@@ -107,8 +118,8 @@ export function HomePage() {
         ) : (
           !active.modules.includes('events') && (
             <div className="card tile">
-              <h2>Übersicht</h2>
-              <p className="muted">Hier erscheinen Kacheln der Module.</p>
+              <h2>{t('Übersicht')}</h2>
+              <p className="muted">{t('Hier erscheinen Kacheln der Module.')}</p>
             </div>
           )
         )}

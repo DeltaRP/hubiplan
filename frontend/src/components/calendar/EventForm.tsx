@@ -15,6 +15,7 @@ import { Alert, Checkbox, Field, SaveStatus, SelectField } from '../ui.tsx'
 import { addDays, berlin, toApi } from './time.ts'
 import { confirmDialog } from '../dialog.ts'
 import { Why } from '../../learning/Aids.tsx'
+import { t } from '../../i18n/index.ts'
 
 /** Prüft vor dem Schließen des Dialogs, ob Eingaben verloren gingen; false = offen lassen. */
 export type CloseGuard = () => Promise<boolean>
@@ -149,9 +150,9 @@ function toInput(v: Values): EventInput {
 
 const INTERVAL_UNIT: Record<Repeat, string> = {
   none: '',
-  weekly: 'Wochen',
-  monthly: 'Monate',
-  yearly: 'Jahre',
+  weekly: t('Wochen'),
+  monthly: t('Monate'),
+  yearly: t('Jahre'),
 }
 
 export function EventForm({
@@ -212,19 +213,20 @@ export function EventForm({
       if (event) {
         if (await auto.flush()) return true
         return confirmDialog({
-          title: 'Änderungen nicht gespeichert',
-          message:
+          title: t('Änderungen nicht gespeichert'),
+          message: t(
             'Die letzten Änderungen am Termin konnten nicht gespeichert werden. Trotzdem schließen und sie verwerfen?',
-          confirmLabel: 'Verwerfen und schließen',
-          cancelLabel: 'Weiter bearbeiten',
+          ),
+          confirmLabel: t('Verwerfen und schließen'),
+          cancelLabel: t('Weiter bearbeiten'),
         })
       }
       if (JSON.stringify(valuesRef.current) === pristine.current) return true
       return confirmDialog({
-        title: 'Entwurf verwerfen?',
-        message: 'Deine Eingaben für den neuen Termin gehen dann verloren.',
-        confirmLabel: 'Verwerfen',
-        cancelLabel: 'Weiter bearbeiten',
+        title: t('Entwurf verwerfen?'),
+        message: t('Deine Eingaben für den neuen Termin gehen dann verloren.'),
+        confirmLabel: t('Verwerfen'),
+        cancelLabel: t('Weiter bearbeiten'),
       })
     }
     return () => {
@@ -238,14 +240,14 @@ export function EventForm({
     if (!(await auto.flush())) {
       form.setMessage({
         kind: 'error',
-        text: 'Vor dem Versenden müssen alle Änderungen gespeichert sein.',
+        text: t('Vor dem Versenden müssen alle Änderungen gespeichert sein.'),
       })
       setMailBusy(false)
       return
     }
     await form.submit(
       () => eventApi.notify(base, event.id, v.is_cancelled ? 'cancel' : 'change'),
-      'Die E-Mails werden verschickt.',
+      t('Die E-Mails werden verschickt.'),
     )
     setMailBusy(false)
   }
@@ -259,19 +261,19 @@ export function EventForm({
     }
     const saved = await form.submit(
       () => eventApi.create(base, toInput(v)),
-      'Der Termin wurde angelegt.',
+      t('Der Termin wurde angelegt.'),
     )
     if (saved) onSaved(saved as EventDetail)
   }
 
   return (
-    <form onSubmit={submit} className="stack event-form" aria-label="Termin">
+    <form onSubmit={submit} className="stack event-form" aria-label={t('Termin')}>
       {event && <SaveStatus auto={auto} />}
       {form.message && (event || form.message.kind === 'error') && (
         <Alert kind={form.message.kind}>{form.message.text}</Alert>
       )}
       <Field
-        label="Titel"
+        label={t('Titel')}
         value={v.title}
         required
         maxLength={200}
@@ -280,12 +282,12 @@ export function EventForm({
       />
       <div className="grid-2">
         <SelectField
-          label="Kategorie"
+          label={t('Kategorie')}
           value={v.category}
           error={errors.category}
           onChange={(e) => set('category', e.target.value)}
         >
-          <option value="">ohne Kategorie</option>
+          <option value="">{t('ohne Kategorie')}</option>
           {choosable.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
@@ -293,15 +295,15 @@ export function EventForm({
           ))}
         </SelectField>
         <SelectField
-          label="Wer sieht den Termin?"
+          label={t('Wer sieht den Termin?')}
           value={v.visibility}
           error={errors.visibility}
           hint={
             v.visibility === 'public'
-              ? 'Auch ohne Anmeldung, z. B. auf der Webseite.'
+              ? t('Auch ohne Anmeldung, z. B. auf der Webseite.')
               : v.visibility === 'board'
-                ? 'Nur Vorstandsrollen dieser Ebene.'
-                : 'Alle Mitglieder dieser Ebene.'
+                ? t('Nur Vorstandsrollen dieser Ebene.')
+                : t('Alle Mitglieder dieser Ebene.')
           }
           onChange={(e) => set('visibility', e.target.value as Visibility)}
         >
@@ -321,19 +323,19 @@ export function EventForm({
             return (
               <SelectField
                 key={dir}
-                label={dir === 'up' ? 'Nach oben weitergeben' : 'Nach unten weitergeben'}
+                label={dir === 'up' ? t('Nach oben weitergeben') : t('Nach unten weitergeben')}
                 value={v[key]}
                 hint={
                   dir === 'up'
-                    ? 'Erscheint im Kalender der übergeordneten Einheit.'
-                    : 'Erscheint bei den Untereinheiten und ihren Mitgliedern.'
+                    ? t('Erscheint im Kalender der übergeordneten Einheit.')
+                    : t('Erscheint bei den Untereinheiten und ihren Mitgliedern.')
                 }
                 onChange={(e) => set(key, e.target.value as Share)}
               >
                 <option value="">
                   {preset === undefined
-                    ? 'wie voreingestellt'
-                    : `wie voreingestellt (${preset ? 'ja' : 'nein'})`}
+                    ? t('wie voreingestellt')
+                    : t('wie voreingestellt ({x})', { x: preset ? 'ja' : 'nein' })}
                 </option>
                 <option value="yes">ja</option>
                 <option value="no">nein</option>
@@ -342,10 +344,10 @@ export function EventForm({
           })}
         </div>
       )}
-      <Checkbox label="ganztägig" checked={v.all_day} onChange={(x) => set('all_day', x)} />
+      <Checkbox label={t('ganztägig')} checked={v.all_day} onChange={(x) => set('all_day', x)} />
       <div className="grid-2">
         <Field
-          label={v.all_day ? 'Erster Tag' : 'Beginn (Datum)'}
+          label={v.all_day ? t('Erster Tag') : t('Beginn (Datum)')}
           type="date"
           required
           value={v.start_date}
@@ -354,7 +356,7 @@ export function EventForm({
         />
         {!v.all_day && (
           <Field
-            label="Beginn (Uhrzeit)"
+            label={t('Beginn (Uhrzeit)')}
             type="time"
             required
             value={v.start_time}
@@ -362,7 +364,7 @@ export function EventForm({
           />
         )}
         <Field
-          label={v.all_day ? 'Letzter Tag' : 'Ende (Datum)'}
+          label={v.all_day ? t('Letzter Tag') : t('Ende (Datum)')}
           type="date"
           required
           min={v.start_date}
@@ -375,7 +377,7 @@ export function EventForm({
         />
         {!v.all_day && (
           <Field
-            label="Ende (Uhrzeit)"
+            label={t('Ende (Uhrzeit)')}
             type="time"
             required
             value={v.end_time}
@@ -385,15 +387,15 @@ export function EventForm({
       </div>
       <div className="grid-2">
         <Field
-          label="Ort"
+          label={t('Ort')}
           value={v.location}
           maxLength={200}
-          placeholder="z. B. Vereinsheim"
+          placeholder={t('z. B. Vereinsheim')}
           error={errors.location}
           onChange={(e) => set('location', e.target.value)}
         />
         <Field
-          label="Anschrift"
+          label={t('Anschrift')}
           value={v.address}
           maxLength={300}
           error={errors.address}
@@ -401,7 +403,7 @@ export function EventForm({
         />
       </div>
       <label className="field">
-        <span>Beschreibung</span>
+        <span>{t('Beschreibung')}</span>
         <textarea
           rows={4}
           value={v.description}
@@ -411,7 +413,7 @@ export function EventForm({
       </label>
       <div className="grid-3">
         <SelectField
-          label="Wiederholung"
+          label={t('Wiederholung')}
           value={v.repeat}
           error={errors.repeat}
           onChange={(e) => set('repeat', e.target.value as Repeat)}
@@ -425,7 +427,7 @@ export function EventForm({
         {v.repeat !== 'none' && (
           <>
             <Field
-              label={`alle … ${INTERVAL_UNIT[v.repeat]}`}
+              label={t('alle … {x}', { x: INTERVAL_UNIT[v.repeat] })}
               type="number"
               min={1}
               max={52}
@@ -434,7 +436,7 @@ export function EventForm({
               onChange={(e) => set('repeat_interval', e.target.value)}
             />
             <Field
-              label="wiederholen bis (optional)"
+              label={t('wiederholen bis (optional)')}
               type="date"
               min={addDays(v.start_date, 1)}
               value={v.repeat_until}
@@ -446,9 +448,9 @@ export function EventForm({
       </div>
       {rsvpAllowed && v.repeat === 'none' && v.visibility !== 'board' && (
         <fieldset className="subcard stack-sm">
-          <legend>Zu- und Absagen</legend>
+          <legend>{t('Zu- und Absagen')}</legend>
           <Checkbox
-            label="Mitglieder können zu- oder absagen"
+            label={t('Mitglieder können zu- oder absagen')}
             checked={v.rsvp_enabled}
             onChange={(x) => set('rsvp_enabled', x)}
           />
@@ -457,7 +459,7 @@ export function EventForm({
             <>
               <div className="grid-3">
                 <Field
-                  label="Anmeldeschluss (optional)"
+                  label={t('Anmeldeschluss (optional)')}
                   type="date"
                   max={v.start_date}
                   value={v.rsvp_deadline_date}
@@ -466,14 +468,14 @@ export function EventForm({
                 />
                 {v.rsvp_deadline_date && (
                   <Field
-                    label="Uhrzeit"
+                    label={t('Uhrzeit')}
                     type="time"
                     value={v.rsvp_deadline_time}
                     onChange={(e) => set('rsvp_deadline_time', e.target.value)}
                   />
                 )}
                 <Field
-                  label="Höchstzahl Personen (optional)"
+                  label={t('Höchstzahl Personen (optional)')}
                   type="number"
                   min={1}
                   value={v.rsvp_capacity}
@@ -482,7 +484,7 @@ export function EventForm({
                 />
               </div>
               <Checkbox
-                label="Begleitpersonen erlaubt"
+                label={t('Begleitpersonen erlaubt')}
                 checked={v.rsvp_guests}
                 onChange={(x) => set('rsvp_guests', x)}
               />
@@ -492,17 +494,17 @@ export function EventForm({
       )}
       {rsvpAllowed && v.visibility !== 'board' && (
         <fieldset className="subcard stack-sm">
-          <legend>E-Mail</legend>
+          <legend>{t('E-Mail')}</legend>
           {v.repeat === 'none' && (
             <div className="grid-3">
               <Checkbox
-                label="Erinnerung per E-Mail"
+                label={t('Erinnerung per E-Mail')}
                 checked={v.remind}
                 onChange={(x) => set('remind', x)}
               />
               {v.remind && (
                 <Field
-                  label="Tage vorher"
+                  label={t('Tage vorher')}
                   type="number"
                   min={1}
                   max={60}
@@ -514,7 +516,7 @@ export function EventForm({
             </div>
           )}
           {v.remind && v.rsvp_enabled && v.repeat === 'none' && (
-            <p className="muted small">Die Erinnerung geht an alle, die zugesagt haben.</p>
+            <p className="muted small">{t('Die Erinnerung geht an alle, die zugesagt haben.')}</p>
           )}
           {event ? (
             <div>
@@ -525,17 +527,18 @@ export function EventForm({
                 onClick={() => void sendMail()}
               >
                 {v.is_cancelled
-                  ? 'Absage per E-Mail an Eingeladene schicken'
-                  : 'Änderung per E-Mail an Eingeladene schicken'}
+                  ? t('Absage per E-Mail an Eingeladene schicken')
+                  : t('Änderung per E-Mail an Eingeladene schicken')}
               </button>
               <p className="muted small">
-                Änderungen werden ohne E-Mail gespeichert. Hat sich Zeit oder Ort geändert oder ist
-                der Termin abgesagt, informierst du die Eingeladenen hiermit.
+                {t(
+                  'Änderungen werden ohne E-Mail gespeichert. Hat sich Zeit oder Ort geändert oder ist der Termin abgesagt, informierst du die Eingeladenen hiermit.',
+                )}
               </p>
             </div>
           ) : (
             <Checkbox
-              label="Einladung per E-Mail an alle Eingeladenen schicken"
+              label={t('Einladung per E-Mail an alle Eingeladenen schicken')}
               checked={v.notify}
               onChange={(x) => set('notify', x)}
             />
@@ -545,13 +548,13 @@ export function EventForm({
       {event && (
         <>
           <Checkbox
-            label={event.repeat !== 'none' ? 'ganze Serie abgesagt' : 'Termin abgesagt'}
+            label={event.repeat !== 'none' ? t('ganze Serie abgesagt') : t('Termin abgesagt')}
             checked={v.is_cancelled}
             onChange={(x) => set('is_cancelled', x)}
           />
           {v.is_cancelled && (
             <Field
-              label="Hinweis zur Absage"
+              label={t('Hinweis zur Absage')}
               value={v.cancel_note}
               maxLength={300}
               onChange={(e) => set('cancel_note', e.target.value)}
@@ -565,7 +568,7 @@ export function EventForm({
           className={event ? 'button button-ghost' : 'button button-primary'}
           disabled={form.busy}
         >
-          {event ? 'Schließen' : 'Termin anlegen'}
+          {event ? t('Schließen') : t('Termin anlegen')}
         </button>
         {!event && (
           <button
@@ -577,7 +580,7 @@ export function EventForm({
               if (ok) onCancel()
             }}
           >
-            Abbrechen
+            {t('Abbrechen')}
           </button>
         )}
       </div>

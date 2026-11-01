@@ -7,6 +7,7 @@ import type { CalendarBase, EventDetail } from '../../api/events.ts'
 import { financeApi } from '../../api/finance.ts'
 import { errorMessage, useLoad } from '../forms.ts'
 import { Alert } from '../ui.tsx'
+import { t } from '../../i18n/index.ts'
 
 export function EventProjectPanel({
   base,
@@ -43,10 +44,10 @@ export function EventProjectPanel({
 
   return (
     <div className="stack-sm">
-      <strong>Veranstaltungsfinanzen</strong>
+      <strong>{t('Veranstaltungsfinanzen')}</strong>
       {event.project ? (
         <p className="small">
-          Einnahmen und Ausgaben stehen bei{' '}
+          {t('Einnahmen und Ausgaben stehen bei')}{' '}
           <Link to={`/finanzen/veranstaltungen/${event.project.id}`}>{event.project.name}</Link>.
           {event.can_link_project && (
             <>
@@ -57,15 +58,16 @@ export function EventProjectPanel({
                 disabled={busy}
                 onClick={() => void run({ project: null })}
               >
-                lösen
+                {t('lösen')}
               </button>
             </>
           )}
         </p>
       ) : (
         <p className="muted small">
-          Keine Veranstaltung zugeordnet. Mehrere Termine (z. B. die Tage eines Festes) können zu
-          einer Veranstaltung mit gemeinsamer Abrechnung gehören.
+          {t(
+            'Keine Veranstaltung zugeordnet. Mehrere Termine (z. B. die Tage eines Festes) können zu einer Veranstaltung mit gemeinsamer Abrechnung gehören.',
+          )}
         </p>
       )}
       {error && <Alert kind="error">{error}</Alert>}
@@ -77,7 +79,7 @@ export function EventProjectPanel({
             disabled={busy}
             onClick={() => void run({ create: true })}
           >
-            Abrechnung für diesen Termin anlegen
+            {t('Abrechnung für diesen Termin anlegen')}
           </button>
           <button
             type="button"
@@ -85,26 +87,26 @@ export function EventProjectPanel({
             disabled={busy}
             onClick={() => setChoosing(true)}
           >
-            Vorhandener Veranstaltung zuordnen
+            {t('Vorhandener Veranstaltung zuordnen')}
           </button>
         </div>
       )}
       {choosing && (
         <div className="button-row">
           {!projects.data ? (
-            <span className="muted small">Lädt …</span>
+            <span className="muted small">{t('Lädt …')}</span>
           ) : projects.data.length === 0 ? (
-            <span className="muted small">Es gibt noch keine Veranstaltung.</span>
+            <span className="muted small">{t('Es gibt noch keine Veranstaltung.')}</span>
           ) : (
             <label className="field">
-              <span>Veranstaltung</span>
+              <span>{t('Veranstaltung')}</span>
               <select
                 defaultValue=""
                 disabled={busy}
                 onChange={(e) => e.target.value && void run({ project: Number(e.target.value) })}
               >
                 <option value="" disabled>
-                  bitte wählen …
+                  {t('bitte wählen …')}
                 </option>
                 {projects.data.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -115,7 +117,7 @@ export function EventProjectPanel({
             </label>
           )}
           <button type="button" className="button button-ghost" onClick={() => setChoosing(false)}>
-            Abbrechen
+            {t('Abbrechen')}
           </button>
         </div>
       )}

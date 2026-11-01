@@ -3,6 +3,7 @@ import { exchangeApi, waitFor } from '../api/exchange.ts'
 import type { ExportJob } from '../api/exchange.ts'
 import { errorMessage, formatDate, useLoad, useUnmountSignal } from './forms.ts'
 import { Alert } from './ui.tsx'
+import { t } from '../i18n/index.ts'
 
 /** Export der aktuell gefilterten Liste als Excel oder PDF. */
 export function ExportPanel({
@@ -83,12 +84,14 @@ export function ExportPanel({
   return (
     <div className="card card-wide export-panel">
       <div className="card-head">
-        <h2>Exportieren</h2>
+        <h2>{t('Exportieren')}</h2>
         <button type="button" className="link-button push-right" onClick={onClose}>
-          schließen
+          {t('schließen')}
         </button>
       </div>
-      <p className="muted small">Exportiert wird die aktuell gefilterte und sortierte Liste.</p>
+      <p className="muted small">
+        {t('Exportiert wird die aktuell gefilterte und sortierte Liste.')}
+      </p>
       {ownTemplates.length > 0 && (
         <div className="chips">
           {ownTemplates.map((tm) => (
@@ -108,7 +111,7 @@ export function ExportPanel({
         </div>
       )}
       <fieldset className="column-picker">
-        <legend className="small">Spalten</legend>
+        <legend className="small">{t('Spalten')}</legend>
         {options.map((c) => (
           <label key={c.key} className="checkbox">
             <input
@@ -122,21 +125,21 @@ export function ExportPanel({
       </fieldset>
       <div className="filters">
         <select
-          aria-label="Format"
+          aria-label={t('Format')}
           value={format}
           onChange={(e) => setFormat(e.target.value as 'xlsx' | 'pdf')}
         >
-          <option value="xlsx">Excel</option>
+          <option value="xlsx">{t('Excel')}</option>
           <option value="pdf">PDF</option>
         </select>
         {format === 'pdf' && (
           <select
-            aria-label="Ausrichtung"
+            aria-label={t('Ausrichtung')}
             value={orientation}
             onChange={(e) => setOrientation(e.target.value as 'portrait' | 'landscape')}
           >
-            <option value="portrait">Hochformat</option>
-            <option value="landscape">Querformat</option>
+            <option value="portrait">{t('Hochformat')}</option>
+            <option value="landscape">{t('Querformat')}</option>
           </select>
         )}
         <button
@@ -145,31 +148,37 @@ export function ExportPanel({
           disabled={busy || chosen.length === 0}
           onClick={() => void start()}
         >
-          {busy ? 'Wird erstellt …' : 'Export erstellen'}
+          {busy ? t('Wird erstellt …') : t('Export erstellen')}
         </button>
       </div>
       <div className="inline-add">
         <input
-          aria-label="Name der Vorlage"
-          placeholder="Als Vorlage speichern, z. B. Geburtstagsliste"
+          aria-label={t('Name der Vorlage')}
+          placeholder={t('Als Vorlage speichern, z. B. Geburtstagsliste')}
           value={templateName}
           onChange={(e) => setTemplateName(e.target.value)}
         />
         <button type="button" className="button button-ghost" onClick={() => void saveTemplate()}>
-          Vorlage speichern
+          {t('Vorlage speichern')}
         </button>
       </div>
       {error && <Alert kind="error">{error}</Alert>}
       {job?.status === 'done' && (
         <Alert kind="success">
-          Fertig: {job.row_count} Einträge.{' '}
+          {t('Fertig: {row_count} Einträge.', { row_count: job.row_count })}{' '}
           <a href={exchangeApi.downloadUrl(orgId, job.id)}>{job.file_name} herunterladen</a>
           {job.keep_until && ` (bis ${formatDate(job.keep_until.slice(0, 10))}, danach gelöscht)`}
         </Alert>
       )}
-      {job?.status === 'failed' && <Alert kind="error">Export fehlgeschlagen: {job.error}</Alert>}
+      {job?.status === 'failed' && (
+        <Alert kind="error">
+          {t('Export fehlgeschlagen:')} {job.error}
+        </Alert>
+      )}
       {job && ['pending', 'running'].includes(job.status) && (
-        <Alert kind="info">Der Export läuft noch im Hintergrund. Bitte später erneut öffnen.</Alert>
+        <Alert kind="info">
+          {t('Der Export läuft noch im Hintergrund. Bitte später erneut öffnen.')}
+        </Alert>
       )}
     </div>
   )

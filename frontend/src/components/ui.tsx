@@ -4,6 +4,7 @@ import type { ChangeEvent, InputHTMLAttributes, ReactNode, SelectHTMLAttributes 
 import { NavLink } from 'react-router-dom'
 import { useSubNav } from './subnav.ts'
 import type { AutoSave, SaveState } from './forms.ts'
+import { t } from '../i18n/index.ts'
 
 /**
  * Beschriftung, Hinweis und Fehler eines Feldes. Hinweis und Fehler hängen per
@@ -146,7 +147,7 @@ export function Tabs({ items }: { items: { to: string; label: string }[] }) {
   // Im App-Rahmen stehen die Punkte in der Seitenleiste (UX-Audit 31.10. W09)
   if (useSubNav(items)) return null
   return (
-    <nav className="tabs" aria-label="Bereiche">
+    <nav className="tabs" aria-label={t('Bereiche')}>
       {items.map((item) => (
         <NavLink key={item.to} to={item.to} className="tab" end>
           {item.label}
@@ -157,11 +158,11 @@ export function Tabs({ items }: { items: { to: string; label: string }[] }) {
 }
 
 const SAVE_TEXT: Record<SaveState, string> = {
-  idle: 'Änderungen werden automatisch gespeichert.',
-  pending: 'Ungespeicherte Änderungen …',
-  saving: 'Wird gespeichert …',
-  saved: '✓ Gespeichert',
-  error: 'Nicht gespeichert',
+  idle: t('Änderungen werden automatisch gespeichert.'),
+  pending: t('Ungespeicherte Änderungen …'),
+  saving: t('Wird gespeichert …'),
+  saved: t('✓ Gespeichert'),
+  error: t('Nicht gespeichert'),
 }
 
 /** Stand des Autospeicherns oben am Formular. */
@@ -175,17 +176,17 @@ export function SaveStatus(
     <div className={`save-status save-status-${state}`}>
       <p role="status" aria-live="polite">
         {SAVE_TEXT[state]}
-        {state === 'error' && error ? `: ${error}` : ''}
-        {state === 'error' && auto ? ' Deine Eingaben bleiben erhalten.' : ''}
+        {state === 'error' && error ? t(': {error}', { error }) : ''}
+        {state === 'error' && auto ? t(' Deine Eingaben bleiben erhalten.') : ''}
       </p>
       {state === 'error' && auto && (
         <div className="button-row">
           <button type="button" className="button button-ghost" onClick={() => void auto.flush()}>
-            Erneut versuchen
+            {t('Erneut versuchen')}
           </button>
           {auto.discard && (
             <button type="button" className="button button-ghost" onClick={auto.discard}>
-              Änderungen verwerfen
+              {t('Änderungen verwerfen')}
             </button>
           )}
         </div>
@@ -212,14 +213,17 @@ export function Freshness({
   if (error) {
     return (
       <LoadError
-        message={`Aktualisierung fehlgeschlagen (${error}). Angezeigt werden noch die vorherigen Ergebnisse.`}
+        message={t(
+          'Aktualisierung fehlgeschlagen ({error}). Angezeigt werden noch die vorherigen Ergebnisse.',
+          { error },
+        )}
         onRetry={onRetry}
       />
     )
   }
   return (
     <p className="muted small freshness" role="status" aria-live="polite">
-      {refreshing ? 'Ergebnisse werden aktualisiert …' : ''}
+      {refreshing ? t('Ergebnisse werden aktualisiert …') : ''}
     </p>
   )
 }
@@ -232,7 +236,7 @@ export function LoadError({ message, onRetry }: { message: string; onRetry?: () 
         <>
           {' '}
           <button type="button" className="link-button" onClick={onRetry}>
-            Erneut laden
+            {t('Erneut laden')}
           </button>
         </>
       )}

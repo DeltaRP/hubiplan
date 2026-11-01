@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import type { ListQuery, Paged } from '../api/client.ts'
+import { t } from '../i18n/index.ts'
 
 export function ListSearch({
   query,
@@ -26,7 +27,7 @@ export function ListSearch({
   return (
     <form className="list-search" role="search" onSubmit={submit}>
       <label className="field">
-        <span>Suchen</span>
+        <span>{t('Suchen')}</span>
         <input
           type="search"
           value={text}
@@ -45,7 +46,7 @@ export function ListSearch({
       {children}
       <div className="button-row">
         <button type="submit" className="button">
-          Suchen
+          {t('Suchen')}
         </button>
         {filtered && (
           <button
@@ -58,7 +59,7 @@ export function ListSearch({
               onChange({ ...query, q: '', von: '', bis: '', seite: 1 })
             }}
           >
-            Suche zurücksetzen
+            {t('Suche zurücksetzen')}
           </button>
         )}
       </div>
@@ -84,10 +85,10 @@ export function Pager({
         disabled={data.page <= 1}
         onClick={() => onPage(data.page - 1)}
       >
-        Zurück
+        {t('Zurück')}
       </button>
       <span className="small" aria-live="polite">
-        {data.count} {noun} · Seite {data.page} von {Math.max(data.pages, 1)}
+        {data.count} {noun} {t('· Seite {page} von', { page: data.page })} {Math.max(data.pages, 1)}
       </span>
       <button
         type="button"
@@ -95,7 +96,7 @@ export function Pager({
         disabled={data.page >= data.pages}
         onClick={() => onPage(data.page + 1)}
       >
-        Weiter
+        {t('Weiter')}
       </button>
     </div>
   )
@@ -130,7 +131,7 @@ export function RangePager({
         disabled={page <= 1}
         onClick={() => onPage(page - 1)}
       >
-        Zurück
+        {t('Zurück')}
       </button>
       <span className="small" aria-live="polite">
         {from}–{to} von {total} {noun}
@@ -141,7 +142,7 @@ export function RangePager({
         disabled={page >= pages}
         onClick={() => onPage(page + 1)}
       >
-        Weiter
+        {t('Weiter')}
       </button>
     </div>
   )

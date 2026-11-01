@@ -9,7 +9,7 @@ import { useLoad } from './forms.ts'
 const STATUS = [
   ['', 'alle'],
   ['sent', 'versendet'],
-  ['stored', 'nur gespeichert'],
+  ['stored', t('nur gespeichert')],
   ['failed', 'fehlgeschlagen'],
 ] as const
 
@@ -30,9 +30,9 @@ export function OutboxBrowser({
   const searching = !!(query.q || query.von || query.bis || query.status)
   return (
     <>
-      <ListSearch query={query} onChange={setQuery} placeholder="Empfänger oder Betreff">
+      <ListSearch query={query} onChange={setQuery} placeholder={t('Empfänger oder Betreff')}>
         <label className="field">
-          <span>Status</span>
+          <span>{t('Status')}</span>
           <select
             value={query.status ?? ''}
             onChange={(e) => setQuery({ ...query, status: e.target.value, seite: 1 })}
@@ -46,15 +46,19 @@ export function OutboxBrowser({
         </label>
       </ListSearch>
       {error && <Alert kind="error">{error}</Alert>}
-      {!data && !error && <p className="muted">Lädt …</p>}
+      {!data && !error && <p className="muted">{t('Lädt …')}</p>}
       {data &&
         (data.results.length === 0 && searching ? (
-          <p className="muted">Keine passenden Mails.</p>
+          <p className="muted">{t('Keine passenden Mails.')}</p>
         ) : (
           <>
             <OutboxList mails={data.results} attachmentUrl={attachmentUrl} showOrg={showOrg} />
             {data.count > 0 && (
-              <Pager data={data} noun="Mails" onPage={(seite) => setQuery({ ...query, seite })} />
+              <Pager
+                data={data}
+                noun={t('Mails')}
+                onPage={(seite) => setQuery({ ...query, seite })}
+              />
             )}
           </>
         ))}
@@ -62,6 +66,7 @@ export function OutboxBrowser({
   )
 }
 import { formatDateTime } from './forms.ts'
+import { t } from '../i18n/index.ts'
 
 export function OutboxList({
   mails,
@@ -73,7 +78,7 @@ export function OutboxList({
   showOrg?: boolean
 }) {
   const [open, setOpen] = useState<number | null>(null)
-  if (mails.length === 0) return <p className="muted">Noch keine Mails.</p>
+  if (mails.length === 0) return <p className="muted">{t('Noch keine Mails.')}</p>
   return (
     <ul className="audit-list">
       {mails.map((m) => (
@@ -87,9 +92,12 @@ export function OutboxList({
             <strong>{m.subject}</strong>
           </button>
           <div className="muted small">
-            {formatDateTime(m.created_at)} · an {m.to}
-            {showOrg && m.organization_name && ` · ${m.organization_name}`} · {m.status_label}
-            {m.attachments.length > 0 && ` · ${m.attachments.length} Anhang`}
+            {formatDateTime(m.created_at)} {t('· an')} {m.to}
+            {showOrg &&
+              m.organization_name &&
+              t(' · {organization_name}', { organization_name: m.organization_name })}{' '}
+            · {m.status_label}
+            {m.attachments.length > 0 && t(' · {n} Anhang', { n: m.attachments.length })}
           </div>
           {open === m.id && (
             <div className="subcard">

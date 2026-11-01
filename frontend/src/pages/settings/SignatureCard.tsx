@@ -6,6 +6,7 @@ import { confirmDialog } from '../../components/dialog.ts'
 import { errorMessage, formatDateTime, useLoad } from '../../components/forms.ts'
 import { SignatureFullscreen, SignatureImage } from '../../components/SignaturePad.tsx'
 import { Alert } from '../../components/ui.tsx'
+import { t } from '../../i18n/index.ts'
 
 export function SignatureCard() {
   const { data, error, setData } = useLoad(() => signatureApi.get(), [])
@@ -29,7 +30,8 @@ export function SignatureCard() {
   }
 
   async function remove() {
-    if (!(await confirmDialog({ title: 'Unterschrift löschen?', confirmLabel: 'Löschen' }))) return
+    if (!(await confirmDialog({ title: t('Unterschrift löschen?'), confirmLabel: t('Löschen') })))
+      return
     try {
       await signatureApi.remove()
       setData({ signature: null, updated_at: null })
@@ -40,38 +42,40 @@ export function SignatureCard() {
 
   return (
     <div className="card">
-      <h2>Unterschrift</h2>
+      <h2>{t('Unterschrift')}</h2>
       <p className="muted small">
-        Wer Kasse führt, kann hier seine Unterschrift hinterlegen. Sie steht dann bei Quittungen
-        schon im Feld des Kassierers. Verwendet wird sie nur, wenn du selbst eine Quittung
-        abschließt. Gespeichert wird nur die Form der Linien.
+        {t(
+          'Wer Kasse führt, kann hier seine Unterschrift hinterlegen. Sie steht dann bei Quittungen schon im Feld des Kassierers. Verwendet wird sie nur, wenn du selbst eine Quittung abschließt. Gespeichert wird nur die Form der Linien.',
+        )}
       </p>
       {error && <Alert kind="error">{error}</Alert>}
       {message && <Alert kind="error">{message}</Alert>}
       {data?.signature && (
         <>
-          <SignatureImage shape={data.signature} label="Deine hinterlegte Unterschrift" />
+          <SignatureImage shape={data.signature} label={t('Deine hinterlegte Unterschrift')} />
           {data.updated_at && (
-            <p className="muted small">Hinterlegt am {formatDateTime(data.updated_at)}</p>
+            <p className="muted small">
+              {t('Hinterlegt am')} {formatDateTime(data.updated_at)}
+            </p>
           )}
         </>
       )}
       {data && (
         <div className="button-row">
           <button type="button" className="button button-ghost" onClick={() => setDrawing(true)}>
-            {data.signature ? 'Neu unterschreiben' : 'Unterschrift hinterlegen'}
+            {data.signature ? t('Neu unterschreiben') : t('Unterschrift hinterlegen')}
           </button>
           {data.signature && (
             <button type="button" className="button button-ghost" onClick={remove}>
-              Löschen
+              {t('Löschen')}
             </button>
           )}
         </div>
       )}
       {drawing && (
         <SignatureFullscreen
-          title="Deine Unterschrift"
-          text="Bitte unterschreibe so, wie du auf Papier unterschreibst."
+          title={t('Deine Unterschrift')}
+          text={t('Bitte unterschreibe so, wie du auf Papier unterschreibst.')}
           busy={busy}
           error={saveError}
           onCancel={() => {

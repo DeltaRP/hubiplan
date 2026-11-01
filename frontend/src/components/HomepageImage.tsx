@@ -6,6 +6,7 @@ import { errorMessage } from './forms.ts'
 import { useImageCrop } from './ImageCrop.tsx'
 import { RightsHint } from './RightsHint.tsx'
 import { Alert } from './ui.tsx'
+import { t } from '../i18n/index.ts'
 
 /**
  * Vorschaubild der Homepage einer Untereinheit (Ralf 31.10.): HUBIplan holt es einmal
@@ -29,7 +30,7 @@ export function HomepageImage({
   const [busy, setBusy] = useState(false)
   // Antwort von „Neu von der Homepage holen“: warum kein Bild kam
   const [note, setNote] = useState<string | null>(null)
-  const crop = useImageCrop({ title: 'Ausschnitt für das Bild der Homepage', maxSide: 1200 })
+  const crop = useImageCrop({ title: t('Ausschnitt für das Bild der Homepage'), maxSide: 1200 })
   const url = orgApi.departmentHomepageImageUrl(orgId, depId)
 
   async function run(action: () => Promise<unknown>) {
@@ -58,17 +59,17 @@ export function HomepageImage({
   return (
     <div className="logo-upload-box" data-testid="homepage-image">
       <p className="muted small">
-        Bild für die Karte „Homepage“ auf der Webseite.{' '}
+        {t('Bild für die Karte „Homepage“ auf der Webseite.')}{' '}
         {custom
-          ? 'Eigenes Bild.'
+          ? t('Eigenes Bild.')
           : imageUrl
-            ? 'Von der Homepage übernommen.'
-            : 'Noch kein Bild. Hol es von der Homepage oder lade ein eigenes hoch.'}
+            ? t('Von der Homepage übernommen.')
+            : t('Noch kein Bild. Hol es von der Homepage oder lade ein eigenes hoch.')}
       </p>
-      {imageUrl && <img src={imageUrl} alt="Bild der Homepage" className="homepage-preview" />}
+      {imageUrl && <img src={imageUrl} alt={t('Bild der Homepage')} className="homepage-preview" />}
       <div className="button-row">
         <label className="button button-ghost">
-          {custom ? 'Anderes Bild wählen' : 'Eigenes Bild hochladen'}
+          {custom ? t('Anderes Bild wählen') : t('Eigenes Bild hochladen')}
           <input
             type="file"
             accept="image/png,image/jpeg,image/webp"
@@ -91,13 +92,17 @@ export function HomepageImage({
           }
         >
           {busy
-            ? 'Wird geholt …'
+            ? t('Wird geholt …')
             : custom
-              ? 'Eigenes Bild entfernen'
-              : 'Neu von der Homepage holen'}
+              ? t('Eigenes Bild entfernen')
+              : t('Neu von der Homepage holen')}
         </button>
       </div>
-      {note && <Alert kind="info">{note} Du kannst ein eigenes Bild hochladen.</Alert>}
+      {note && (
+        <Alert kind="info">
+          {note} {t('Du kannst ein eigenes Bild hochladen.')}
+        </Alert>
+      )}
       {error && <Alert kind="error">{error}</Alert>}
     </div>
   )

@@ -5,9 +5,10 @@ import type { Area } from 'react-easy-crop'
 import { cropImage, prepareImage } from './photoCrop.ts'
 import { Alert } from './ui.tsx'
 import { RightsHint } from './RightsHint.tsx'
+import { t } from '../i18n/index.ts'
 
 const ASPECTS = [
-  { value: 3 / 4, label: 'Passbild (3:4)' },
+  { value: 3 / 4, label: t('Passbild (3:4)') },
   { value: 1, label: 'quadratisch' },
 ]
 const MAX_FILE = 10 * 1024 * 1024
@@ -20,7 +21,7 @@ export function PhotoEditor({
   onDone,
   onCancel,
   busy = false,
-  submitLabel = 'Übernehmen',
+  submitLabel = t('Übernehmen'),
   children,
 }: {
   onDone: (blob: Blob) => void | Promise<void>
@@ -63,11 +64,11 @@ export function PhotoEditor({
     const mine = ++generation.current
     setError(null)
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      setError('Bitte ein JPEG-, PNG- oder WebP-Bild wählen.')
+      setError(t('Bitte ein JPEG-, PNG- oder WebP-Bild wählen.'))
       return
     }
     if (file.size > MAX_FILE) {
-      setError('Das Bild darf höchstens 10 MB groß sein.')
+      setError(t('Das Bild darf höchstens 10 MB groß sein.'))
       return
     }
     let url: string
@@ -75,7 +76,7 @@ export function PhotoEditor({
       url = await prepareImage(file)
     } catch (err) {
       if (mine === generation.current) {
-        setError(err instanceof Error ? err.message : 'Bild konnte nicht geladen werden.')
+        setError(err instanceof Error ? err.message : t('Bild konnte nicht geladen werden.'))
       }
       return
     }
@@ -95,14 +96,14 @@ export function PhotoEditor({
     try {
       await onDone(await cropImage(src, area, rotation, flip))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Das hat nicht geklappt.')
+      setError(err instanceof Error ? err.message : t('Das hat nicht geklappt.'))
     }
   }
 
   return (
     <div className="photo-editor">
       <label className="button button-ghost">
-        {src ? 'Anderes Bild wählen' : 'Bild wählen'}
+        {src ? t('Anderes Bild wählen') : t('Bild wählen')}
         <input
           type="file"
           accept="image/jpeg,image/png,image/webp"
@@ -130,18 +131,18 @@ export function PhotoEditor({
             <button
               type="button"
               className="button button-ghost"
-              aria-label="nach links drehen"
+              aria-label={t('nach links drehen')}
               onClick={() => setRotation((r) => (r + 270) % 360)}
             >
-              ⟲ Drehen
+              {t('⟲ Drehen')}
             </button>
             <button
               type="button"
               className="button button-ghost"
-              aria-label="nach rechts drehen"
+              aria-label={t('nach rechts drehen')}
               onClick={() => setRotation((r) => (r + 90) % 360)}
             >
-              ⟳ Drehen
+              {t('⟳ Drehen')}
             </button>
             <button
               type="button"
@@ -149,10 +150,10 @@ export function PhotoEditor({
               aria-pressed={flip}
               onClick={() => setFlip((f) => !f)}
             >
-              ⇋ Spiegeln
+              {t('⇋ Spiegeln')}
             </button>
             <label className="inline-label">
-              Zoom
+              {t('Zoom')}
               <input
                 type="range"
                 min={1}
@@ -160,11 +161,11 @@ export function PhotoEditor({
                 step={0.05}
                 value={zoom}
                 onChange={(e) => setZoom(Number(e.target.value))}
-                aria-label="Zoom"
+                aria-label={t('Zoom')}
               />
             </label>
             <select
-              aria-label="Format"
+              aria-label={t('Format')}
               value={aspect}
               onChange={(e) => setAspect(Number(e.target.value))}
             >
@@ -176,7 +177,7 @@ export function PhotoEditor({
             </select>
           </div>
           <p className="muted small">
-            Bild mit der Maus oder dem Finger verschieben, zum Zoomen ziehen oder scrollen.
+            {t('Bild mit der Maus oder dem Finger verschieben, zum Zoomen ziehen oder scrollen.')}
           </p>
         </>
       )}
@@ -189,11 +190,11 @@ export function PhotoEditor({
           disabled={!src || !area || busy}
           onClick={() => void apply()}
         >
-          {busy ? 'Wird hochgeladen …' : submitLabel}
+          {busy ? t('Wird hochgeladen …') : submitLabel}
         </button>
         {onCancel && (
           <button type="button" className="button button-ghost" onClick={onCancel}>
-            Abbrechen
+            {t('Abbrechen')}
           </button>
         )}
       </div>

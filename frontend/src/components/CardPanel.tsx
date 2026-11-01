@@ -8,6 +8,7 @@ import { Alert } from './ui.tsx'
 import { confirmDialog } from './dialog.ts'
 import type { ConfirmOptions } from './dialog.ts'
 import { useTerms } from '../org/terms.ts'
+import { t } from '../i18n/index.ts'
 
 export function CardPanel({ base, pdfUrl }: { base: string; pdfUrl: string }) {
   const tm = useTerms()
@@ -31,15 +32,17 @@ export function CardPanel({ base, pdfUrl }: { base: string; pdfUrl: string }) {
 
   return (
     <div className="card card-wide">
-      <h2>Mitgliedsausweis</h2>
+      <h2>{t('Mitgliedsausweis')}</h2>
       {error && <Alert kind="error">{error}</Alert>}
       {!data ? (
-        !error && <p className="muted">Lädt …</p>
+        !error && <p className="muted">{t('Lädt …')}</p>
       ) : data.state === 'none' ? (
         <>
           <p className="muted">
-            Noch kein Ausweis. Der QR-Code führt auf eine Seite mit Name, Foto (nur mit
-            Einwilligung), aktuellem Status, {tm.e_sg} und {tm.sg}.
+            {t(
+              'Noch kein Ausweis. Der QR-Code führt auf eine Seite mit Name, Foto (nur mit Einwilligung), aktuellem Status, {e_sg} und {sg}.',
+              { e_sg: tm.e_sg, sg: tm.sg },
+            )}
           </p>
           <button
             type="button"
@@ -47,7 +50,7 @@ export function CardPanel({ base, pdfUrl }: { base: string; pdfUrl: string }) {
             disabled={busy}
             onClick={() => void run('create')}
           >
-            QR-Code erzeugen
+            {t('QR-Code erzeugen')}
           </button>
         </>
       ) : (
@@ -59,25 +62,25 @@ export function CardPanel({ base, pdfUrl }: { base: string; pdfUrl: string }) {
             void run(
               'renew',
               {
-                title: 'Neuen QR-Code erzeugen?',
-                message: 'Der bisherige Code und alle Ausdrucke werden ungültig.',
-                confirmLabel: 'Neuen QR-Code erzeugen',
+                title: t('Neuen QR-Code erzeugen?'),
+                message: t('Der bisherige Code und alle Ausdrucke werden ungültig.'),
+                confirmLabel: t('Neuen QR-Code erzeugen'),
               },
-              'Neuer QR-Code erzeugt. Der alte ist ungültig.',
+              t('Neuer QR-Code erzeugt. Der alte ist ungültig.'),
             )
           }
           onRevoke={() =>
             void run(
               'revoke',
               {
-                title: 'Ausweis sperren?',
-                message: 'Beim Scannen erscheint dann „ungültig“.',
-                confirmLabel: 'Sperren',
+                title: t('Ausweis sperren?'),
+                message: t('Beim Scannen erscheint dann „ungültig“.'),
+                confirmLabel: t('Sperren'),
               },
-              'Ausweis gesperrt.',
+              t('Ausweis gesperrt.'),
             )
           }
-          onRestore={() => void run('restore', undefined, 'Ausweis wieder freigegeben.')}
+          onRestore={() => void run('restore', undefined, t('Ausweis wieder freigegeben.'))}
         />
       )}
       {message && <Alert kind={message.kind}>{message.text}</Alert>}
@@ -106,33 +109,33 @@ function CardView({
       {card.qr && (
         <img
           src={card.qr}
-          alt="QR-Code des Mitgliedsausweises"
+          alt={t('QR-Code des Mitgliedsausweises')}
           className={`card-qr${revoked ? ' card-qr-revoked' : ''}`}
         />
       )}
       <div className="stack-sm">
         {revoked ? (
           <Alert kind="info">
-            Gesperrt seit {formatDateTime(card.revoked_at ?? '')}. Beim Scannen erscheint
+            {t('Gesperrt seit')} {formatDateTime(card.revoked_at ?? '')}. Beim Scannen erscheint
             „ungültig“.
           </Alert>
         ) : (
           <p className="small">
-            Gültig seit {formatDateTime(card.issued_at ?? '')}
+            {t('Gültig seit')} {formatDateTime(card.issued_at ?? '')}
             <br />
             <a href={card.url} target="_blank" rel="noreferrer">
-              Seite nach dem Scan ansehen
+              {t('Seite nach dem Scan ansehen')}
             </a>
           </p>
         )}
         <div className="button-row">
           {!revoked && (
             <a className="button button-primary" href={pdfUrl}>
-              Ausweis als PDF
+              {t('Ausweis als PDF')}
             </a>
           )}
           <button type="button" className="button button-ghost" disabled={busy} onClick={onRenew}>
-            Neuen QR-Code erzeugen
+            {t('Neuen QR-Code erzeugen')}
           </button>
           {revoked ? (
             <button
@@ -141,7 +144,7 @@ function CardView({
               disabled={busy}
               onClick={onRestore}
             >
-              Wieder freigeben
+              {t('Wieder freigeben')}
             </button>
           ) : (
             <button
@@ -150,7 +153,7 @@ function CardView({
               disabled={busy}
               onClick={onRevoke}
             >
-              Sperren
+              {t('Sperren')}
             </button>
           )}
         </div>
@@ -168,26 +171,31 @@ export function OwnCardPanel({ accessId, empty }: { accessId: number; empty?: Re
   if (data.state === 'none') return empty ?? null
   return (
     <div className="card card-wide">
-      <h2>Mein Mitgliedsausweis</h2>
+      <h2>{t('Mein Mitgliedsausweis')}</h2>
       {data.state === 'revoked' ? (
-        <Alert kind="info">Dein Ausweis ist gesperrt. Bitte wende dich an {tm.e_deinen}.</Alert>
+        <Alert kind="info">
+          {t('Dein Ausweis ist gesperrt. Bitte wende dich an {e_deinen}.', {
+            e_deinen: tm.e_deinen,
+          })}
+        </Alert>
       ) : (
         <div className="card-qr-row">
           {data.qr && (
-            <img src={data.qr} alt="QR-Code deines Mitgliedsausweises" className="card-qr" />
+            <img src={data.qr} alt={t('QR-Code deines Mitgliedsausweises')} className="card-qr" />
           )}
           <div className="stack-sm">
             <p className="small">
-              Zeig den QR-Code vor, wenn jemand deine Mitgliedschaft prüfen möchte. Wer ihn scannt,
-              sieht deinen Namen, dein Foto (nur mit deiner Einwilligung), den aktuellen Status
-              deiner Mitgliedschaft, {tm.e_sg} und {tm.sg}.
+              {t(
+                'Zeig den QR-Code vor, wenn jemand deine Mitgliedschaft prüfen möchte. Wer ihn scannt, sieht deinen Namen, dein Foto (nur mit deiner Einwilligung), den aktuellen Status deiner Mitgliedschaft, {e_sg} und {sg}.',
+                { e_sg: tm.e_sg, sg: tm.sg },
+              )}
             </p>
             <div className="button-row">
               <a className="button button-primary" href={cardApi.portalPdfUrl(accessId)}>
-                Ausweis als PDF
+                {t('Ausweis als PDF')}
               </a>
               <a className="button button-ghost" href={data.url} target="_blank" rel="noreferrer">
-                Seite ansehen
+                {t('Seite ansehen')}
               </a>
             </div>
           </div>

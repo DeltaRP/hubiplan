@@ -1,12 +1,17 @@
 import { SelectField } from '../ui.tsx'
+import { t } from '../../i18n/index.ts'
 
 // Zustellweg eines Rundschreibens: nur Mail, App statt Mail oder App und Mail
 type Delivery = 'mail' | 'app' | 'both'
 
 const HINTS: Record<Delivery, string> = {
-  mail: 'Alle bekommen es per E-Mail, auch Mitglieder mit der HUBIplan-App.',
-  app: 'Mitglieder mit der HUBIplan-App bekommen es nur als Mitteilung aufs Telefon, alle anderen per E-Mail.',
-  both: 'Mitglieder mit der HUBIplan-App bekommen es aufs Telefon und zusätzlich per E-Mail, alle anderen per E-Mail.',
+  mail: t('Alle bekommen es per E-Mail, auch Mitglieder mit der HUBIplan-App.'),
+  app: t(
+    'Mitglieder mit der HUBIplan-App bekommen es nur als Mitteilung aufs Telefon, alle anderen per E-Mail.',
+  ),
+  both: t(
+    'Mitglieder mit der HUBIplan-App bekommen es aufs Telefon und zusätzlich per E-Mail, alle anderen per E-Mail.',
+  ),
 }
 
 export function DeliveryField({
@@ -21,7 +26,7 @@ export function DeliveryField({
   const value: Delivery = !viaApp ? 'mail' : alsoMail ? 'both' : 'app'
   return (
     <SelectField
-      label="Zustellung"
+      label={t('Zustellung')}
       value={value}
       hint={HINTS[value]}
       onChange={(e) => {
@@ -29,9 +34,9 @@ export function DeliveryField({
         onChange({ via_app: next !== 'mail', also_mail: next === 'both' })
       }}
     >
-      <option value="app">per App, sonst E-Mail</option>
-      <option value="both">per App und zusätzlich E-Mail</option>
-      <option value="mail">nur per E-Mail</option>
+      <option value="app">{t('per App, sonst E-Mail')}</option>
+      <option value="both">{t('per App und zusätzlich E-Mail')}</option>
+      <option value="mail">{t('nur per E-Mail')}</option>
     </SelectField>
   )
 }

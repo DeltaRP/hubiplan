@@ -6,15 +6,16 @@ import { useOrg } from '../org/OrgContext.tsx'
 import { PublicImprintContext } from './publicImprint.ts'
 import type { PublicImprintTarget } from './publicImprint.ts'
 import { formatTitle } from './pageTitle.ts'
+import { t } from '../i18n/index.ts'
 
 // Ein Link je Seite: Mit Einheit zeigt die Seite zuerst die Einheit, dann die Plattform.
 function FooterLinks({ unit }: { unit: PublicImprintTarget | null }) {
   return (
-    <nav className="site-footer" aria-label="Rechtliches">
-      <Link to={imprintPath(unit?.key)}>Impressum</Link>
-      <Link to={privacyPath(unit?.key)}>Datenschutz</Link>
-      <Link to="/lizenz">Lizenzen</Link>
-      <Link to="/barrierefreiheit">Barrierefreiheit</Link>
+    <nav className="site-footer" aria-label={t('Rechtliches')}>
+      <Link to={imprintPath(unit?.key)}>{t('Impressum')}</Link>
+      <Link to={privacyPath(unit?.key)}>{t('Datenschutz')}</Link>
+      <Link to="/lizenz">{t('Lizenzen')}</Link>
+      <Link to="/barrierefreiheit">{t('Barrierefreiheit')}</Link>
     </nav>
   )
 }
@@ -22,18 +23,18 @@ function FooterLinks({ unit }: { unit: PublicImprintTarget | null }) {
 /** Rahmen der öffentlichen Seiten (ohne Anmeldung) mit Fußzeile. */
 // Titel der öffentlichen Seiten (ohne Token oder Namen aus der Adresse)
 const PUBLIC_TITLES: [string, string][] = [
-  ['/anmelden/link', 'Anmeldung per Link'],
-  ['/anmelden', 'Anmelden'],
-  ['/konto/email', 'E-Mail-Adresse bestätigen'],
-  ['/passwort-vergessen', 'Passwort vergessen'],
-  ['/passwort-zuruecksetzen', 'Passwort zurücksetzen'],
-  ['/foto', 'Foto hochladen'],
-  ['/rundschreiben/abmelden', 'Rundschreiben abbestellen'],
-  ['/ausweis', 'Mitgliedsausweis'],
-  ['/impressum', 'Impressum'],
-  ['/datenschutz', 'Datenschutz'],
-  ['/lizenz', 'Lizenzen'],
-  ['/barrierefreiheit', 'Barrierefreiheit'],
+  ['/anmelden/link', t('Anmeldung per Link')],
+  ['/anmelden', t('Anmelden')],
+  ['/konto/email', t('E-Mail-Adresse bestätigen')],
+  ['/passwort-vergessen', t('Passwort vergessen')],
+  ['/passwort-zuruecksetzen', t('Passwort zurücksetzen')],
+  ['/foto', t('Foto hochladen')],
+  ['/rundschreiben/abmelden', t('Rundschreiben abbestellen')],
+  ['/ausweis', t('Mitgliedsausweis')],
+  ['/impressum', t('Impressum')],
+  ['/datenschutz', t('Datenschutz')],
+  ['/lizenz', t('Lizenzen')],
+  ['/barrierefreiheit', t('Barrierefreiheit')],
 ]
 
 export function PublicShell() {

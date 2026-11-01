@@ -15,6 +15,7 @@ import type {
 import { errorMessage } from '../forms.ts'
 import { Alert, Checkbox } from '../ui.tsx'
 import { useTerms } from '../../org/terms.ts'
+import { t } from '../../i18n/index.ts'
 
 function toggle(list: number[] | undefined, id: number, on: boolean): number[] {
   const set = new Set(list ?? [])
@@ -65,15 +66,16 @@ function CheckList({
         </label>
         <label className="checkbox">
           <input type="radio" name={name} checked={some} onChange={() => setSome(true)} />
-          <span>nur ausgewählte</span>
+          <span>{t('nur ausgewählte')}</span>
         </label>
       </div>
       {some && (
         <>
           {chosen.length === 0 && (
             <Alert kind="error">
-              Noch nichts ausgewählt: So geht die Nachricht an niemanden. Bitte mindestens eins
-              anhaken oder oben „alle“ wählen.
+              {t(
+                'Noch nichts ausgewählt: So geht die Nachricht an niemanden. Bitte mindestens eins anhaken oder oben „alle“ wählen.',
+              )}
             </Alert>
           )}
           {items.map((item) => (
@@ -175,25 +177,28 @@ export function RecipientPanel({
 
   return (
     <div className="card card-wide">
-      <h2>Empfänger</h2>
+      <h2>{t('Empfänger')}</h2>
       {fixed ? (
         <p className="muted small">
-          Die Empfänger kommen aus dem gewählten Verteiler. Ändern lassen sie sich dort unter
-          Rundschreiben › Verteiler.
+          {t(
+            'Die Empfänger kommen aus dem gewählten Verteiler. Ändern lassen sie sich dort unter Rundschreiben › Verteiler.',
+          )}
         </p>
       ) : (
         <>
           {audience === 'roles' ? (
             <>
               <p className="muted small">
-                Geht an die aktuellen Inhaber der gewählten Rollen des Vereins, ohne die Rollen in
-                den {tm.pl_dat}.
+                {t(
+                  'Geht an die aktuellen Inhaber der gewählten Rollen des Vereins, ohne die Rollen in den {pl_dat}.',
+                  { pl_dat: tm.pl_dat },
+                )}
               </p>
               <CheckList
                 field="club_roles"
                 filters={filters}
                 onFilters={onFilters}
-                legend="Welche Rollen"
+                legend={t('Welche Rollen')}
                 items={options.club_roles ?? []}
                 selected={filters.club_roles}
                 onChange={(ids) => onFilters({ club_roles: ids })}
@@ -215,7 +220,7 @@ export function RecipientPanel({
                       })
                     }
                   >
-                    Alle Vorstandsrollen auswählen
+                    {t('Alle Vorstandsrollen auswählen')}
                   </button>
                 </div>
               )}
@@ -223,7 +228,7 @@ export function RecipientPanel({
           ) : audience === 'departments' ? (
             <>
               <p className="muted small">
-                Geht an die aktuellen Inhaber von Rollen in den gewählten Einheiten.
+                {t('Geht an die aktuellen Inhaber von Rollen in den gewählten Einheiten.')}
               </p>
               <div className="grid-2">
                 <CheckList
@@ -239,7 +244,7 @@ export function RecipientPanel({
                   field="role_names"
                   filters={filters}
                   onFilters={onFilters}
-                  legend="Welche Rollen"
+                  legend={t('Welche Rollen')}
                   items={(options.role_names ?? []).map((name, i) => ({ id: i, name }))}
                   selected={(filters.role_names ?? [])
                     .map((n) => (options.role_names ?? []).indexOf(n))
@@ -263,13 +268,15 @@ export function RecipientPanel({
               />
               {boards ? (
                 <p className="muted small">
-                  Es schreiben die Inhaber von Vorstandsrollen mit Zugang; hat {tm.ein} keinen, geht
-                  die Mail an die hinterlegte Kontaktadresse.
+                  {t(
+                    'Es schreiben die Inhaber von Vorstandsrollen mit Zugang; hat {ein} keinen, geht die Mail an die hinterlegte Kontaktadresse.',
+                    { ein: tm.ein },
+                  )}
                 </p>
               ) : (
                 <>
                   <Checkbox
-                    label={`nur an ${tm.e_akk} gemeldete Mitglieder`}
+                    label={t('nur an {e_akk} gemeldete Mitglieder', { e_akk: tm.e_akk })}
                     checked={!!filters.reported}
                     onChange={(on) => onFilters({ reported: on })}
                   />
@@ -278,7 +285,7 @@ export function RecipientPanel({
                       field="honorary_titles"
                       filters={filters}
                       onFilters={onFilters}
-                      legend="Ehrungen"
+                      legend={t('Ehrungen')}
                       items={options.honorary_titles ?? []}
                       selected={filters.honorary_titles}
                       onChange={(ids) => onFilters({ honorary_titles: ids })}
@@ -294,7 +301,7 @@ export function RecipientPanel({
                   field="member_types"
                   filters={filters}
                   onFilters={onFilters}
-                  legend="Mitgliedsarten"
+                  legend={t('Mitgliedsarten')}
                   items={options.member_types ?? []}
                   selected={filters.member_types}
                   onChange={(ids) => onFilters({ member_types: ids })}
@@ -304,7 +311,7 @@ export function RecipientPanel({
                     field="departments"
                     filters={filters}
                     onFilters={onFilters}
-                    legend="Zugehörigkeit"
+                    legend={t('Zugehörigkeit')}
                     items={options.departments ?? []}
                     selected={filters.departments}
                     onChange={(ids) => onFilters({ departments: ids })}
@@ -316,7 +323,7 @@ export function RecipientPanel({
                   field="honorary_titles"
                   filters={filters}
                   onFilters={onFilters}
-                  legend="Ehrungen"
+                  legend={t('Ehrungen')}
                   items={options.honorary_titles ?? []}
                   selected={filters.honorary_titles}
                   onChange={(ids) => onFilters({ honorary_titles: ids })}
@@ -326,24 +333,26 @@ export function RecipientPanel({
                 field="roles"
                 filters={filters}
                 onFilters={onFilters}
-                legend="Inhaber von Rollen"
+                legend={t('Inhaber von Rollen')}
                 items={(options.roles ?? []).map((r) => ({
                   id: r.id,
-                  name: options.department ? r.name : `${r.name} (${r.department})`,
+                  name: options.department
+                    ? r.name
+                    : t('{name} ({department})', { name: r.name, department: r.department }),
                 }))}
                 selected={filters.roles}
                 onChange={(ids) => onFilters({ roles: ids })}
               />
               {!options.department && (
                 <Checkbox
-                  label="nur Mitglieder mit einer Vorstandsrolle"
+                  label={t('nur Mitglieder mit einer Vorstandsrolle')}
                   checked={!!filters.board}
                   onChange={(on) => onFilters({ board: on })}
                 />
               )}
               <div className="grid-3">
                 <label className="field">
-                  <span>Alter ab</span>
+                  <span>{t('Alter ab')}</span>
                   <input
                     type="number"
                     min={0}
@@ -353,7 +362,7 @@ export function RecipientPanel({
                   />
                 </label>
                 <label className="field">
-                  <span>Alter bis</span>
+                  <span>{t('Alter bis')}</span>
                   <input
                     type="number"
                     min={0}
@@ -363,7 +372,7 @@ export function RecipientPanel({
                   />
                 </label>
                 <label className="field">
-                  <span>nur Jubilare im Jahr</span>
+                  <span>{t('nur Jubilare im Jahr')}</span>
                   <input
                     type="number"
                     min={1900}
@@ -380,10 +389,10 @@ export function RecipientPanel({
           {audience === 'members' && (
             <div className="stack-sm">
               <label className="field">
-                <span>Einzelnes Mitglied hinzufügen</span>
+                <span>{t('Einzelnes Mitglied hinzufügen')}</span>
                 <input
                   type="search"
-                  placeholder="Name suchen …"
+                  placeholder={t('Name suchen …')}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                 />
@@ -423,26 +432,32 @@ export function RecipientPanel({
         <>
           <p>
             <strong>
-              {(data.counts.app ?? 0) > 0 && `${data.counts.app} per App · `}
-              {data.counts.mail} per E-Mail · {data.counts.letter} per Brief
-              {(data.counts.portal ?? 0) > 0 && ` · ${data.counts.portal} nur im Mitgliederbereich`}
+              {(data.counts.app ?? 0) > 0 && t('{app} per App · ', { app: data.counts.app })}
+              {data.counts.mail}{' '}
+              {t('per E-Mail · {letter} per Brief', { letter: data.counts.letter })}
+              {(data.counts.portal ?? 0) > 0 &&
+                t(' · {portal} nur im Mitgliederbereich', { portal: data.counts.portal })}
             </strong>
-            {!!data.counts.opted_out && ` · ${data.counts.opted_out} abgemeldet`}
-            {!!data.counts.excluded && ` · ${data.counts.excluded} abgewählt`}
+            {!!data.counts.opted_out &&
+              t(' · {opted_out} abgemeldet', { opted_out: data.counts.opted_out })}
+            {!!data.counts.excluded &&
+              t(' · {excluded} abgewählt', { excluded: data.counts.excluded })}
           </p>
           {items.length === 0 ? (
-            <p className="muted">Für diese Auswahl gibt es keine Empfänger.</p>
+            <p className="muted">{t('Für diese Auswahl gibt es keine Empfänger.')}</p>
           ) : (
             <div className="table-scroll">
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Name</th>
-                    {showGroup && <th className="col-optional">{federation ? tm.Sg : 'Rolle'}</th>}
-                    <th>Weg</th>
+                    <th>{t('Name')}</th>
+                    {showGroup && (
+                      <th className="col-optional">{federation ? tm.Sg : t('Rolle')}</th>
+                    )}
+                    <th>{t('Weg')}</th>
                     {!fixed && (
                       <th>
-                        <span className="sr-only">Auswahl</span>
+                        <span className="sr-only">{t('Auswahl')}</span>
                       </th>
                     )}
                   </tr>
@@ -452,7 +467,7 @@ export function RecipientPanel({
                     <tr key={c.key} className={c.excluded ? 'muted' : undefined}>
                       <td>
                         {c.last_name}
-                        {c.first_name && `, ${c.first_name}`}
+                        {c.first_name && t(', {first_name}', { first_name: c.first_name })}
                         {c.included && <span className="badge">einzeln</span>}
                         {c.email && <div className="muted small">{c.email}</div>}
                       </td>
@@ -472,7 +487,7 @@ export function RecipientPanel({
                             className="link-button"
                             onClick={() => setExcluded(c, !c.excluded)}
                           >
-                            {c.excluded ? 'wieder aufnehmen' : 'abwählen'}
+                            {c.excluded ? t('wieder aufnehmen') : t('abwählen')}
                           </button>
                         </td>
                       )}
@@ -484,7 +499,7 @@ export function RecipientPanel({
           )}
           {items.length > shown.length && (
             <button type="button" className="link-button" onClick={() => setShowAll(true)}>
-              Alle {items.length} anzeigen
+              {t('Alle {n} anzeigen', { n: items.length })}
             </button>
           )}
         </>

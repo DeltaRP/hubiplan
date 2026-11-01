@@ -1,5 +1,6 @@
 // Datum und Uhrzeit in deutscher Zeit, unabhängig von der Zeitzone des Geräts.
 import type { Occurrence } from '../../api/events.ts'
+import { t } from '../../i18n/index.ts'
 
 const TZ = 'Europe/Berlin'
 
@@ -31,18 +32,18 @@ export function toApi(date: string, time = '00:00'): string {
 
 export const WEEKDAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
 export const MONTHS = [
-  'Januar',
-  'Februar',
-  'März',
-  'April',
-  'Mai',
-  'Juni',
-  'Juli',
-  'August',
-  'September',
-  'Oktober',
-  'November',
-  'Dezember',
+  t('Januar'),
+  t('Februar'),
+  t('März'),
+  t('April'),
+  t('Mai'),
+  t('Juni'),
+  t('Juli'),
+  t('August'),
+  t('September'),
+  t('Oktober'),
+  t('November'),
+  t('Dezember'),
 ]
 
 function utc(date: string): Date {
@@ -101,13 +102,22 @@ export function formatRange(startIso: string, endIso: string, allDay: boolean): 
   const e = berlin(endIso)
   if (allDay) {
     return s.date === e.date
-      ? `${formatDay(s.date)}, ganztägig`
-      : `${formatDay(s.date)} – ${formatDay(e.date)}`
+      ? t('{x}, ganztägig', { x: formatDay(s.date) })
+      : t('{x} – {x2}', { x: formatDay(s.date), x2: formatDay(e.date) })
   }
   if (s.date === e.date) {
-    return `${formatDay(s.date)}, ${s.time}${e.time !== s.time ? ` – ${e.time}` : ''} Uhr`
+    return t('{x}, {time}{x2} Uhr', {
+      x: formatDay(s.date),
+      time: s.time,
+      x2: e.time !== s.time ? ` – ${e.time}` : '',
+    })
   }
-  return `${formatDay(s.date)}, ${s.time} Uhr – ${formatDay(e.date)}, ${e.time} Uhr`
+  return t('{x}, {time} Uhr – {x2}, {time2} Uhr', {
+    x: formatDay(s.date),
+    time: s.time,
+    x2: formatDay(e.date),
+    time2: e.time,
+  })
 }
 
 /** Tage zwischen `from` und `to`, an denen ein Termin erscheint (mehrtägig: jeder Tag).

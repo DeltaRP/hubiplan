@@ -17,6 +17,7 @@
 // Mitgliederliste bleibt die serverseitige Variante.
 import { useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
+import { t } from '../i18n/index.ts'
 
 export type CellValue = string | number | boolean | null | undefined
 
@@ -100,8 +101,8 @@ export function DataTable<T>({
   actions,
   initialSort,
   pageSizes = [10, 20, 50],
-  searchPlaceholder = 'Suchen …',
-  emptyText = 'Keine Einträge.',
+  searchPlaceholder = t('Suchen …'),
+  emptyText = t('Keine Einträge.'),
   countText,
   rowClassName,
   toolbar,
@@ -133,7 +134,9 @@ export function DataTable<T>({
           [...new Set(rows.map((r) => asText(c.value(r))).filter(Boolean))]
             .sort(collator.compare)
             .map((v) => ({ value: v, label: v }))
-        return [{ column: c, allLabel: spec.allLabel ?? `${c.label}: alle`, options }]
+        return [
+          { column: c, allLabel: spec.allLabel ?? t('{label}: alle', { label: c.label }), options },
+        ]
       }),
     [columns, rows],
   )
@@ -192,7 +195,7 @@ export function DataTable<T>({
           type="search"
           className="search-input"
           placeholder={searchPlaceholder}
-          aria-label={`${label} durchsuchen`}
+          aria-label={t('{label} durchsuchen', { label })}
           value={search}
           onChange={(e) => {
             setSearch(e.target.value)
@@ -202,7 +205,7 @@ export function DataTable<T>({
         {filterOptions.map(({ column, allLabel, options }) => (
           <select
             key={column.key}
-            aria-label={`Filter ${column.label}`}
+            aria-label={t('Filter {label}', { label: column.label })}
             value={filters[column.key] ?? ''}
             onChange={(e) => {
               setFilters((f) => ({ ...f, [column.key]: e.target.value }))
@@ -219,7 +222,7 @@ export function DataTable<T>({
         ))}
         {columns.some((c) => c.sortable !== false) && (
           <label className="data-table-sort">
-            <span>Sortieren nach</span>
+            <span>{t('Sortieren nach')}</span>
             <select
               value={sort ? `${sort.key}:${sort.dir}` : ''}
               onChange={(e) => {
@@ -228,15 +231,15 @@ export function DataTable<T>({
                 setSort(key ? { key, dir: dir === 'desc' ? 'desc' : 'asc' } : null)
               }}
             >
-              {!sort && <option value="">Sortieren nach …</option>}
+              {!sort && <option value="">{t('Sortieren nach …')}</option>}
               {columns
                 .filter((c) => c.sortable !== false)
                 .flatMap((c) => [
                   <option key={`${c.key}:asc`} value={`${c.key}:asc`}>
-                    {c.label} ▲ aufsteigend
+                    {c.label} {t('▲ aufsteigend')}
                   </option>,
                   <option key={`${c.key}:desc`} value={`${c.key}:desc`}>
-                    {c.label} ▼ absteigend
+                    {c.label} {t('▼ absteigend')}
                   </option>,
                 ])}
             </select>
@@ -249,12 +252,12 @@ export function DataTable<T>({
         {countText
           ? countText(visible.length, rows.length)
           : filtered
-            ? `${visible.length} von ${rows.length} Einträgen`
-            : `${rows.length} ${rows.length === 1 ? 'Eintrag' : 'Einträge'}`}
+            ? t('{n} von {n2} Einträgen', { n: visible.length, n2: rows.length })
+            : t('{n} {x}', { n: rows.length, x: rows.length === 1 ? 'Eintrag' : 'Einträge' })}
       </p>
 
       {shown.length === 0 ? (
-        <p className="muted">{rows.length > 0 && filtered ? 'Nichts gefunden.' : emptyText}</p>
+        <p className="muted">{rows.length > 0 && filtered ? t('Nichts gefunden.') : emptyText}</p>
       ) : (
         <div className="table-scroll">
           <table className={fixedLayout ? 'table table-fixed' : 'table'} aria-label={label}>
@@ -293,7 +296,7 @@ export function DataTable<T>({
                 })}
                 {actions && (
                   <th className="actions">
-                    <span className="sr-only">Aktionen</span>
+                    <span className="sr-only">{t('Aktionen')}</span>
                   </th>
                 )}
               </tr>
@@ -326,7 +329,7 @@ export function DataTable<T>({
       {visible.length > pageSizes[0] || pageSize !== pageSizes[0] ? (
         <div className="pager data-table-pager">
           <label className="small page-size">
-            Zeilen pro Seite{' '}
+            {t('Zeilen pro Seite')}{' '}
             <select
               value={pageSize}
               onChange={(e) => {
@@ -347,11 +350,16 @@ export function DataTable<T>({
             disabled={current <= 1}
             onClick={() => setPage(current - 1)}
           >
-            Zurück
+            {t('Zurück')}
           </button>
           <span className="small">
-            {visible.length === 0 ? 0 : start + 1}–{Math.min(start + pageSize, visible.length)} von{' '}
-            {visible.length} · Seite {current} von {pages}
+            {visible.length === 0 ? 0 : start + 1}
+            {t('–{x} von  {n} · Seite {current} von', {
+              x: Math.min(start + pageSize, visible.length),
+              n: visible.length,
+              current,
+            })}{' '}
+            {pages}
           </span>
           <button
             type="button"
@@ -359,7 +367,7 @@ export function DataTable<T>({
             disabled={current >= pages}
             onClick={() => setPage(current + 1)}
           >
-            Weiter
+            {t('Weiter')}
           </button>
         </div>
       ) : null}

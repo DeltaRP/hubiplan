@@ -6,12 +6,13 @@ import type { AccountData } from '../../api/account.ts'
 import { useAuth } from '../../auth/AuthContext.tsx'
 import { useAutoSave, useForm, useLoad } from '../../components/forms.ts'
 import { Alert, Field, SaveStatus } from '../../components/ui.tsx'
+import { t } from '../../i18n/index.ts'
 
 /** Mein Konto › Profil: Name */
 export function NameSection() {
   const { data, error, setData } = useLoad(() => accountApi.get(), [])
   if (error) return <Alert kind="error">{error}</Alert>
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
   return <NameCard data={data} onSaved={setData} />
 }
 
@@ -19,7 +20,7 @@ export function NameSection() {
 export function LoginSections() {
   const { data, error, setData } = useLoad(() => accountApi.get(), [])
   if (error) return <Alert kind="error">{error}</Alert>
-  if (!data) return <p className="muted">Lädt …</p>
+  if (!data) return <p className="muted">{t('Lädt …')}</p>
   return (
     <>
       <EmailCard data={data} onSaved={setData} />
@@ -39,24 +40,31 @@ function NameCard({ data, onSaved }: { data: AccountData; onSaved: (d: AccountDa
       onSaved: (result) => {
         const saved = result as AccountData
         onSaved(saved)
-        if (user) setUser({ ...user, display: `${saved.first_name} ${saved.last_name}`.trim() })
+        if (user)
+          setUser({
+            ...user,
+            display: t('{first_name} {last_name}', {
+              first_name: saved.first_name,
+              last_name: saved.last_name,
+            }).trim(),
+          })
       },
     },
   )
   return (
     <form className="card card-wide" onSubmit={(e) => e.preventDefault()}>
-      <h2>Name</h2>
+      <h2>{t('Name')}</h2>
       <SaveStatus auto={auto} />
       <div className="grid-2">
         <Field
-          label="Vorname"
+          label={t('Vorname')}
           autoComplete="given-name"
           value={form.values.first_name}
           error={form.errors.first_name}
           onChange={(e) => form.set('first_name', e.target.value)}
         />
         <Field
-          label="Nachname"
+          label={t('Nachname')}
           autoComplete="family-name"
           value={form.values.last_name}
           error={form.errors.last_name}
@@ -79,7 +87,7 @@ function EmailCard({ data, onSaved }: { data: AccountData; onSaved: (d: AccountD
           email: form.values.email.trim(),
           ...(data.has_password ? { password: form.values.password } : {}),
         }),
-      'Wir haben einen Bestätigungslink an die neue Adresse geschickt.',
+      t('Wir haben einen Bestätigungslink an die neue Adresse geschickt.'),
     )) as AccountData | undefined
     if (saved) {
       onSaved(saved)
@@ -95,16 +103,18 @@ function EmailCard({ data, onSaved }: { data: AccountData; onSaved: (d: AccountD
 
   return (
     <div className="card card-wide">
-      <h2>Anmelde-E-Mail</h2>
+      <h2>{t('Anmelde-E-Mail')}</h2>
       <p>
-        Du meldest dich an mit <strong>{data.email}</strong>.
+        {t('Du meldest dich an mit')} <strong>{data.email}</strong>.
       </p>
       {data.pending_email && (
         <Alert kind="info">
-          Neue Adresse {data.pending_email} wartet auf Bestätigung. Bitte den Link in der Mail an
-          diese Adresse öffnen.{' '}
+          {t(
+            'Neue Adresse {pending_email} wartet auf Bestätigung. Bitte den Link in der Mail an diese Adresse öffnen.',
+            { pending_email: data.pending_email },
+          )}{' '}
           <button type="button" className="link-button" onClick={() => void cancel()}>
-            Verwerfen
+            {t('Verwerfen')}
           </button>
         </Alert>
       )}
@@ -113,7 +123,7 @@ function EmailCard({ data, onSaved }: { data: AccountData; onSaved: (d: AccountD
         <form onSubmit={save}>
           <div className="grid-2">
             <Field
-              label="Neue E-Mail-Adresse"
+              label={t('Neue E-Mail-Adresse')}
               type="email"
               required
               autoComplete="email"
@@ -123,7 +133,7 @@ function EmailCard({ data, onSaved }: { data: AccountData; onSaved: (d: AccountD
             />
             {data.has_password && (
               <Field
-                label="Dein Passwort zur Bestätigung"
+                label={t('Dein Passwort zur Bestätigung')}
                 type="password"
                 required
                 autoComplete="current-password"
@@ -136,20 +146,20 @@ function EmailCard({ data, onSaved }: { data: AccountData; onSaved: (d: AccountD
           {form.message?.kind === 'error' && <Alert kind="error">{form.message.text}</Alert>}
           <div className="button-row">
             <button type="submit" className="button button-primary" disabled={form.busy}>
-              Bestätigungslink senden
+              {t('Bestätigungslink senden')}
             </button>
             <button type="button" className="button button-ghost" onClick={() => setOpen(false)}>
-              Abbrechen
+              {t('Abbrechen')}
             </button>
           </div>
         </form>
       ) : (
         <button type="button" className="button button-ghost" onClick={() => setOpen(true)}>
-          Anmelde-E-Mail ändern
+          {t('Anmelde-E-Mail ändern')}
         </button>
       )}
       <p className="muted small">
-        Die Kontaktdaten, die dein Verein über dich führt, änderst du unter „Meine Daten“.
+        {t('Die Kontaktdaten, die dein Verein über dich führt, änderst du unter „Meine Daten“.')}
       </p>
     </div>
   )
@@ -161,7 +171,7 @@ function PasswordCard({ data, onSaved }: { data: AccountData; onSaved: (d: Accou
   async function save(e: FormEvent) {
     e.preventDefault()
     if (form.values.new_password !== form.values.repeat) {
-      form.setMessage({ kind: 'error', text: 'Die beiden neuen Passwörter sind verschieden.' })
+      form.setMessage({ kind: 'error', text: t('Die beiden neuen Passwörter sind verschieden.') })
       return
     }
     const saved = (await form.submit(
@@ -170,7 +180,7 @@ function PasswordCard({ data, onSaved }: { data: AccountData; onSaved: (d: Accou
           ...(data.has_password ? { current_password: form.values.current_password } : {}),
           new_password: form.values.new_password,
         }),
-      data.has_password ? 'Passwort geändert.' : 'Passwort festgelegt.',
+      data.has_password ? t('Passwort geändert.') : t('Passwort festgelegt.'),
     )) as AccountData | undefined
     if (saved) {
       form.setValues({ current_password: '', new_password: '', repeat: '' })
@@ -180,22 +190,25 @@ function PasswordCard({ data, onSaved }: { data: AccountData; onSaved: (d: Accou
   }
   return (
     <form className="card card-wide" onSubmit={save}>
-      <h2>{data.has_password ? 'Passwort ändern' : 'Passwort festlegen'}</h2>
+      <h2>{data.has_password ? t('Passwort ändern') : t('Passwort festlegen')}</h2>
       {user?.must_change_password && (
         <Alert kind="info">
-          Du bist mit einem Startpasswort angemeldet. Bitte lege zuerst ein eigenes Passwort fest;
-          das Startpasswort gilt nur wenige Tage.
+          {t(
+            'Du bist mit einem Startpasswort angemeldet. Bitte lege zuerst ein eigenes Passwort fest; das Startpasswort gilt nur wenige Tage.',
+          )}
         </Alert>
       )}
       {!data.has_password && (
         <p className="muted small">
-          Du meldest dich bisher per Anmeldelink an. Mit einem Passwort geht es auch ohne Link.
+          {t(
+            'Du meldest dich bisher per Anmeldelink an. Mit einem Passwort geht es auch ohne Link.',
+          )}
         </p>
       )}
       <div className="grid-3">
         {data.has_password && (
           <Field
-            label="Bisheriges Passwort"
+            label={t('Bisheriges Passwort')}
             type="password"
             required
             autoComplete="current-password"
@@ -205,17 +218,17 @@ function PasswordCard({ data, onSaved }: { data: AccountData; onSaved: (d: Accou
           />
         )}
         <Field
-          label="Neues Passwort"
+          label={t('Neues Passwort')}
           type="password"
           required
           autoComplete="new-password"
           value={form.values.new_password}
           error={form.errors.new_password}
-          hint="mindestens 8 Zeichen, nicht zu einfach"
+          hint={t('mindestens 8 Zeichen, nicht zu einfach')}
           onChange={(e) => form.set('new_password', e.target.value)}
         />
         <Field
-          label="Neues Passwort wiederholen"
+          label={t('Neues Passwort wiederholen')}
           type="password"
           required
           autoComplete="new-password"
@@ -225,7 +238,7 @@ function PasswordCard({ data, onSaved }: { data: AccountData; onSaved: (d: Accou
       </div>
       {form.message && <Alert kind={form.message.kind}>{form.message.text}</Alert>}
       <button type="submit" className="button button-primary" disabled={form.busy}>
-        {data.has_password ? 'Passwort ändern' : 'Passwort festlegen'}
+        {data.has_password ? t('Passwort ändern') : t('Passwort festlegen')}
       </button>
     </form>
   )

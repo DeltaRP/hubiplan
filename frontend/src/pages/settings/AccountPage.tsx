@@ -10,6 +10,7 @@ import { LanguageCard } from '../../i18n/LanguageControls.tsx'
 import { AppDevicesCard } from './AppDevicesCard.tsx'
 import { RemoteLoginCard } from './RemoteLoginCard.tsx'
 import { SignatureCard } from './SignatureCard.tsx'
+import { t } from '../../i18n/index.ts'
 
 // Mein Konto: persönliche Einstellungen, unabhängig von der gewählten Organisation.
 // Aufgeteilt in Unterpunkte (accountNav.ts), die in der Seitenleiste stehen.
@@ -18,7 +19,7 @@ import { SignatureCard } from './SignatureCard.tsx'
 export function AccountPage() {
   return (
     <section>
-      <h1>Profil</h1>
+      <h1>{t('Profil')}</h1>
       <div className="stack">
         <NameSection />
         <LanguageCard />
@@ -32,7 +33,7 @@ export function AccountPage() {
 export function AccountLoginPage() {
   return (
     <section>
-      <h1>Anmeldung &amp; Sicherheit</h1>
+      <h1>{t('Anmeldung & Sicherheit')}</h1>
       <div className="stack">
         <LoginSections />
         <TwoFactorCard />
@@ -45,7 +46,7 @@ export function AccountLoginPage() {
 export function AccountAppPage() {
   return (
     <section>
-      <h1>App &amp; andere Instanzen</h1>
+      <h1>{t('App & andere Instanzen')}</h1>
       <div className="stack">
         <AppDevicesCard />
         <RemoteLoginCard />
@@ -58,16 +59,17 @@ export function AccountAppPage() {
 export function AccountTemplatesPage() {
   return (
     <section>
-      <h1>Briefvorlage &amp; Unterschrift</h1>
+      <h1>{t('Briefvorlage & Unterschrift')}</h1>
       <div className="stack">
         <div className="card">
-          <h2>Briefvorlage</h2>
+          <h2>{t('Briefvorlage')}</h2>
           <p className="muted small">
-            Als Vorstandsmitglied oder mit einer Rolle in einer Untereinheit erstellst du dir eine
-            Word-Vorlage mit dem Briefbogen deiner Einheit, deiner Funktion und deinem Kontaktweg.
+            {t(
+              'Als Vorstandsmitglied oder mit einer Rolle in einer Untereinheit erstellst du dir eine Word-Vorlage mit dem Briefbogen deiner Einheit, deiner Funktion und deinem Kontaktweg.',
+            )}
           </p>
           <p>
-            <Link to="/briefvorlage">Briefvorlage erstellen</Link>
+            <Link to="/briefvorlage">{t('Briefvorlage erstellen')}</Link>
           </p>
         </div>
         <SignatureCard />
@@ -128,8 +130,8 @@ function TwoFactorCard() {
       }
     } catch {
       setError(
-        'Keine Verbindung zum Server. Ob die Änderung angekommen ist, zeigt der Stand unten; ' +
-          'bitte prüfen und ggf. wiederholen.',
+        t('Keine Verbindung zum Server. Ob die Änderung angekommen ist, zeigt der Stand unten; ') +
+          t('bitte prüfen und ggf. wiederholen.'),
       )
       setAttempt((n) => n + 1)
     } finally {
@@ -149,14 +151,14 @@ function TwoFactorCard() {
   const afterActivate = async () => {
     setCode('')
     setPassword('')
-    setMessage('Zwei-Faktor-Anmeldung ist aktiv.')
+    setMessage(t('Zwei-Faktor-Anmeldung ist aktiv.'))
     await loadRecoveryCodes()
     await load()
   }
   const afterDeactivate = async () => {
     setRecoveryCodes([])
     setCodesFailed(false)
-    setMessage('Zwei-Faktor-Anmeldung wurde ausgeschaltet.')
+    setMessage(t('Zwei-Faktor-Anmeldung wurde ausgeschaltet.'))
     await load()
   }
 
@@ -187,7 +189,7 @@ function TwoFactorCard() {
 
   return (
     <div className="card">
-      <h2>Zwei-Faktor-Anmeldung</h2>
+      <h2>{t('Zwei-Faktor-Anmeldung')}</h2>
       {message && <p className="alert alert-success">{message}</p>}
       {error && (
         <p className="alert alert-error" role="alert">
@@ -195,32 +197,38 @@ function TwoFactorCard() {
         </p>
       )}
 
-      {totp === null && !loadFailed && <p className="muted">Lädt …</p>}
+      {totp === null && !loadFailed && <p className="muted">{t('Lädt …')}</p>}
       {totp === null && loadFailed && (
         <div className="alert alert-error" role="alert">
-          Der Stand der Zwei-Faktor-Anmeldung konnte nicht geladen werden.{' '}
+          {t('Der Stand der Zwei-Faktor-Anmeldung konnte nicht geladen werden.')}{' '}
           <button type="button" className="button" onClick={() => setAttempt((n) => n + 1)}>
-            Erneut laden
+            {t('Erneut laden')}
           </button>
         </div>
       )}
 
       {totp?.active && (
         <>
-          <p>Bei der Anmeldung wird zusätzlich ein Code aus deiner Authenticator-App abgefragt.</p>
+          <p>
+            {t(
+              'Bei der Anmeldung wird zusätzlich ein Code aus deiner Authenticator-App abgefragt.',
+            )}
+          </p>
           {codesFailed && (
             <div className="alert alert-error" role="alert">
-              Die Wiederherstellungscodes konnten nicht geladen werden.{' '}
+              {t('Die Wiederherstellungscodes konnten nicht geladen werden.')}{' '}
               <button type="button" className="button" onClick={() => void loadRecoveryCodes()}>
-                Codes erneut laden
+                {t('Codes erneut laden')}
               </button>
             </div>
           )}
           {recoveryCodes.length > 0 && (
             <div className="recovery-codes">
               <p>
-                <strong>Wiederherstellungscodes</strong> – sicher aufbewahren. Jeder Code
-                funktioniert einmal, falls du dein Handy nicht zur Hand hast.
+                <strong>{t('Wiederherstellungscodes')}</strong>{' '}
+                {t(
+                  '– sicher aufbewahren. Jeder Code funktioniert einmal, falls du dein Handy nicht zur Hand hast.',
+                )}
               </p>
               <ul>
                 {recoveryCodes.map((c) => (
@@ -237,7 +245,7 @@ function TwoFactorCard() {
             disabled={busy}
             onClick={() => void run(api.deactivateTotp, afterDeactivate)}
           >
-            Ausschalten
+            {t('Ausschalten')}
           </button>
         </>
       )}
@@ -245,18 +253,18 @@ function TwoFactorCard() {
       {totp && !totp.active && (
         <form onSubmit={activate}>
           <p>
-            Schütze dein Konto mit einem zweiten Faktor. Scanne den QR-Code mit einer
-            Authenticator-App (z. B. FreeOTP, Aegis, Google Authenticator) und gib den angezeigten
-            Code ein.
+            {t(
+              'Schütze dein Konto mit einem zweiten Faktor. Scanne den QR-Code mit einer Authenticator-App (z. B. FreeOTP, Aegis, Google Authenticator) und gib den angezeigten Code ein.',
+            )}
           </p>
           <div className="totp-setup">
             <QRCodeSVG value={totp.totpUrl} size={168} marginSize={2} />
             <p className="muted">
-              Manuell: <code>{totp.secret}</code>
+              {t('Manuell:')} <code>{totp.secret}</code>
             </p>
           </div>
           <label className="field">
-            <span>Code aus der App</span>
+            <span>{t('Code aus der App')}</span>
             <input
               inputMode="numeric"
               autoComplete="one-time-code"
@@ -266,7 +274,7 @@ function TwoFactorCard() {
             />
           </label>
           <label className="field">
-            <span>Dein Passwort zur Bestätigung</span>
+            <span>{t('Dein Passwort zur Bestätigung')}</span>
             <input
               type="password"
               autoComplete="current-password"
@@ -276,7 +284,7 @@ function TwoFactorCard() {
             />
           </label>
           <button type="submit" className="button button-primary" disabled={busy}>
-            Aktivieren
+            {t('Aktivieren')}
           </button>
         </form>
       )}
@@ -304,7 +312,7 @@ function ReauthCard({
       if (result.kind === 'ok') await onConfirmed()
       else if (result.kind === 'error') setError(result.message)
     } catch {
-      setError('Keine Verbindung zum Server. Bitte erneut versuchen.')
+      setError(t('Keine Verbindung zum Server. Bitte erneut versuchen.'))
     } finally {
       setBusy(false)
     }
@@ -312,10 +320,10 @@ function ReauthCard({
 
   return (
     <form className="card" onSubmit={submit}>
-      <h2>Passwort bestätigen</h2>
-      <p className="muted">Für diese Änderung brauchen wir noch einmal dein Passwort.</p>
+      <h2>{t('Passwort bestätigen')}</h2>
+      <p className="muted">{t('Für diese Änderung brauchen wir noch einmal dein Passwort.')}</p>
       <label className="field">
-        <span>Passwort</span>
+        <span>{t('Passwort')}</span>
         <input
           type="password"
           autoComplete="current-password"
@@ -332,10 +340,10 @@ function ReauthCard({
       )}
       <div className="button-row">
         <button type="submit" className="button button-primary" disabled={busy}>
-          Bestätigen
+          {t('Bestätigen')}
         </button>
         <button type="button" className="button button-ghost" onClick={onCancel}>
-          Abbrechen
+          {t('Abbrechen')}
         </button>
       </div>
     </form>

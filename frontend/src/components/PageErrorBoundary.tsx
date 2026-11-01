@@ -1,5 +1,6 @@
 import { Component } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
+import { t } from '../i18n/index.ts'
 
 /** Fängt Fehler beim Laden oder Anzeigen einer Seite ab (z. B. nach einem Update fehlt ein
  * altes Seitenmodul), statt die ganze Oberfläche leer zu lassen (Gesamtaudit 30.10.).
@@ -30,11 +31,12 @@ export class PageErrorBoundary extends Component<
     return (
       <div className="alert alert-error" role="alert">
         <p>
-          Diese Seite ließ sich nicht laden. Vielleicht gibt es eine neue Version von HUBIplan oder
-          die Verbindung war kurz weg.
+          {t(
+            'Diese Seite ließ sich nicht laden. Vielleicht gibt es eine neue Version von HUBIplan oder die Verbindung war kurz weg.',
+          )}
         </p>
         <button type="button" className="button" onClick={() => window.location.reload()}>
-          Neu laden
+          {t('Neu laden')}
         </button>
       </div>
     )

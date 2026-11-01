@@ -1,3 +1,4 @@
+import { t } from '../../i18n/index.ts'
 // Farben und Rechenhilfen der Diagramme.
 
 /** Feste Reihenfolge für Kategorien (farbfehlsichtigkeitsgeprüft), nie zyklisch. */
@@ -57,7 +58,7 @@ export function foldSeries(
   if (rest.length > 0)
     out.push({
       key: 'weitere',
-      name: `Weitere (${rest.length})`,
+      name: t('Weitere ({n})', { n: rest.length }),
       color: REST_COLOR,
       values: rest[0].values.map((_, i) => rest.reduce((sum, s) => sum + (s.values[i] ?? 0), 0)),
     })

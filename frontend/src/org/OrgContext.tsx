@@ -7,6 +7,7 @@ import type { DeptSummary, PortalEntry } from '../api/portal.ts'
 import { useAuth } from '../auth/AuthContext.tsx'
 import { applyTheme } from '../theme/theme.ts'
 import type { DatePrecision } from '../components/forms.ts'
+import { t } from '../i18n/index.ts'
 
 const STORAGE_KEY = 'hubiplan.aktiveOrganisation'
 
@@ -164,7 +165,7 @@ export function useOptionalOrg(): OrgState | null {
 // oxlint-disable-next-line react/only-export-components
 export function useOrg(): OrgState {
   const ctx = useContext(OrgContext)
-  if (!ctx) throw new Error('useOrg muss innerhalb von OrgProvider genutzt werden.')
+  if (!ctx) throw new Error(t('useOrg muss innerhalb von OrgProvider genutzt werden.'))
   return ctx
 }
 
@@ -172,7 +173,7 @@ export function useOrg(): OrgState {
 // oxlint-disable-next-line react/only-export-components
 export function useActiveOrg(): OrgSummary {
   const { active } = useOrg()
-  if (!active) throw new Error('Keine aktive Organisation.')
+  if (!active) throw new Error(t('Keine aktive Organisation.'))
   return active
 }
 
@@ -180,7 +181,7 @@ export function useActiveOrg(): OrgSummary {
 // oxlint-disable-next-line react/only-export-components
 export function useActiveDept(): DeptSummary {
   const { activeDept } = useOrg()
-  if (!activeDept) throw new Error('Keine aktive Abteilung.')
+  if (!activeDept) throw new Error(t('Keine aktive Abteilung.'))
   return activeDept
 }
 

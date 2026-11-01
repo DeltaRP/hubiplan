@@ -19,13 +19,16 @@ import { errorMessage, formatDateTime, useAutoSave, useForm, useLoad } from '../
 import { Alert, Checkbox, Field, LoadError, SaveStatus, SelectField } from '../ui.tsx'
 import { DeliveryField } from './DeliveryField.tsx'
 import { RecipientPanel } from './RecipientPanel.tsx'
+import { t } from '../../i18n/index.ts'
 
 const MODE_HINT: Record<MailingListMode, string> = {
-  confirm:
+  confirm: t(
     'Der Absender bekommt eine Mail mit Link und versendet erst mit einem Klick. Schützt vor gefälschten Absendern und Versehen.',
-  draft: 'Das Rundschreiben liegt als Entwurf unter Rundschreiben und wird dort versendet.',
-  direct:
+  ),
+  draft: t('Das Rundschreiben liegt als Entwurf unter Rundschreiben und wird dort versendet.'),
+  direct: t(
     'Die Mail geht sofort an alle Empfänger, ohne Link und ohne Freigabe. Der Absender bekommt nur eine Versandmeldung.',
+  ),
 }
 
 export function MailingListsArea({
@@ -53,9 +56,14 @@ function SetupHint({ settings }: { settings: MailingListSettings }) {
   return (
     <Alert kind="info">
       {settings.domain && !settings.domain.endsWith('.invalid')
-        ? `Das Sammelpostfach für ${settings.domain} ist noch nicht eingerichtet. Bis dahin kommen keine Mails an.`
-        : 'Auf diesem Server ist noch kein Sammelpostfach eingerichtet. Bis dahin kommen keine Mails an.'}{' '}
-      {settings.simulation && 'Mit „Probe-Eingang“ beim Verteiler lässt sich der Ablauf testen.'}
+        ? t(
+            'Das Sammelpostfach für {domain} ist noch nicht eingerichtet. Bis dahin kommen keine Mails an.',
+            { domain: settings.domain },
+          )
+        : t(
+            'Auf diesem Server ist noch kein Sammelpostfach eingerichtet. Bis dahin kommen keine Mails an.',
+          )}{' '}
+      {settings.simulation && t('Mit „Probe-Eingang“ beim Verteiler lässt sich der Ablauf testen.')}
     </Alert>
   )
 }
@@ -94,34 +102,33 @@ function ListOverview({ base, root }: { base: CircularBase; root: string }) {
   }
 
   if (data.error) return <LoadError message={data.error} onRetry={data.reload} />
-  if (!data.data) return <p className="muted">Wird geladen …</p>
+  if (!data.data) return <p className="muted">{t('Wird geladen …')}</p>
   const items = data.data.items
   return (
     <div className="stack">
       <div className="card card-wide">
-        <h2>Verteiler</h2>
+        <h2>{t('Verteiler')}</h2>
         <p className="muted small">
-          Wer Rundschreiben versenden darf, schreibt aus dem eigenen Mailprogramm an die Adresse
-          eines Verteilers. HUBIplan macht daraus ein Rundschreiben an die Empfänger des Verteilers:
-          mit Abmeldelink, Versandprotokoll und Brief für Mitglieder ohne E-Mail. Mails von anderen
-          Absendern werden verworfen. Antworten gehen an den Absender, nie an alle.
+          {t(
+            'Wer Rundschreiben versenden darf, schreibt aus dem eigenen Mailprogramm an die Adresse eines Verteilers. HUBIplan macht daraus ein Rundschreiben an die Empfänger des Verteilers: mit Abmeldelink, Versandprotokoll und Brief für Mitglieder ohne E-Mail. Mails von anderen Absendern werden verworfen. Antworten gehen an den Absender, nie an alle.',
+          )}
         </p>
         <SetupHint settings={data.data.settings} />
         {error && items.length > 0 && <Alert kind="error">{error}</Alert>}
         {items.length === 0 ? (
-          <p className="muted">Noch keine Verteiler.</p>
+          <p className="muted">{t('Noch keine Verteiler.')}</p>
         ) : (
           <table className="table">
             <thead>
               <tr>
-                <th scope="col">Aktiv</th>
-                <th scope="col">Name</th>
-                <th scope="col">Adresse</th>
+                <th scope="col">{t('Aktiv')}</th>
+                <th scope="col">{t('Name')}</th>
+                <th scope="col">{t('Adresse')}</th>
                 <th scope="col" className="num">
-                  Empfänger
+                  {t('Empfänger')}
                 </th>
-                <th scope="col">Versand</th>
-                <th scope="col">Letzter Eingang</th>
+                <th scope="col">{t('Versand')}</th>
+                <th scope="col">{t('Letzter Eingang')}</th>
               </tr>
             </thead>
             <tbody>
@@ -131,8 +138,8 @@ function ListOverview({ base, root }: { base: CircularBase; root: string }) {
                     <input
                       type="checkbox"
                       checked={ml.is_active}
-                      aria-label={`Verteiler ${ml.name} aktiv`}
-                      title="Ausgeschaltet werden Mails an diese Adresse verworfen."
+                      aria-label={t('Verteiler {name} aktiv', { name: ml.name })}
+                      title={t('Ausgeschaltet werden Mails an diese Adresse verworfen.')}
                       onChange={(e) => void toggle(ml, e.target.checked)}
                     />
                   </td>
@@ -145,7 +152,10 @@ function ListOverview({ base, root }: { base: CircularBase; root: string }) {
                   <td>{ml.mode_label}</td>
                   <td>
                     {ml.last_inbound
-                      ? `${formatDateTime(ml.last_inbound.received_at)} · ${ml.last_inbound.status_label}`
+                      ? t('{x} · {status_label}', {
+                          x: formatDateTime(ml.last_inbound.received_at),
+                          status_label: ml.last_inbound.status_label,
+                        })
                       : '–'}
                   </td>
                 </tr>
@@ -155,33 +165,36 @@ function ListOverview({ base, root }: { base: CircularBase; root: string }) {
         )}
       </div>
       <form className="card card-wide stack-sm" onSubmit={(e) => void create(e)}>
-        <h2>Neuer Verteiler</h2>
+        <h2>{t('Neuer Verteiler')}</h2>
         <Field
-          label="Name"
+          label={t('Name')}
           value={name}
           maxLength={100}
           error={errors.name}
-          placeholder="z. B. Alle Mitglieder"
+          placeholder={t('z. B. Alle Mitglieder')}
           onChange={(e) => setName(e.target.value)}
           required
         />
         <Field
-          label="Adresse"
+          label={t('Adresse')}
           value={local}
           maxLength={64}
           error={errors.local_part}
-          placeholder="z. B. alle"
+          placeholder={t('z. B. alle')}
           hint={
             domain
-              ? `Teil vor dem @: ${local || 'alle'}@${domain}. Kleinbuchstaben, Ziffern, Punkt und Bindestrich.`
-              : 'Teil vor dem @. Kleinbuchstaben, Ziffern, Punkt und Bindestrich.'
+              ? t(
+                  'Teil vor dem @: {x}@{domain}. Kleinbuchstaben, Ziffern, Punkt und Bindestrich.',
+                  { x: local || 'alle', domain },
+                )
+              : t('Teil vor dem @. Kleinbuchstaben, Ziffern, Punkt und Bindestrich.')
           }
           onChange={(e) => setLocal(e.target.value.toLowerCase())}
           required
         />
         <div className="button-row">
           <button type="submit" className="button button-primary">
-            Anlegen
+            {t('Anlegen')}
           </button>
         </div>
         {error && <Alert kind="error">{error}</Alert>}
@@ -210,11 +223,11 @@ function ListPage({
   const error = ml.error ?? options.error ?? pattern.error
   if (error) return <LoadError message={error} onRetry={ml.reload} />
   if (!ml.data || !options.data || !pattern.data || !all.data)
-    return <p className="muted">Wird geladen …</p>
+    return <p className="muted">{t('Wird geladen …')}</p>
   return (
     <div className="stack">
       <p>
-        <Link to={root}>← Alle Verteiler</Link>
+        <Link to={root}>{t('← Alle Verteiler')}</Link>
       </p>
       <SetupHint settings={all.data.settings} />
       <ListSettings key={ml.data.id} base={base} root={root} initial={ml.data} />
@@ -288,12 +301,16 @@ function ListSettings({
     if (mode === 'direct') {
       const ok = await confirmDialog({
         message:
-          'Wirklich direkt versenden? Dann geht jede Mail eines berechtigten Absenders sofort an ' +
-          'alle Empfänger, ohne Bestätigungslink. Ein Versehen lässt sich nicht zurückholen, und ' +
-          'gegen gefälschte Absender schützt nur noch die DMARC-Prüfung. Bestätigt der ' +
-          'Mailserver die Herkunft nicht (dmarc=pass), kommt trotzdem ein Bestätigungslink. ' +
-          'Am besten nur für kleine Empfängerkreise nutzen.',
-        confirmLabel: 'Direkt versenden',
+          t(
+            'Wirklich direkt versenden? Dann geht jede Mail eines berechtigten Absenders sofort an ',
+          ) +
+          t(
+            'alle Empfänger, ohne Bestätigungslink. Ein Versehen lässt sich nicht zurückholen, und ',
+          ) +
+          t('gegen gefälschte Absender schützt nur noch die DMARC-Prüfung. Bestätigt der ') +
+          t('Mailserver die Herkunft nicht (dmarc=pass), kommt trotzdem ein Bestätigungslink. ') +
+          t('Am besten nur für kleine Empfängerkreise nutzen.'),
+        confirmLabel: t('Direkt versenden'),
       })
       if (!ok) return
     }
@@ -303,11 +320,13 @@ function ListSettings({
   async function openToAll() {
     const ok = await confirmDialog({
       message:
-        'Wirklich alle schreiben lassen? Dann kann jeder, auch ohne HUBIplan-Konto, an diesen ' +
-        'Verteiler schreiben, und die Mail geht ohne Bestätigung an alle Empfänger. Auch Spam ' +
-        'oder Mails mit gefälschtem Absender können durchrutschen. Am besten nur für sehr kleine ' +
-        'Empfängerkreise nutzen.',
-      confirmLabel: 'Alle schreiben lassen',
+        t('Wirklich alle schreiben lassen? Dann kann jeder, auch ohne HUBIplan-Konto, an diesen ') +
+        t('Verteiler schreiben, und die Mail geht ohne Bestätigung an alle Empfänger. Auch Spam ') +
+        t(
+          'oder Mails mit gefälschtem Absender können durchrutschen. Am besten nur für sehr kleine ',
+        ) +
+        t('Empfängerkreise nutzen.'),
+      confirmLabel: t('Alle schreiben lassen'),
     })
     if (!ok) return
     setSomeSenders(false)
@@ -317,8 +336,11 @@ function ListSettings({
 
   async function remove() {
     const ok = await confirmDialog({
-      message: `Verteiler „${initial.name}“ löschen? Mails an ${address} werden danach verworfen.`,
-      confirmLabel: 'Löschen',
+      message: t('Verteiler „{name}“ löschen? Mails an {address} werden danach verworfen.', {
+        name: initial.name,
+        address,
+      }),
+      confirmLabel: t('Löschen'),
     })
     if (!ok) return
     try {
@@ -332,37 +354,42 @@ function ListSettings({
   return (
     <div className="card card-wide stack-sm">
       <div className="card-head">
-        <h2>{v.name || 'Verteiler'}</h2>
+        <h2>{v.name || t('Verteiler')}</h2>
         <SaveStatus auto={auto} />
       </div>
       {address && (
         <p>
-          Adresse: <strong>{address}</strong>
+          {t('Adresse:')} <strong>{address}</strong>
           {aliasAddresses.length > 0 && (
-            <span className="muted"> · auch: {aliasAddresses.join(', ')}</span>
+            <span className="muted">
+              {' '}
+              {t('· auch:')} {aliasAddresses.join(', ')}
+            </span>
           )}
         </p>
       )}
       <Field
-        label="Name"
+        label={t('Name')}
         value={v.name}
         maxLength={100}
         error={errors.name}
         onChange={(e) => set('name', e.target.value)}
       />
       <Field
-        label="Adresse"
+        label={t('Adresse')}
         value={v.local_part}
         maxLength={64}
         error={errors.local_part}
-        hint="Teil vor dem @. Umlaute werden umgeschrieben (ü wird ue)."
+        hint={t('Teil vor dem @. Umlaute werden umgeschrieben (ü wird ue).')}
         onChange={(e) => set('local_part', e.target.value.toLowerCase())}
       />
       <Field
-        label="Weitere Adressen"
+        label={t('Weitere Adressen')}
         value={aliasText}
         error={errors.aliases}
-        hint="Optional, mit Komma getrennt, z. B. „schriftfuehrerin, sf“. Mails an diese Adressen landen im selben Verteiler."
+        hint={t(
+          'Optional, mit Komma getrennt, z. B. „schriftfuehrerin, sf“. Mails an diese Adressen landen im selben Verteiler.',
+        )}
         onChange={(e) => {
           setAliasText(e.target.value)
           set(
@@ -375,24 +402,24 @@ function ListSettings({
         }}
       />
       <SelectField
-        label="Versand"
+        label={t('Versand')}
         value={v.mode}
         error={errors.mode}
         hint={MODE_HINT[v.mode]}
         onChange={(e) => void chooseMode(e.target.value as MailingListMode)}
       >
-        <option value="confirm">Absender bestätigt per Link</option>
-        <option value="draft">als Entwurf in HUBIplan ablegen</option>
-        <option value="direct">direkt versenden (ohne Bestätigung)</option>
+        <option value="confirm">{t('Absender bestätigt per Link')}</option>
+        <option value="draft">{t('als Entwurf in HUBIplan ablegen')}</option>
+        <option value="direct">{t('direkt versenden (ohne Bestätigung)')}</option>
       </SelectField>
       <Checkbox
-        label="Verteiler eingeschaltet"
+        label={t('Verteiler eingeschaltet')}
         checked={v.is_active}
         onChange={(on) => set('is_active', on)}
-        hint="Ausgeschaltet werden Mails an diese Adresse verworfen."
+        hint={t('Ausgeschaltet werden Mails an diese Adresse verworfen.')}
       />
       <fieldset className="subcard stack-sm">
-        <legend>Wer darf an den Verteiler schreiben?</legend>
+        <legend>{t('Wer darf an den Verteiler schreiben?')}</legend>
         <div className="button-row">
           <label className="checkbox">
             <input
@@ -405,7 +432,7 @@ function ListSettings({
                 set('open_senders', false)
               }}
             />
-            <span>alle mit dem Recht „Rundschreiben versenden“</span>
+            <span>{t('alle mit dem Recht „Rundschreiben versenden“')}</span>
           </label>
           <label className="checkbox">
             <input
@@ -417,7 +444,7 @@ function ListSettings({
                 set('open_senders', false)
               }}
             />
-            <span>nur ausgewählte</span>
+            <span>{t('nur ausgewählte')}</span>
           </label>
           <label className="checkbox">
             <input
@@ -426,22 +453,24 @@ function ListSettings({
               checked={v.open_senders}
               onChange={() => void openToAll()}
             />
-            <span>alle, auch ohne HUBIplan-Konto</span>
+            <span>{t('alle, auch ohne HUBIplan-Konto')}</span>
           </label>
         </div>
         {v.open_senders && (
           <Alert kind="info">
-            Jeder kann an diesen Verteiler schreiben, die Mail geht ohne Bestätigung an alle
-            Empfänger. Automatische Mails, gefälschte Absender und vom Spamfilter markierte Mails
-            werden verworfen; je fremdem Absender höchstens drei Mails am Tag.
+            {t(
+              'Jeder kann an diesen Verteiler schreiben, die Mail geht ohne Bestätigung an alle Empfänger. Automatische Mails, gefälschte Absender und vom Spamfilter markierte Mails werden verworfen; je fremdem Absender höchstens drei Mails am Tag.',
+            )}
           </Alert>
         )}
         {someSenders && !v.open_senders && options.length === 0 && (
-          <p className="muted small">Niemand hat zurzeit das Recht „Rundschreiben versenden“.</p>
+          <p className="muted small">
+            {t('Niemand hat zurzeit das Recht „Rundschreiben versenden“.')}
+          </p>
         )}
         {someSenders && !v.open_senders && options.length > 0 && v.senders.length === 0 && (
           <Alert kind="info">
-            Noch niemand angehakt: Bis dahin dürfen alle mit dem Recht schreiben.
+            {t('Noch niemand angehakt: Bis dahin dürfen alle mit dem Recht schreiben.')}
           </Alert>
         )}
         {someSenders &&
@@ -449,7 +478,7 @@ function ListSettings({
           options.map((o) => (
             <Checkbox
               key={o.id}
-              label={`${o.name} (${o.email})`}
+              label={t('{name} ({email})', { name: o.name, email: o.email })}
               checked={v.senders.includes(o.id)}
               onChange={(on) =>
                 set(
@@ -463,10 +492,12 @@ function ListSettings({
           ))}
         {errors.senders && <p className="field-error small">{errors.senders}</p>}
         <p className="muted small">
-          Zur Auswahl stehen alle mit dem Recht
-          {initial.department ? ` im Verein oder in ${initial.department.name}` : ''}. Geschrieben
-          wird von der E-Mail-Adresse des HUBIplan-Kontos; der Bestätigungslink geht immer an diese
-          Adresse.
+          {t('Zur Auswahl stehen alle mit dem Recht')}
+          {initial.department
+            ? t(' im Verein oder in {name}', { name: initial.department.name })
+            : ''}
+          . Geschrieben wird von der E-Mail-Adresse des HUBIplan-Kontos; der Bestätigungslink geht
+          immer an diese Adresse.
         </p>
       </fieldset>
       <div className="button-row">
@@ -475,7 +506,7 @@ function ListSettings({
           className="button button-danger push-right"
           onClick={() => void remove()}
         >
-          Verteiler löschen
+          {t('Verteiler löschen')}
         </button>
       </div>
       {error && <Alert kind="error">{error}</Alert>}
@@ -513,18 +544,18 @@ function ListRecipients({
     <>
       <div className="card card-wide stack-sm">
         <div className="card-head">
-          <h2>Versand</h2>
+          <h2>{t('Versand')}</h2>
           <SaveStatus auto={auto} />
         </div>
         <div className="form-row">
           <SelectField
-            label="Art"
+            label={t('Art')}
             value={v.kind}
             error={errors.kind}
             hint={
               v.kind === 'info'
-                ? 'Mitglieder können sich von Informationen abmelden.'
-                : 'Geht an alle, auch an Abgemeldete (z. B. Einladung zur Versammlung).'
+                ? t('Mitglieder können sich von Informationen abmelden.')
+                : t('Geht an alle, auch an Abgemeldete (z. B. Einladung zur Versammlung).')
             }
             onChange={(e) => set('kind', e.target.value as RecipientValues['kind'])}
           >
@@ -558,7 +589,7 @@ function ListRecipients({
           }}
         />
         <p className="muted small">
-          Die Auswahl gilt bei jedem Eingang neu: Neue Mitglieder sind automatisch dabei.
+          {t('Die Auswahl gilt bei jedem Eingang neu: Neue Mitglieder sind automatisch dabei.')}
         </p>
       </div>
       <RecipientPanel
@@ -603,10 +634,10 @@ function Inbound({
         kind: entry.status === 'rejected' ? 'error' : 'success',
         text:
           entry.status === 'rejected'
-            ? `Abgewiesen: ${entry.reason}`
+            ? t('Abgewiesen: {reason}', { reason: entry.reason })
             : entry.status === 'waiting'
-              ? 'Eingegangen. Die Bestätigungsmail an dich liegt im Postausgang; hier direkt:'
-              : 'Eingegangen und als Entwurf abgelegt.',
+              ? t('Eingegangen. Die Bestätigungsmail an dich liegt im Postausgang; hier direkt:')
+              : t('Eingegangen und als Entwurf abgelegt.'),
         url: entry.confirm_url,
       })
       await rows.reload()
@@ -617,19 +648,19 @@ function Inbound({
 
   return (
     <div className="card card-wide stack-sm">
-      <h2>Eingänge</h2>
+      <h2>{t('Eingänge')}</h2>
       {rows.error && <LoadError message={rows.error} onRetry={rows.reload} />}
       {rows.data && rows.data.length === 0 && (
-        <p className="muted">Noch keine Mails eingegangen.</p>
+        <p className="muted">{t('Noch keine Mails eingegangen.')}</p>
       )}
       {rows.data && rows.data.length > 0 && (
         <table className="table">
           <thead>
             <tr>
-              <th scope="col">Eingang</th>
-              <th scope="col">Absender</th>
-              <th scope="col">Betreff</th>
-              <th scope="col">Stand</th>
+              <th scope="col">{t('Eingang')}</th>
+              <th scope="col">{t('Absender')}</th>
+              <th scope="col">{t('Betreff')}</th>
+              <th scope="col">{t('Stand')}</th>
             </tr>
           </thead>
           <tbody>
@@ -657,23 +688,25 @@ function Inbound({
       )}
       {simulation && (
         <form className="subcard stack-sm" onSubmit={(e) => void probe(e)}>
-          <h3>Probe-Eingang</h3>
+          <h3>{t('Probe-Eingang')}</h3>
           <p className="muted small">
-            Ohne Sammelpostfach: so, als käme eine Mail von deiner Adresse an {ml.address}.
+            {t('Ohne Sammelpostfach: so, als käme eine Mail von deiner Adresse an {address}.', {
+              address: ml.address,
+            })}
           </p>
           <Field
-            label="Betreff"
+            label={t('Betreff')}
             value={subject}
             maxLength={200}
             onChange={(e) => setSubject(e.target.value)}
           />
           <label className="field">
-            <span>Text</span>
+            <span>{t('Text')}</span>
             <textarea rows={5} value={body} onChange={(e) => setBody(e.target.value)} />
           </label>
           <div className="button-row">
             <button type="submit" className="button button-ghost">
-              Probe-Eingang
+              {t('Probe-Eingang')}
             </button>
           </div>
           {notice && (
@@ -681,7 +714,7 @@ function Inbound({
               {notice.text}{' '}
               {notice.url && (
                 <a href={notice.url} target="_blank" rel="noreferrer">
-                  Bestätigungsseite öffnen
+                  {t('Bestätigungsseite öffnen')}
                 </a>
               )}
             </Alert>

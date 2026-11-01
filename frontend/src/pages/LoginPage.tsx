@@ -8,6 +8,7 @@ import { useAuth } from '../auth/AuthContext.tsx'
 import { loginTarget, rememberedTarget } from '../auth/loginTarget.ts'
 import { Logo } from '../components/Logo.tsx'
 import { RemoteLoginChoices } from './VerbundLoginPages.tsx'
+import { t } from '../i18n/index.ts'
 
 type Step = 'password' | 'mfa'
 
@@ -47,7 +48,7 @@ export function LoginPage() {
     try {
       handle(await action())
     } catch {
-      setError('Der Server ist nicht erreichbar.')
+      setError(t('Der Server ist nicht erreichbar.'))
     } finally {
       setBusy(false)
     }
@@ -62,9 +63,9 @@ export function LoginPage() {
 
         {step === 'password' ? (
           <form onSubmit={(e) => submit(e, () => api.login(email.trim(), password))}>
-            <h1>Anmelden</h1>
+            <h1>{t('Anmelden')}</h1>
             <label className="field">
-              <span>E-Mail-Adresse</span>
+              <span>{t('E-Mail-Adresse')}</span>
               <input
                 type="email"
                 autoComplete="username"
@@ -74,7 +75,7 @@ export function LoginPage() {
               />
             </label>
             <label className="field">
-              <span>Passwort</span>
+              <span>{t('Passwort')}</span>
               <input
                 type="password"
                 autoComplete="current-password"
@@ -89,28 +90,29 @@ export function LoginPage() {
               </p>
             )}
             <button type="submit" className="button button-primary button-block" disabled={busy}>
-              {busy ? 'Anmelden …' : 'Anmelden'}
+              {busy ? t('Anmelden …') : t('Anmelden')}
             </button>
             <p className="small">
               <Link to="/passwort-vergessen" state={location.state}>
-                Passwort vergessen?
+                {t('Passwort vergessen?')}
               </Link>{' '}
               ·{' '}
               <Link to="/anmelden/link" state={location.state}>
-                Ohne Passwort per Link anmelden
+                {t('Ohne Passwort per Link anmelden')}
               </Link>
             </p>
             <RemoteLoginChoices target={target} />
           </form>
         ) : (
           <form onSubmit={(e) => submit(e, () => api.authenticateMfa(code.trim()))}>
-            <h1>Bestätigungscode</h1>
+            <h1>{t('Bestätigungscode')}</h1>
             <p className="muted">
-              Gib den 6-stelligen Code aus deiner Authenticator-App ein – oder einen deiner
-              Wiederherstellungscodes.
+              {t(
+                'Gib den 6-stelligen Code aus deiner Authenticator-App ein – oder einen deiner Wiederherstellungscodes.',
+              )}
             </p>
             <label className="field">
-              <span>Code</span>
+              <span>{t('Code')}</span>
               <input
                 inputMode="numeric"
                 autoComplete="one-time-code"
@@ -126,7 +128,7 @@ export function LoginPage() {
               </p>
             )}
             <button type="submit" className="button button-primary button-block" disabled={busy}>
-              {busy ? 'Prüfe …' : 'Bestätigen'}
+              {busy ? t('Prüfe …') : t('Bestätigen')}
             </button>
             <button
               type="button"
@@ -137,7 +139,7 @@ export function LoginPage() {
                 setError(null)
               }}
             >
-              Zurück
+              {t('Zurück')}
             </button>
           </form>
         )}

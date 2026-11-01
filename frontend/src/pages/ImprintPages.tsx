@@ -7,6 +7,7 @@ import type { ImprintDetails, PublicImprint } from '../api/imprint.ts'
 import { Logo } from '../components/Logo.tsx'
 import { Alert } from '../components/ui.tsx'
 import { usePublicImprint } from '../components/publicImprint.ts'
+import { t } from '../i18n/index.ts'
 
 function usePublicImprintData(key?: string) {
   const [result, setResult] = useState<{
@@ -26,8 +27,8 @@ function usePublicImprintData(key?: string) {
           data: null,
           error:
             err instanceof ApiError && err.status === 404
-              ? 'Diese Seite gibt es nicht.'
-              : 'Die Seite kann gerade nicht geladen werden. Bitte später erneut versuchen.',
+              ? t('Diese Seite gibt es nicht.')
+              : t('Die Seite kann gerade nicht geladen werden. Bitte später erneut versuchen.'),
         })
       })
     return () => {
@@ -47,7 +48,7 @@ export function ImprintDetailsView({ d }: { d: ImprintDetails }) {
   const address = d.address
   return (
     <div className="imprint">
-      <h2>Angaben gemäß § 5 DDG</h2>
+      <h2>{t('Angaben gemäß § 5 DDG')}</h2>
       <p>
         <strong>{d.name}</strong>
         {d.legal_form && (
@@ -77,7 +78,7 @@ export function ImprintDetailsView({ d }: { d: ImprintDetails }) {
       </p>
       {(d.representatives_text || d.representatives.length > 0) && (
         <>
-          <h3>Vertreten durch</h3>
+          <h3>{t('Vertreten durch')}</h3>
           {d.representatives_text ? (
             <Text value={d.representatives_text} />
           ) : (
@@ -93,19 +94,23 @@ export function ImprintDetailsView({ d }: { d: ImprintDetails }) {
       )}
       {(d.email || d.phone || d.website) && (
         <>
-          <h3>Kontakt</h3>
+          <h3>{t('Kontakt')}</h3>
           <p>
-            {d.phone && <>Telefon: {d.phone}</>}
+            {d.phone && (
+              <>
+                {t('Telefon:')} {d.phone}
+              </>
+            )}
             {d.phone && d.email && <br />}
             {d.email && (
               <>
-                E-Mail: <a href={`mailto:${d.email}`}>{d.email}</a>
+                {t('E-Mail:')} <a href={`mailto:${d.email}`}>{d.email}</a>
               </>
             )}
             {d.website && (
               <>
                 <br />
-                Website:{' '}
+                {t('Website:')}{' '}
                 <a href={d.website} rel="noopener noreferrer">
                   {d.website}
                 </a>
@@ -116,29 +121,39 @@ export function ImprintDetailsView({ d }: { d: ImprintDetails }) {
       )}
       {(d.register_court || d.register_number) && (
         <>
-          <h3>Registereintrag</h3>
+          <h3>{t('Registereintrag')}</h3>
           <p>
-            {d.register_court && <>Registergericht: {d.register_court}</>}
+            {d.register_court && (
+              <>
+                {t('Registergericht:')} {d.register_court}
+              </>
+            )}
             {d.register_court && d.register_number && <br />}
-            {d.register_number && <>Registernummer: {d.register_number}</>}
+            {d.register_number && (
+              <>
+                {t('Registernummer:')} {d.register_number}
+              </>
+            )}
           </p>
         </>
       )}
       {d.vat_id && (
         <>
-          <h3>Umsatzsteuer-ID</h3>
-          <p>Umsatzsteuer-Identifikationsnummer nach § 27a UStG: {d.vat_id}</p>
+          <h3>{t('Umsatzsteuer-ID')}</h3>
+          <p>
+            {t('Umsatzsteuer-Identifikationsnummer nach § 27a UStG:')} {d.vat_id}
+          </p>
         </>
       )}
       {d.responsible && (
         <>
-          <h3>Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h3>
+          <h3>{t('Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV')}</h3>
           <Text value={d.responsible} />
         </>
       )}
       {d.data_protection_officer && (
         <>
-          <h3>Datenschutzbeauftragte(r)</h3>
+          <h3>{t('Datenschutzbeauftragte(r)')}</h3>
           <Text value={d.data_protection_officer} />
         </>
       )}
@@ -185,7 +200,7 @@ function Section({
     <section className="imprint-section">
       <h2>{title}</h2>
       {state.error && <Alert kind="error">{state.error}</Alert>}
-      {!state.data && !state.error && <p className="muted">Lädt …</p>}
+      {!state.data && !state.error && <p className="muted">{t('Lädt …')}</p>}
       {state.data && children(state.data)}
     </section>
   )
@@ -195,20 +210,22 @@ function ImprintBody({ data }: { data: PublicImprint }) {
   if (data.inherited && data.is_platform)
     return (
       <p className="muted">
-        Für {data.unit} ist noch kein eigenes Impressum hinterlegt. Es gelten die Angaben des
-        Betreibers dieser Plattform (unten).
+        {t(
+          'Für {unit} ist noch kein eigenes Impressum hinterlegt. Es gelten die Angaben des Betreibers dieser Plattform (unten).',
+          { unit: data.unit },
+        )}
       </p>
     )
   return (
     <>
       {data.inherited && (
         <p className="muted">
-          Für {data.unit} gilt das Impressum von {data.owner}.
+          {t('Für {unit} gilt das Impressum von {owner}.', { unit: data.unit, owner: data.owner })}
         </p>
       )}
       {data.mode === 'link' ? (
         <p>
-          Das Impressum von {data.owner} steht auf der eigenen Website:{' '}
+          {t('Das Impressum von {owner} steht auf der eigenen Website:', { owner: data.owner })}{' '}
           <a href={data.external_url} rel="noopener noreferrer">
             {data.external_url}
           </a>
@@ -224,7 +241,7 @@ function PrivacyBody({ data }: { data: PublicImprint }) {
   if (data.privacy.mode === 'link' && data.privacy.url)
     return (
       <p>
-        Die Datenschutzhinweise stehen auf der eigenen Website:{' '}
+        {t('Die Datenschutzhinweise stehen auf der eigenen Website:')}{' '}
         <a href={data.privacy.url} rel="noopener noreferrer">
           {data.privacy.url}
         </a>
@@ -233,11 +250,11 @@ function PrivacyBody({ data }: { data: PublicImprint }) {
   return data.privacy.text.trim() ? (
     <Text value={data.privacy.text} />
   ) : (
-    <p>Es sind noch keine Datenschutzhinweise hinterlegt.</p>
+    <p>{t('Es sind noch keine Datenschutzhinweise hinterlegt.')}</p>
   )
 }
 
-const PLATFORM_TITLE = 'Betreiber der Plattform HUBIplan'
+const PLATFORM_TITLE = t('Betreiber der Plattform HUBIplan')
 
 /**
  * /impressum und /impressum/:key: eine Seite für alles. Mit Schlüssel steht zuerst die
@@ -247,9 +264,9 @@ export function ImprintPage() {
   const key = useParams().key
   const { unit, platform } = useCombinedImprint(key)
   return (
-    <PublicCard title="Impressum">
+    <PublicCard title={t('Impressum')}>
       {unit && (
-        <Section title={unit.data?.owner ?? 'Verein'} state={unit}>
+        <Section title={unit.data?.owner ?? t('Verein')} state={unit}>
           {(data) => <ImprintBody data={data} />}
         </Section>
       )}
@@ -258,14 +275,15 @@ export function ImprintPage() {
           <>
             <ImprintBody data={data} />
             <p className="muted small">
-              Über diese Plattform verwalten Vereine und andere Einheiten ihre Mitglieder. Für ihre
-              Inhalte (Rundschreiben, Termine, Dokumente) ist die jeweilige Einheit verantwortlich.
+              {t(
+                'Über diese Plattform verwalten Vereine und andere Einheiten ihre Mitglieder. Für ihre Inhalte (Rundschreiben, Termine, Dokumente) ist die jeweilige Einheit verantwortlich.',
+              )}
             </p>
           </>
         )}
       </Section>
       <p className="small">
-        <Link to={privacyPath(key)}>Datenschutz</Link>
+        <Link to={privacyPath(key)}>{t('Datenschutz')}</Link>
       </p>
     </PublicCard>
   )
@@ -279,17 +297,23 @@ export function PrivacyPage() {
   const key = useParams().key
   const { unit, platform } = useCombinedImprint(key)
   return (
-    <PublicCard title="Datenschutz">
+    <PublicCard title={t('Datenschutz')}>
       {unit && (
-        <Section title={`Datenschutzhinweise ${unit.data?.owner ?? 'des Vereins'}`} state={unit}>
+        <Section
+          title={t('Datenschutzhinweise {x}', { x: unit.data?.owner ?? 'des Vereins' })}
+          state={unit}
+        >
           {(data) => <PrivacyBody data={data} />}
         </Section>
       )}
-      <Section title={`Datenschutzerklärung: ${PLATFORM_TITLE}`} state={platform}>
+      <Section
+        title={t('Datenschutzerklärung: {PLATFORM_TITLE}', { PLATFORM_TITLE })}
+        state={platform}
+      >
         {(data) => <PrivacyBody data={data} />}
       </Section>
       <p className="small">
-        <Link to={imprintPath(key)}>Impressum</Link>
+        <Link to={imprintPath(key)}>{t('Impressum')}</Link>
       </p>
     </PublicCard>
   )
@@ -330,34 +354,34 @@ function useRunningCommit(): string | null {
 export function LicensePage() {
   const commit = useRunningCommit()
   return (
-    <PublicCard title="Lizenzen">
+    <PublicCard title={t('Lizenzen')}>
       <p>
-        HUBIplan ist freie Software unter der GNU Affero General Public License, Version 3 oder
-        später (AGPL-3.0-or-later). Ihr dürft HUBIplan nutzen, verändern und weitergeben. Wer eine
-        veränderte Fassung weitergibt oder als Online-Dienst betreibt, muss den Quellcode dieser
-        Fassung unter derselben Lizenz zugänglich machen.
+        {t(
+          'HUBIplan ist freie Software unter der GNU Affero General Public License, Version 3 oder später (AGPL-3.0-or-later). Ihr dürft HUBIplan nutzen, verändern und weitergeben. Wer eine veränderte Fassung weitergibt oder als Online-Dienst betreibt, muss den Quellcode dieser Fassung unter derselben Lizenz zugänglich machen.',
+        )}
       </p>
       <p>
-        HUBIplan wird ohne Gewährleistung bereitgestellt, soweit das Gesetz es zulässt. Einzelheiten
-        stehen in den Abschnitten 15 und 16 der Lizenz.
+        {t(
+          'HUBIplan wird ohne Gewährleistung bereitgestellt, soweit das Gesetz es zulässt. Einzelheiten stehen in den Abschnitten 15 und 16 der Lizenz.',
+        )}
       </p>
       <p>
-        Den Quellcode bekommt ihr kostenlos auf GitHub:{' '}
+        {t('Den Quellcode bekommt ihr kostenlos auf GitHub:')}{' '}
         {commit ? (
           <a href={`${SOURCE_REPO}/tree/${commit}`}>
-            Quellcode dieser Fassung ({commit.slice(0, 7)})
+            {t('Quellcode dieser Fassung ({x})', { x: commit.slice(0, 7) })}
           </a>
         ) : (
-          <a href={SOURCE_REPO}>Quellcode von HUBIplan</a>
+          <a href={SOURCE_REPO}>{t('Quellcode von HUBIplan')}</a>
         )}
         .
       </p>
       <ul>
         <li>
-          <a href={LICENSE_FILES.license}>Lizenztext (englisch)</a>
+          <a href={LICENSE_FILES.license}>{t('Lizenztext (englisch)')}</a>
         </li>
         <li>
-          <a href={LICENSE_FILES.thirdParty}>Lizenzen der enthaltenen Bibliotheken</a>
+          <a href={LICENSE_FILES.thirdParty}>{t('Lizenzen der enthaltenen Bibliotheken')}</a>
         </li>
       </ul>
     </PublicCard>
@@ -370,36 +394,40 @@ export function LicensePage() {
  */
 export function AccessibilityPage() {
   return (
-    <PublicCard title="Barrierefreiheit">
+    <PublicCard title={t('Barrierefreiheit')}>
       <p>
-        HUBIplan soll für alle Mitglieder und Vorstände bedienbar sein, auch mit Tastatur,
-        Screenreader, Vergrößerung oder großer Schrift. Maßstab sind die Richtlinien WCAG 2.2, Stufe
-        AA.
+        {t(
+          'HUBIplan soll für alle Mitglieder und Vorstände bedienbar sein, auch mit Tastatur, Screenreader, Vergrößerung oder großer Schrift. Maßstab sind die Richtlinien WCAG 2.2, Stufe AA.',
+        )}
       </p>
-      <h2>Stand</h2>
+      <h2>{t('Stand')}</h2>
       <p>
-        Weitgehend erfüllt (Prüfung im Oktober 2026). Dazu gehören Tastaturbedienung, sichtbarer
-        Fokus, beschriftete Felder, Fehlermeldungen am Feld, ausreichende Kontraste auch bei hellen
-        Vereinsfarben sowie Diagramme mit Wertetabelle.
+        {t(
+          'Weitgehend erfüllt (Prüfung im Oktober 2026). Dazu gehören Tastaturbedienung, sichtbarer Fokus, beschriftete Felder, Fehlermeldungen am Feld, ausreichende Kontraste auch bei hellen Vereinsfarben sowie Diagramme mit Wertetabelle.',
+        )}
       </p>
-      <h2>Bekannte Einschränkungen</h2>
+      <h2>{t('Bekannte Einschränkungen')}</h2>
       <ul>
         <li>
-          PDF-Dokumente (Rechnungen, Bestätigungen, Ausweise) sind noch nicht für Screenreader
-          aufbereitet. Die wichtigen Angaben stehen auch als Text in der E-Mail oder im
-          Mitgliederbereich.
+          {t(
+            'PDF-Dokumente (Rechnungen, Bestätigungen, Ausweise) sind noch nicht für Screenreader aufbereitet. Die wichtigen Angaben stehen auch als Text in der E-Mail oder im Mitgliederbereich.',
+          )}
         </li>
         <li>
-          Die Unterschrift auf Quittungen wird gezeichnet. Wer nicht unterschreiben kann, wird mit
-          Grund „ohne Unterschrift“ vermerkt.
+          {t(
+            'Die Unterschrift auf Quittungen wird gezeichnet. Wer nicht unterschreiben kann, wird mit Grund „ohne Unterschrift“ vermerkt.',
+          )}
         </li>
-        <li>Beschreibungen von Bildern (Alternativtexte) pflegt der jeweilige Verein selbst.</li>
+        <li>
+          {t('Beschreibungen von Bildern (Alternativtexte) pflegt der jeweilige Verein selbst.')}
+        </li>
       </ul>
-      <h2>Barriere melden</h2>
+      <h2>{t('Barriere melden')}</h2>
       <p>
-        Wenn Ihnen etwas den Zugang erschwert, schreiben Sie bitte dem Vorstand Ihres Vereins oder
-        dem Betreiber dieser Instanz. Die Kontaktdaten stehen im{' '}
-        <Link to="/impressum">Impressum</Link>.
+        {t(
+          'Wenn Ihnen etwas den Zugang erschwert, schreiben Sie bitte dem Vorstand Ihres Vereins oder dem Betreiber dieser Instanz. Die Kontaktdaten stehen im',
+        )}{' '}
+        <Link to="/impressum">{t('Impressum')}</Link>.
       </p>
     </PublicCard>
   )

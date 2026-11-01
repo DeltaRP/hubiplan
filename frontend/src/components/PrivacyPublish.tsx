@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { confirmDialog } from './dialog.ts'
 import { formatDateTime } from './forms.ts'
+import { t } from '../i18n/index.ts'
 
 /** Angaben in eckigen Klammern, die noch zu ergänzen sind. */
 function openPlaceholders(text: string): string[] {
@@ -32,11 +33,14 @@ export function PrivacyPublish({
 
   async function publish() {
     const ok = await confirmDialog({
-      title: 'Datenschutzhinweise veröffentlichen?',
+      title: t('Datenschutzhinweise veröffentlichen?'),
       message: open.length
-        ? `Im Entwurf stehen noch ${open.length} offene Angaben in eckigen Klammern: ${open.join(', ')}. Erst ergänzen oder trotzdem veröffentlichen?`
-        : 'Der Entwurf wird zur öffentlichen Fassung. Die bisherige Fassung wird ersetzt.',
-      confirmLabel: open.length ? 'Trotzdem veröffentlichen' : 'Veröffentlichen',
+        ? t(
+            'Im Entwurf stehen noch {n} offene Angaben in eckigen Klammern: {x}. Erst ergänzen oder trotzdem veröffentlichen?',
+            { n: open.length, x: open.join(', ') },
+          )
+        : t('Der Entwurf wird zur öffentlichen Fassung. Die bisherige Fassung wird ersetzt.'),
+      confirmLabel: open.length ? t('Trotzdem veröffentlichen') : t('Veröffentlichen'),
       danger: open.length > 0,
     })
     if (!ok) return
@@ -53,18 +57,22 @@ export function PrivacyPublish({
       <p className="small" role="status">
         {publishedAt ? (
           <>
-            <strong>Veröffentlicht am {formatDateTime(publishedAt)}.</strong>{' '}
+            <strong>{t('Veröffentlicht am {x}.', { x: formatDateTime(publishedAt) })}</strong>{' '}
             {changed
-              ? 'Der Entwurf weicht davon ab; öffentlich gilt weiter die veröffentlichte Fassung.'
-              : 'Der Entwurf entspricht der veröffentlichten Fassung.'}
+              ? t(
+                  'Der Entwurf weicht davon ab; öffentlich gilt weiter die veröffentlichte Fassung.',
+                )
+              : t('Der Entwurf entspricht der veröffentlichten Fassung.')}
           </>
         ) : (
-          <strong>Noch nicht veröffentlicht: Öffentlich erscheinen noch keine Hinweise.</strong>
+          <strong>
+            {t('Noch nicht veröffentlicht: Öffentlich erscheinen noch keine Hinweise.')}
+          </strong>
         )}
       </p>
       {open.length > 0 && (
         <div className="small">
-          Vor dem Veröffentlichen prüfen, noch offen:
+          {t('Vor dem Veröffentlichen prüfen, noch offen:')}
           {onFill && !disabled ? (
             <ul className="placeholder-fill">
               {open.map((p) => (
@@ -91,7 +99,7 @@ export function PrivacyPublish({
           disabled={disabled || busy || !draft.trim() || !changed}
           onClick={() => void publish()}
         >
-          Datenschutzhinweise veröffentlichen
+          {t('Datenschutzhinweise veröffentlichen')}
         </button>
       </div>
     </div>
@@ -132,9 +140,9 @@ function PlaceholderInput({
         className="button button-ghost"
         disabled={!value.trim()}
         onClick={apply}
-        aria-label={`${label} einsetzen`}
+        aria-label={t('{label} einsetzen', { label })}
       >
-        Einsetzen
+        {t('Einsetzen')}
       </button>
     </li>
   )

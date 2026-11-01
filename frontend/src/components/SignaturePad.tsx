@@ -4,13 +4,14 @@ import { useEffect, useId, useRef, useState } from 'react'
 import type { KeyboardEvent, PointerEvent as ReactPointerEvent } from 'react'
 import { createPortal } from 'react-dom'
 import type { SignatureInput, StoredShape } from '../api/finance.ts'
+import { t } from '../i18n/index.ts'
 
 type Point = [number, number]
 
 /** Zeichenfeld; meldet nach jedem Strich die Unterschrift (oder null, wenn leer). */
 export function SignaturePad({
   onChange,
-  label = 'Unterschrift',
+  label = t('Unterschrift'),
   className = '',
 }: {
   onChange: (value: SignatureInput | null) => void
@@ -141,7 +142,7 @@ export function SignaturePad({
       </div>
       {!empty && (
         <button type="button" className="link-button signature-clear" onClick={clear}>
-          Löschen
+          {t('Löschen')}
         </button>
       )}
     </div>
@@ -296,18 +297,20 @@ export function SignatureFullscreen({
           </p>
           {error && (
             <p className="alert alert-error" role="alert">
-              Unterschrift nicht gespeichert: {error} Deine Zeichnung bleibt erhalten; prüfe die
-              Verbindung und tippe erneut auf „Bestätigen“.
+              {t(
+                'Unterschrift nicht gespeichert: {error} Deine Zeichnung bleibt erhalten; prüfe die Verbindung und tippe erneut auf „Bestätigen“.',
+                { error },
+              )}
             </p>
           )}
           {portrait && (
-            <p className="muted small">Tipp: Telefon quer halten, dann ist mehr Platz.</p>
+            <p className="muted small">{t('Tipp: Telefon quer halten, dann ist mehr Platz.')}</p>
           )}
         </div>
         <SignaturePad onChange={setValue} label={title} className="signature-pad-full" />
         <div className="button-row signature-fullscreen-actions">
           <button type="button" className="button button-ghost" onClick={onCancel} disabled={busy}>
-            Abbrechen
+            {t('Abbrechen')}
           </button>
           <button
             type="button"
@@ -315,7 +318,7 @@ export function SignatureFullscreen({
             onClick={() => value && onConfirm(value)}
             disabled={!value || busy}
           >
-            {busy ? 'Speichert …' : 'Bestätigen'}
+            {busy ? t('Speichert …') : t('Bestätigen')}
           </button>
         </div>
       </div>

@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { choiceDialog } from './dialog.ts'
+import { t } from '../i18n/index.ts'
 
 export type LeaveEntry = {
   /** Gibt es Ungespeichertes (auch nach einem Fehler)? */
@@ -56,12 +57,13 @@ async function confirmDiscardDrafts(): Promise<boolean> {
   const list = pendingManual()
   if (list.length === 0) return true
   const choice = await choiceDialog({
-    title: 'Eingaben verwerfen?',
-    message:
+    title: t('Eingaben verwerfen?'),
+    message: t(
       'Deine Eingaben wurden noch nicht gespeichert. Wenn du die Seite verlässt, gehen sie verloren.',
+    ),
     choices: [
-      { value: 'discard', label: 'Verwerfen', danger: true },
-      { value: 'stay', label: 'Weiter bearbeiten', primary: true },
+      { value: 'discard', label: t('Verwerfen'), danger: true },
+      { value: 'stay', label: t('Weiter bearbeiten'), primary: true },
     ],
     cancelValue: 'stay',
   })
@@ -84,14 +86,14 @@ export function confirmLeave(): Promise<boolean> {
       for (;;) {
         if (await flushAll(pending())) return await confirmDiscardDrafts()
         const choice = await choiceDialog({
-          title: 'Änderungen noch nicht gespeichert',
+          title: t('Änderungen noch nicht gespeichert'),
           message:
-            'Deine letzten Änderungen konnten nicht gespeichert werden, z. B. weil die ' +
-            'Verbindung fehlt. Wie möchtest du weitermachen?',
+            t('Deine letzten Änderungen konnten nicht gespeichert werden, z. B. weil die ') +
+            t('Verbindung fehlt. Wie möchtest du weitermachen?'),
           choices: [
-            { value: 'discard', label: 'Änderungen verwerfen', danger: true },
-            { value: 'stay', label: 'Weiter bearbeiten' },
-            { value: 'retry', label: 'Erneut versuchen', primary: true },
+            { value: 'discard', label: t('Änderungen verwerfen'), danger: true },
+            { value: 'stay', label: t('Weiter bearbeiten') },
+            { value: 'retry', label: t('Erneut versuchen'), primary: true },
           ],
           cancelValue: 'stay',
         })
@@ -229,11 +231,11 @@ export function useDraftGuard(dirty: boolean, discard?: () => void) {
 export async function confirmDiscard(dirty: boolean): Promise<boolean> {
   if (!dirty) return true
   const choice = await choiceDialog({
-    title: 'Eingaben verwerfen?',
-    message: 'Deine Eingaben wurden noch nicht gespeichert und gehen verloren.',
+    title: t('Eingaben verwerfen?'),
+    message: t('Deine Eingaben wurden noch nicht gespeichert und gehen verloren.'),
     choices: [
-      { value: 'discard', label: 'Verwerfen', danger: true },
-      { value: 'stay', label: 'Weiter bearbeiten', primary: true },
+      { value: 'discard', label: t('Verwerfen'), danger: true },
+      { value: 'stay', label: t('Weiter bearbeiten'), primary: true },
     ],
     cancelValue: 'stay',
   })

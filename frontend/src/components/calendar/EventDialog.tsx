@@ -11,6 +11,7 @@ import { berlin, formatDay, formatRange, toApi } from './time.ts'
 import { confirmDialog, promptDialog } from '../dialog.ts'
 import { Modal } from '../Modal.tsx'
 import type { CloseGuard } from './EventForm.tsx'
+import { t } from '../../i18n/index.ts'
 
 export { Modal }
 
@@ -18,15 +19,15 @@ const MAX_BYTES = 15 * 1024 * 1024
 
 function formatSize(bytes: number): string {
   return bytes >= 1024 * 1024
-    ? `${(bytes / 1024 / 1024).toFixed(1).replace('.', ',')} MB`
-    : `${Math.max(1, Math.round(bytes / 1024))} KB`
+    ? t('{x} MB', { x: (bytes / 1024 / 1024).toFixed(1).replace('.', ',') })
+    : t('{x} KB', { x: Math.max(1, Math.round(bytes / 1024)) })
 }
 
 export function VisibilityBadge({ visibility }: { visibility: string }) {
   if (visibility === 'members') return null
   return (
     <span className={`badge badge-${visibility}`}>
-      {visibility === 'public' ? 'öffentlich' : 'nur Vorstand'}
+      {visibility === 'public' ? t('öffentlich') : t('nur Vorstand')}
     </span>
   )
 }
@@ -49,7 +50,11 @@ export function NewEventDialog({
 }) {
   const guard = useRef<CloseGuard | null>(null)
   return (
-    <Modal title="Neuer Termin" onClose={onClose} beforeClose={() => guard.current?.() ?? true}>
+    <Modal
+      title={t('Neuer Termin')}
+      onClose={onClose}
+      beforeClose={() => guard.current?.() ?? true}
+    >
       <EventForm
         guardRef={guard}
         base={base}
@@ -101,13 +106,13 @@ function OccurrencePanel({
   const original = occurrence.original_start
   return (
     <div className="subcard stack-sm">
-      <strong>Nur dieser Termin ({formatDay(berlin(original).date)})</strong>
+      <strong>{t('Nur dieser Termin ({x})', { x: formatDay(berlin(original).date) })}</strong>
       {error && <Alert kind="error">{error}</Alert>}
       {mode === 'move' ? (
         <div className="stack-sm">
           <div className="grid-3">
             <Field
-              label="Neues Datum"
+              label={t('Neues Datum')}
               type="date"
               value={date}
               onChange={(x) => setDate(x.target.value)}
@@ -115,13 +120,13 @@ function OccurrencePanel({
             {!event.all_day && (
               <>
                 <Field
-                  label="Beginn"
+                  label={t('Beginn')}
                   type="time"
                   value={start}
                   onChange={(x) => setStart(x.target.value)}
                 />
                 <Field
-                  label="Ende"
+                  label={t('Ende')}
                   type="time"
                   value={end}
                   onChange={(x) => setEnd(x.target.value)}
@@ -129,7 +134,7 @@ function OccurrencePanel({
               </>
             )}
           </div>
-          <Field label="Hinweis" value={note} onChange={(x) => setNote(x.target.value)} />
+          <Field label={t('Hinweis')} value={note} onChange={(x) => setNote(x.target.value)} />
           <div className="button-row">
             <button
               type="button"
@@ -145,17 +150,17 @@ function OccurrencePanel({
                 )
               }
             >
-              Verschieben
+              {t('Verschieben')}
             </button>
             <button type="button" className="button button-ghost" onClick={() => setMode('none')}>
-              Abbrechen
+              {t('Abbrechen')}
             </button>
           </div>
         </div>
       ) : (
         <div className="button-row">
           <button type="button" className="button button-ghost" onClick={() => setMode('move')}>
-            Verschieben
+            {t('Verschieben')}
           </button>
           {!occurrence.is_cancelled && (
             <button
@@ -163,9 +168,9 @@ function OccurrencePanel({
               className="button button-ghost"
               onClick={async () => {
                 const reason = await promptDialog({
-                  title: 'Diesen Termin absagen?',
-                  label: 'Hinweis zur Absage (optional)',
-                  confirmLabel: 'Absagen',
+                  title: t('Diesen Termin absagen?'),
+                  label: t('Hinweis zur Absage (optional)'),
+                  confirmLabel: t('Absagen'),
                   danger: true,
                 })
                 if (reason === null) return
@@ -178,7 +183,7 @@ function OccurrencePanel({
                 )
               }}
             >
-              Nur diesen absagen
+              {t('Nur diesen absagen')}
             </button>
           )}
           {exception && (
@@ -187,7 +192,7 @@ function OccurrencePanel({
               className="button button-ghost"
               onClick={() => run(() => eventApi.resetOccurrence(base, event.id, original))}
             >
-              Wie in der Serie
+              {t('Wie in der Serie')}
             </button>
           )}
         </div>
@@ -228,7 +233,7 @@ export function EventDialog({
 
   async function upload(file: File) {
     if (file.size > MAX_BYTES) {
-      setMessage({ kind: 'error', text: 'Die Datei ist größer als 15 MB.' })
+      setMessage({ kind: 'error', text: t('Die Datei ist größer als 15 MB.') })
       return
     }
     setBusy(true)
@@ -246,12 +251,12 @@ export function EventDialog({
   const title = data?.title ?? occurrence.title
   return (
     <Modal
-      title={editing ? 'Termin bearbeiten' : title}
+      title={editing ? t('Termin bearbeiten') : title}
       onClose={onClose}
       beforeClose={() => (editing ? (guard.current?.() ?? true) : true)}
     >
       {error && <Alert kind="error">{error}</Alert>}
-      {!data && !error && <p className="muted">Lädt …</p>}
+      {!data && !error && <p className="muted">{t('Lädt …')}</p>}
       {data && editing && (
         <EventForm
           guardRef={guard}
@@ -271,37 +276,40 @@ export function EventDialog({
         <div className="stack">
           {message && <Alert kind={message.kind}>{message.text}</Alert>}
           {occurrence.is_cancelled && (
-            <Alert kind="error">Abgesagt{occurrence.note ? `: ${occurrence.note}` : ''}</Alert>
+            <Alert kind="error">
+              {t('Abgesagt')}
+              {occurrence.note ? t(': {note}', { note: occurrence.note }) : ''}
+            </Alert>
           )}
           <dl className="event-facts">
-            <dt>Wann</dt>
+            <dt>{t('Wann')}</dt>
             <dd>
               {formatRange(occurrence.starts_at, occurrence.ends_at, occurrence.all_day)}
               {occurrence.is_moved && <span className="badge"> verschoben</span>}
               {data.repeat !== 'none' && (
                 <div className="muted small">
-                  Serie: {data.repeat_label}
+                  {t('Serie:')} {data.repeat_label}
                   {data.repeat_interval > 1 && ` (alle ${data.repeat_interval})`}
-                  {data.repeat_until && ` bis ${formatDay(data.repeat_until, false)}`}
+                  {data.repeat_until && t(' bis {x}', { x: formatDay(data.repeat_until, false) })}
                 </div>
               )}
             </dd>
             {(data.location || data.address) && (
               <>
-                <dt>Ort</dt>
+                <dt>{t('Ort')}</dt>
                 <dd>
                   {data.location}
                   {data.address && <div className="muted small">{data.address}</div>}
                 </dd>
               </>
             )}
-            <dt>Kalender</dt>
+            <dt>{t('Kalender')}</dt>
             <dd>
               {data.owner} <VisibilityBadge visibility={data.visibility} />
             </dd>
             {data.category && (
               <>
-                <dt>Kategorie</dt>
+                <dt>{t('Kategorie')}</dt>
                 <dd>
                   <span className="event-dot" style={{ background: data.category.color }} />{' '}
                   {data.category.name}
@@ -310,8 +318,10 @@ export function EventDialog({
             )}
             {data.changed_at && (
               <>
-                <dt>Geändert</dt>
-                <dd>Zeit oder Ort geändert am {formatDay(berlin(data.changed_at).date, false)}</dd>
+                <dt>{t('Geändert')}</dt>
+                <dd>
+                  {t('Zeit oder Ort geändert am')} {formatDay(berlin(data.changed_at).date, false)}
+                </dd>
               </>
             )}
           </dl>
@@ -322,15 +332,20 @@ export function EventDialog({
           {data.rsvp.can_view_list && <ResponsesPanel base={base} event={data} />}
           {data.can_edit && data.rsvp.enabled && (
             <p className="muted small">
-              Zu- und Absagen sind eingeschaltet
-              {data.remind_days ? `, Erinnerung ${data.remind_days} Tage vorher` : ''}.
+              {t('Zu- und Absagen sind eingeschaltet')}
+              {data.remind_days
+                ? t(', Erinnerung {remind_days} Tage vorher', { remind_days: data.remind_days })
+                : ''}
+              .
             </p>
           )}
           <EventProjectPanel base={base} event={data} onChanged={changed} />
           {(data.attachments.length > 0 || data.can_edit) && (
             <div className="stack-sm">
-              <strong>Anhänge</strong>
-              {data.attachments.length === 0 && <p className="muted small">Keine Anhänge.</p>}
+              <strong>{t('Anhänge')}</strong>
+              {data.attachments.length === 0 && (
+                <p className="muted small">{t('Keine Anhänge.')}</p>
+              )}
               <ul className="plain-list">
                 {data.attachments.map((a) => (
                   <li key={a.id}>
@@ -346,8 +361,8 @@ export function EventDialog({
                         onClick={async () => {
                           if (
                             !(await confirmDialog({
-                              title: `Anhang „${a.name}“ entfernen?`,
-                              confirmLabel: 'Entfernen',
+                              title: t('Anhang „{name}“ entfernen?', { name: a.name }),
+                              confirmLabel: t('Entfernen'),
                             }))
                           )
                             return
@@ -367,7 +382,7 @@ export function EventDialog({
               </ul>
               {data.can_edit && (
                 <label className="field">
-                  <span>Anhang hinzufügen (PDF, JPEG oder PNG, höchstens 15 MB)</span>
+                  <span>{t('Anhang hinzufügen (PDF, JPEG oder PNG, höchstens 15 MB)')}</span>
                   <input
                     key={inputKey}
                     type="file"
@@ -384,7 +399,8 @@ export function EventDialog({
           )}
           <p className="small">
             <a href={eventApi.icsUrl(base, data.id)} download>
-              {data.repeat !== 'none' ? 'Serie' : 'Termin'} in den eigenen Kalender (.ics)
+              {data.repeat !== 'none' ? t('Serie') : t('Termin')}{' '}
+              {t('in den eigenen Kalender (.ics)')}
             </a>
           </p>
           {data.can_edit && data.repeat !== 'none' && (
@@ -397,18 +413,18 @@ export function EventDialog({
                 className="button button-primary"
                 onClick={() => setEditing(true)}
               >
-                {data.repeat !== 'none' ? 'Serie bearbeiten' : 'Bearbeiten'}
+                {data.repeat !== 'none' ? t('Serie bearbeiten') : t('Bearbeiten')}
               </button>
               <button
                 type="button"
                 className="button button-danger"
                 disabled={busy}
                 onClick={async () => {
-                  const what = data.repeat !== 'none' ? 'die ganze Serie' : 'den Termin'
+                  const what = data.repeat !== 'none' ? t('die ganze Serie') : t('den Termin')
                   if (
                     !(await confirmDialog({
-                      title: `Wirklich ${what} „${data.title}“ löschen?`,
-                      confirmLabel: 'Löschen',
+                      title: t('Wirklich {what} „{title}“ löschen?', { what, title: data.title }),
+                      confirmLabel: t('Löschen'),
                     }))
                   )
                     return
@@ -421,7 +437,7 @@ export function EventDialog({
                   }
                 }}
               >
-                Löschen
+                {t('Löschen')}
               </button>
             </div>
           )}

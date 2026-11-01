@@ -7,6 +7,7 @@ import { Logo } from '../components/Logo.tsx'
 import { Alert } from '../components/ui.tsx'
 import { usePublicImprint } from '../components/publicImprint.ts'
 import { applyTheme } from '../theme/theme.ts'
+import { t } from '../i18n/index.ts'
 
 /** Öffentliche Seite hinter dem QR-Code des Mitgliedsausweises (ohne Anmeldung). */
 export function PublicCardPage() {
@@ -55,31 +56,34 @@ export function PublicCardPage() {
         <div className="login-logo">
           <Logo name={card?.club ?? 'HUBIplan'} logoUrl={card?.logo_url ?? null} />
         </div>
-        {state === 'loading' && <p className="muted">Lädt …</p>}
+        {state === 'loading' && <p className="muted">{t('Lädt …')}</p>}
         {state === 'busy' && (
-          <Alert kind="error">Zu viele Aufrufe. Bitte später erneut versuchen.</Alert>
+          <Alert kind="error">{t('Zu viele Aufrufe. Bitte später erneut versuchen.')}</Alert>
         )}
         {state === 'unavailable' && (
           <>
             <Alert kind="error">
-              Die Mitgliedschaft kann gerade nicht geprüft werden. Bitte Verbindung prüfen und
-              erneut versuchen.
+              {t(
+                'Die Mitgliedschaft kann gerade nicht geprüft werden. Bitte Verbindung prüfen und erneut versuchen.',
+              )}
             </Alert>
             <div className="button-row">
               <button type="button" className="button button-primary" onClick={retry}>
-                Erneut prüfen
+                {t('Erneut prüfen')}
               </button>
             </div>
           </>
         )}
         {state === 'invalid' && (
           <Alert kind="error">
-            Dieser Mitgliedsausweis ist nicht (mehr) gültig. Bitte wenden Sie sich an den Vorstand.
+            {t(
+              'Dieser Mitgliedsausweis ist nicht (mehr) gültig. Bitte wenden Sie sich an den Vorstand.',
+            )}
           </Alert>
         )}
         {card && state === 'ready' && (
           <>
-            <p className="muted small public-card-kind">Mitgliedsausweis</p>
+            <p className="muted small public-card-kind">{t('Mitgliedsausweis')}</p>
             <div className="public-card-body">
               {card.photo_url && <img src={card.photo_url} alt="" className="public-card-photo" />}
               <div>
@@ -95,11 +99,11 @@ export function PublicCardPage() {
                 <dl className="public-card-facts">
                   {card.member_type && (
                     <>
-                      <dt>Mitgliedsart</dt>
+                      <dt>{t('Mitgliedsart')}</dt>
                       <dd>{card.member_type}</dd>
                     </>
                   )}
-                  <dt>{card.club_label || 'Mitglied in'}</dt>
+                  <dt>{card.club_label || t('Mitglied in')}</dt>
                   <dd>{card.club}</dd>
                   {card.departments.length > 0 && (
                     <>
@@ -109,14 +113,16 @@ export function PublicCardPage() {
                   )}
                   {card.federation && (
                     <>
-                      <dt>{card.federation_label || 'Verband'}</dt>
+                      <dt>{card.federation_label || t('Verband')}</dt>
                       <dd>{card.federation}</dd>
                     </>
                   )}
                 </dl>
               </div>
             </div>
-            <p className="muted small">Stand: {formatDateTime(card.checked_at)}</p>
+            <p className="muted small">
+              {t('Stand:')} {formatDateTime(card.checked_at)}
+            </p>
           </>
         )}
       </div>

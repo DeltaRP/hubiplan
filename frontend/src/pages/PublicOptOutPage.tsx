@@ -7,6 +7,7 @@ import { errorMessage } from '../components/forms.ts'
 import { Logo } from '../components/Logo.tsx'
 import { Alert } from '../components/ui.tsx'
 import { usePublicImprint } from '../components/publicImprint.ts'
+import { t } from '../i18n/index.ts'
 
 /** Abmeldelink aus einem Rundschreiben (ohne Anmeldung). */
 export function PublicOptOutPage() {
@@ -53,12 +54,12 @@ export function PublicOptOutPage() {
         <div className="login-logo">
           <Logo name={info?.club ?? 'HUBIplan'} logoUrl={null} />
         </div>
-        <h1>Informationen per E-Mail</h1>
-        {invalid && <Alert kind="error">Dieser Link ist ungültig.</Alert>}
+        <h1>{t('Informationen per E-Mail')}</h1>
+        {invalid && <Alert kind="error">{t('Dieser Link ist ungültig.')}</Alert>}
         {unavailable && (
           <>
             <Alert kind="error">
-              Die Seite kann gerade nicht geladen werden. Bitte später erneut versuchen.
+              {t('Die Seite kann gerade nicht geladen werden. Bitte später erneut versuchen.')}
             </Alert>
             <div className="button-row">
               <button
@@ -69,23 +70,28 @@ export function PublicOptOutPage() {
                   setAttempt((n) => n + 1)
                 }}
               >
-                Erneut versuchen
+                {t('Erneut versuchen')}
               </button>
             </div>
           </>
         )}
-        {!info && !invalid && !unavailable && <p className="muted">Lädt …</p>}
+        {!info && !invalid && !unavailable && <p className="muted">{t('Lädt …')}</p>}
         {info && (
           <>
             <p>
-              Hallo {info.first_name},{' '}
+              {t('Hallo {first_name},', { first_name: info.first_name })}{' '}
               {info.info_opt_out
-                ? `du bekommst keine Informationen von ${info.club} mehr per E-Mail.`
-                : `hier kannst du Informationen von ${info.club} per E-Mail abbestellen.`}
+                ? t('du bekommst keine Informationen von {club} mehr per E-Mail.', {
+                    club: info.club,
+                  })
+                : t('hier kannst du Informationen von {club} per E-Mail abbestellen.', {
+                    club: info.club,
+                  })}
             </p>
             <p className="muted small">
-              Offizielle Mitteilungen wie Einladungen zur Mitgliederversammlung bekommst du
-              weiterhin.
+              {t(
+                'Offizielle Mitteilungen wie Einladungen zur Mitgliederversammlung bekommst du weiterhin.',
+              )}
             </p>
             <button
               type="button"
@@ -93,7 +99,7 @@ export function PublicOptOutPage() {
               disabled={busy}
               onClick={() => void change(!info.info_opt_out)}
             >
-              {info.info_opt_out ? 'Doch wieder erhalten' : 'Informationen abbestellen'}
+              {info.info_opt_out ? t('Doch wieder erhalten') : t('Informationen abbestellen')}
             </button>
           </>
         )}

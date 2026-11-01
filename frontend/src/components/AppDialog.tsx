@@ -1,6 +1,7 @@
 // Darstellung der app-eigenen Rückfragen; aufgerufen wird sie über dialog.ts.
 import { useId, useRef, useState } from 'react'
 import type { FormEvent, KeyboardEvent } from 'react'
+import { t } from '../i18n/index.ts'
 
 export type ConfirmOptions = {
   /** Überschrift; ohne eigene Überschrift wird die Frage selbst zur Überschrift. */
@@ -124,7 +125,7 @@ export function AppDialog({
   const cancelLabel =
     spec.kind === 'alert' || spec.kind === 'choice'
       ? null
-      : (spec.options.cancelLabel ?? 'Abbrechen')
+      : (spec.options.cancelLabel ?? t('Abbrechen'))
 
   return (
     <div className="modal-backdrop app-dialog-backdrop" onMouseDown={cancel}>
