@@ -1,18 +1,15 @@
 // Auswertung: Ranglisten je Wertung mit Preisplätzen, offene Stechen, Kennzahlen, Ausgaben.
-import { Fragment, useState } from 'react'
+import { Fragment } from 'react'
 import {
   competitionsApi,
-  showValue,
   type BirdState,
   type CompetitionDetail,
-  type ShootOff,
-  type ShootOffEntry,
   type StandingBlock,
   type Stats,
 } from '../../api/competitions.ts'
-import { confirmDialog } from '../../components/dialog.ts'
-import { errorMessage, useLoad } from '../../components/forms.ts'
+import { useLoad } from '../../components/forms.ts'
 import { Alert, LoadError } from '../../components/ui.tsx'
+import { ShootoffBlock } from './Shootoffs.tsx'
 
 export function ResultsPanel({
   org,
@@ -25,21 +22,11 @@ export function ResultsPanel({
 }) {
   const standings = useLoad(() => competitionsApi.standings(org, comp.id), [org, comp.id])
   const shootoffs = useLoad(() => competitionsApi.shootoffs(org, comp.id), [org, comp.id])
-  const [message, setMessage] = useState<string | null>(null)
   const closed = comp.status === 'endgueltig'
 
   function reload() {
     void standings.reload()
     void shootoffs.reload()
-  }
-
-  async function startShootoff(scoring: number, keys: string[]) {
-    try {
-      await competitionsApi.createShootoff(org, comp.id, scoring, keys)
-      reload()
-    } catch (err) {
-      setMessage(errorMessage(err))
-    }
   }
 
   if (standings.error) return <LoadError message={standings.error} onRetry={reload} />
@@ -60,7 +47,6 @@ export function ResultsPanel({
           Aktualisieren
         </button>
       </div>
-      {message && <Alert kind="error">{message}</Alert>}
       {data.bird && <BirdResults bird={data.bird} />}
       {data.open_shootoffs > 0 && (
         <Alert kind="info">
@@ -69,44 +55,19 @@ export function ResultsPanel({
         </Alert>
       )}
       {data.scorings.map((block) => {
-        const scoring = comp.scorings.find((s) => s.id === block.scoring)
         const own = (shootoffs.data ?? []).filter((so) => so.scoring === block.scoring)
         return (
           <div className="card card-wide" key={block.scoring}>
             <h2>{block.name}</h2>
             {comp.own ? <StandingTable block={block} /> : <ForeignTable block={block} />}
-            {block.open.map((t) => (
-              <div key={t.keys.join()} className="alert alert-info">
-                <p>
-                  Platz {t.place}: {t.names.join(', ')}{' '}
-                  {t.shootoff ? `– ${t.shootoff}. Stechen läuft` : '– Stechen nötig'}
-                </p>
-                {!t.shootoff && !closed && (
-                  <button
-                    type="button"
-                    className="button"
-                    onClick={() => void startShootoff(block.scoring, t.keys)}
-                  >
-                    Stechen anlegen
-                  </button>
-                )}
-              </div>
-            ))}
-            {own.map((so) => (
-              <ShootOffCard
-                key={so.id}
-                org={org}
-                comp={comp}
-                so={so}
-                decimals={
-                  (block.kind === 'einheit'
-                    ? comp.scorings.find((s) => s.id === scoring?.source)?.decimals
-                    : scoring?.decimals) ?? 0
-                }
-                closed={closed}
-                onChanged={reload}
-              />
-            ))}
+            <ShootoffBlock
+              org={org}
+              comp={comp}
+              block={block}
+              shootoffs={own}
+              closed={closed}
+              onChanged={reload}
+            />
             {block.without_value.length > 0 && (
               <p className="muted small">
                 Ohne Ergebnis: {block.without_value.map((w) => w.name).join(', ')}
@@ -270,158 +231,6 @@ function StandingTable({ block }: { block: StandingBlock }) {
         </tbody>
       </table>
     </div>
-  )
-}
-
-function ShootOffCard({
-  org,
-  comp,
-  so,
-  decimals,
-  closed,
-  onChanged,
-}: {
-  org: number
-  comp: CompetitionDetail
-  so: ShootOff
-  decimals: number
-  closed: boolean
-  onChanged: () => void
-}) {
-  const [error, setError] = useState<string | null>(null)
-  const unitShootoff = so.entries.some((e) => e.unit !== null)
-
-  async function save(entry: ShootOffEntry, data: { value?: string | null; membership?: number }) {
-    try {
-      await competitionsApi.updateShootoffEntry(org, comp.id, entry.id, data)
-      setError(null)
-      onChanged()
-    } catch (err) {
-      setError(errorMessage(err))
-    }
-  }
-
-  async function remove() {
-    const ok = await confirmDialog({
-      title: 'Stechen entfernen',
-      message: `${so.number}. Stechen mit allen Werten entfernen?`,
-      confirmLabel: 'Entfernen',
-    })
-    if (!ok) return
-    try {
-      await competitionsApi.removeShootoff(org, comp.id, so.id)
-      onChanged()
-    } catch (err) {
-      setError(errorMessage(err))
-    }
-  }
-
-  return (
-    <div className="card">
-      <div className="card-head">
-        <h3>
-          {so.number}. Stechen
-          {so.shots ? ` · ${so.shots} Schuss` : ''}
-          {so.counted_shots && so.counted_shots !== so.shots
-            ? `, davon ${so.counted_shots} gewertet`
-            : ''}
-        </h3>
-        <a
-          className="button button-ghost push-right"
-          href={competitionsApi.exportUrl(org, comp.id, `als=stechliste&stechen=${so.id}`)}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Stechliste (PDF)
-        </a>
-      </div>
-      {error && <Alert kind="error">{error}</Alert>}
-      <table className="table">
-        <thead>
-          <tr>
-            {unitShootoff && <th>Einheit</th>}
-            <th>Schütze</th>
-            <th className="num">Wert</th>
-          </tr>
-        </thead>
-        <tbody>
-          {so.entries.map((e) => (
-            <tr key={e.id}>
-              {unitShootoff && <td>{comp.units.find((u) => u.id === e.unit)?.name}</td>}
-              <td>
-                {unitShootoff && !closed ? (
-                  <UnitShooter
-                    org={org}
-                    comp={comp}
-                    entry={e}
-                    onPick={(m) => void save(e, { membership: m })}
-                  />
-                ) : (
-                  e.name
-                )}
-              </td>
-              <td className="num">
-                <input
-                  className="inline-edit num"
-                  inputMode={decimals ? 'decimal' : 'numeric'}
-                  aria-label={`Wert im Stechen für ${e.name}`}
-                  defaultValue={showValue(e.value, decimals)}
-                  disabled={closed}
-                  onBlur={(ev) => {
-                    const v = ev.target.value.trim().replace(',', '.')
-                    if (v !== (e.value === null ? '' : String(Number(e.value))))
-                      void save(e, { value: v || null })
-                  }}
-                  onKeyDown={(ev) => {
-                    if (ev.key === 'Enter') (ev.target as HTMLInputElement).blur()
-                  }}
-                />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {!closed && (
-        <div className="button-row">
-          <button type="button" className="button button-ghost" onClick={() => void remove()}>
-            Stechen entfernen
-          </button>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function UnitShooter({
-  org,
-  comp,
-  entry,
-  onPick,
-}: {
-  org: number
-  comp: CompetitionDetail
-  entry: ShootOffEntry
-  onPick: (membership: number) => void
-}) {
-  const { data } = useLoad(
-    () =>
-      entry.unit ? competitionsApi.unitMembers(org, comp.id, entry.unit) : Promise.resolve([]),
-    [org, comp.id, entry.unit],
-  )
-  return (
-    <select
-      className="inline-edit"
-      aria-label="Schütze im Stechen"
-      value={entry.membership ?? ''}
-      onChange={(e) => e.target.value && onPick(Number(e.target.value))}
-    >
-      <option value="">{entry.membership ? entry.name : 'bitte wählen'}</option>
-      {(data ?? []).map((m) => (
-        <option key={m.membership} value={m.membership}>
-          {m.name}
-        </option>
-      ))}
-    </select>
   )
 }
 

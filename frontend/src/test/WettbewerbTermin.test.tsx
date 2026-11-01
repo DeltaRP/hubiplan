@@ -168,4 +168,92 @@ describe('Wettbewerb und Termin', () => {
     expect(within(live).getByRole('heading', { name: 'Einzelwertung' })).toBeVisible()
     expect(within(live).getByText('Schütze 6')).toBeVisible()
   })
+
+  it('Schießen beenden, Stechen mit eigenen Regeln anlegen, alles im Standmodus', async () => {
+    const scoring = {
+      id: 11,
+      competition: 3,
+      name: 'Einzelwertung',
+      kind: 'einzel',
+      sort_order: 1,
+      shots: 5,
+      counted_shots: 3,
+      max_per_shot: '10.000',
+      unit_label: 'Punkte',
+      decimals: 0,
+      higher_better: true,
+      source: null,
+      team_mode: 'beste',
+      team_size: null,
+      prize_places: 3,
+      shootoff_shots: 3,
+      shootoff_counted: null,
+      field_size: null,
+    }
+    const tie = { keys: ['s1', 's2'], names: ['Max Muster', 'Erika Beispiel'], place: 2 }
+    let created = false
+    const calls = renderAt('/stand/7/3', {
+      [`GET ${base}3/`]: () => ({
+        status: 200,
+        body: { ...detail, status: 'laeuft', scorings: [scoring] },
+      }),
+      [`GET ${base}3/starters/`]: () => ({ status: 200, body: [] }),
+      [`GET ${base}3/members/`]: () => ({ status: 200, body: [] }),
+      [`GET ${base}3/version/`]: () => ({ status: 200, body: { version: 'a' } }),
+      [`GET ${base}3/standings/`]: () => ({
+        status: 200,
+        body: {
+          open_shootoffs: 1,
+          status: 'laeuft',
+          stats: {},
+          scorings: [
+            {
+              scoring: 11,
+              name: 'Einzelwertung',
+              kind: 'einzel',
+              open: [{ ...tie, shootoff: created ? 1 : null }],
+              without_value: [{ key: 's3', name: 'Otto Normal' }],
+              rows: [],
+            },
+          ],
+        },
+      }),
+      [`GET ${base}3/shootoffs/`]: () => ({ status: 200, body: [] }),
+      [`POST ${base}3/shootoffs/`]: () => {
+        created = true
+        return {
+          status: 201,
+          body: { id: 1, scoring: 11, number: 1, shots: 1, counted_shots: null, entries: [] },
+        }
+      },
+      [`POST ${base}3/status/`]: () => ({
+        status: 200,
+        body: { status: 'vorlaeufig', status_label: 'vorläufig' },
+      }),
+    })
+    const user = userEvent.setup()
+    const end = await screen.findByRole('region', { name: 'Abschluss' })
+    expect(within(end).getByText(/Noch ohne Ergebnis: 1 \(Otto Normal\)/)).toBeVisible()
+    // Schießen beenden: Rückfrage nennt, wer noch fehlt
+    await user.click(within(end).getByRole('button', { name: 'Schießen beenden' }))
+    const dialog = await screen.findByRole('alertdialog')
+    expect(dialog).toHaveTextContent('Otto Normal')
+    await user.click(within(dialog).getByRole('button', { name: 'Schießen beenden' }))
+    await waitFor(() => expect(calls.some((c) => c.key === `POST ${base}3/status/`)).toBe(true))
+    // Stechen: Regeln vor Ort, vorbelegt aus „Einrichten“ (3 Schuss)
+    await user.click(within(end).getByRole('button', { name: 'Stechen anlegen …' }))
+    const shots = within(end).getByLabelText('Schüsse im Stechen')
+    expect(shots).toHaveValue(3)
+    await user.clear(shots)
+    await user.type(shots, '1')
+    await user.click(within(end).getByRole('button', { name: 'Stechen anlegen' }))
+    await waitFor(() => {
+      const post = calls.find((c) => c.key === `POST ${base}3/shootoffs/`)
+      expect(JSON.parse(String(post?.init?.body))).toMatchObject({
+        scoring: 11,
+        keys: ['s1', 's2'],
+        shots: 1,
+      })
+    })
+  })
 })

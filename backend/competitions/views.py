@@ -1061,8 +1061,23 @@ def _shootoff_data(so: ShootOff) -> dict:
     }
 
 
+def _shootoff_rules(data, defaults: tuple) -> tuple:
+    """Schüsse und davon gewertet fürs Stechen; vor Ort festgelegt (Ralf 2026-11-01), sonst
+    wie im vorigen Stechen oder wie unter „Einrichten“ vorgeschlagen."""
+    shots = bird._positive(data["shots"], "shots") if "shots" in data else defaults[0]  # noqa: SLF001
+    counted = (
+        bird._positive(data["counted_shots"], "counted_shots")  # noqa: SLF001
+        if "counted_shots" in data
+        else defaults[1]
+    )
+    if shots and counted and counted > shots:
+        raise ValidationError({"counted_shots": "Höchstens so viele wie Schüsse."})
+    return shots, counted
+
+
 class ShootOffsView(_Mixin, APIView):
-    """GET: alle Stechen · POST {scoring, keys}: Stechen für eine Gleichstandsgruppe anlegen."""
+    """GET: alle Stechen · POST {scoring, keys, shots?, counted_shots?}: Stechen für eine
+    Gleichstandsgruppe anlegen."""
 
     manage_only = False
 
@@ -1091,12 +1106,19 @@ class ShootOffsView(_Mixin, APIView):
         if group is None:
             raise ValidationError("Für diese Gruppe ist kein Stechen nötig.")
         number = (scoring.shootoffs.aggregate(m=Max("number"))["m"] or 0) + 1
+        previous = scoring.shootoffs.order_by("-number").first()
+        defaults = (
+            (previous.shots, previous.counted_shots)
+            if previous
+            else (scoring.shootoff_shots, scoring.shootoff_counted)
+        )
+        shots, counted = _shootoff_rules(request.data, defaults)
         so = ShootOff.objects.create(
             organization=self.org,
             scoring=scoring,
             number=number,
-            shots=scoring.shootoff_shots,
-            counted_shots=scoring.shootoff_counted,
+            shots=shots,
+            counted_shots=counted,
         )
         rows = {r["key"]: r for r in block["rows"]}
         for key in group["keys"]:
@@ -1121,9 +1143,25 @@ class ShootOffsView(_Mixin, APIView):
 
 
 class ShootOffView(_Mixin, APIView):
-    """DELETE: Stechen entfernen (nur das letzte einer Wertung)."""
+    """PATCH {shots?, counted_shots?}: Regeln ändern, solange kein Wert eingetragen ist ·
+    DELETE: Stechen entfernen (nur das letzte einer Wertung)."""
 
     manage_only = False
+
+    @transaction.atomic
+    def patch(self, request, org_id: int, competition_id: int, pk: int):
+        comp = self.competition(competition_id)
+        if comp.status == Competition.Status.FINAL:
+            raise ValidationError("Der Wettbewerb ist endgültig abgeschlossen.")
+        so = get_object_or_404(ShootOff, pk=pk, scoring__competition=comp)
+        if so.entries.filter(value__isnull=False).exists():
+            raise ValidationError("Es sind schon Werte eingetragen; erst die Werte löschen.")
+        before = snapshot(so)
+        so.shots, so.counted_shots = _shootoff_rules(request.data, (so.shots, so.counted_shots))
+        so.save(update_fields=["shots", "counted_shots"])
+        record(self.org, request.user, "update", so, diff(before, snapshot(so)))
+        so = ShootOff.objects.prefetch_related("entries").get(pk=so.pk)
+        return Response(_shootoff_data(so))
 
     @transaction.atomic
     def delete(self, request, org_id: int, competition_id: int, pk: int):

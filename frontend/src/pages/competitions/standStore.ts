@@ -267,3 +267,16 @@ export function describe(op: SyncOp, l: Local): string {
   const s = l.starters.find((x) => x.id === op.starter || (!!x.key && x.key === op.starter))
   return s?.name ?? 'Eingabe'
 }
+
+/** Gast (Ralf 2026-11-01): freier Verein oder eine Untereinheit des Wettbewerbs. Passt der
+ * Text genau auf eine Untereinheit, gehört der Gast zu ihr (zählt für deren Wertung). */
+export function guestOrigin(
+  text: string,
+  units: { id: number; name: string }[],
+): { club: string; unit: number | null; unit_name: string } {
+  const t = text.trim()
+  const unit = units.find((u) => u.name.toLocaleLowerCase('de') === t.toLocaleLowerCase('de'))
+  return unit
+    ? { club: '', unit: unit.id, unit_name: unit.name }
+    : { club: t, unit: null, unit_name: '' }
+}

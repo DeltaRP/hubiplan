@@ -409,8 +409,19 @@ export const competitionsApi = {
     api.get<{ membership: number; name: string }[]>(`${c(org, id)}unit-members/?unit=${unit}`),
   standings: (org: number, id: number) => api.get<Standings>(`${c(org, id)}standings/`),
   shootoffs: (org: number, id: number) => api.get<ShootOff[]>(`${c(org, id)}shootoffs/`),
-  createShootoff: (org: number, id: number, scoring: number, keys: string[]) =>
-    api.post<ShootOff>(`${c(org, id)}shootoffs/`, { scoring, keys }),
+  createShootoff: (
+    org: number,
+    id: number,
+    scoring: number,
+    keys: string[],
+    rules: { shots?: number | null; counted_shots?: number | null } = {},
+  ) => api.post<ShootOff>(`${c(org, id)}shootoffs/`, { scoring, keys, ...rules }),
+  updateShootoff: (
+    org: number,
+    id: number,
+    so: number,
+    rules: { shots: number | null; counted_shots: number | null },
+  ) => api.patch<ShootOff>(`${c(org, id)}shootoffs/${so}/`, rules),
   removeShootoff: (org: number, id: number, so: number) => api.del(`${c(org, id)}shootoffs/${so}/`),
   updateShootoffEntry: (
     org: number,

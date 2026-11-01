@@ -306,6 +306,6 @@ describe('Vogelschießen am Stand', () => {
     )
     expect(await screen.findByText(/Standzugang Tablet 1/)).toBeVisible()
     expect(await screen.findByText('Erika Beispiel', { selector: 'strong' })).toBeVisible()
-    expect(screen.queryByText('Beenden')).toBeNull()
+    expect(screen.queryByText('Standmodus verlassen')).toBeNull()
   })
 })

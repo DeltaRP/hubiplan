@@ -3781,3 +3781,39 @@ label:has(> .file-input:focus-visible) {
     font-size: 1.2rem;
   }
 }
+
+/* Standmodus dunkel in der Vereinsfarbe (Ralf 2026-11-01): klar vom normalen HUBIplan
+   abgegrenzt, weniger Blendung am Stand. Die Vereinsfarbe setzt applyTheme() auf :root. */
+.stand-page {
+  color-scheme: dark;
+  --color-bg: color-mix(in srgb, var(--color-primary) 22%, #0c0e0d);
+  --color-surface: color-mix(in srgb, var(--color-primary) 18%, #1c201e);
+  --color-text: #f2f5f3;
+  --color-text-muted: #b9c3bf;
+  --color-border: rgba(255, 255, 255, 0.2);
+  --color-input-border: rgba(255, 255, 255, 0.55);
+  /* Text und Rahmen in Vereinsfarbe aufgehellt, damit sie auf Dunkel lesbar bleiben */
+  --color-link: color-mix(in srgb, var(--color-primary) 45%, #ffffff);
+  --color-focus: color-mix(in srgb, var(--color-primary) 45%, #ffffff);
+  --color-error: #ff9a90;
+  --color-error-bg: #4a1714;
+  --color-success: #9fe3c1;
+  --color-success-bg: color-mix(in srgb, var(--color-primary) 35%, #10201a);
+  color: var(--color-text);
+}
+.stand-page :where(input, select, textarea) {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+.stand-page .alert-info {
+  background: color-mix(in srgb, var(--color-primary) 28%, #16201c);
+}
+.stand-page .stand-lot,
+.stand-page .stand-prizes li.fallen strong,
+.stand-page .stand-draw-big strong,
+.stand-page a:not(.button) {
+  color: var(--color-link);
+}
+.stand-page .stand-draw-big {
+  border-color: var(--color-link);
+}

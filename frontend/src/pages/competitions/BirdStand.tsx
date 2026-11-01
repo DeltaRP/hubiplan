@@ -16,7 +16,7 @@ import {
   type Starter,
 } from '../../api/competitions.ts'
 import { StandFinish } from './StandFinish.tsx'
-import { describe, useStandStore, type LocalStarter } from './standStore.ts'
+import { describe, guestOrigin, useStandStore, type LocalStarter } from './standStore.ts'
 
 export function BirdStand({
   api,
@@ -354,6 +354,7 @@ export function BirdStand({
           <AddShooter
             starters={local.starters}
             lots={comp.lots}
+            units={comp.units}
             members={local.members}
             onAdd={(s, op, number, how) => {
               setLocal((l) => ({ ...l, starters: [...l.starters, s] }))
@@ -533,11 +534,13 @@ type Pick = { kind: 'member'; member: MemberChoice } | { kind: 'guest'; name: st
 function AddShooter({
   starters,
   lots,
+  units,
   members,
   onAdd,
 }: {
   starters: LocalStarter[]
   lots: number | null
+  units: { id: number; name: string }[]
   members: MemberChoice[]
   onAdd: (
     s: LocalStarter,
@@ -581,15 +584,16 @@ function AddShooter({
     }
     const key = newRequestKey()
     const name = chosen.kind === 'member' ? chosen.member.name : chosen.name
+    const origin = guestOrigin(club, units)
     const s: LocalStarter = {
       id: 0,
       key,
       name,
-      club: chosen.kind === 'guest' ? club.trim() : '',
+      club: chosen.kind === 'guest' ? origin.club : '',
       guest: chosen.kind === 'guest',
       membership: chosen.kind === 'member' ? chosen.member.membership : null,
-      unit: chosen.kind === 'member' ? chosen.member.unit : null,
-      unit_name: chosen.kind === 'member' ? chosen.member.unit_name : '',
+      unit: chosen.kind === 'member' ? chosen.member.unit : origin.unit,
+      unit_name: chosen.kind === 'member' ? chosen.member.unit_name : origin.unit_name,
       number: '',
       out_of_competition: false,
       presence: '',
@@ -599,7 +603,13 @@ function AddShooter({
     const op =
       chosen.kind === 'member'
         ? { op: 'starter' as const, client_key: key, membership: chosen.member.membership }
-        : { op: 'starter' as const, client_key: key, name, club: club.trim() }
+        : {
+            op: 'starter' as const,
+            client_key: key,
+            name,
+            club: origin.club,
+            unit: origin.unit,
+          }
     if (how === 'digital') number = drawFree([...starters, s], undefined, Math.random, lots)
     onAdd(s, op, number, how ?? 'hut')
     setChosen(null)
@@ -621,8 +631,19 @@ function AddShooter({
         </p>
         {chosen.kind === 'guest' && (
           <label className="field">
-            <span>Verein (optional)</span>
-            <input className="stand-input" value={club} onChange={(e) => setClub(e.target.value)} />
+            <span>Verein oder Einheit (optional)</span>
+            <input
+              className="stand-input"
+              list="vogel-einheiten"
+              autoComplete="off"
+              value={club}
+              onChange={(e) => setClub(e.target.value)}
+            />
+            <datalist id="vogel-einheiten">
+              {units.map((u) => (
+                <option key={u.id} value={u.name} />
+              ))}
+            </datalist>
           </label>
         )}
         <label className="field">
