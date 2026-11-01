@@ -13,6 +13,7 @@ from competitions import urls as competition_urls
 from customfields import views as field_views
 from datatransfer import views as transfer_views
 from documents import views as doc_views
+from entries import urls as entry_urls
 from events import views as event_views
 from exchange import views as exchange_views
 from finance import bank_views, cash_count_views, donation_views, quittung_views, reserve_views
@@ -459,6 +460,7 @@ org_patterns = [
     *website_urls.org_patterns,
     *honors_urls.org_patterns,
     *competition_urls.org_patterns,
+    *entry_urls.org_patterns,
     path("offices/", office_views.OfficesView.as_view(), name="offices"),
     path("offices/<int:pk>/", office_views.OfficeEntryView.as_view(), name="office-entry"),
     path(

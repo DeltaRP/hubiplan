@@ -39,6 +39,7 @@ const MODULES = [
   { id: 'events', label: 'Termine' },
   { id: 'website', label: 'Webseite' },
   { id: 'competitions', label: 'Wettbewerbe' },
+  { id: 'entries', label: 'Meldungen' },
 ]
 
 export function PlatformLayout() {

@@ -580,6 +580,7 @@ export const PERM = {
   peeringManage: 'peering.manage',
   competitionsManage: 'competitions.manage',
   competitionsResults: 'competitions.results',
+  entriesSubmit: 'entries.submit',
 } as const
 
 /** Ergebnis von „Verwalter einrichten“ für eine Untereinheit. */

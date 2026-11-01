@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     "website",
     "honors",
     "competitions",
+    "entries",
     "peering",
     "devices",
 ]
@@ -295,6 +296,7 @@ CELERY_BEAT_SCHEDULE = {
     # Backup-Stand prüfen, Alarm-Mail bei Fehler oder Lücke (ohne Statusordner: nichts)
     # Änderungsprotokoll versiegeln und Kette prüfen (Finanzamt-Prüfung C3)
     "protokoll-pruefen": {"task": "audit.tasks.check_chains", "schedule": 24 * 60 * 60},
+    "meldungen-kuerzen": {"task": "entries.tasks.shorten_old_entries", "schedule": 24 * 60 * 60},
     "backup-pruefen": {"task": "core.backup_status.check_backup", "schedule": 60 * 60},
 }
 # Statusdatei des Backup-Dienstes (docker-compose.server.yml) und ab wann ein fehlendes
