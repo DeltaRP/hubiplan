@@ -16,6 +16,7 @@ urlpatterns = [
     path("devices/<int:pk>/", views.DeviceDetailView.as_view(), name="app-device"),
     path("devices/<int:pk>/admin/", views.DeviceAdminLockView.as_view(), name="app-device-admin"),
     path("me/", views.MeView.as_view(), name="app-me"),
+    path("me/language/", views.AppLanguageView.as_view(), name="app-language"),
     path("send/", send.SendersView.as_view(), name="app-senders"),
     path("send/<str:kind>/<int:pk>/", send.SendShortView.as_view(), name="app-send-short"),
     # Verwaltung (Schritt A8)

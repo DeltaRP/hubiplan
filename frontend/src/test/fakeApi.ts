@@ -17,6 +17,15 @@ const DEFAULTS: Record<string, Handler> = {
   }),
   // Hinterlegte Unterschrift (Quittungen): ohne eigene Angabe keine
   'GET /api/me/signature/': () => ({ status: 200, body: { signature: null, updated_at: null } }),
+  // Sprache: ohne eigene Angabe nur Deutsch (kein Umschalter)
+  'GET /api/me/language/': () => ({
+    status: 200,
+    body: { languages: [{ code: 'de', name: 'Deutsch' }], default: 'de', language: 'de' },
+  }),
+  'GET /api/public/languages/': () => ({
+    status: 200,
+    body: { languages: [{ code: 'de', name: 'Deutsch' }], default: 'de' },
+  }),
   // Lernhilfen: ohne eigene Angabe ausgeschaltet (Abwägungen bleiben sichtbar)
   'GET /api/me/learning/': () => ({
     status: 200,

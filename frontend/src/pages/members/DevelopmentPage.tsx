@@ -19,6 +19,7 @@ import { useActiveOrg } from '../../org/OrgContext.tsx'
 import { useTerms } from '../../org/terms.ts'
 import { HowTo } from '../../learning/Aids.tsx'
 import { ownMembers } from './access.ts'
+import { locale } from '../../i18n/index.ts'
 
 /** Mitglieder › Entwicklung: eigene Mitglieder (``own``) oder alle Einheiten darunter
  *  (``all``, mit Freigabe der Plattform). */
@@ -48,7 +49,7 @@ export function MembersDevelopmentPage({ view = 'own' }: { view?: 'own' | 'all' 
   )
 }
 
-const count = (n: number) => n.toLocaleString('de-DE')
+const count = (n: number) => n.toLocaleString(locale())
 const signed = (n: number) => (n > 0 ? `+${count(n)}` : n < 0 ? `−${count(-n)}` : '±0')
 
 export function MemberDevelopment({
@@ -242,7 +243,7 @@ function MemberCharts({ data }: { data: MemberStats }) {
 }
 
 const oneDecimal = (n: number) =>
-  n.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+  n.toLocaleString(locale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 
 /** Durchschnittsalter (± Standardabweichung) zu beiden Stichtagen */
 function AgeSummaries({ items }: { items: [string, AgeSummary | undefined][] }) {
@@ -264,7 +265,7 @@ function AgeSummaries({ items }: { items: [string, AgeSummary | undefined][] }) 
                 )
               </>
             )}
-            , {count.toLocaleString('de-DE')} {count === 1 ? 'Person' : 'Personen'}
+            , {count.toLocaleString(locale())} {count === 1 ? 'Person' : 'Personen'}
           </dd>
         </div>
       ))}

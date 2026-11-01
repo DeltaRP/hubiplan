@@ -10,6 +10,7 @@ import { Alert, Checkbox, Field, SaveStatus, SelectField } from '../../component
 import { useActiveOrg, useOrg } from '../../org/OrgContext.tsx'
 import { useTerms } from '../../org/terms.ts'
 import { HowTo, Term, Why } from '../../learning/Aids.tsx'
+import { locale } from '../../i18n/index.ts'
 
 function useBillingSettings() {
   const org = useActiveOrg()
@@ -243,7 +244,7 @@ function AgeRatesCard({
                 <td>
                   {a.amount !== null
                     ? `${euro(a.amount)} im Jahr`
-                    : `${Number(a.discount_percent).toLocaleString('de-DE')} % Abschlag`}
+                    : `${Number(a.discount_percent).toLocaleString(locale())} % Abschlag`}
                 </td>
                 <td className="actions">
                   {canEdit && (

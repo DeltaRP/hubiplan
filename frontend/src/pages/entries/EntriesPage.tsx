@@ -40,6 +40,7 @@ import { PERM } from '../../api/orgs.ts'
 import { useActiveOrg } from '../../org/OrgContext.tsx'
 import { CallEventCard, InterestCard } from './CallEvent.tsx'
 import { UnitEntryPage, UnitsPanel } from './UnitEntries.tsx'
+import { locale } from '../../i18n/index.ts'
 
 export function EntriesPage() {
   return (
@@ -1118,7 +1119,7 @@ function SubmitCard({
     const note = await promptDialog({
       title: 'Bestätigung vermerken',
       label: 'Wie und wann bestätigt?',
-      defaultValue: `per Mail am ${new Date().toLocaleDateString('de-DE')}`,
+      defaultValue: `per Mail am ${new Date().toLocaleDateString(locale())}`,
     })
     if (note !== null) await run(() => entriesApi.confirm(org, call.id, note))
   }
@@ -1368,7 +1369,7 @@ function VersionsPanel({
                 {v.number} · {v.kind_label}
               </td>
               <td>
-                {new Date(v.created_at).toLocaleString('de-DE', {
+                {new Date(v.created_at).toLocaleString(locale(), {
                   dateStyle: 'short',
                   timeStyle: 'short',
                 })}

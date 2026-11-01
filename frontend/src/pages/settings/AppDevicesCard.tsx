@@ -4,9 +4,10 @@ import { devicesApi } from '../../api/devices.ts'
 import { HowTo } from '../../learning/Aids.tsx'
 import { confirmDialog } from '../../components/dialog.ts'
 import type { AppDevice, PairingCode } from '../../api/devices.ts'
+import { locale } from '../../i18n/index.ts'
 
 function formatDate(value: string): string {
-  return new Date(value).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' })
+  return new Date(value).toLocaleString(locale(), { dateStyle: 'medium', timeStyle: 'short' })
 }
 
 // Mein Konto: HUBIplan-App mit dem Konto verbinden und Geräte abmelden.

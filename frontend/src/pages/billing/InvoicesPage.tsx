@@ -23,6 +23,7 @@ import { useActiveOrg } from '../../org/OrgContext.tsx'
 import { confirmDialog } from '../../components/dialog.ts'
 import { useTerms } from '../../org/terms.ts'
 import { Term } from '../../learning/Aids.tsx'
+import { locale } from '../../i18n/index.ts'
 
 export function StatusBadge({
   row,
@@ -409,7 +410,7 @@ function InvoiceDetail({
               <td>{l.text}</td>
               <td className="muted small">
                 {l.detail}
-                {l.vat_rate && ` · ${Number(l.vat_rate).toLocaleString('de-DE')} % USt`}
+                {l.vat_rate && ` · ${Number(l.vat_rate).toLocaleString(locale())} % USt`}
               </td>
               <td className="num">{euro(l.amount)}</td>
             </tr>
@@ -1032,7 +1033,7 @@ function InvoiceForm({
               <option value="">keine</option>
               {[...new Set([Number(settings.vat_rate), 19, 7])].map((r) => (
                 <option key={r} value={String(r)}>
-                  {r.toLocaleString('de-DE')} % enthalten
+                  {r.toLocaleString(locale())} % enthalten
                 </option>
               ))}
             </SelectField>

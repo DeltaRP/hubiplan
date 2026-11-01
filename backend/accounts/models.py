@@ -1,6 +1,7 @@
 import secrets
 import string
 
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 
@@ -51,6 +52,11 @@ class User(AbstractUser):
     # ausgeblendet hat (nur Schlüssel). Reine Anzeigepräferenz.
     learning_aids = models.BooleanField("Lernhilfen zeigen", default=True)
     learning_hidden = models.JSONField("ausgeblendete Erklärungen", null=True, blank=True)
+    # Nutzersprache (konzepte/englisch.md): Oberfläche, Fehlermeldungen, Hinweis-Mails und
+    # Push an dieses Konto. Belege und Briefe folgen der Vereinssprache der Einheit.
+    language = models.CharField(
+        "Sprache", max_length=5, choices=settings.LANGUAGES, default="de", db_default="de"
+    )
     # Gesetzt, solange das Konto noch das ausgegebene Startpasswort hat: Es muss bei der
     # ersten Anmeldung ersetzt werden und wird nach Ablauf unbrauchbar (AT-S04)
     initial_password_expires = models.DateTimeField(

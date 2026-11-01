@@ -12,6 +12,7 @@ from __future__ import annotations
 import datetime
 import uuid
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -365,6 +366,11 @@ class Organization(ShortNameMixin, FiscalYearFields, ThemeFields):
     )
 
     enabled_modules = models.JSONField("freigeschaltete Module", default=list, blank=True)
+    # Vereinssprache (konzepte/englisch.md, Fachfrage F10): Sprache der Belege, Briefe,
+    # Rechnungen und der Vereinswebseite. Vorerst immer Deutsch, noch nicht einstellbar.
+    language = models.CharField(
+        "Vereinssprache", max_length=5, choices=settings.LANGUAGES, default="de", db_default="de"
+    )
     # Kasse: Kategorien den vier steuerlichen Bereichen zuordnen (entscheidet die Organisation)
     tax_areas_enabled = models.BooleanField("steuerliche Bereiche in der Kasse", default=False)
     # Kasse: Buchungen bis einschließlich diesem Tag sind festgeschrieben (GoBD); nur vorwärts

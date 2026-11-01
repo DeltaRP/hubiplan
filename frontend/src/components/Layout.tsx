@@ -23,6 +23,7 @@ import { ACCOUNT_PATH, accountSectionLabel } from '../pages/settings/accountNav.
 import { AccountMenu } from './AccountMenu.tsx'
 import { RolePreviewBanner, RolePreviewSelect } from './RolePreview.tsx'
 import { rolePreviewApi } from '../api/orgs.ts'
+import { locale } from '../i18n/index.ts'
 
 // Seiten außerhalb der Bereiche in der Seitenleiste
 const OTHER_PAGES: Record<string, string> = {
@@ -422,7 +423,7 @@ export function Layout() {
 
 /** Pflicht-2FA für heikle Rechte (Gesamtaudit 31.10.b, Frage 1). */
 function MfaNotice({ by, overdue }: { by: string; overdue: boolean }) {
-  const date = new Date(by).toLocaleDateString('de-DE')
+  const date = new Date(by).toLocaleDateString(locale())
   return (
     <div className={overdue ? 'alert alert-error' : 'alert alert-info'} role="status">
       {overdue

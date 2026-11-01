@@ -19,6 +19,7 @@ from drf_spectacular.extensions import OpenApiAuthenticationExtension
 from rest_framework import authentication
 from rest_framework.exceptions import APIException
 
+from core.i18n import activate_for
 from core.tenancy import set_rls
 
 from . import devicekey
@@ -136,6 +137,7 @@ class DeviceTokenAuthentication(authentication.BaseAuthentication):
             device.last_seen_at = now
         # Die Middleware kennt nur die Sitzung; Datenbereich des Benutzers setzen
         set_rls(None, device.user_id)
+        activate_for(request, device.user)
         return device.user, device
 
 
@@ -184,6 +186,7 @@ class AdminTokenAuthentication(authentication.BaseAuthentication):
             Device.objects.filter(pk=device.pk).update(admin_used_at=now, last_seen_at=now)
             device.admin_used_at = device.last_seen_at = now
         set_rls(None, device.user_id)
+        activate_for(request, device.user)
         return device.user, device
 
     def authenticate_header(self, request):

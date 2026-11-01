@@ -12,7 +12,8 @@
     "test": "vitest run",
     "typecheck": "tsc -b",
     "format": "prettier --write src",
-    "format:check": "prettier --check src"
+    "format:check": "prettier --check src",
+    "i18n:check": "node scripts/i18n-check.mjs"
   },
   "dependencies": {
     "markdown-it": "15.0.3",
