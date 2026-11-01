@@ -47,6 +47,9 @@ Meldeschluss noch geht (nichts, nur Ersatz, alles bis zum Anlass).
   Ohne Änderung entsteht keine neue Fassung.
 - Mannschaften und Plätze behalten ihre Kennung; „ersetzen“ tauscht nur die Person.
 - **Zurückziehen** hält eine Fassung „Rückzug“ fest, danach ist die Meldung gesperrt.
+  „Wieder öffnen“ macht sie erneut zum Entwurf mit den bisherigen Angaben (Fassungen bleiben,
+  die nächste Abgabe ist wieder eine Meldung). „Meldung löschen“ entfernt sie samt Fassungen;
+  die Ausschreibung bleibt (`POST …/entry/reopen/`, `DELETE …/entry/discard/`).
 - **Bestätigung** des Veranstalters lässt sich vermerken (z. B. „per Mail am …“).
 
 ## Interessenabfrage über den Kalender

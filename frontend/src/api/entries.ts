@@ -280,6 +280,7 @@ export const entriesApi = {
   updateEntry: (org: Scope, id: number, data: { note: string }) =>
     api.patch<Entry>(e(org, id), data),
   discard: (org: Scope, id: number) => api.del(`${e(org, id)}discard/`),
+  reopen: (org: Scope, id: number) => api.post<Entry>(`${e(org, id)}reopen/`, {}),
   addTeam: (org: Scope, id: number, block: number, name = '') =>
     api.post<Entry>(`${e(org, id)}teams/`, { block, name }),
   updateTeam: (org: Scope, id: number, team: number, data: Partial<EntryTeam>) =>

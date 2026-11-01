@@ -266,6 +266,33 @@ class TestAblauf:
         resp = c.post(f"{base}teams/", {"block": call["blocks"][0]["id"]}, "application/json")
         assert resp.status_code == 400
 
+    def test_nach_rueckzug_wieder_oeffnen_oder_loeschen(self, club, schuetzen, board_a, api):
+        c = api(board_a)
+        call = _call(c, club)
+        _mannschaften(c, club, call, schuetzen, ZEHN)
+        base = url(club, f"calls/{call['id']}/entry/")
+        _post(c, f"{base}submit/", {"channel": "sonstiges", "sent_to": "persönlich"})
+        # Abgegebene Meldung lässt sich nicht löschen und nicht wieder öffnen
+        assert c.delete(f"{base}discard/").status_code == 400
+        assert c.post(f"{base}reopen/", {}, "application/json").status_code == 400
+        _post(c, f"{base}submit/", {"channel": "brief", "withdraw": True})
+
+        entry = _post(c, f"{base}reopen/", {})
+        assert entry["status"] == "entwurf"
+        assert len(entry["versions"]) == 2
+        assert len(entry["persons"]) == 10
+        # Nächste Abgabe ist wieder eine Meldung, auch ohne Änderung
+        entry = _post(c, f"{base}submit/", {"channel": "sonstiges", "sent_to": "persönlich"})
+        assert entry["status"] == "abgegeben"
+        assert entry["versions"][-1]["kind"] == "meldung"
+
+        # Erneut zurückziehen und ganz löschen; die Ausschreibung bleibt
+        _post(c, f"{base}submit/", {"channel": "brief", "withdraw": True})
+        assert c.delete(f"{base}discard/").status_code == 204
+        assert c.get(base).content == b"null"
+        assert c.get(url(club, f"calls/{call['id']}/")).status_code == 200
+        assert not EntryVersion.objects.filter(entry__call_id=call["id"]).exists()
+
 
 class TestHinweise:
     def test_bedingungen_nur_als_warnung(self, club, schuetzen, board_a, api):

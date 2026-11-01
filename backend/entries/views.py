@@ -1334,17 +1334,46 @@ class UnitsListDownloadView(_Mixin, APIView):
         return _download(data, name, fmt)
 
 
+def _withdrawn_last(entry: Entry) -> bool:
+    last = entry.versions.order_by("-number").first()
+    return last is not None and last.kind == EntryVersion.Kind.WITHDRAWAL
+
+
 class EntryDeleteView(_Mixin, APIView):
-    """DELETE: Entwurf verwerfen (nur, solange nichts abgegeben ist)."""
+    """DELETE: Meldung löschen, solange nichts abgegeben ist oder nachdem sie zurückgezogen
+    wurde; dann samt Fassungen. Die Ausschreibung bleibt."""
 
     @transaction.atomic
     def delete(self, request, org_id: int, call_id: int):
         entry = self.entry(call_id)
-        if entry.versions.exists():
-            raise ValidationError("Die Meldung ist schon abgegeben; ziehe sie stattdessen zurück.")
-        record(self.org, request.user, "delete", entry, diff(snapshot(entry), {}))
+        withdrawn = _withdrawn_last(entry)
+        if entry.versions.exists() and not withdrawn:
+            raise ValidationError("Die Meldung ist schon abgegeben; ziehe sie zuerst zurück.")
+        data = snapshot(entry)
+        if withdrawn:
+            data["Fassungen"] = entry.versions.count()
+        record(self.org, request.user, "delete", entry, diff(data, {}))
         entry.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class EntryReopenView(_Mixin, APIView):
+    """POST: zurückgezogene Meldung wieder öffnen. Sie wird wieder zum Entwurf mit den
+    bisherigen Mannschaften und Personen; die Fassungen bleiben, die nächste Abgabe ist
+    wieder eine Meldung."""
+
+    @transaction.atomic
+    def post(self, request, org_id: int, call_id: int):
+        entry = self.entry(call_id)
+        if entry.status != Entry.Status.WITHDRAWN:
+            raise ValidationError("Nur eine zurückgezogene Meldung lässt sich wieder öffnen.")
+        entry.status = Entry.Status.DRAFT
+        entry.changed = False
+        entry.confirmed_note = ""
+        entry.question = ""
+        entry.save(update_fields=["status", "changed", "confirmed_note", "question", "updated_at"])
+        record(self.org, request.user, "update", entry, {"Zustand": ["zurückgezogen", "Entwurf"]})
+        return Response(_entry_detail(self, entry))
 
 
 FORMATS = {
