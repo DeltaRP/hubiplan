@@ -29,7 +29,7 @@ export function ExportSection({
   /** Plattform: Organisationen zur Auswahl */
   organizations?: { id: number; name: string; display_name?: string; type_label: string }[]
 }) {
-  const t = useTerms()
+  const tm = useTerms()
   const jobs = useLoad(() => transferApi.exports(base), [JSON.stringify(base)])
   const [withFiles, setWithFiles] = useState(false)
   const [target, setTarget] = useState('')
@@ -65,7 +65,7 @@ export function ExportSection({
     <div className="card card-wide">
       <h2>Vollständiger Export</h2>
       <p className="muted small">
-        Alle Daten als eine Datei: Stammdaten, Rollen, Mitgliedsarten, Zusatzfelder, {t.pl},
+        Alle Daten als eine Datei: Stammdaten, Rollen, Mitgliedsarten, Zusatzfelder, {tm.pl},
         Mitglieder mit allen Zeiträumen, Kasse, Beiträge und Rechnungen sowie die Satzung.
         Benutzerkonten und Passwörter sind nicht enthalten. Jeder Export wird protokolliert, die
         Datei wird nach 7 Tagen gelöscht.
@@ -88,11 +88,11 @@ export function ExportSection({
         {departments && departments.length > 0 && (
           <select aria-label="Umfang" value={target} onChange={(e) => setTarget(e.target.value)}>
             <option value="">
-              ganz{t.e_adj} {t.e_sg}
+              ganz{tm.e_adj} {tm.e_sg}
             </option>
             {departments.map((d) => (
               <option key={d.id} value={d.id}>
-                nur {t.sg} {unitName(d)}
+                nur {tm.sg} {unitName(d)}
               </option>
             ))}
           </select>
@@ -214,9 +214,9 @@ export function ImportSection({
   const [choices, setChoices] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const t = useTerms()
+  const tm = useTerms()
   const text = TARGET_TEXT[target]
-  const title = fillTerms(text.title, t)
+  const title = fillTerms(text.title, tm)
   const signal = useUnmountSignal()
   // Auftrag in der Adresse merken: nach Neuladen oder Rückkehr wieder erreichbar
   // (UI-Audit NAF-04)
@@ -316,7 +316,7 @@ export function ImportSection({
         <h2>{title}</h2>
         <Alert kind="success">
           „{result.organization?.name ?? result.department?.name}“ wurde angelegt.
-          {result.new_members ? ` ${result.new_members} neue Mitglieder ${t.e_im}.` : ''}
+          {result.new_members ? ` ${result.new_members} neue Mitglieder ${tm.e_im}.` : ''}
           {result.invited ? ` ${result.invited} Einladungen verschickt.` : ''}
           {result.renumbered ? ` ${result.renumbered} Verbandsnummern neu vergeben.` : ''}
           {result.skipped_assignments
@@ -333,7 +333,7 @@ export function ImportSection({
   return (
     <div className="card card-wide">
       <h2>{title}</h2>
-      <p className="muted small">{fillTerms(text.hint, t)}</p>
+      <p className="muted small">{fillTerms(text.hint, tm)}</p>
       {job && RUNNING.includes(job.status) && (
         <div className="stack-sm">
           <Alert kind="info">
@@ -495,7 +495,7 @@ function ImportPreviewView({
   onRun: () => void
   onCancel: () => void
 }) {
-  const t = useTerms()
+  const tm = useTerms()
   const open = preview.duplicates.filter((d) => !d.fixed)
   const fixed = preview.duplicates.filter((d) => d.fixed)
   const counts = Object.entries(preview.summary).filter(
@@ -512,7 +512,7 @@ function ImportPreviewView({
           <li key={key}>
             {fillTerms(
               key === 'departments' && target === 'club' ? '{Pl}' : (SUMMARY_LABELS[key] ?? key),
-              t,
+              tm,
             )}
             : {value}
           </li>
@@ -534,7 +534,7 @@ function ImportPreviewView({
         <p className="small muted">Nicht übernommen: {preview.not_included.join(', ')}.</p>
       )}
       <Field
-        label={target === 'club' ? `Name ${t.gen}` : 'Name der neuen Einheit'}
+        label={target === 'club' ? `Name ${tm.gen}` : 'Name der neuen Einheit'}
         value={name}
         placeholder={preview.name}
         onChange={(e) => setName(e.target.value)}
@@ -587,7 +587,7 @@ function ImportPreviewView({
       )}
       {fixed.length > 0 && (
         <Alert kind="info">
-          Schon Mitglied {t.e_im}, werden nur zugeordnet: {fixed.map((d) => d.name).join('; ')}
+          Schon Mitglied {tm.e_im}, werden nur zugeordnet: {fixed.map((d) => d.name).join('; ')}
         </Alert>
       )}
       {open.length > 0 && (
@@ -677,7 +677,7 @@ export function ClubCreateForm({
   federationId: number
   onDone: () => void
 }) {
-  const t = useTerms()
+  const tm = useTerms()
   const form = useForm({
     name: '',
     founding_year: '',
@@ -697,7 +697,7 @@ export function ClubCreateForm({
           ...v,
           founding_year: v.founding_year ? Number(v.founding_year) : null,
         }),
-      fillTerms('{Nom} wurde angelegt.', t),
+      fillTerms('{Nom} wurde angelegt.', tm),
     )
     if (result) {
       form.setValues({
@@ -715,7 +715,7 @@ export function ClubCreateForm({
 
   return (
     <form className="card card-wide" onSubmit={(e) => void save(e)}>
-      <h2>{t.Sg} von Hand anlegen</h2>
+      <h2>{tm.Sg} von Hand anlegen</h2>
       <div className="grid-2">
         <Field
           label="Name"
@@ -754,7 +754,7 @@ export function ClubCreateForm({
           required
         />
         <Field
-          label={`E-Mail ${t.gen}`}
+          label={`E-Mail ${tm.gen}`}
           type="email"
           value={v.contact_email}
           error={form.errors.contact_email}
@@ -771,7 +771,7 @@ export function ClubCreateForm({
       </div>
       {form.message && <Alert kind={form.message.kind}>{form.message.text}</Alert>}
       <button type="submit" className="button button-primary" disabled={form.busy}>
-        {t.Sg} anlegen
+        {tm.Sg} anlegen
       </button>
     </form>
   )

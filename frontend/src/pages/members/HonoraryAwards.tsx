@@ -99,10 +99,10 @@ function AwardEdit({
   const [until, setUntil] = useState(a.valid_until ?? '')
   const [note, setNote] = useState(a.note ?? '')
   // Archivierte Ehrung bleibt wählbar, solange sie hier vergeben ist.
-  const list = options.some((t) => t.id === a.title)
+  const list = options.some((tm) => tm.id === a.title)
     ? options
     : [{ id: a.title, name: a.title_name, year_only: a.year_only }, ...options]
-  const yearOnly = list.find((t) => String(t.id) === title)?.year_only ?? false
+  const yearOnly = list.find((tm) => String(tm.id) === title)?.year_only ?? false
   return (
     <li>
       <form
@@ -119,9 +119,9 @@ function AwardEdit({
         }}
       >
         <select aria-label="Ehrung" value={title} onChange={(e) => setTitle(e.target.value)}>
-          {list.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
+          {list.map((tm) => (
+            <option key={tm.id} value={tm.id}>
+              {tm.name}
             </option>
           ))}
         </select>
@@ -180,8 +180,8 @@ export function HonoraryAwards({
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
   const [editing, setEditing] = useState<number | null>(null)
-  const options = titles.data?.filter((t) => !t.is_archived) ?? []
-  const addYearOnly = options.find((t) => String(t.id) === title)?.year_only ?? false
+  const options = titles.data?.filter((tm) => !tm.is_archived) ?? []
+  const addYearOnly = options.find((tm) => String(tm.id) === title)?.year_only ?? false
 
   async function run(action: () => Promise<unknown>) {
     setError(null)
@@ -315,9 +315,9 @@ export function HonoraryAwards({
               onChange={(e) => setTitle(e.target.value)}
             >
               <option value="">Ehrung verleihen …</option>
-              {options.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
+              {options.map((tm) => (
+                <option key={tm.id} value={tm.id}>
+                  {tm.name}
                 </option>
               ))}
             </select>

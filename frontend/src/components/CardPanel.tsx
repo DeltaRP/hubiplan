@@ -10,7 +10,7 @@ import type { ConfirmOptions } from './dialog.ts'
 import { useTerms } from '../org/terms.ts'
 
 export function CardPanel({ base, pdfUrl }: { base: string; pdfUrl: string }) {
-  const t = useTerms()
+  const tm = useTerms()
   const { data, error, setData } = useLoad(() => cardApi.get(base), [base])
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<{ kind: 'success' | 'error'; text: string } | null>(null)
@@ -39,7 +39,7 @@ export function CardPanel({ base, pdfUrl }: { base: string; pdfUrl: string }) {
         <>
           <p className="muted">
             Noch kein Ausweis. Der QR-Code führt auf eine Seite mit Name, Foto (nur mit
-            Einwilligung), aktuellem Status, {t.e_sg} und {t.sg}.
+            Einwilligung), aktuellem Status, {tm.e_sg} und {tm.sg}.
           </p>
           <button
             type="button"
@@ -161,7 +161,7 @@ function CardView({
 
 /** Eigener Ausweis im Mitgliederbereich (nur ansehen und drucken). */
 export function OwnCardPanel({ accessId, empty }: { accessId: number; empty?: ReactNode }) {
-  const t = useTerms()
+  const tm = useTerms()
   const { data, error } = useLoad(() => cardApi.portal(accessId), [accessId])
   if (error) return empty ? <Alert kind="error">{error}</Alert> : null
   if (!data) return null
@@ -170,7 +170,7 @@ export function OwnCardPanel({ accessId, empty }: { accessId: number; empty?: Re
     <div className="card card-wide">
       <h2>Mein Mitgliedsausweis</h2>
       {data.state === 'revoked' ? (
-        <Alert kind="info">Dein Ausweis ist gesperrt. Bitte wende dich an {t.e_deinen}.</Alert>
+        <Alert kind="info">Dein Ausweis ist gesperrt. Bitte wende dich an {tm.e_deinen}.</Alert>
       ) : (
         <div className="card-qr-row">
           {data.qr && (
@@ -180,7 +180,7 @@ export function OwnCardPanel({ accessId, empty }: { accessId: number; empty?: Re
             <p className="small">
               Zeig den QR-Code vor, wenn jemand deine Mitgliedschaft prüfen möchte. Wer ihn scannt,
               sieht deinen Namen, dein Foto (nur mit deiner Einwilligung), den aktuellen Status
-              deiner Mitgliedschaft, {t.e_sg} und {t.sg}.
+              deiner Mitgliedschaft, {tm.e_sg} und {tm.sg}.
             </p>
             <div className="button-row">
               <a className="button button-primary" href={cardApi.portalPdfUrl(accessId)}>

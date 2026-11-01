@@ -15,26 +15,26 @@ export interface ShotScore {
   teilerTenths: number
 }
 
-export function scoreShot(t: TargetInfo, x: number, y: number): ShotScore {
+export function scoreShot(tm: TargetInfo, x: number, y: number): ShotScore {
   const d = Math.hypot(x, y)
-  const edge = t.top_diameter / 2 + t.caliber / 2
-  const raw = t.top + (edge - d) / t.ring_width
+  const edge = tm.top_diameter / 2 + tm.caliber / 2
+  const raw = tm.top + (edge - d) / tm.ring_width
   // auf sechs Stellen runden (Gleitkomma), dann auf Zehntel abschneiden
   const micro = Math.round(raw * 1e6)
-  let tenths = Math.min(Math.trunc(micro / 1e5), t.top * 10 + 9)
-  let ring = Math.min(Math.trunc(tenths / 10), t.top)
-  if (ring < t.lowest) {
+  let tenths = Math.min(Math.trunc(micro / 1e5), tm.top * 10 + 9)
+  let ring = Math.min(Math.trunc(tenths / 10), tm.top)
+  if (ring < tm.lowest) {
     ring = 0
     tenths = 0
   }
   let inner = false
-  if (t.inner_diameter && ring === t.top) {
-    const rIn = t.inner_diameter / 2
-    const rCal = t.caliber / 2
-    const limit = t.inner_mode === 'wegschiessen' ? rCal - rIn : rIn + rCal
+  if (tm.inner_diameter && ring === tm.top) {
+    const rIn = tm.inner_diameter / 2
+    const rCal = tm.caliber / 2
+    const limit = tm.inner_mode === 'wegschiessen' ? rCal - rIn : rIn + rCal
     inner = d <= limit + 1e-9
   }
-  const teilerTenths = Math.round(d * 100 * t.teiler_factor * 10)
+  const teilerTenths = Math.round(d * 100 * tm.teiler_factor * 10)
   return { ring, tenths, inner, distance: d, teilerTenths }
 }
 

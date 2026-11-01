@@ -28,7 +28,7 @@ function ThemeForm({
 }: {
   orgId: number
   theme: ThemeSettings
-  onSaved: (t: ThemeSettings) => void
+  onSaved: (tm: ThemeSettings) => void
   reload: () => Promise<void>
 }) {
   const { can, refresh } = useOrg()

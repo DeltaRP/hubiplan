@@ -11,7 +11,7 @@ import { Alert, Checkbox, Field, SaveStatus, SelectField } from '../../component
 import { useActiveOrg } from '../../org/OrgContext.tsx'
 import { useTerms } from '../../org/terms.ts'
 
-const typeLabel = (t: FieldType) => FIELD_TYPES.find((x) => x.value === t)?.label ?? t
+const typeLabel = (tmx: FieldType) => FIELD_TYPES.find((x) => x.value === tmx)?.label ?? tmx
 
 export function FieldsPage() {
   const org = useActiveOrg()
@@ -374,9 +374,9 @@ function FieldForm({
             value={v.field_type}
             onChange={(e) => form.set('field_type', e.target.value as FieldType)}
           >
-            {FIELD_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
+            {FIELD_TYPES.map((tmx) => (
+              <option key={tmx.value} value={tmx.value}>
+                {tmx.label}
               </option>
             ))}
           </SelectField>
@@ -408,9 +408,9 @@ function FieldForm({
                 value={s.type}
                 onChange={(e) => setSub(i, { type: e.target.value as FieldType })}
               >
-                {FIELD_TYPES.map((t) => (
-                  <option key={t.value} value={t.value}>
-                    {t.label}
+                {FIELD_TYPES.map((tmx) => (
+                  <option key={tmx.value} value={tmx.value}>
+                    {tmx.label}
                   </option>
                 ))}
               </select>

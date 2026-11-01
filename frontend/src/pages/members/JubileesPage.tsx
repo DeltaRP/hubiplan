@@ -44,13 +44,13 @@ export function unitJubileeHeading(rows: UnitJubileeRow[]): { title: string; col
     groups.set(key, g)
   }
   const parts = [...groups.values()].map(({ row, ids }) => {
-    const t = buildTerms(
+    const tm = buildTerms(
       row.label,
       row.label_plural || row.label,
       row.label_gender,
       row.label_genitive,
     )
-    return ids.size === 1 ? t.gen : `der ${t.pl}`
+    return ids.size === 1 ? tm.gen : `der ${tm.pl}`
   })
   const list =
     parts.length > 1 ? `${parts.slice(0, -1).join(', ')} und ${parts[parts.length - 1]}` : parts[0]

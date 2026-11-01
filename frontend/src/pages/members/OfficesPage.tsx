@@ -391,34 +391,34 @@ function StatsPanel() {
   )
 
   const personColumns: Column<Tally>[] = [
-    { key: 'name', label: 'Name', value: (t) => t.name },
+    { key: 'name', label: 'Name', value: (tm) => tm.name },
     {
       key: 'years',
       label: 'Jahre insgesamt',
-      value: (t) => t.years,
-      render: (t) => yearsText(t.years),
+      value: (tm) => tm.years,
+      render: (tm) => yearsText(tm.years),
       numeric: true,
     },
-    { key: 'offices', label: 'Ämter', value: (t) => t.offices, optional: true },
+    { key: 'offices', label: 'Ämter', value: (tm) => tm.offices, optional: true },
     {
       key: 'current',
       label: 'heute im Amt',
-      value: (t) => (t.current ? 'ja' : ''),
+      value: (tm) => (tm.current ? 'ja' : ''),
       optional: true,
     },
   ]
   // Feste Breiten, damit die Spalten in allen Blöcken gleich stehen (Ralf 2026-10-31)
   const officeColumns: Column<Tally>[] = [
-    { key: 'name', label: 'Name', value: (t) => t.name, width: '40%' },
+    { key: 'name', label: 'Name', value: (tm) => tm.name, width: '40%' },
     {
       key: 'years',
       label: 'Jahre',
       width: '9rem',
-      value: (t) => t.years,
-      render: (t) => yearsText(t.years),
+      value: (tm) => tm.years,
+      render: (tm) => yearsText(tm.years),
       numeric: true,
     },
-    { key: 'periods', label: 'Zeiträume', value: (t) => t.periods, optional: true },
+    { key: 'periods', label: 'Zeiträume', value: (tm) => tm.periods, optional: true },
   ]
 
   return (
@@ -439,7 +439,7 @@ function StatsPanel() {
         <DataTable
           label="Personen nach Jahren im Amt"
           rows={people}
-          rowKey={(t) => t.key}
+          rowKey={(tm) => tm.key}
           columns={personColumns}
           initialSort={{ key: 'years', dir: 'desc' }}
           emptyText="Noch keine Amtsinhaber erfasst."
@@ -451,7 +451,7 @@ function StatsPanel() {
           <DataTable
             label={`${officeLabel(o)}: Inhaber nach Jahren`}
             rows={tally(o.holders.map((holder) => ({ holder, office: o })))}
-            rowKey={(t) => t.key}
+            rowKey={(tm) => tm.key}
             columns={officeColumns}
             fixedLayout
             initialSort={{ key: 'years', dir: 'desc' }}

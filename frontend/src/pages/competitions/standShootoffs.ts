@@ -76,8 +76,8 @@ export function mergeShootoffs(l: Local): ShootOff[] {
 
 /** Offene Gleichstände: läuft für die Gruppe schon ein (auch noch wartendes) Stechen? */
 export function withLocalShootoffs(block: StandingBlock, shootoffs: ShootOff[]): StandingBlock {
-  const open = block.open.map((t) => {
-    if (t.shootoff) return t
+  const open = block.open.map((tm) => {
+    if (tm.shootoff) return tm
     const mine = shootoffs.find(
       (so) =>
         so.pending &&
@@ -85,9 +85,9 @@ export function withLocalShootoffs(block: StandingBlock, shootoffs: ShootOff[]):
         so.entries
           .map((e) => e.key)
           .sort()
-          .join() === [...t.keys].sort().join(),
+          .join() === [...tm.keys].sort().join(),
     )
-    return mine ? { ...t, shootoff: mine.number } : t
+    return mine ? { ...tm, shootoff: mine.number } : tm
   })
   return { ...block, open }
 }

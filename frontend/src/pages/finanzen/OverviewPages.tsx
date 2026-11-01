@@ -197,9 +197,9 @@ function BillingSummary({ feeRuns }: { feeRuns: boolean }) {
           <p className="muted">Gerade ist nichts offen.</p>
         ) : (
           <ul className="todo-list">
-            {todo.map((t) => (
-              <li key={t.text}>
-                <Link to={t.to}>{t.text}</Link>
+            {todo.map((tm) => (
+              <li key={tm.text}>
+                <Link to={tm.to}>{tm.text}</Link>
               </li>
             ))}
           </ul>
@@ -237,7 +237,7 @@ function CashSummary({ canEdit }: { canEdit: boolean }) {
   if (error) return <Alert kind="error">{error}</Alert>
   if (!data) return <p className="muted">Lädt …</p>
   if (data.accounts.length === 0) return <NoAccounts canEdit={canEdit} />
-  const t = data.totals
+  const tm = data.totals
   return (
     <>
       <div className="card card-wide filters">
@@ -253,18 +253,18 @@ function CashSummary({ canEdit }: { canEdit: boolean }) {
       <div className="tiles tiles-figures">
         <div className="card tile">
           <h2>Einnahmen {data.label}</h2>
-          <p className="amount-big amount-in">{euro(t.income)}</p>
+          <p className="amount-big amount-in">{euro(tm.income)}</p>
         </div>
         <div className="card tile">
           <h2>Ausgaben {data.label}</h2>
-          <p className="amount-big amount-out">{euro(t.expense)}</p>
+          <p className="amount-big amount-out">{euro(tm.expense)}</p>
         </div>
         <div className="card tile">
           <h2>
             <Term k="result">Ergebnis</Term> {data.label}
           </h2>
-          <p className={`amount-big ${Number(t.result) < 0 ? 'amount-out' : 'amount-in'}`}>
-            {euro(t.result)}
+          <p className={`amount-big ${Number(tm.result) < 0 ? 'amount-out' : 'amount-in'}`}>
+            {euro(tm.result)}
           </p>
         </div>
       </div>
@@ -292,7 +292,7 @@ function CashSummary({ canEdit }: { canEdit: boolean }) {
           <tfoot>
             <tr>
               <th>Summe</th>
-              <th className="num">{euro(t.end)}</th>
+              <th className="num">{euro(tm.end)}</th>
             </tr>
           </tfoot>
         </table>
@@ -308,7 +308,7 @@ export function EvaluationPage() {
   if (!data) return <p className="muted">Lädt …</p>
   if (data.accounts.length === 0)
     return <NoAccounts canEdit={org.permissions.includes(PERM.financeEdit)} />
-  const t = data.totals
+  const tm = data.totals
   return (
     <div className="stack">
       <div className="card card-wide filters">
@@ -373,11 +373,11 @@ export function EvaluationPage() {
             <tfoot>
               <tr>
                 <th>Summe</th>
-                <th className="num">{euro(t.start)}</th>
-                <th className="num">{euro(t.income)}</th>
-                <th className="num">{euro(t.expense)}</th>
+                <th className="num">{euro(tm.start)}</th>
+                <th className="num">{euro(tm.income)}</th>
+                <th className="num">{euro(tm.expense)}</th>
                 <th />
-                <th className="num">{euro(t.end)}</th>
+                <th className="num">{euro(tm.end)}</th>
               </tr>
             </tfoot>
           </table>

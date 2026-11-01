@@ -138,16 +138,16 @@ function TeamsCard({
   return (
     <div className="card card-wide">
       <h2>Mannschaften</h2>
-      {teams.map((t) => (
-        <fieldset key={t.id} className="team-box" disabled={closed}>
+      {teams.map((tm) => (
+        <fieldset key={tm.id} className="team-box" disabled={closed}>
           <legend>
             <input
               aria-label="Name der Mannschaft"
-              defaultValue={t.name}
+              defaultValue={tm.name}
               onBlur={(e) => {
                 const v = e.target.value.trim()
-                if (v && v !== t.name)
-                  void run(() => competitionsApi.updateTeam(org, comp.id, t.id, { name: v }))
+                if (v && v !== tm.name)
+                  void run(() => competitionsApi.updateTeam(org, comp.id, tm.id, { name: v }))
               }}
             />
           </legend>
@@ -156,13 +156,13 @@ function TeamsCard({
               <label key={s.id} className="checkbox">
                 <input
                   type="checkbox"
-                  checked={t.members.includes(s.id)}
+                  checked={tm.members.includes(s.id)}
                   onChange={(e) =>
                     void run(() =>
-                      competitionsApi.updateTeam(org, comp.id, t.id, {
+                      competitionsApi.updateTeam(org, comp.id, tm.id, {
                         members: e.target.checked
-                          ? [...t.members, s.id]
-                          : t.members.filter((x) => x !== s.id),
+                          ? [...tm.members, s.id]
+                          : tm.members.filter((x) => x !== s.id),
                       }),
                     )
                   }
@@ -179,10 +179,10 @@ function TeamsCard({
                 onClick={async () => {
                   const ok = await confirmDialog({
                     title: 'Mannschaft entfernen',
-                    message: `„${t.name}“ mit Platz und Wert entfernen?`,
+                    message: `„${tm.name}“ mit Platz und Wert entfernen?`,
                     confirmLabel: 'Entfernen',
                   })
-                  if (ok) await run(() => competitionsApi.removeTeam(org, comp.id, t.id))
+                  if (ok) await run(() => competitionsApi.removeTeam(org, comp.id, tm.id))
                 }}
               >
                 Mannschaft entfernen

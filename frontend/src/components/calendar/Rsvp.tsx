@@ -151,7 +151,7 @@ export function MyResponsePanel({
 
 /** Vorstand: Teilnehmerliste mit Eintragen von Hand und Export. */
 export function ResponsesPanel({ base, event }: { base: CalendarBase; event: EventDetail }) {
-  const t = useTerms()
+  const tm = useTerms()
   const { data, error, reload } = useLoad(
     () => eventApi.responses(base, event.id),
     [base, event.id],
@@ -235,7 +235,7 @@ export function ResponsesPanel({ base, event }: { base: CalendarBase; event: Eve
             <thead>
               <tr>
                 <th>Name</th>
-                <th>{t.sg}</th>
+                <th>{tm.sg}</th>
                 <th>Rückmeldung</th>
                 <th>Bemerkung</th>
                 {canEnter && <th />}

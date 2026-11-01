@@ -9,7 +9,7 @@ export function LiveTables({ api }: { api: StandApi }) {
   const [stale, setStale] = useState(false)
   const [tick, setTick] = useState(0)
   // neu laden, sobald irgendein Gerät etwas erfasst hat
-  useVersion(api, () => setTick((t) => t + 1))
+  useVersion(api, () => setTick((tm) => tm + 1))
 
   useEffect(() => {
     let stop = false

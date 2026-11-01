@@ -26,7 +26,7 @@ export function MemberPicker<T extends PickedMember = MemberRow>({
   useEffect(() => {
     if (term.trim().length < 2) return
     let alive = true
-    const t = setTimeout(() => {
+    const tm = setTimeout(() => {
       const found = search
         ? search(term)
         : memberApi
@@ -42,7 +42,7 @@ export function MemberPicker<T extends PickedMember = MemberRow>({
     }, 250)
     return () => {
       alive = false
-      clearTimeout(t)
+      clearTimeout(tm)
     }
   }, [orgId, term, search, attempt])
 

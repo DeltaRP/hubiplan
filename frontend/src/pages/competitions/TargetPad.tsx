@@ -23,19 +23,19 @@ const ZOOMS = [
 
 type Zoom = (typeof ZOOMS)[number]['key']
 
-function viewRadius(t: TargetInfo, zoom: Zoom): number {
-  const outer = (t.rings[0]?.diameter ?? t.top_diameter) / 2
+function viewRadius(tm: TargetInfo, zoom: Zoom): number {
+  const outer = (tm.rings[0]?.diameter ?? tm.top_diameter) / 2
   if (zoom === 'ganz') return outer * 1.08
-  if (zoom === 'spiegel') return Math.min(outer, (t.black_diameter ?? outer) / 2) * 1.15
+  if (zoom === 'spiegel') return Math.min(outer, (tm.black_diameter ?? outer) / 2) * 1.15
   // Mitte: die drei höchsten Ringe
-  const ring = t.rings.find((r) => r.ring === Math.max(t.lowest, t.top - 2))
+  const ring = tm.rings.find((r) => r.ring === Math.max(tm.lowest, tm.top - 2))
   return Math.min(outer, (ring?.diameter ?? outer) / 2) * 1.2
 }
 
 /** Scheibe als SVG-Inhalt (ohne äußeres svg), Maße in mm. */
-export function TargetRings({ t }: { t: TargetInfo }) {
-  const black = t.black_diameter ? t.black_diameter / 2 : 0
-  const rings = [...t.rings].sort((a, b) => b.diameter - a.diameter)
+export function TargetRings({ t: tm }: { t: TargetInfo }) {
+  const black = tm.black_diameter ? tm.black_diameter / 2 : 0
+  const rings = [...tm.rings].sort((a, b) => b.diameter - a.diameter)
   return (
     <g className="pad-target">
       <circle r={(rings[0]?.diameter ?? 1) / 2} className="pad-paper" />
@@ -45,20 +45,20 @@ export function TargetRings({ t }: { t: TargetInfo }) {
           key={r.ring}
           r={r.diameter / 2}
           className={r.diameter / 2 <= black + 1e-6 ? 'pad-line pad-line-dark' : 'pad-line'}
-          strokeWidth={Math.max(t.ring_width / 25, 0.06)}
+          strokeWidth={Math.max(tm.ring_width / 25, 0.06)}
         />
       ))}
-      {t.inner_diameter ? (
+      {tm.inner_diameter ? (
         <circle
-          r={t.inner_diameter / 2}
-          className={t.inner_diameter / 2 <= black ? 'pad-line pad-line-dark' : 'pad-line'}
-          strokeWidth={Math.max(t.ring_width / 40, 0.04)}
+          r={tm.inner_diameter / 2}
+          className={tm.inner_diameter / 2 <= black ? 'pad-line pad-line-dark' : 'pad-line'}
+          strokeWidth={Math.max(tm.ring_width / 40, 0.04)}
         />
       ) : null}
       {rings
-        .filter((r) => r.ring < t.top)
+        .filter((r) => r.ring < tm.top)
         .map((r) => {
-          const pos = r.diameter / 2 - t.ring_width / 2
+          const pos = r.diameter / 2 - tm.ring_width / 2
           const dark = pos < black
           return (
             <text
@@ -66,7 +66,7 @@ export function TargetRings({ t }: { t: TargetInfo }) {
               x={pos}
               y={0}
               className={dark ? 'pad-number pad-number-dark' : 'pad-number'}
-              fontSize={t.ring_width * 0.55}
+              fontSize={tm.ring_width * 0.55}
               textAnchor="middle"
               dominantBaseline="central"
             >
@@ -79,7 +79,7 @@ export function TargetRings({ t }: { t: TargetInfo }) {
 }
 
 export function TargetPad({
-  target: t,
+  target: tm,
   method,
   counted,
   maxShots,
@@ -93,16 +93,16 @@ export function TargetPad({
   hits: PadHit[]
   onChange: (hits: PadHit[]) => void
 }) {
-  const [zoom, setZoom] = useState<Zoom>(t.spots > 1 ? 'spiegel' : 'ganz')
+  const [zoom, setZoom] = useState<Zoom>(tm.spots > 1 ? 'spiegel' : 'ganz')
   const [spot, setSpot] = useState(1)
   const [selected, setSelected] = useState<number | null>(null)
   const [lens, setLens] = useState<{ x: number; y: number } | null>(null)
   const svgRef = useRef<SVGSVGElement>(null)
   const drag = useRef<{ index: number; moved: boolean } | null>(null)
-  const R = viewRadius(t, zoom)
-  const multi = t.spots > 1
+  const R = viewRadius(tm, zoom)
+  const multi = tm.spots > 1
   const onSpot = (h: PadHit) => !multi || (h.spot ?? 1) === spot
-  const scores = hits.map((h) => scoreShot(t, h.x, h.y))
+  const scores = hits.map((h) => scoreShot(tm, h.x, h.y))
   const keep = countedIndexes(method === 'frei' ? 'ringe' : method, scores, counted)
   const total = totalText(method, scores, counted)
   const full = maxShots !== null && hits.length >= maxShots
@@ -126,7 +126,7 @@ export function TargetPad({
     const p = toMm(e)
     if (!p) return
     // Treffer in der Nähe greifen (Fingerbreite ≈ 3 % der Ansicht), sonst neuen setzen
-    const grab = Math.max(t.caliber / 2, R * 0.06)
+    const grab = Math.max(tm.caliber / 2, R * 0.06)
     let index = -1
     let best = Infinity
     hits.forEach((h, i) => {
@@ -189,13 +189,13 @@ export function TargetPad({
     }
   }
 
-  const lensR = Math.max(t.caliber * 1.6, R / 6)
-  const holeR = t.caliber / 2
+  const lensR = Math.max(tm.caliber * 1.6, R / 6)
+  const holeR = tm.caliber / 2
 
   return (
     <div className="pad">
       <div className="pad-toolbar" role="group" aria-label="Ansicht">
-        {ZOOMS.filter((z) => z.key !== 'spiegel' || t.black_diameter).map((z) => (
+        {ZOOMS.filter((z) => z.key !== 'spiegel' || tm.black_diameter).map((z) => (
           <button
             key={z.key}
             type="button"
@@ -209,7 +209,7 @@ export function TargetPad({
       </div>
       {multi && (
         <div className="pad-toolbar" role="group" aria-label="Scheibenbild">
-          {Array.from({ length: t.spots }, (_, i) => i + 1).map((n) => (
+          {Array.from({ length: tm.spots }, (_, i) => i + 1).map((n) => (
             <button
               key={n}
               type="button"
@@ -228,13 +228,13 @@ export function TargetPad({
           className="pad-svg"
           viewBox={`${-R} ${-R} ${2 * R} ${2 * R}`}
           role="img"
-          aria-label={`${t.name}: ${hits.length} Treffer, antippen zum Setzen`}
+          aria-label={`${tm.name}: ${hits.length} Treffer, antippen zum Setzen`}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
         >
-          <TargetRings t={t} />
+          <TargetRings t={tm} />
           {hits.map((h, i) =>
             onSpot(h) ? (
               <g key={i} className={`pad-hit${i === selected ? ' pad-hit-selected' : ''}`}>
@@ -258,7 +258,7 @@ export function TargetPad({
             viewBox={`${lens.x - lensR} ${-lens.y - lensR} ${2 * lensR} ${2 * lensR}`}
             aria-hidden="true"
           >
-            <TargetRings t={t} />
+            <TargetRings t={tm} />
             {hits.map((h, i) =>
               onSpot(h) ? (
                 <circle key={i} className="pad-hit-lens" cx={h.x} cy={-h.y} r={holeR} />

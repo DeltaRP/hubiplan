@@ -72,11 +72,11 @@ function FederationList({ prefix }: { prefix: string }) {
   const [showExport, setShowExport] = useState(false)
 
   useEffect(() => {
-    const t = setTimeout(() => {
+    const tmx = setTimeout(() => {
       setParams((p) => ({ ...p, suche: search }))
       setPage(1)
     }, 300)
-    return () => clearTimeout(t)
+    return () => clearTimeout(tmx)
   }, [search])
 
   useEffect(() => {
@@ -171,10 +171,10 @@ function FederationList({ prefix }: { prefix: string }) {
           >
             <option value="">alle (mit und ohne Ehrung)</option>
             <option value="mit">mit Ehrung {tm.e_gen}</option>
-            {titles.data.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-                {t.is_archived ? ' (archiviert)' : ''}
+            {titles.data.map((tmx) => (
+              <option key={tmx.id} value={tmx.id}>
+                {tmx.name}
+                {tmx.is_archived ? ' (archiviert)' : ''}
               </option>
             ))}
           </select>

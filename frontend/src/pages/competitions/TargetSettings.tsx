@@ -46,12 +46,12 @@ export function TargetSettings({
   set: <K extends keyof TargetValues>(key: K, value: TargetValues[K]) => void
   errors: Record<string, string>
 }) {
-  const chosen = catalog.targets.find((t) => t.key === v.target)
+  const chosen = catalog.targets.find((tm) => tm.key === v.target)
   const custom = v.target === catalog.custom
   const ct = { ...EMPTY_CUSTOM, ...(v.custom_target as CustomTarget) }
   const setCustom = (patch: Partial<CustomTarget>) => set('custom_target', { ...ct, ...patch })
-  const labels = Object.fromEntries(catalog.tie_breaks.map((t) => [t.value, t.label]))
-  const unused = catalog.tie_breaks.filter((t) => !v.tie_breaks.includes(t.value))
+  const labels = Object.fromEntries(catalog.tie_breaks.map((tm) => [tm.value, tm.label]))
+  const unused = catalog.tie_breaks.filter((tm) => !v.tie_breaks.includes(tm.value))
 
   function move(index: number, by: -1 | 1) {
     const next = [...v.tie_breaks]
@@ -266,9 +266,9 @@ export function TargetSettings({
                 }
               >
                 <option value="">wählen …</option>
-                {unused.map((t) => (
-                  <option key={t.value} value={t.value}>
-                    {t.label}
+                {unused.map((tm) => (
+                  <option key={tm.value} value={tm.value}>
+                    {tm.label}
                   </option>
                 ))}
               </SelectField>

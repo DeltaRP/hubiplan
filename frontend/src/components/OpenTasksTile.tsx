@@ -20,12 +20,12 @@ export function OpenTasksTile({ org }: { org: OrgSummary }) {
       {data && items.length === 0 && <p className="muted">Zurzeit ist nichts zu entscheiden.</p>}
       {items.length > 0 && (
         <ul className="plain-list task-list">
-          {items.map((t, i) => (
-            <li key={`${t.kind}-${i}`}>
-              <span className="muted small">{t.kind_label}</span>
+          {items.map((tm, i) => (
+            <li key={`${tm.kind}-${i}`}>
+              <span className="muted small">{tm.kind_label}</span>
               <div>
-                <Link to={t.link}>{t.title}</Link>
-                <span className="muted small"> · {t.detail}</span>
+                <Link to={tm.link}>{tm.title}</Link>
+                <span className="muted small"> · {tm.detail}</span>
               </div>
             </li>
           ))}

@@ -25,7 +25,7 @@ export function MembershipActions({
 }) {
   const [action, setAction] = useState<Action>(null)
   const types = useLoad(() => memberApi.types(org.id), [org.id])
-  const available = types.data?.filter((t) => !t.is_archived) ?? []
+  const available = types.data?.filter((tm) => !tm.is_archived) ?? []
   const ready = !types.error && available.length > 0
   const canSetup = org.permissions.includes(PERM.orgEdit)
   const done = (m: MemberDetail) => {
@@ -268,11 +268,11 @@ function ChangeType({
         >
           <option value="">– bitte wählen –</option>
           {types
-            .filter((t) => t.id !== member.current_type?.member_type)
-            .map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-                {t.active ? ' (aktiv)' : ''}
+            .filter((tm) => tm.id !== member.current_type?.member_type)
+            .map((tm) => (
+              <option key={tm.id} value={tm.id}>
+                {tm.name}
+                {tm.active ? ' (aktiv)' : ''}
               </option>
             ))}
         </SelectField>
@@ -421,9 +421,9 @@ function Reentry({
           onChange={(ev) => form.set('member_type', ev.target.value)}
         >
           <option value="">– bitte wählen –</option>
-          {types.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
+          {types.map((tm) => (
+            <option key={tm.id} value={tm.id}>
+              {tm.name}
             </option>
           ))}
         </SelectField>

@@ -86,8 +86,8 @@ export function UndoControls({ base }: { base: string }) {
   const setHoldNotice = (on: boolean) => setHeldNotice(on ? notice : null)
   useEffect(() => {
     if (!notice || holdNotice) return
-    const t = setTimeout(dismissNotice, 15000)
-    return () => clearTimeout(t)
+    const tm = setTimeout(dismissNotice, 15000)
+    return () => clearTimeout(tm)
   }, [notice, holdNotice])
 
   return (

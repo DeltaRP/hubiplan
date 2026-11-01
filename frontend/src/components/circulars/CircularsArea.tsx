@@ -78,9 +78,9 @@ function CircularList({ base, root }: { base: CircularBase; root: string }) {
               onChange={(e) => setTemplate(e.target.value)}
             >
               <option value="">ohne Vorlage</option>
-              {templates.data.map((t) => (
-                <option key={t.id} value={t.id}>
-                  Vorlage: {t.name}
+              {templates.data.map((tmx) => (
+                <option key={tmx.id} value={tmx.id}>
+                  Vorlage: {tmx.name}
                 </option>
               ))}
             </select>
@@ -112,21 +112,21 @@ function CircularList({ base, root }: { base: CircularBase; root: string }) {
         <div className="card card-wide">
           <h2>Vorlagen</h2>
           <ul className="plain-list">
-            {templates.data.map((t) => (
-              <li key={t.id}>
-                <strong>{t.name}</strong>{' '}
+            {templates.data.map((tmx) => (
+              <li key={tmx.id}>
+                <strong>{tmx.name}</strong>{' '}
                 <span className="muted small">
-                  {t.kind === 'notice'
+                  {tmx.kind === 'notice'
                     ? 'Offizielle Mitteilung'
-                    : t.kind === 'short'
+                    : tmx.kind === 'short'
                       ? 'Kurzmitteilung'
                       : 'Information'}
-                  {t.subject && ` · ${t.subject}`}
+                  {tmx.subject && ` · ${tmx.subject}`}
                 </span>
                 <button
                   type="button"
                   className="link-button spaced"
-                  onClick={() => void removeTemplate(t.id, t.name)}
+                  onClick={() => void removeTemplate(tmx.id, tmx.name)}
                 >
                   löschen
                 </button>

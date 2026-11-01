@@ -22,7 +22,8 @@ export interface PluralEntry {
 }
 export type Catalog = Record<string, string | PluralEntry>
 
-type Params = Record<string, string | number>
+// null/undefined erscheinen wie in JSX als leerer Text
+type Params = Record<string, string | number | null | undefined>
 
 function readCookie(): Lang {
   if (typeof document === 'undefined') return 'de'
@@ -75,7 +76,7 @@ export function switchLanguage(language: Lang, reload = true): void {
 function fill(text: string, params?: Params): string {
   if (!params) return text
   return text.replace(/\{(\w+)\}/g, (all, key: string) =>
-    key in params ? String(params[key]) : all,
+    key in params ? String(params[key] ?? '') : all,
   )
 }
 

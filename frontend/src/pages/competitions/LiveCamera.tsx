@@ -123,7 +123,7 @@ export function LiveCamera({
       .catch((err: unknown) => fail.current(cameraError(err)))
     return () => {
       window.clearTimeout(timer)
-      stream?.getTracks().forEach((t) => t.stop())
+      stream?.getTracks().forEach((tm) => tm.stop())
     }
   }, [blackShare])
 

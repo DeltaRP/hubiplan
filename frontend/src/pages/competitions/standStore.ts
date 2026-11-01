@@ -284,9 +284,9 @@ export function guestOrigin(
   text: string,
   units: { id: number; name: string }[],
 ): { club: string; unit: number | null; unit_name: string } {
-  const t = text.trim()
-  const unit = units.find((u) => u.name.toLocaleLowerCase('de') === t.toLocaleLowerCase('de'))
+  const tm = text.trim()
+  const unit = units.find((u) => u.name.toLocaleLowerCase('de') === tm.toLocaleLowerCase('de'))
   return unit
     ? { club: '', unit: unit.id, unit_name: unit.name }
-    : { club: t, unit: null, unit_name: '' }
+    : { club: tm, unit: null, unit_name: '' }
 }

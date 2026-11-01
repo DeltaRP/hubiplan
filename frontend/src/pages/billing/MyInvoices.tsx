@@ -79,7 +79,7 @@ export function DeptInvoices({ deptId }: { deptId: number }) {
 }
 
 export function PortalInvoices({ accessId, empty }: { accessId: number; empty?: ReactNode }) {
-  const t = useTerms()
+  const tm = useTerms()
   const { data, error } = useLoad(() => portalBillingApi.invoices(accessId), [accessId])
   if (error) return <Alert kind="error">{error}</Alert>
   if (!data) return null
@@ -121,7 +121,7 @@ export function PortalInvoices({ accessId, empty }: { accessId: number; empty?: 
       )}
       {data.collective.length > 0 && (
         <>
-          <p className="muted small">Diese Beiträge laufen über die Sammelrechnung {t.deines}:</p>
+          <p className="muted small">Diese Beiträge laufen über die Sammelrechnung {tm.deines}:</p>
           <ul>
             {data.collective.map((c) => (
               <li key={c.id}>

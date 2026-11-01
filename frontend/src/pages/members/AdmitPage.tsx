@@ -113,8 +113,8 @@ export function AdmitPage() {
 
   const activeConflict =
     !!linked && !!e.member_type && e.member_type.includes('bereits aktives Mitglied')
-  const activeTypes = types.data?.filter((t) => !t.is_archived) ?? []
-  const selectedType = activeTypes.find((t) => String(t.id) === v.member_type)
+  const activeTypes = types.data?.filter((tm) => !tm.is_archived) ?? []
+  const selectedType = activeTypes.find((tm) => String(tm.id) === v.member_type)
 
   return (
     <section>
@@ -253,9 +253,9 @@ export function AdmitPage() {
                 onChange={(ev) => form.set('member_type', ev.target.value)}
               >
                 <option value="">– bitte wählen –</option>
-                {activeTypes.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
+                {activeTypes.map((tm) => (
+                  <option key={tm.id} value={tm.id}>
+                    {tm.name}
                   </option>
                 ))}
               </SelectField>

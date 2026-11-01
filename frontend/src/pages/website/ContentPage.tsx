@@ -26,9 +26,9 @@ import { ImageChoice, ImagePicker } from './images.tsx'
 import { imageLabel } from './imageTools.ts'
 import type { Unit } from './images.tsx'
 
-function status(t: WebsiteTextSummary): string {
-  if (!t.is_published) return 'Entwurf, nicht veröffentlicht'
-  return t.has_changes ? 'veröffentlicht, Entwurf mit Änderungen' : 'veröffentlicht'
+function status(tm: WebsiteTextSummary): string {
+  if (!tm.is_published) return 'Entwurf, nicht veröffentlicht'
+  return tm.has_changes ? 'veröffentlicht, Entwurf mit Änderungen' : 'veröffentlicht'
 }
 
 export function ContentPage() {
@@ -45,9 +45,9 @@ export function ContentPage() {
   const wanted = `${wantedUnit ?? ''}/${wantedText ?? ''}`
   if (data && (wantedUnit || wantedText) && handled !== wanted) {
     setHandled(wanted)
-    if (wantedText && data.texts.some((t) => t.id === wantedText)) setOpen(wantedText)
+    if (wantedText && data.texts.some((tm) => tm.id === wantedText)) setOpen(wantedText)
     else if (wantedUnit) {
-      const text = data.texts.find((t) => t.kind === 'unit' && t.department === wantedUnit)
+      const text = data.texts.find((tm) => tm.kind === 'unit' && tm.department === wantedUnit)
       if (text) setOpen(text.id)
       else if (data.units.some((u) => u.id === wantedUnit)) setAdding('unit')
     }
@@ -73,7 +73,7 @@ export function ContentPage() {
           <Link to="/webseite/bilder">Webseite › Bilder</Link>.
         </p>
         {groups.map((g) => {
-          const items = data.texts.filter((t) => t.kind === g.kind)
+          const items = data.texts.filter((tm) => tm.kind === g.kind)
           return (
             <div key={g.kind}>
               <h3>{g.title}</h3>
@@ -86,21 +86,21 @@ export function ContentPage() {
               )}
               <TextList
                 items={items}
-                render={(t) => (
+                render={(tm) => (
                   <>
                     <button
                       type="button"
                       className="link-button"
-                      aria-expanded={open === t.id}
-                      onClick={() => setOpen(open === t.id ? null : t.id)}
+                      aria-expanded={open === tm.id}
+                      onClick={() => setOpen(open === tm.id ? null : tm.id)}
                     >
-                      {t.kind === 'unit' ? t.department_name : t.title || t.kind_label}
+                      {tm.kind === 'unit' ? tm.department_name : tm.title || tm.kind_label}
                     </button>
-                    {t.kind === 'page' && <span className="muted small"> /{t.slug}</span>}
-                    <span className="muted small"> · {status(t)}</span>
-                    {open === t.id && (
+                    {tm.kind === 'page' && <span className="muted small"> /{tm.slug}</span>}
+                    <span className="muted small"> · {status(tm)}</span>
+                    {open === tm.id && (
                       <TextPanel
-                        id={t.id}
+                        id={tm.id}
                         units={data.units}
                         linkTargets={data.link_targets ?? []}
                         onChanged={() => void reload()}
@@ -121,7 +121,7 @@ export function ContentPage() {
             kind={adding}
             initialUnit={wantedUnit}
             units={data.units.filter(
-              (u) => !data.texts.some((t) => t.kind === 'unit' && t.department === u.id),
+              (u) => !data.texts.some((tm) => tm.kind === 'unit' && tm.department === u.id),
             )}
             onDone={(id) => {
               setAdding(null)
@@ -156,12 +156,12 @@ function TextList({
   render,
 }: {
   items: WebsiteTextSummary[]
-  render: (t: WebsiteTextSummary) => ReactNode
+  render: (tm: WebsiteTextSummary) => ReactNode
 }) {
   return (
     <ul className="plain-list">
-      {items.map((t) => (
-        <li key={t.id}>{render(t)}</li>
+      {items.map((tm) => (
+        <li key={tm.id}>{render(tm)}</li>
       ))}
     </ul>
   )
@@ -295,8 +295,8 @@ function TextPanel({
       text={data}
       units={units}
       linkTargets={linkTargets}
-      onSaved={(t) => {
-        setData(t)
+      onSaved={(tm) => {
+        setData(tm)
         onChanged()
       }}
       onDeleted={onDeleted}
@@ -314,7 +314,7 @@ function TextForm({
   text: WebsiteText
   units: Unit[]
   linkTargets: LinkTarget[]
-  onSaved: (t: WebsiteText) => void
+  onSaved: (tm: WebsiteText) => void
   onDeleted: () => void
 }) {
   const org = useActiveOrg()

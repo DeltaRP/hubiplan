@@ -30,7 +30,7 @@ export function ExportPanel({
   const options =
     (columns.data as Record<string, { key: string; label: string }[]> | null)?.[kind] ?? []
   const chosen = selected ?? options.slice(0, kind === 'members' ? 5 : 6).map((c) => c.key)
-  const ownTemplates = templates.data?.filter((t) => t.kind === kind) ?? []
+  const ownTemplates = templates.data?.filter((tm) => tm.kind === kind) ?? []
 
   function toggle(key: string, on: boolean) {
     setSelected(on ? [...chosen, key] : chosen.filter((k) => k !== key))
@@ -91,18 +91,18 @@ export function ExportPanel({
       <p className="muted small">Exportiert wird die aktuell gefilterte und sortierte Liste.</p>
       {ownTemplates.length > 0 && (
         <div className="chips">
-          {ownTemplates.map((t) => (
+          {ownTemplates.map((tm) => (
             <button
-              key={t.id}
+              key={tm.id}
               type="button"
               className="chip"
               onClick={() => {
-                setSelected(t.columns)
-                setFormat(t.file_format as 'xlsx' | 'pdf')
-                setOrientation(t.orientation as 'portrait' | 'landscape')
+                setSelected(tm.columns)
+                setFormat(tm.file_format as 'xlsx' | 'pdf')
+                setOrientation(tm.orientation as 'portrait' | 'landscape')
               }}
             >
-              {t.name}
+              {tm.name}
             </button>
           ))}
         </div>

@@ -210,8 +210,8 @@ export function TimeChart({
     all.length === 0 ? [0, 1] : niceTicks(Math.min(...all), Math.max(...all), 4, kind === 'bar')
   const lo = ticks[0]
   const hi = ticks[ticks.length - 1]
-  const tickText = ticks.map((t) => axisFormat(t))
-  const left = Math.min(110, 10 + Math.max(...tickText.map((t) => t.length)) * 7)
+  const tickText = ticks.map((tm) => axisFormat(tm))
+  const left = Math.min(110, 10 + Math.max(...tickText.map((tm) => tm.length)) * 7)
   const top = 10
   const bottom = 26
   const right = 10
@@ -291,16 +291,16 @@ export function TimeChart({
               <rect width="4" height="6" fill={PREVIOUS} />
             </pattern>
           </defs>
-          {ticks.map((t, i) => (
-            <g key={t}>
+          {ticks.map((tm, i) => (
+            <g key={tm}>
               <line
                 x1={left}
                 x2={left + plotW}
-                y1={y(t)}
-                y2={y(t)}
-                className={t === 0 ? 'chart-zero' : 'chart-grid'}
+                y1={y(tm)}
+                y2={y(tm)}
+                className={tm === 0 ? 'chart-zero' : 'chart-grid'}
               />
-              <text x={left - 6} y={y(t)} dy="0.32em" textAnchor="end" className="chart-axis">
+              <text x={left - 6} y={y(tm)} dy="0.32em" textAnchor="end" className="chart-axis">
                 {tickText[i]}
               </text>
             </g>

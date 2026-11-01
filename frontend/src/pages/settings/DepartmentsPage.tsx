@@ -40,9 +40,9 @@ export function DepartmentsPage() {
   const editable = org.permissions.includes(PERM.orgEdit)
   const { data, error, reload } = useLoad(() => orgApi.departments(org.id), [org.id])
   const catalog = useLoad(() => orgApi.catalog('department', org.id), [org.id])
-  const t = useTerms()
-  const label = t.sg
-  const labelPlural = t.pl
+  const tmx = useTerms()
+  const label = tmx.sg
+  const labelPlural = tmx.pl
   const [selected, setSelected] = useState<number | null>(null)
   const [sorting, setSorting] = useState(false)
   const panel = useRef<HTMLDivElement>(null)
@@ -59,7 +59,7 @@ export function DepartmentsPage() {
   const current = data.find((d) => d.id === selected) ?? null
 
   async function remove(dep: Department) {
-    const own = ownTerms(dep, t)
+    const own = ownTerms(dep, tmx)
     const ok = await confirmDialog({
       title: `„${dep.name}“ löschen?`,
       message: fillTerms(
@@ -205,8 +205,8 @@ export function DepartmentsPage() {
             orgId={org.id}
             dep={current}
             units={data}
-            terms={t}
-            inThis={ownTerms(current, t).diesem}
+            terms={tmx}
+            inThis={ownTerms(current, tmx).diesem}
             editable={editable && !current.is_remote}
             catalog={catalog.data ?? []}
             onChange={reload}
@@ -219,7 +219,7 @@ export function DepartmentsPage() {
           key={current?.id ?? 0}
           orgId={org.id}
           units={data}
-          terms={t}
+          terms={tmx}
           initialParent={current?.id ?? null}
           onCreated={reload}
         />

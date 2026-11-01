@@ -26,7 +26,7 @@ export function AccessPanel({
   onSend: (transfer?: boolean) => Promise<{ sent: 'link' | 'password' }>
   onRemove: () => Promise<unknown>
 }) {
-  const t = useTerms()
+  const tm = useTerms()
   const [message, setMessage] = useState<{ kind: 'success' | 'error'; text: string } | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -79,7 +79,7 @@ export function AccessPanel({
       ) : (
         <p className="muted">
           Noch kein Zugang. Mit einem Zugang sieht das Mitglied seine Daten und kann Änderungen
-          melden; Inhaber von Rollen {t.im} arbeiten damit in {t.ihrem}.
+          melden; Inhaber von Rollen {tm.im} arbeiten damit in {tm.ihrem}.
         </p>
       )}
       {disabledHint && <Alert kind="info">{disabledHint}</Alert>}
@@ -165,7 +165,7 @@ export function MemberAccessSection({
   contactEmail?: string
   canManage: boolean
 }) {
-  const t = useTerms()
+  const tm = useTerms()
   const { data, error, setData } = useLoad(
     () => portalApi.memberAccess(orgId, memberId),
     [orgId, memberId],
@@ -186,7 +186,7 @@ export function MemberAccessSection({
             <Link to="/mitglieder/einrichtung/mitgliederbereich">
               Mitglieder → Einrichtung → Mitgliederbereich & Fotos
             </Link>{' '}
-            ein, den Zugang für {t.pl} unter{' '}
+            ein, den Zugang für {tm.pl} unter{' '}
             <Link to="/einstellungen/organisation">Einstellungen → Organisation</Link>.
           </>
         )

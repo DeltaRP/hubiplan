@@ -241,17 +241,17 @@ function ImportWizard({
           )}
           {templates.data && templates.data.length > 0 && (
             <div className="chips">
-              {templates.data.map((t) => (
+              {templates.data.map((tmx) => (
                 <button
-                  key={t.id}
+                  key={tmx.id}
                   type="button"
                   className="chip"
                   onClick={() => {
-                    setMapping(t.mapping)
-                    setValueMapping(t.value_mapping)
+                    setMapping(tmx.mapping)
+                    setValueMapping(tmx.value_mapping)
                   }}
                 >
-                  Vorlage: {t.name}
+                  Vorlage: {tmx.name}
                 </button>
               ))}
             </div>
@@ -294,13 +294,13 @@ function ImportWizard({
                         }
                       >
                         <option value="">– nicht importieren –</option>
-                        {(targets.data ?? []).map((t) => (
+                        {(targets.data ?? []).map((tmx) => (
                           <option
-                            key={t.key}
-                            value={t.key}
-                            disabled={mappedTargets.has(t.key) && mapping[String(i)] !== t.key}
+                            key={tmx.key}
+                            value={tmx.key}
+                            disabled={mappedTargets.has(tmx.key) && mapping[String(i)] !== tmx.key}
                           >
-                            {t.label}
+                            {tmx.label}
                           </option>
                         ))}
                       </select>
@@ -469,14 +469,14 @@ function ValueMappings({
   departmentLabel: string
 }) {
   const tm = useTerms()
-  const mapped = new Set(Object.values(mapping).map((t) => t.replace(/_\d$/, '')))
-  const needed = targets.filter((t) => t.value_mapped && mapped.has(t.key))
+  const mapped = new Set(Object.values(mapping).map((tmx) => tmx.replace(/_\d$/, '')))
+  const needed = targets.filter((tmx) => tmx.value_mapped && mapped.has(tmx.key))
   const types = useLoad(() => memberApi.types(orgId), [orgId])
   const departments = useLoad(() => orgApi.departments(orgId), [orgId])
   const roles = useLoad(() => orgApi.roles(orgId).catch(() => []), [orgId])
   if (needed.length === 0) return null
   const choices: Record<string, { value: string; label: string }[]> = {
-    member_type: (types.data ?? []).map((t) => ({ value: String(t.id), label: t.name })),
+    member_type: (types.data ?? []).map((tmx) => ({ value: String(tmx.id), label: tmx.name })),
     departments: (departments.data ?? []).map((d) => ({
       value: String(d.id),
       label: unitName(d),
@@ -490,17 +490,20 @@ function ValueMappings({
       <p className="muted small">
         Bezeichnungen aus der Datei den Werten in HUBIplan zuordnen, z. B. „Akt.“ → „aktiv“.
       </p>
-      {needed.map((t) => (
+      {needed.map((tmx) => (
         <ValueTable
-          key={t.key}
+          key={tmx.key}
           orgId={orgId}
           jobId={job.id}
-          target={t.key}
-          label={t.key === 'departments' ? departmentLabel : t.label}
-          choices={choices[t.key] ?? []}
-          values={valueMapping[t.key] ?? {}}
+          target={tmx.key}
+          label={tmx.key === 'departments' ? departmentLabel : tmx.label}
+          choices={choices[tmx.key] ?? []}
+          values={valueMapping[tmx.key] ?? {}}
           onChange={(raw, value) =>
-            setValueMapping((vm) => ({ ...vm, [t.key]: { ...(vm[t.key] ?? {}), [raw]: value } }))
+            setValueMapping((vm) => ({
+              ...vm,
+              [tmx.key]: { ...(vm[tmx.key] ?? {}), [raw]: value },
+            }))
           }
         />
       ))}

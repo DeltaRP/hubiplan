@@ -173,11 +173,11 @@ export function PortalTasks({ entry }: { entry: PortalEntry }) {
   ]
   return (
     <ul className="task-tiles">
-      {tasks.map((t) => (
-        <li key={t.to}>
-          <Link to={t.to} className="task-tile">
-            <strong>{t.title}</strong>
-            <span className="muted small">{t.text}</span>
+      {tasks.map((tmx) => (
+        <li key={tmx.to}>
+          <Link to={tmx.to} className="task-tile">
+            <strong>{tmx.title}</strong>
+            <span className="muted small">{tmx.text}</span>
           </Link>
         </li>
       ))}

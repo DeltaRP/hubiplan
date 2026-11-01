@@ -75,7 +75,7 @@ export function CircularsPage() {
 }
 
 function ReceivedList({ orgId }: { orgId: number }) {
-  const t = useTerms()
+  const tm = useTerms()
   const list = useLoad(() => receivedApi.list(orgId), [orgId])
   const [open, setOpen] = useState<ReceivedCircular | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -95,9 +95,9 @@ function ReceivedList({ orgId }: { orgId: number }) {
 
   return (
     <div className="card card-wide">
-      <h2>{t.dv_Vom}</h2>
+      <h2>{tm.dv_Vom}</h2>
       <p className="muted small">
-        Rundschreiben {t.dv_gen} an die Vorstände {t.e_gen}.
+        Rundschreiben {tm.dv_gen} an die Vorstände {tm.e_gen}.
       </p>
       {list.data && list.data.length === 0 && (
         <p className="muted">Noch keine Rundschreiben empfangen.</p>

@@ -28,7 +28,7 @@ export function LabelFields({
   preview?: 'own' | 'children'
   testId?: string
 }) {
-  const t = buildTerms(value.label, value.plural, value.gender, value.genitive)
+  const tm = buildTerms(value.label, value.plural, value.gender, value.genitive)
   const set = (part: Partial<LabelValue>) => onChange({ ...value, ...part })
   return (
     <>
@@ -66,8 +66,8 @@ export function LabelFields({
       </div>
       <p className="muted small" data-testid={testId}>
         {preview === 'own'
-          ? `So erscheint es: Mitglied ${t.im} · Vorstand ${t.gen} · Mitglied ${t.eines_anderen}`
-          : `So erscheint es: ${t.Nom} · Mitglieder ${t.gen} · Rollen in ${t.diesem} · Termine in ${t.pl_dat}`}
+          ? `So erscheint es: Mitglied ${tm.im} · Vorstand ${tm.gen} · Mitglied ${tm.eines_anderen}`
+          : `So erscheint es: ${tm.Nom} · Mitglieder ${tm.gen} · Rollen in ${tm.diesem} · Termine in ${tm.pl_dat}`}
       </p>
     </>
   )

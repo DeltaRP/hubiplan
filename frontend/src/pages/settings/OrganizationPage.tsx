@@ -403,7 +403,7 @@ function FederationNameGrammar({
   onGender: (g: 'f' | 'm' | 'n') => void
   onGenitive: (g: string) => void
 }) {
-  const t = buildFederationTerms(name, gender, genitive)
+  const tm = buildFederationTerms(name, gender, genitive)
   return (
     <>
       <h3>Name in den Texten der Untereinheiten</h3>
@@ -432,8 +432,8 @@ function FederationNameGrammar({
         />
       </div>
       <p className="muted small" data-testid="fed-terms-preview">
-        So erscheint es: an {t.dv_akk} melden · Mitglied {t.dv_im} · Rundschreiben {t.dv_gen} ·{' '}
-        {t.dv_Vom}
+        So erscheint es: an {tm.dv_akk} melden · Mitglied {tm.dv_im} · Rundschreiben {tm.dv_gen} ·{' '}
+        {tm.dv_Vom}
       </p>
     </>
   )

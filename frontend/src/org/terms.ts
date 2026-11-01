@@ -63,19 +63,19 @@ export function buildTerms(
   const sg = label || 'Abteilung'
   const pl = plural || 'Abteilungen'
   const gen = genitive || genitiveOf(sg, g)
-  const t: DeptTerms = {
+  const tm: DeptTerms = {
     sg,
     pl,
     sg_gen: gen,
     pl_dat: /(n|s)$/.test(pl) ? pl : `${pl}n`,
   }
   for (const [key, forms] of Object.entries(FORMS)) {
-    t[key] = `${forms[idx]} ${GENITIVE_KEYS.has(key) ? gen : sg}`
+    tm[key] = `${forms[idx]} ${GENITIVE_KEYS.has(key) ? gen : sg}`
   }
-  for (const key of Object.keys(t)) t[cap(key)] = cap(t[key])
-  t.gender = g
-  t.adj = ADJ[idx]
-  return t
+  for (const key of Object.keys(tm)) tm[cap(key)] = cap(tm[key])
+  tm.gender = g
+  tm.adj = ADJ[idx]
+  return tm
 }
 
 /**
@@ -87,12 +87,12 @@ export function buildFederationTerms(name = '', gender = 'm', genitive = ''): De
   const base = name
     ? buildTerms(name, name, gender || 'm', genitive || name)
     : buildTerms('Dachverband', 'Dachverbände', 'm', 'Dachverbands')
-  const t: DeptTerms = {}
+  const tm: DeptTerms = {}
   for (const [key, value] of Object.entries(base)) {
-    if (!/^pl/i.test(key)) t[`dv_${key}`] = value
+    if (!/^pl/i.test(key)) tm[`dv_${key}`] = value
   }
-  t.dv_has = name ? '1' : ''
-  return t
+  tm.dv_has = name ? '1' : ''
+  return tm
 }
 
 export const DEFAULT_FED_TERMS: DeptTerms = buildFederationTerms()
@@ -106,9 +106,9 @@ export function buildOwnTerms(label = '', plural = '', gender = 'f', genitive = 
   const base = label
     ? buildTerms(label, plural || label, gender, genitive)
     : buildTerms('Einheit', 'Einheiten', 'f')
-  const t: DeptTerms = {}
-  for (const [key, value] of Object.entries(base)) t[`e_${key}`] = value
-  return t
+  const tm: DeptTerms = {}
+  for (const [key, value] of Object.entries(base)) tm[`e_${key}`] = value
+  return tm
 }
 
 export const DEFAULT_OWN_TERMS: DeptTerms = buildOwnTerms()

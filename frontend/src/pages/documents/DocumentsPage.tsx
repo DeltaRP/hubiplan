@@ -155,7 +155,7 @@ function Library({
   const [newName, setNewName] = useState('')
   const [newVisibility, setNewVisibility] = useState<Visibility>('board')
   const [newShared, setNewShared] = useState(false)
-  const t = useTerms()
+  const tm = useTerms()
   const shareUp = data.share_up_label ?? null
   const manage = data.can_manage
   const visibilities = data.visibilities ?? []
@@ -326,7 +326,7 @@ function Library({
 
       {data.from_below && data.from_below.some(visible) && (
         <section className="doc-shared" aria-label="Freigaben von unten">
-          <h2>{`Von den ${t.pl_dat}`}</h2>
+          <h2>{`Von den ${tm.pl_dat}`}</h2>
           <p className="muted small">Diese Ordner sind für euch freigegeben (nur lesen).</p>
           {data.from_below.filter(visible).map((f) => (
             <FolderView
@@ -343,8 +343,8 @@ function Library({
       )}
 
       {data.shared && data.shared.some(visible) && (
-        <section className="doc-shared" aria-label={t.dv_Vom}>
-          <h2>{t.dv_Vom}</h2>
+        <section className="doc-shared" aria-label={tm.dv_Vom}>
+          <h2>{tm.dv_Vom}</h2>
           {data.shared.filter(visible).map((f) => (
             <FolderView
               key={`s${f.id}`}

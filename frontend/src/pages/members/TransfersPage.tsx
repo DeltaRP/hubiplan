@@ -15,8 +15,8 @@ export function TransfersPage() {
   const { data, error, reload } = useLoad(() => memberApi.transfers(org.id), [org.id])
   if (error) return <Alert kind="error">{error}</Alert>
   if (!data) return <p className="muted">Lädt …</p>
-  const incoming = data.filter((t) => t.direction === 'incoming')
-  const outgoing = data.filter((t) => t.direction === 'outgoing')
+  const incoming = data.filter((tm) => tm.direction === 'incoming')
+  const outgoing = data.filter((tm) => tm.direction === 'outgoing')
 
   return (
     <>
@@ -30,11 +30,11 @@ export function TransfersPage() {
           {incoming.length === 0 ? (
             <p className="muted">Keine Anfragen.</p>
           ) : (
-            incoming.map((t) => (
+            incoming.map((tm) => (
               <IncomingItem
-                key={t.id}
+                key={tm.id}
                 orgId={org.id}
-                transfer={t}
+                transfer={tm}
                 canEdit={canEdit}
                 onDone={reload}
               />
@@ -46,11 +46,11 @@ export function TransfersPage() {
           {outgoing.length === 0 ? (
             <p className="muted">Keine Anfragen.</p>
           ) : (
-            outgoing.map((t) => (
+            outgoing.map((tm) => (
               <OutgoingItem
-                key={t.id}
+                key={tm.id}
                 orgId={org.id}
-                transfer={t}
+                transfer={tm}
                 canEdit={canEdit}
                 onDone={reload}
               />
@@ -62,20 +62,21 @@ export function TransfersPage() {
   )
 }
 
-function Summary({ t }: { t: Transfer }) {
+function Summary({ t: tm }: { t: Transfer }) {
   return (
     <>
       <div>
-        <strong>{t.person_name}</strong> · geb. {formatDate(t.birth_date)}
+        <strong>{tm.person_name}</strong> · geb. {formatDate(tm.birth_date)}
       </div>
       <div className="small">
-        {t.from_org_name} → {t.to_org_name} als „{t.member_type_name}“ ab {formatDate(t.entry_date)}
+        {tm.from_org_name} → {tm.to_org_name} als „{tm.member_type_name}“ ab{' '}
+        {formatDate(tm.entry_date)}
       </div>
-      {t.message && <div className="small muted">„{t.message}“</div>}
+      {tm.message && <div className="small muted">„{tm.message}“</div>}
       <div className="small muted">
-        gestellt {formatDateTime(t.created_at)} · {t.status_label}
-        {t.decision_label && ` · ${t.decision_label}`}
-        {t.response && ` · Antwort: „${t.response}“`}
+        gestellt {formatDateTime(tm.created_at)} · {tm.status_label}
+        {tm.decision_label && ` · ${tm.decision_label}`}
+        {tm.response && ` · Antwort: „${tm.response}“`}
       </div>
     </>
   )
@@ -115,7 +116,7 @@ function IncomingItem({
     }
   }
 
-  const passive = types.data?.filter((t) => !t.active && !t.is_archived) ?? []
+  const passive = types.data?.filter((tm) => !tm.active && !tm.is_archived) ?? []
 
   return (
     <div className="transfer-item">
@@ -143,9 +144,9 @@ function IncomingItem({
               onChange={(e) => setNewType(e.target.value)}
             >
               <option value="">Wechsel zu nicht aktiver Art …</option>
-              {passive.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
+              {passive.map((tm) => (
+                <option key={tm.id} value={tm.id}>
+                  {tm.name}
                 </option>
               ))}
             </select>

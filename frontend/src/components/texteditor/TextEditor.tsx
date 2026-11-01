@@ -375,7 +375,7 @@ export function TextEditor({
     } else {
       const mark = m.link.create({ href })
       if (s.selection.empty && !range) {
-        const target = linkTargets?.find((t) => t.href === href)
+        const target = linkTargets?.find((tm) => tm.href === href)
         const text = target ? target.label.replace(/ \(noch nicht veröffentlicht\)$/, '') : href
         const from = s.selection.from
         tr = tr.insertText(text, from).addMark(from, from + text.length, mark)
@@ -525,11 +525,11 @@ export function TextEditor({
     else switchMode()
   }
 
-  const enabled = tools.filter((t) => !t.disabled)
-  const tabStop = enabled.some((t) => t.key === focusKey) ? focusKey : enabled[0]?.key
+  const enabled = tools.filter((tm) => !tm.disabled)
+  const tabStop = enabled.some((tm) => tm.key === focusKey) ? focusKey : enabled[0]?.key
 
   function onToolbarKey(e: KeyboardEvent<HTMLDivElement>) {
-    const keys = enabled.map((t) => t.key)
+    const keys = enabled.map((tm) => tm.key)
     const index = keys.indexOf(tabStop!)
     let next = -1
     if (e.key === 'ArrowRight') next = (index + 1) % keys.length
@@ -554,23 +554,23 @@ export function TextEditor({
         aria-controls={markdownMode ? sourceId : undefined}
         onKeyDown={onToolbarKey}
       >
-        {tools.map((t) => (
+        {tools.map((tm) => (
           <button
-            key={t.key}
+            key={tm.key}
             type="button"
-            data-tool={t.key}
-            className={t.gapBefore ? 'texteditor-gap' : undefined}
-            aria-label={t.label}
-            title={t.label}
-            aria-pressed={t.pressed === undefined ? undefined : t.pressed}
-            disabled={t.disabled}
-            tabIndex={t.key === tabStop ? 0 : -1}
+            data-tool={tm.key}
+            className={tm.gapBefore ? 'texteditor-gap' : undefined}
+            aria-label={tm.label}
+            title={tm.label}
+            aria-pressed={tm.pressed === undefined ? undefined : tm.pressed}
+            disabled={tm.disabled}
+            tabIndex={tm.key === tabStop ? 0 : -1}
             // Auswahl im Text behalten
             onMouseDown={(e) => e.preventDefault()}
-            onFocus={() => setFocusKey(t.key)}
-            onClick={() => act(t.key)}
+            onFocus={() => setFocusKey(tm.key)}
+            onClick={() => act(tm.key)}
           >
-            {t.text}
+            {tm.text}
           </button>
         ))}
       </div>
@@ -667,7 +667,7 @@ function LinkDialog({
   const [url, setUrl] = useState(isPage ? '' : current)
   const [error, setError] = useState<string | null>(null)
   const pageOptions =
-    isPage && !targets.some((t) => t.href === current)
+    isPage && !targets.some((tm) => tm.href === current)
       ? [...targets, { href: current, label: `${current.slice(PAGE_PREFIX.length)} (unbekannt)` }]
       : targets
 
@@ -723,9 +723,9 @@ function LinkDialog({
         {kind === 'page' && targets.length > 0 ? (
           <SelectField label="Seite" value={page} onChange={(e) => setPage(e.target.value)}>
             <option value="">Seite wählen …</option>
-            {pageOptions.map((t) => (
-              <option key={t.href} value={t.href}>
-                {t.label}
+            {pageOptions.map((tm) => (
+              <option key={tm.href} value={tm.href}>
+                {tm.label}
               </option>
             ))}
           </SelectField>
