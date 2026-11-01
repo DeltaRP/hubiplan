@@ -403,24 +403,171 @@ describe('Inhalte der Webseite', () => {
     expect(calls.some((c) => c.key === `POST ${base}texts/5/publish/`)).toBe(true)
   })
 
-  it('löscht ein verwendetes Bild nach Rückfrage mit den Stellen', async () => {
-    const image = {
-      id: 3,
-      key: 'k3',
-      caption: 'Gruppenbild',
-      alt_text: 'Gruppenbild',
-      width: 60,
-      height: 40,
-      url: '/img/3',
-      small_url: '/img/3?size=small',
-      markdown: '![Gruppenbild](bild:k3)',
-      uploaded_at: '2026-10-28T10:00:00Z',
+  const img = (id: number, alt: string, over: Record<string, unknown> = {}) => ({
+    id,
+    key: `k${id}`,
+    caption: '',
+    alt_text: alt,
+    decorative: false,
+    width: 60,
+    height: 40,
+    url: `/img/${id}`,
+    small_url: `/img/${id}?size=small`,
+    original_url: `/img/${id}?size=original`,
+    markdown: `![${alt}](bild:k${id})`,
+    uploaded_at: '2026-10-28T10:00:00Z',
+    department: null,
+    department_name: null,
+    crop: {},
+    version: 0,
+    used: true,
+    ...over,
+  })
+  const units = [
+    { id: 4, name: 'Zweiter Zug' },
+    { id: 5, name: 'Dritter Zug' },
+  ]
+
+  it('zeigt die Bilder als Kacheln mit Suche und Filtern', async () => {
+    renderApp(
+      {
+        [`GET ${base}`]: () => ({ status: 200, body: data(website()) }),
+        [`GET ${base}texts/`]: () => ({ status: 200, body: { texts: [], units } }),
+        [`GET ${base}images/`]: () => ({
+          status: 200,
+          body: [
+            img(1, 'Fahne'),
+            img(2, '', { caption: 'Zelt', used: false }),
+            img(3, 'Gruppenbild', { department: 4, department_name: 'Zweiter Zug' }),
+          ],
+        }),
+      },
+      '/webseite/bilder',
+    )
+    const user = userEvent.setup()
+    expect(await screen.findByText('3 Bilder')).toBeVisible()
+    expect(screen.getByText('ohne Beschreibung', { selector: 'small' })).toBeVisible()
+    expect(screen.getByText('nicht verwendet', { selector: 'small' })).toBeVisible()
+    await user.selectOptions(screen.getByLabelText('Gehört zu'), '4')
+    expect(screen.getByText('1 von 3 Bildern')).toBeVisible()
+    expect(screen.getByRole('button', { name: /Gruppenbild/ })).toBeVisible()
+    await user.selectOptions(screen.getByLabelText('Gehört zu'), 'all')
+    await user.selectOptions(screen.getByLabelText('Zustand'), 'no_alt')
+    expect(screen.getByRole('button', { name: /Zelt/ })).toBeVisible()
+    expect(screen.queryByRole('button', { name: /Fahne/ })).toBeNull()
+    await user.selectOptions(screen.getByLabelText('Zustand'), 'all')
+    await user.type(screen.getByLabelText('Suchen'), 'fah')
+    expect(screen.getByText('1 von 3 Bildern')).toBeVisible()
+  })
+
+  it('ändert Angaben und Zuordnung eines Bildes im Fenster „Bild bearbeiten“', async () => {
+    const image = img(3, 'Gruppenbild')
+    const calls = renderApp(
+      {
+        [`GET ${base}`]: () => ({ status: 200, body: data(website()) }),
+        [`GET ${base}texts/`]: () => ({ status: 200, body: { texts: [], units } }),
+        [`GET ${base}images/`]: () => ({ status: 200, body: [image] }),
+        [`GET ${base}images/3/`]: () => ({
+          status: 200,
+          body: {
+            ...image,
+            usage: [{ text: 6, label: 'Willkommen', places: ['Bilderkarussell'] }],
+          },
+        }),
+        [`PUT ${base}images/3/`]: () => ({
+          status: 200,
+          body: { ...image, alt_text: 'Gruppenbild am Zelt', department: 5 },
+        }),
+      },
+      '/webseite/bilder',
+    )
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: /Gruppenbild/ }))
+    const dialog = await screen.findByRole('dialog', { name: 'Bild bearbeiten' })
+    expect(await within(dialog).findByRole('link', { name: 'Willkommen' })).toHaveAttribute(
+      'href',
+      '/webseite/inhalte?text=6',
+    )
+    expect(within(dialog).getByText(/Bilderkarussell/)).toBeVisible()
+    const alt = within(dialog).getByLabelText('Alternativtext (was zu sehen ist)')
+    await user.clear(alt)
+    await user.type(alt, 'Gruppenbild am Zelt')
+    await user.selectOptions(within(dialog).getByLabelText(/Gehört zu/), '5')
+    await waitFor(
+      () => {
+        const sent = calls
+          .filter((c) => c.key === `PUT ${base}images/3/`)
+          .map((c) => JSON.parse(String(c.init?.body)))
+        const merged = Object.assign({}, ...sent)
+        expect(merged).toEqual({ alt_text: 'Gruppenbild am Zelt', department: 5 })
+      },
+      { timeout: 3000 },
+    )
+  })
+
+  it('lädt mehrere Bilder hoch und wählt den Ausschnitt später neu', async () => {
+    if (!URL.createObjectURL) {
+      URL.createObjectURL = vi.fn(() => 'blob:test')
+      URL.revokeObjectURL = vi.fn()
     }
+    const image = img(3, 'Gruppenbild', {
+      crop: { x: 0, y: 0, width: 50, height: 100, rotation: 0, aspect: '16:9' },
+    })
+    const calls = renderApp(
+      {
+        [`GET ${base}`]: () => ({ status: 200, body: data(website()) }),
+        [`GET ${base}texts/`]: () => ({ status: 200, body: { texts: [], units } }),
+        [`GET ${base}images/`]: () => ({ status: 200, body: [image] }),
+        [`POST ${base}images/`]: () => ({ status: 201, body: img(8, '') }),
+        [`GET ${base}images/3/`]: () => ({ status: 200, body: { ...image, usage: [] } }),
+        'GET /img/3?size=original': () => ({ status: 200, body: 'bild' }),
+        [`POST ${base}images/3/crop/`]: () => ({ status: 200, body: { ...image, version: 1 } }),
+      },
+      '/webseite/bilder',
+    )
+    const user = userEvent.setup()
+    await screen.findByText('1 Bild')
+    await user.selectOptions(screen.getByLabelText('Gehört zu'), '4')
+    const files = [
+      new File(['a'], 'a.jpg', { type: 'image/jpeg' }),
+      new File(['b'], 'b.jpg', { type: 'image/jpeg' }),
+    ]
+    await user.upload(screen.getByLabelText('Bilder hochladen'), files)
+    for (let n = 0; n < 2; n++) {
+      const crop = await screen.findByRole('dialog', { name: 'Bildausschnitt festlegen' })
+      await user.click(within(crop).getByRole('button', { name: 'Unverändert übernehmen' }))
+      await waitFor(() =>
+        expect(calls.filter((c) => c.key === `POST ${base}images/`)).toHaveLength(n + 1),
+      )
+    }
+    const form = calls.find((c) => c.key === `POST ${base}images/`)!.init!.body as FormData
+    // Unverändert: die Datei ist zugleich das Original, neue Bilder gehören zum Filter
+    expect(form.get('original')).toBeNull()
+    expect(form.get('department')).toBe('4')
+
+    await user.selectOptions(screen.getByLabelText('Gehört zu'), 'all')
+    await user.click(screen.getByRole('button', { name: /Gruppenbild/ }))
+    const dialog = await screen.findByRole('dialog', { name: 'Bild bearbeiten' })
+    await user.click(await within(dialog).findByRole('button', { name: 'Ausschnitt ändern' }))
+    const crop = await screen.findByRole('dialog', { name: 'Ausschnitt ändern' })
+    // Der zuletzt gewählte Ausschnitt ist vorgewählt
+    expect(within(crop).getByLabelText('Seitenverhältnis')).toHaveValue('16:9')
+    await user.click(within(crop).getByRole('button', { name: 'Unverändert übernehmen' }))
+    await waitFor(() =>
+      expect(calls.some((c) => c.key === `POST ${base}images/3/crop/`)).toBe(true),
+    )
+    const sent = calls.find((c) => c.key === `POST ${base}images/3/crop/`)!.init!.body as FormData
+    expect(JSON.parse(String(sent.get('crop')))).toMatchObject({ width: 100, height: 100 })
+  })
+
+  it('löscht ein verwendetes Bild nach Rückfrage mit den Stellen', async () => {
+    const image = img(3, 'Gruppenbild', { caption: 'Gruppenbild' })
     const calls = renderApp(
       {
         [`GET ${base}`]: () => ({ status: 200, body: data(website()) }),
         [`GET ${base}texts/`]: () => ({ status: 200, body: { texts: [], units: [] } }),
         [`GET ${base}images/`]: () => ({ status: 200, body: [image] }),
+        [`GET ${base}images/3/`]: () => ({ status: 200, body: { ...image, usage: [] } }),
         [`DELETE ${base}images/3/`]: () => ({
           status: 409,
           body: {
@@ -431,10 +578,12 @@ describe('Inhalte der Webseite', () => {
         }),
         [`DELETE ${base}images/3/?trotzdem=1`]: () => ({ status: 204 }),
       },
-      '/webseite/inhalte',
+      '/webseite/bilder',
     )
     const user = userEvent.setup()
-    await user.click(await screen.findByRole('button', { name: 'Bild Gruppenbild löschen' }))
+    await user.click(await screen.findByRole('button', { name: /Gruppenbild/ }))
+    const dialog = await screen.findByRole('dialog', { name: 'Bild bearbeiten' })
+    await user.click(await within(dialog).findByRole('button', { name: 'Löschen' }))
     await user.click(
       within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Löschen' }),
     )
@@ -447,18 +596,6 @@ describe('Inhalte der Webseite', () => {
   })
 
   it('stellt das Bilderkarussell der Begrüßung zusammen', async () => {
-    const img = (id: number, alt: string) => ({
-      id,
-      key: `k${id}`,
-      caption: '',
-      alt_text: alt,
-      width: 60,
-      height: 40,
-      url: `/img/${id}`,
-      small_url: `/img/${id}?size=small`,
-      markdown: '',
-      uploaded_at: '2026-10-28T10:00:00Z',
-    })
     const greeting = text({ id: 6, kind: 'greeting', title: 'Willkommen', slug: '', gallery: [1] })
     const calls = renderApp(
       {
@@ -472,12 +609,65 @@ describe('Inhalte der Webseite', () => {
     )
     const user = userEvent.setup()
     await user.click(await screen.findByRole('button', { name: 'Willkommen' }))
-    await user.selectOptions(await screen.findByLabelText('Bild hinzufügen'), '2')
+    await user.click(await screen.findByRole('button', { name: 'Bilder ändern' }))
+    const picker = await screen.findByRole('dialog', { name: 'Bilder fürs Karussell' })
+    expect(within(picker).getByRole('button', { name: /Fahne/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    await user.click(within(picker).getByRole('button', { name: /Zelt/ }))
+    await user.click(within(picker).getByRole('button', { name: 'Übernehmen (2 von 10)' }))
     await user.click(screen.getByRole('button', { name: 'Zelt nach vorn' }))
     await waitFor(
       () => {
         const put = calls.filter((c) => c.key === `PUT ${base}texts/6/`).at(-1)
         expect(put && JSON.parse(String(put.init?.body))).toEqual({ gallery: [2, 1] })
+      },
+      { timeout: 3000 },
+    )
+  })
+
+  it('zeigt bei der Bildauswahl einer Untereinheit zuerst deren Bilder', async () => {
+    const unitText = text({
+      id: 7,
+      kind: 'unit',
+      kind_label: 'Text einer Untereinheit',
+      department: 4,
+      department_name: 'Zweiter Zug',
+      title: 'Zweiter Zug',
+      slug: '',
+    })
+    const calls = renderApp(
+      {
+        [`GET ${base}`]: () => ({ status: 200, body: data(website()) }),
+        [`GET ${base}texts/`]: () => ({ status: 200, body: { texts: [unitText], units } }),
+        [`GET ${base}texts/7/`]: () => ({ status: 200, body: unitText }),
+        [`GET ${base}images/`]: () => ({
+          status: 200,
+          body: [
+            img(1, 'Vereinsfahne'),
+            img(2, 'Zug zwei', { department: 4, department_name: 'Zweiter Zug' }),
+            img(3, 'Zug drei', { department: 5, department_name: 'Dritter Zug' }),
+          ],
+        }),
+        [`PUT ${base}texts/7/`]: () => ({ status: 200, body: { ...unitText, image: 2 } }),
+      },
+      '/webseite/inhalte?text=7',
+    )
+    const user = userEvent.setup()
+    const choice = await screen.findByRole('group', { name: 'Bild der Untereinheit' })
+    await user.click(within(choice).getByRole('button', { name: 'Bild wählen' }))
+    const picker = await screen.findByRole('dialog', { name: 'Bild der Untereinheit' })
+    expect(within(picker).getByRole('button', { name: /Vereinsfahne/ })).toBeVisible()
+    expect(within(picker).queryByRole('button', { name: /Zug drei/ })).toBeNull()
+    await user.click(within(picker).getByLabelText('alle Bilder'))
+    expect(within(picker).getByRole('button', { name: /Zug drei/ })).toBeVisible()
+    await user.click(within(picker).getByRole('button', { name: /Zug zwei/ }))
+    expect(await within(choice).findByRole('button', { name: 'Bearbeiten' })).toBeVisible()
+    await waitFor(
+      () => {
+        const put = calls.filter((c) => c.key === `PUT ${base}texts/7/`).at(-1)
+        expect(put && JSON.parse(String(put.init?.body))).toEqual({ image: 2 })
       },
       { timeout: 3000 },
     )

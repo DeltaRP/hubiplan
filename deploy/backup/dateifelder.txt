@@ -25,5 +25,6 @@ peering_remotestate file private
 statutes_statuteversion file private
 website_websiteimage file private
 website_websiteimage small private
+website_websiteimage original private
 website_socialpostimage file private
 website_socialpostimage small private

@@ -34,11 +34,11 @@ class _ContentMixin(_WebsiteMixin):
             raise NotFound()
 
 
-def image_data(org_id: int, image: WebsiteImage | None) -> dict | None:
+def image_data(org_id: int, image: WebsiteImage | None, used: bool | None = None) -> dict | None:
     if image is None:
         return None
-    base = f"/api/orgs/{org_id}/website/images/{image.pk}/file/"
-    return {
+    base = f"/api/orgs/{org_id}/website/images/{image.pk}/file/?v={image.version}"
+    data = {
         "id": image.pk,
         "key": image.key,
         "caption": image.caption,
@@ -47,10 +47,21 @@ def image_data(org_id: int, image: WebsiteImage | None) -> dict | None:
         "width": image.width,
         "height": image.height,
         "url": base,
-        "small_url": f"{base}?size=small",
+        "small_url": f"{base}&size=small",
+        "original_url": f"{base}&size=original",
         "markdown": f"![{image.alt_text or image.caption}](bild:{image.key})",
+        "department": image.department_id,
+        "department_name": (image.department.short_name or image.department.name)
+        if image.department_id
+        else None,
+        "crop": image.crop or {},
+        "version": image.version,
         "uploaded_at": image.uploaded_at,
+        "updated_at": image.updated_at,
     }
+    if used is not None:
+        data["used"] = used
+    return data
 
 
 def text_data(org_id: int, t: WebsiteText, full: bool = False) -> dict:
@@ -296,6 +307,31 @@ class ImageUploadSerializer(serializers.Serializer):
     caption = serializers.CharField(max_length=300, required=False, allow_blank=True, default="")
     alt_text = serializers.CharField(max_length=300, required=False, allow_blank=True, default="")
     decorative = serializers.BooleanField(required=False, default=False)
+    department = serializers.IntegerField(required=False, allow_null=True, default=None)
+
+
+def _department(website, value):
+    """Untereinheit für „Gehört zu“ (leer: Verein allgemein)."""
+    if value in (None, "", 0):
+        return None
+    dept = services.units_below(website.organization).filter(pk=value).first()
+    if dept is None:
+        raise ValidationError({"department": "Unbekannte Untereinheit."})
+    return dept
+
+
+def _image_files(request) -> tuple:
+    """Hochgeladener Ausschnitt (``file``), optional ganzes Original und Ausschnitt."""
+    upload = request.FILES.get("file")
+    if upload is None:
+        raise ValidationError({"file": "Bitte ein Bild auswählen."})
+    original = request.FILES.get("original")
+    crop = content.clean_crop(request.data.get("crop")) if original is not None else {}
+    return upload, original, crop
+
+
+def _with_department(qs):
+    return qs.select_related("department")
 
 
 class ImageListView(_ContentMixin, APIView):
@@ -305,16 +341,18 @@ class ImageListView(_ContentMixin, APIView):
 
     def get(self, request, org_id: int):
         website = self.website()
+        used = content.used_image_ids(website)
         return Response(
-            [image_data(self.org.pk, i) for i in WebsiteImage.objects.filter(website=website)]
+            [
+                image_data(self.org.pk, i, used=i.pk in used)
+                for i in _with_department(WebsiteImage.objects.filter(website=website))
+            ]
         )
 
     @transaction.atomic
     def post(self, request, org_id: int):
         website = self.website()
-        upload = request.FILES.get("file")
-        if upload is None:
-            raise ValidationError({"file": "Bitte ein Bild auswählen."})
+        upload, original, crop = _image_files(request)
         ser = ImageUploadSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
         image = content.store_image(
@@ -324,16 +362,34 @@ class ImageListView(_ContentMixin, APIView):
             ser.validated_data["alt_text"],
             request.user,
             decorative=ser.validated_data["decorative"],
+            original=original,
+            crop=crop,
+            department=_department(website, ser.validated_data["department"]),
         )
         record(self.org, request.user, "create", image, {"Bild": [None, str(image)]})
-        return Response(image_data(self.org.pk, image), status=status.HTTP_201_CREATED)
+        return Response(image_data(self.org.pk, image, used=False), status=status.HTTP_201_CREATED)
 
 
-class ImageDetailView(_ContentMixin, APIView):
-    """PUT: Bildunterschrift/Alternativtext · DELETE: Bild löschen (benutzt: nach Rückfrage)."""
+class _ImageMixin(_ContentMixin):
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def image(self) -> WebsiteImage:
-        return get_object_or_404(WebsiteImage, website=self.website(), pk=self.kwargs["pk"])
+        return get_object_or_404(
+            _with_department(WebsiteImage.objects), website=self.website(), pk=self.kwargs["pk"]
+        )
+
+    def data(self, image: WebsiteImage) -> dict:
+        used = bool(content.image_usage(image))
+        return image_data(self.org.pk, image, used=used)
+
+
+class ImageDetailView(_ImageMixin, APIView):
+    """GET: Bild mit Stellen · PUT: Angaben ändern · DELETE: löschen (benutzt: nach Rückfrage)."""
+
+    def get(self, request, org_id: int, pk: int):
+        image = self.image()
+        usage = content.image_usage(image)
+        return Response({**image_data(self.org.pk, image, used=bool(usage)), "usage": usage})
 
     @transaction.atomic
     def put(self, request, org_id: int, pk: int):
@@ -341,13 +397,19 @@ class ImageDetailView(_ContentMixin, APIView):
         ser = ImageUploadSerializer(data=request.data, partial=True)
         ser.is_valid(raise_exception=True)
         before = snapshot(image)
-        for key, value in ser.validated_data.items():
+        values = dict(ser.validated_data)
+        if "department" in request.data:
+            image.department = _department(image.website, values.pop("department", None))
+        else:
+            values.pop("department", None)
+        for key, value in values.items():
             setattr(image, key, value)
+        image.updated_by = request.user
         image.save()
         changes = diff(before, snapshot(image))
         if changes:
             record(self.org, request.user, "update", image, changes)
-        return Response(image_data(self.org.pk, image))
+        return Response(self.data(image))
 
     @transaction.atomic
     def delete(self, request, org_id: int, pk: int):
@@ -384,12 +446,57 @@ class ImageDetailView(_ContentMixin, APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class ImageCropView(_ImageMixin, APIView):
+    """POST: neuer Ausschnitt aus dem Original (``file`` = Ausschnitt, ``crop``)."""
+
+    @transaction.atomic
+    def post(self, request, org_id: int, pk: int):
+        image = self.image()
+        upload = request.FILES.get("file")
+        if upload is None:
+            raise ValidationError({"file": "Bitte ein Bild auswählen."})
+        crop = content.clean_crop(request.data.get("crop"))
+        content.recrop_image(image, upload, crop, request.user)
+        record(self.org, request.user, "update", image, {"Ausschnitt": ["", "neu gewählt"]})
+        return Response(self.data(image))
+
+
+class ImageReplaceView(_ImageMixin, APIView):
+    """POST: neue Datei für dasselbe Bild; Stellen und Angaben bleiben."""
+
+    @transaction.atomic
+    def post(self, request, org_id: int, pk: int):
+        image = self.image()
+        upload, original, crop = _image_files(request)
+        content.replace_image(image, upload, original, crop, request.user)
+        record(self.org, request.user, "update", image, {"Datei": ["", "ersetzt"]})
+        return Response(self.data(image))
+
+
+class ImageCopyView(_ImageMixin, APIView):
+    """POST: zweites Bild aus demselben Original mit eigenem Ausschnitt."""
+
+    @transaction.atomic
+    def post(self, request, org_id: int, pk: int):
+        image = self.image()
+        upload = request.FILES.get("file")
+        if upload is None:
+            raise ValidationError({"file": "Bitte ein Bild auswählen."})
+        crop = content.clean_crop(request.data.get("crop"))
+        copy = content.copy_image(image, upload, crop, request.user)
+        record(self.org, request.user, "create", copy, {"Bild": [None, str(copy)]})
+        return Response(image_data(self.org.pk, copy, used=False), status=status.HTTP_201_CREATED)
+
+
 class ImageFileView(_ContentMixin, APIView):
     """GET: Bilddatei für die Verwaltung."""
 
     def get(self, request, org_id: int, pk: int):
         image = get_object_or_404(WebsiteImage, website=self.website(), pk=pk)
-        f = image.small if request.query_params.get("size") == "small" else image.file
+        size = request.query_params.get("size")
+        f = image.small if size == "small" else image.file
+        if size == "original" and image.original.name:
+            f = image.original
         ctype = "image/png" if f.name.endswith(".png") else "image/jpeg"
         response = FileResponse(f.open("rb"), content_type=ctype)
         response["Cache-Control"] = "private, max-age=3600"

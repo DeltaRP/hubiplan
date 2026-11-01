@@ -72,7 +72,7 @@ def items(website: Website, *, public_site=None) -> dict[str, dict]:
                 if p.published_at is None:
                     state.append("noch nicht veröffentlicht")
                 if not p.show_in_menu:
-                    state.append("unter Texte und Bilder aus dem Menü genommen")
+                    state.append("unter Webseite › Texte aus dem Menü genommen")
                 add(
                     f"page:{p.pk}",
                     p.title or p.published_title or p.slug,

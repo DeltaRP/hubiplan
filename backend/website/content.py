@@ -18,6 +18,7 @@ MAX_PIXELS = 60_000_000
 ALLOWED_FORMATS = {"JPEG", "PNG", "WEBP"}
 FULL_SIZE = 2000
 SMALL_SIZE = 800
+ORIGINAL_SIZE = 4000
 MAX_REVISIONS = 50
 
 
@@ -63,29 +64,160 @@ def process_image(upload) -> tuple[bytes, str, int, int, bytes, str]:
     return full, ext, width, height, small, ext_small
 
 
-def store_image(
-    website, upload, caption: str, alt_text: str, user, *, decorative: bool = False
-) -> WebsiteImage:
+def clean_crop(value) -> dict:
+    """Ausschnitt aus dem Browser prüfen: Prozentwerte, Drehung in 90°-Schritten."""
+    if value in (None, "", {}):
+        return {}
+    if isinstance(value, str):
+        import json
+
+        try:
+            value = json.loads(value)
+        except ValueError as exc:
+            raise ValidationError({"crop": "Ungültiger Ausschnitt."}) from exc
+    if not isinstance(value, dict):
+        raise ValidationError({"crop": "Ungültiger Ausschnitt."})
+    result = {}
+    try:
+        for key in ("x", "y", "width", "height"):
+            number = float(value[key])
+            if not 0 <= number <= 100:
+                raise ValueError
+            result[key] = round(number, 4)
+        rotation = int(value.get("rotation") or 0)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValidationError({"crop": "Ungültiger Ausschnitt."}) from exc
+    if rotation % 90 or not 0 <= rotation < 360:
+        raise ValidationError({"crop": "Ungültige Drehung."})
+    if result["width"] <= 0 or result["height"] <= 0:
+        raise ValidationError({"crop": "Ungültiger Ausschnitt."})
+    result["rotation"] = rotation
+    aspect = value.get("aspect")
+    if isinstance(aspect, str) and len(aspect) <= 12:
+        result["aspect"] = aspect
+    return result
+
+
+def _save_files(image: WebsiteImage, upload, original=None) -> list:
+    """Schreibt Bild (und ggf. Original) neu; liefert die alten Dateien zum Aufräumen."""
+    old = []
     full, ext, width, height, small, ext_small = process_image(upload)
+    for f in (image.file, image.small):
+        if f.name:
+            old.append(f.name)
+    image.width, image.height = width, height
+    image.file.save(f"bild.{ext}", ContentFile(full), save=False)
+    image.small.save(f"bild-klein.{ext_small}", ContentFile(small), save=False)
+    if original is not None:
+        orig, ext_orig, _, _ = _encode(_open(original), ORIGINAL_SIZE)
+        if image.original.name:
+            old.append(image.original.name)
+        image.original.save(f"original.{ext_orig}", ContentFile(orig), save=False)
+    return old
+
+
+def _remove_later(storage, names: list) -> None:
+    def _remove():
+        for name in names:
+            storage.delete(name)
+
+    if names:
+        transaction.on_commit(_remove)
+
+
+def store_image(
+    website,
+    upload,
+    caption: str,
+    alt_text: str,
+    user,
+    *,
+    decorative: bool = False,
+    original=None,
+    crop: dict | None = None,
+    department=None,
+) -> WebsiteImage:
+    """Neues Bild. ``upload`` ist der fertige Ausschnitt, ``original`` die ganze Datei
+    (ohne: ``upload`` ist zugleich das Original)."""
     image = WebsiteImage(
         organization=website.organization,
         website=website,
         key=WebsiteImage.new_key(),
-        width=width,
-        height=height,
         caption=caption,
         alt_text=alt_text,
         decorative=decorative,
+        department=department,
+        crop=crop if original is not None and crop else {},
         uploaded_by=user,
+        updated_by=user,
     )
-    image.file.save(f"bild.{ext}", ContentFile(full), save=False)
-    image.small.save(f"bild-klein.{ext_small}", ContentFile(small), save=False)
+    _save_files(image, upload, original if original is not None else upload)
     image.save()
     return image
 
 
+def ensure_original(image: WebsiteImage) -> None:
+    """Ältere Bilder ohne Original: das bisherige Bild wird zum Original."""
+    if image.original.name or not image.file.name:
+        return
+    with image.file.open("rb") as f:
+        data = f.read()
+    ext = image.file.name.rsplit(".", 1)[-1]
+    image.original.save(f"original.{ext}", ContentFile(data), save=False)
+    image.crop = {}
+
+
+def recrop_image(image: WebsiteImage, upload, crop: dict, user) -> WebsiteImage:
+    """Neuer Ausschnitt aus dem Original (im Browser zugeschnitten)."""
+    ensure_original(image)
+    old = _save_files(image, upload)
+    image.crop = crop
+    image.version += 1
+    image.updated_by = user
+    image.save()
+    _remove_later(image.file.storage, old)
+    return image
+
+
+def replace_image(image: WebsiteImage, upload, original, crop: dict, user) -> WebsiteImage:
+    """Neue Datei für dasselbe Bild: Stellen, Texte und Kennung bleiben."""
+    old = _save_files(image, upload, original if original is not None else upload)
+    image.crop = crop if original is not None and crop else {}
+    image.version += 1
+    image.updated_by = user
+    image.save()
+    _remove_later(image.file.storage, old)
+    return image
+
+
+def copy_image(image: WebsiteImage, upload, crop: dict, user) -> WebsiteImage:
+    """Zweites Bild aus demselben Original (z. B. anderes Format), Angaben übernommen."""
+    if not image.original.name:
+        ensure_original(image)
+        image.save(update_fields=["original", "crop"])
+    copy = WebsiteImage(
+        organization=image.organization,
+        website=image.website,
+        key=WebsiteImage.new_key(),
+        caption=image.caption,
+        alt_text=image.alt_text,
+        decorative=image.decorative,
+        department=image.department,
+        crop=crop,
+        uploaded_by=user,
+        updated_by=user,
+    )
+    _save_files(copy, upload)
+    with image.original.open("rb") as f:
+        data = f.read()
+    ext = image.original.name.rsplit(".", 1)[-1]
+    copy.original.save(f"original.{ext}", ContentFile(data), save=False)
+    copy.save()
+    return copy
+
+
 def delete_image(image: WebsiteImage) -> None:
-    files = [image.file, image.small]
+    files = [image.file, image.small, image.original]
     image.delete()
 
     def _remove():
@@ -123,10 +255,12 @@ def _uses(image: WebsiteImage, t, *, published: bool) -> list[str]:
     return places
 
 
-def image_in_use(image: WebsiteImage) -> list[str]:
-    """Wo das Bild noch steht, mit Stelle: Entwurf und/oder veröffentlichte Fassung."""
+def image_usage(image: WebsiteImage, texts=None) -> list[dict]:
+    """Wo das Bild noch steht, je Text mit Stellen (Entwurf und/oder veröffentlicht)."""
     result = []
-    for t in WebsiteText.objects.filter(website=image.website):
+    if texts is None:
+        texts = WebsiteText.objects.filter(website=image.website).select_related("department")
+    for t in texts:
         draft = _uses(image, t, published=False)
         live = _uses(image, t, published=True) if t.is_published else []
         parts = []
@@ -138,8 +272,64 @@ def image_in_use(image: WebsiteImage) -> list[str]:
             else:
                 parts.append(place)
         if parts:
-            result.append(f"{t}: {', '.join(parts)}")
+            result.append({"text": t.pk, "label": str(t), "places": parts})
     return result
+
+
+def image_in_use(image: WebsiteImage) -> list[str]:
+    """Wo das Bild noch steht, als Sätze für die Rückfrage beim Löschen."""
+    return [f"{u['label']}: {', '.join(u['places'])}" for u in image_usage(image)]
+
+
+def used_image_ids(website) -> set[int]:
+    """Alle Bilder, die in einem Text stehen (Entwurf oder veröffentlicht)."""
+    keys = dict(WebsiteImage.objects.filter(website=website).values_list("key", "pk"))
+    used: set[int] = set()
+    for t in WebsiteText.objects.filter(website=website):
+        used.update(pk for pk in (t.image_id, t.published_image_id) if pk)
+        used.update(t.gallery or [])
+        used.update(t.published_gallery or [])
+        for body in (t.body, t.published_body):
+            for key in _IMAGE_KEY.findall(body or ""):
+                if key in keys:
+                    used.add(keys[key])
+    return used
+
+
+_IMAGE_KEY = re.compile(r"\]\(bild:([A-Za-z0-9_\-]{4,40})")
+_IMAGE_IN_TEXT = re.compile(
+    r'!\[((?:\\.|[^\]\\])*)\]\(bild:([A-Za-z0-9_\-]{4,40})(\s+"(?:\\.|[^"\\])*")?\)'
+)
+
+
+def _escape_alt(text: str) -> str:
+    return text.replace("\\", "\\\\").replace("[", "\\[").replace("]", "\\]").replace("\n", " ")
+
+
+def public_body(body: str, website) -> str:
+    """Text für die Webseite: Bilder im Text bekommen den aktuellen Alternativtext und
+    die Adresse der aktuellen Fassung (``bild:<key>-v<n>``), auch wenn sie im Text
+    seit dem Einfügen anders stehen (Ralf 01.11.)."""
+    if not body or "bild:" not in body:
+        return body or ""
+    keys = set(_IMAGE_KEY.findall(body))
+    images = {i.key: i for i in WebsiteImage.objects.filter(website=website, key__in=keys)}
+
+    def replace(match):
+        image = images.get(match.group(2))
+        if image is None:
+            return match.group(0)
+        if image.decorative:
+            alt = ""
+        else:
+            alt = (
+                _escape_alt(image.alt_text or image.caption)
+                if (image.alt_text or image.caption)
+                else match.group(1)
+            )
+        return f"![{alt}](bild:{image.public_key}{match.group(3) or ''})"
+
+    return _IMAGE_IN_TEXT.sub(replace, body)
 
 
 def remove_image_references(image: WebsiteImage, user) -> list[WebsiteText]:

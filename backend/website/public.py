@@ -28,7 +28,7 @@ from members.models import (
 from members.photo_models import MemberPhoto
 from organizations.models import Department, DepartmentRole, SocialLink
 
-from . import services
+from . import content, services
 from .content_models import WebsiteImage, WebsiteText
 from .models import PublicationConsent, Website
 
@@ -675,7 +675,7 @@ class SiteView:
         return {
             **self.unit_summary(u),
             "title": text.published_title if text else u.name,
-            "text": text.published_body if text else "",
+            "text": content.public_body(text.published_body, self.site) if text else "",
             "gallery": self.gallery(text) if text else [],
             "roles": roles,
             "social": self.social(u) if self.site.block_on("social") else [],
@@ -709,8 +709,8 @@ class SiteView:
             return None
         return {
             "key": image.key,
-            "url": self.url(f"images/{image.key}/"),
-            "small_url": self.url(f"images/{image.key}/?size=small"),
+            "url": self.url(f"images/{image.public_key}/"),
+            "small_url": self.url(f"images/{image.public_key}/?size=small"),
             "width": image.width,
             "height": image.height,
             "caption": image.caption,
@@ -801,6 +801,11 @@ class SiteView:
 
     def public_image(self, key: str) -> WebsiteImage | None:
         image = WebsiteImage.objects.filter(website=self.site, key=key).first()
+        if image is None and "-v" in key:
+            # Adresse mit Fassung (``<key>-v3``); ältere Fassungen zeigen das aktuelle Bild
+            base, _, version = key.rpartition("-v")
+            if version.isdigit():
+                image = WebsiteImage.objects.filter(website=self.site, key=base).first()
         if image is None:
             return None
         marker = f"bild:{key}"
@@ -834,7 +839,7 @@ class SiteView:
         return {
             "slug": t.slug,
             "title": t.published_title,
-            "text": t.published_body,
+            "text": content.public_body(t.published_body, self.site),
             "image": self.image(t.published_image),
             "updated_at": t.published_at,
         }
@@ -850,7 +855,7 @@ class SiteView:
             return None
         return {
             "title": t.published_title,
-            "text": t.published_body,
+            "text": content.public_body(t.published_body, self.site),
             "image": self.image(t.published_image),
             # Bilderkarussell (leer: nur das einzelne Bild wie bisher)
             "gallery": self.gallery(t),

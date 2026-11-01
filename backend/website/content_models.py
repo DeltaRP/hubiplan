@@ -205,10 +205,34 @@ class WebsiteImage(models.Model):
     # Bewusst ohne Beschreibung (reiner Schmuck): dann alt="" auf der Webseite,
     # sonst ersetzt die Bildunterschrift einen fehlenden Alternativtext
     decorative = models.BooleanField("nur Schmuck", default=False)
+    # Original (höchstens 4000 px, ohne Metadaten) und gewählter Ausschnitt: Damit lässt
+    # sich der Ausschnitt später neu wählen, ohne dass etwas verloren geht (Ralf 01.11.).
+    # Ältere Bilder haben kein Original; dann gilt ``file`` als Original.
+    original = models.FileField(
+        "Original", storage=private_storage, upload_to=image_path, blank=True
+    )
+    # {"x", "y", "width", "height"} in Prozent des (gedrehten) Originals, "rotation",
+    # "aspect" (Schlüssel des Formats); leer = ganzes Bild
+    crop = models.JSONField("Ausschnitt", default=dict, blank=True)
+    # Optional: gehört zu einer Untereinheit (nur Filter für die Auswahl, keine Sperre)
+    department = models.ForeignKey(
+        "organizations.Department",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name="gehört zu",
+    )
+    # Steigt mit jedem neuen Ausschnitt oder Ersetzen: neue Adresse für Zwischenspeicher
+    version = models.PositiveIntegerField(default=0)
     uploaded_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
     )
     uploaded_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
 
     class Meta:
         verbose_name = "Bild der Webseite"
@@ -221,3 +245,9 @@ class WebsiteImage(models.Model):
     @staticmethod
     def new_key() -> str:
         return secrets.token_urlsafe(12)
+
+    @property
+    def public_key(self) -> str:
+        """Kennung in öffentlichen Adressen, mit Fassung (``<key>-v3``), damit nach
+        neuem Ausschnitt kein Zwischenspeicher das alte Bild zeigt."""
+        return f"{self.key}-v{self.version}" if self.version else self.key

@@ -26,6 +26,7 @@ import { useActiveOrg } from '../../org/OrgContext.tsx'
 import { Term, Why } from '../../learning/Aids.tsx'
 import type { TermKey } from '../../learning/content.ts'
 import { ContentPage } from './ContentPage.tsx'
+import { ImagesPage } from './images.tsx'
 import { DesignChooser } from './DesignChooser.tsx'
 import { SocialPage } from './SocialPage.tsx'
 import { MenuTree } from './MenuTree.tsx'
@@ -422,6 +423,16 @@ function WebsiteAdmin({
           element={
             data.can_edit_content ? (
               <ContentPage />
+            ) : (
+              <Alert kind="info">Dafür fehlt dir das Recht „Inhalte bearbeiten“.</Alert>
+            )
+          }
+        />
+        <Route
+          path="bilder"
+          element={
+            data.can_edit_content ? (
+              <ImagesPage />
             ) : (
               <Alert kind="info">Dafür fehlt dir das Recht „Inhalte bearbeiten“.</Alert>
             )

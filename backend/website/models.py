@@ -40,7 +40,7 @@ BLOCK_HINTS = {
     "board": "Vorstand und Ansprechpartner",
     "units": "Seiten der Untereinheiten",
     "honors": "aktuelle und frühere Würdenträger",
-    "history": "Textseite zur Geschichte des Vereins (Webseite › Texte und Bilder)",
+    "history": "Textseite zur Geschichte des Vereins (Webseite › Texte)",
     "offices": "heutige und frühere Inhaber der Rollen mit „unter Ämter zeigen“",
     "statutes": "Satzung, Beitragsordnung und Gründungsurkunde zum Herunterladen",
     "contact": "Kontaktformular",
@@ -69,7 +69,7 @@ HOME_SECTIONS = {
 }
 HOME_HINTS = {
     "carousel": "Fotos zum Willkommenstext; bei einem Foto das Titelbild",
-    "greeting": "Überschrift und Text unter Webseite › Texte und Bilder",
+    "greeting": "Überschrift und Text unter Webseite › Texte",
     "events": "die nächsten drei öffentlichen Termine",
     "honors": "die aktuellen Majestäten",
     "units": "Kacheln mit Links zu den Seiten der Untereinheiten",
