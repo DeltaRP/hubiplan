@@ -7,7 +7,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from PIL import Image
 
 from organizations.models import Department
-from website.models import Website, WebsiteImage, WebsiteText
+from website.models import Website, WebsiteImage, WebsiteRevision, WebsiteText
 
 from .factories import give_role, make_user
 
@@ -87,6 +87,13 @@ class TestTexte:
         # zurücknehmen
         data = c.delete(url(orgs["a"], f"texts/{pk}/publish/")).json()
         assert data["is_published"] is False
+        # nur die letzten 5 Fassungen in der Liste, ältere bleiben gespeichert
+        for i in range(5):
+            c.put(url(orgs["a"], f"texts/{pk}/"), {"body": f"F{i}"}, "application/json")
+            c.post(url(orgs["a"], f"texts/{pk}/publish/"))
+        data = c.get(url(orgs["a"], f"texts/{pk}/")).json()
+        assert len(data["revisions"]) == 5
+        assert WebsiteRevision.objects.filter(text_id=pk).count() == 7
 
     def test_adresse_pruefen(self, orgs, editor, api, site):
         c = api(editor)
