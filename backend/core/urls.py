@@ -630,6 +630,7 @@ urlpatterns = [
     ),
     path("", include(peering_urls)),
     path("public/card/<str:token>/", card_views.PublicCardView.as_view(), name="public-card"),
+    *competition_urls.public_patterns,
     path(
         "public/card/<str:token>/photo/",
         card_views.PublicCardPhotoView.as_view(),

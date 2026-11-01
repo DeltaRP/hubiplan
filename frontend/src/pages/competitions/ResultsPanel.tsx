@@ -1,8 +1,9 @@
 // Auswertung: Ranglisten je Wertung mit Preisplätzen, offene Stechen, Kennzahlen, Ausgaben.
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import {
   competitionsApi,
   showValue,
+  type BirdState,
   type CompetitionDetail,
   type ShootOff,
   type ShootOffEntry,
@@ -60,6 +61,7 @@ export function ResultsPanel({
         </button>
       </div>
       {message && <Alert kind="error">{message}</Alert>}
+      {data.bird && <BirdResults bird={data.bird} />}
       {data.open_shootoffs > 0 && (
         <Alert kind="info">
           Gleichstand auf Preisplätzen: Stechen nötig. Erst danach lässt sich der Wettbewerb
@@ -72,7 +74,7 @@ export function ResultsPanel({
         return (
           <div className="card card-wide" key={block.scoring}>
             <h2>{block.name}</h2>
-            <StandingTable block={block} />
+            {comp.own ? <StandingTable block={block} /> : <ForeignTable block={block} />}
             {block.open.map((t) => (
               <div key={t.keys.join()} className="alert alert-info">
                 <p>
@@ -121,6 +123,113 @@ export function ResultsPanel({
         </button>
       </p>
     </>
+  )
+}
+
+function BirdResults({ bird }: { bird: BirdState }) {
+  const st = bird.stats
+  return (
+    <>
+      <div className="card card-wide">
+        <h2>Pfänderliste</h2>
+        <div className="table-scroll">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Pfand</th>
+                <th>Schütze</th>
+                <th>Einheit / Verein</th>
+                <th className="num">Schuss Nr.</th>
+                <th className="num">Schüsse</th>
+                <th>Preis</th>
+              </tr>
+            </thead>
+            <tbody>
+              {bird.prizes.map((p) => (
+                <tr key={p.id}>
+                  <td>{p.name}</td>
+                  <td>{p.winner_name || <span className="muted">hängt noch</span>}</td>
+                  <td>{p.unit_name || p.club}</td>
+                  <td className="num">{p.shot_number ?? ''}</td>
+                  <td className="num">{p.shots_for ?? ''}</td>
+                  <td>{p.award}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div className="card card-wide">
+        <h2>Kennzahlen</h2>
+        <dl className="stats-list">
+          <dt>Schüsse insgesamt</dt>
+          <dd>{st.shots}</dd>
+          <dt>Schützen</dt>
+          <dd>
+            {st.starters} ({st.members} Mitglieder, {st.guests} Gäste)
+          </dd>
+          {st.rounds ? (
+            <>
+              <dt>Runden</dt>
+              <dd>{st.rounds}</dd>
+            </>
+          ) : null}
+          {st.duration_minutes !== null ? (
+            <>
+              <dt>Dauer</dt>
+              <dd>{st.duration_minutes} Minuten</dd>
+            </>
+          ) : null}
+          {st.per_unit.map((u) => (
+            <Fragment key={u.name}>
+              <dt>Pfänder {u.name}</dt>
+              <dd>{u.count}</dd>
+            </Fragment>
+          ))}
+        </dl>
+        {(bird.draw.missing.length > 0 || bird.draw.gaps.length > 0) && (
+          <p className="muted small">
+            {bird.draw.missing.length ? `Ohne Losnummer: ${bird.draw.missing.join(', ')}. ` : ''}
+            {bird.draw.gaps.length ? `Nicht vergebene Nummern: ${bird.draw.gaps.join(', ')}.` : ''}
+          </p>
+        )}
+      </div>
+    </>
+  )
+}
+
+function ForeignTable({ block }: { block: StandingBlock }) {
+  const team = block.kind === 'mannschaft'
+  if (!block.rows.length)
+    return <p className="muted">{team ? 'Noch keine Mannschaften.' : 'Noch keine Schützen.'}</p>
+  return (
+    <div className="table-scroll">
+      <table className="table">
+        <thead>
+          <tr>
+            <th className="num">Platz</th>
+            <th>{team ? 'Mannschaft' : 'Name'}</th>
+            <th>{team ? 'Schützen' : 'Einheit'}</th>
+            <th className="num">Wert</th>
+            <th>Bemerkung</th>
+          </tr>
+        </thead>
+        <tbody>
+          {block.rows.map((r) => (
+            <tr key={r.key} className={r.prize ? 'row-prize' : undefined}>
+              <td className="num">
+                {r.place ? `${r.place}.` : '–'}
+                {r.place && block.field_size ? ` von ${block.field_size}` : ''}
+              </td>
+              <td>{r.name}</td>
+              <td>{team ? (r.members ?? []).join(', ') : r.unit_name || r.club}</td>
+              <td className="num">{r.value_text}</td>
+              <td>{r.note}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 }
 

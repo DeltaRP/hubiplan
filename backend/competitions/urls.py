@@ -3,7 +3,7 @@
 from django.urls import path
 from rest_framework.routers import SimpleRouter
 
-from . import views
+from . import bird_views, foreign_views, stand_views, views
 
 router = SimpleRouter()
 router.register("competitions", views.CompetitionViewSet, basename="competition")
@@ -34,5 +34,37 @@ org_patterns = [
         views.ShootOffEntryView.as_view(),
         name="competition-shootoff-entry",
     ),
+    # Vogelschießen
+    path(f"{C}bird/", bird_views.BirdStateView.as_view(), name="competition-bird"),
+    path(f"{C}prizes/", bird_views.PrizesView.as_view(), name="competition-prizes"),
+    path(f"{C}prizes/<int:pk>/", bird_views.PrizeView.as_view(), name="competition-prize"),
+    path(f"{C}shots/", bird_views.ShotView.as_view(), name="competition-shots"),
+    path(f"{C}undo/", bird_views.UndoView.as_view(), name="competition-undo"),
+    path(f"{C}draw/", bird_views.DrawView.as_view(), name="competition-draw"),
+    path(f"{C}draw-all/", bird_views.DrawAllView.as_view(), name="competition-draw-all"),
+    # Fremde Wettbewerbe
+    path(f"{C}teams/", foreign_views.TeamsView.as_view(), name="competition-teams"),
+    path(f"{C}teams/<int:pk>/", foreign_views.TeamView.as_view(), name="competition-team"),
+    path(f"{C}placings/", foreign_views.PlacingView.as_view(), name="competition-placings"),
+    # Standzugang
+    path(
+        f"{C}stand-access/",
+        stand_views.StandAccessListView.as_view(),
+        name="competition-stand-accesses",
+    ),
+    path(
+        f"{C}stand-access/<int:pk>/",
+        stand_views.StandAccessView.as_view(),
+        name="competition-stand-access",
+    ),
     *router.urls,
+]
+
+# Standzugang ohne Anmeldung (Schlüssel im Link)
+S = "public/stand/<str:token>/"
+public_patterns = [
+    path(S, stand_views.StandDetailView.as_view(), name="stand-detail"),
+    path(f"{S}starters/", stand_views.StandStartersView.as_view(), name="stand-starters"),
+    path(f"{S}members/", stand_views.StandMembersView.as_view(), name="stand-members"),
+    path(f"{S}sync/", stand_views.StandSyncView.as_view(), name="stand-sync"),
 ]

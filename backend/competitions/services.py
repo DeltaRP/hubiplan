@@ -189,6 +189,12 @@ def _team(scoring: Scoring, starters: list[Starter], source_values: dict, unit_n
 
 
 def standings(competition: Competition) -> dict:
+    if competition.form == Competition.Form.BIRD:
+        from . import bird
+
+        return {"scorings": [], "open_shootoffs": 0, "stats": {}, "bird": bird.state(competition)}
+    if not competition.own:
+        return foreign_standings(competition)
     org = competition.organization
     starters = list(
         Starter.objects.filter(competition=competition)
@@ -281,4 +287,70 @@ def statistics(competition, starters, scorings, individual, unit_names) -> dict:
         "min": fmt(min(vals) if vals else None, first.decimals),
         "full": sum(1 for v in vals if first.max_value is not None and v == first.max_value),
         "per_unit": per_unit,
+    }
+
+
+def foreign_standings(competition: Competition) -> dict:
+    """Fremder Wettbewerb: eigene Starter bzw. Mannschaften mit dem Platz des Ausrichters."""
+    from .models import Placing, Team
+
+    starters = list(
+        Starter.objects.filter(competition=competition).select_related("unit").order_by("name")
+    )
+    teams = list(Team.objects.filter(competition=competition).prefetch_related("members"))
+    out = []
+    for sc in Scoring.objects.filter(competition=competition):
+        placings = list(Placing.objects.filter(scoring=sc))
+        rows = []
+        if sc.kind == Scoring.Kind.TEAM:
+            by_team = {p.team_id: p for p in placings if p.team_id}
+            for t in teams:
+                p = by_team.get(t.pk)
+                rows.append(
+                    {
+                        "key": f"t{t.pk}",
+                        "team": t.pk,
+                        "name": t.name,
+                        "members": [m.name for m in sorted(t.members.all(), key=lambda m: m.name)],
+                        **_placing(p, sc),
+                    }
+                )
+        else:
+            by_starter = {p.starter_id: p for p in placings if p.starter_id}
+            for st in starters:
+                p = by_starter.get(st.pk)
+                rows.append(
+                    {
+                        "key": f"s{st.pk}",
+                        "starter": st.pk,
+                        "name": st.name,
+                        "unit_name": st.unit.name if st.unit_id else "",
+                        "club": st.club,
+                        **_placing(p, sc),
+                    }
+                )
+        rows.sort(key=lambda r: (r["place"] is None, r["place"] or 0, r["name"]))
+        out.append(
+            {
+                "scoring": sc.pk,
+                "name": sc.name,
+                "kind": sc.kind,
+                "field_size": sc.field_size,
+                "rows": rows,
+                "open": [],
+                "without_value": [],
+            }
+        )
+    return {"scorings": out, "open_shootoffs": 0, "stats": {}}
+
+
+def _placing(p, sc: Scoring) -> dict:
+    if p is None:
+        return {"place": None, "value": None, "value_text": "", "note": "", "prize": False}
+    return {
+        "place": p.place,
+        "value": p.value,
+        "value_text": fmt(p.value, sc.decimals),
+        "note": p.note,
+        "prize": bool(p.place and p.place <= sc.prize_places),
     }

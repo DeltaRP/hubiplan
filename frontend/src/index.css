@@ -3580,3 +3580,161 @@ label:has(> .file-input:focus-visible) {
 .role-preview-banner p {
   margin: 0;
 }
+
+/* Vogelschießen im Standmodus (Wettbewerbe Schritt 2) */
+.stand-current {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 2px solid var(--color-primary);
+  border-radius: 0.75rem;
+  margin: 0.5rem 0;
+  font-size: 1.4rem;
+}
+.stand-lot {
+  min-width: 3.5rem;
+  text-align: center;
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+.stand-current-name strong {
+  font-size: 1.6rem;
+}
+.stand-lot-small {
+  display: inline-block;
+  min-width: 2rem;
+  font-weight: 700;
+}
+.stand-next {
+  list-style: none;
+  margin: 0 0 0.5rem;
+  padding: 0;
+  font-size: 1.1rem;
+}
+.stand-next li {
+  padding: 0.2rem 0;
+}
+.stand-counter {
+  font-size: 1.2rem;
+  margin: 0.5rem 0;
+}
+.stand-bird-buttons {
+  flex-wrap: wrap;
+}
+.stand-bird-buttons .stand-shot {
+  min-width: 10rem;
+  font-size: 1.4rem;
+}
+.stand-choose {
+  margin: 0.75rem 0;
+}
+.stand-prize-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.stand-prize {
+  min-height: 3rem;
+  font-size: 1.1rem;
+}
+.stand-h {
+  font-size: 1.1rem;
+  margin: 1rem 0 0.25rem;
+}
+.stand-prizes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.stand-prizes li {
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.stand-prizes li.fallen strong {
+  color: var(--color-primary);
+}
+.stand-shooter {
+  flex-wrap: wrap;
+  align-items: center;
+}
+.stand-shooter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+.stand-hat {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+.stand-hat input {
+  width: 4.5rem;
+}
+.stand-draw-big {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  margin: 0.5rem 0;
+  border: 2px solid var(--color-primary);
+  border-radius: 0.75rem;
+  font-size: 1.3rem;
+}
+.stand-draw-big strong {
+  font-size: 4rem;
+  line-height: 1;
+  color: var(--color-primary);
+}
+.prize-setup {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+}
+.prize-setup li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.3rem 0;
+}
+.stand-access-new {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+  margin: 0.75rem 0;
+}
+.break-all {
+  word-break: break-all;
+}
+.input-narrow {
+  width: 6rem;
+}
+.team-box {
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  margin: 0 0 0.75rem;
+}
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: 0.25rem 1rem;
+}
+@media (max-width: 40rem) {
+  .stand-full.stand-bird {
+    padding-bottom: 8rem;
+  }
+  .stand-full .stand-bird-buttons .button {
+    flex: 1 1 45%;
+    min-width: 0;
+  }
+  .stand-current {
+    font-size: 1.2rem;
+  }
+}
