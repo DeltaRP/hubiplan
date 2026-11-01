@@ -19,7 +19,7 @@ ALLOWED_FORMATS = {"JPEG", "PNG", "WEBP"}
 FULL_SIZE = 2000
 SMALL_SIZE = 800
 ORIGINAL_SIZE = 4000
-MAX_REVISIONS = 50
+MAX_REVISIONS = 5  # Ralf 01.11.: nur die letzten 5 Fassungen behalten, ältere löschen
 
 
 def _open(upload) -> Image.Image:
