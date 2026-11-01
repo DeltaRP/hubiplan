@@ -9,6 +9,7 @@ import App from '../App.tsx'
 import { AuthProvider } from '../auth/AuthContext.tsx'
 import { OrgProvider } from '../org/OrgContext.tsx'
 import { LanguageCard, LanguageSwitch } from '../i18n/LanguageControls.tsx'
+import { SiteLanguage } from '../pages/website/SiteLanguage.tsx'
 import en from '../i18n/en.json'
 import { fakeApi, testOrg, testUser } from './fakeApi.ts'
 import { buildTermsEn, termsFor } from '../org/terms.ts'
@@ -191,5 +192,36 @@ describe('Lernhilfen auf Englisch', () => {
     expect(tr(entry.title)).toBe('Calendar year or different financial year?')
     setCatalogForTest('de')
     expect(tr(entry.title)).toBe('Kalenderjahr oder abweichendes Geschäftsjahr?')
+  })
+})
+
+describe('Sprache der Webseite', () => {
+  const show = (value: string, onChange = vi.fn()) =>
+    render(
+      <SiteLanguage value={value} onChange={onChange} render={(field) => <div>{field}</div>} />,
+    )
+
+  it('ist ohne freigeschaltetes Englisch nicht zu sehen', async () => {
+    fakeApi({})
+    const { container } = show('de')
+    await new Promise((r) => setTimeout(r, 0))
+    expect(container).toBeEmptyDOMElement()
+  })
+
+  it('bietet Englisch an und weist auf die deutschen Rechtstexte hin', async () => {
+    fakeApi({ 'GET /api/public/languages/': () => ({ status: 200, body: BOTH }) })
+    const onChange = vi.fn()
+    show('de', onChange)
+    const select = await screen.findByLabelText('Sprache der Webseite')
+    await userEvent.selectOptions(select, 'en')
+    expect(onChange).toHaveBeenCalledWith('en')
+    expect(screen.queryByText(/deutsche Fassung maßgeblich/)).toBeNull()
+  })
+
+  it('bleibt sichtbar, wenn die Webseite schon englisch ist', async () => {
+    fakeApi({})
+    show('en')
+    expect(await screen.findByLabelText('Sprache der Webseite')).toHaveValue('en')
+    expect(screen.getByText(/deutsche Fassung maßgeblich/)).toBeInTheDocument()
   })
 })

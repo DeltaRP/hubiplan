@@ -28,6 +28,8 @@ import type { TermKey } from '../../learning/content.ts'
 import { ContentPage } from './ContentPage.tsx'
 import { ImagesPage } from './images.tsx'
 import { DesignChooser } from './DesignChooser.tsx'
+import { SiteLanguage } from './SiteLanguage.tsx'
+import { t } from '../../i18n/index.ts'
 import { SocialPage } from './SocialPage.tsx'
 import { MenuTree } from './MenuTree.tsx'
 import { sectionTitle } from './sections.ts'
@@ -125,6 +127,7 @@ const SETTINGS: (keyof WebsiteSettings)[] = [
   'include_parent_events',
   'include_parent_honors',
   'allow_indexing',
+  'language',
   'contact_limit_per_hour',
 ]
 
@@ -224,19 +227,29 @@ function WebsiteAdmin({
     </>
   )
 
-  const design = data.designs ? (
-    settings(
-      'Design',
-      <DesignChooser
-        data={data}
-        design={v.design ?? 'classic'}
-        colorRoles={v.color_roles ?? {}}
-        onDesign={(key) => set('design', key)}
-        onColorRoles={(next) => set('color_roles', next)}
-      />,
-    )
-  ) : (
-    <Alert kind="info">Auf diesem Server gibt es keine Designs zur Auswahl.</Alert>
+  const design = (
+    <>
+      {data.designs ? (
+        settings(
+          'Design',
+          <DesignChooser
+            data={data}
+            design={v.design ?? 'classic'}
+            colorRoles={v.color_roles ?? {}}
+            onDesign={(key) => set('design', key)}
+            onColorRoles={(next) => set('color_roles', next)}
+          />,
+        )
+      ) : (
+        <Alert kind="info">Auf diesem Server gibt es keine Designs zur Auswahl.</Alert>
+      )}
+      <SiteLanguage
+        value={v.language ?? 'de'}
+        error={errors.language}
+        render={(field) => settings(t('Sprache der Webseite'), field)}
+        onChange={(lang) => set('language', lang)}
+      />
+    </>
   )
 
   const structure = (

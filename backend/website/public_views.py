@@ -135,6 +135,8 @@ class SiteInfoView(_Public):
             },
             "imprint_url": site.url("imprint/"),
             "allow_indexing": site.site.allow_indexing and self.state == Website.State.PUBLIC,
+            # Sprache der festen Texte (hubiplan-website, W1); Standard Deutsch
+            "language": site.site.language,
             "hubiplan_imprint": imprint.page_urls(org),
         }
         if not self.visible:

@@ -27,6 +27,8 @@ export interface WebsiteSettings {
   /** weitergegebene Würden der Einheiten darüber (nur eigene Träger) */
   include_parent_honors: boolean
   allow_indexing: boolean
+  /** Sprache der festen Texte auf der Webseite (de, en); Vereinsdaten bleiben, wie sie sind */
+  language?: string
   contact_limit_per_hour: number
 }
 

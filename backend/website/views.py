@@ -10,6 +10,7 @@ from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from rest_framework import serializers, status
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
@@ -60,6 +61,7 @@ SETTINGS_FIELDS = [
     "include_parent_events",
     "include_parent_honors",
     "allow_indexing",
+    "language",
     "contact_limit_per_hour",
     "privacy_mode",
     "privacy_text",
@@ -71,6 +73,17 @@ class WebsiteSerializer(ModelCleanMixin, serializers.ModelSerializer):
     class Meta:
         model = Website
         fields = SETTINGS_FIELDS
+
+    def validate_language(self, value):
+        # Nur freigeschaltete Sprachen (HUBIPLAN_LANGUAGES); die bisherige bleibt erlaubt
+        from core.i18n import available
+
+        current = self.instance.language if self.instance else "de"
+        if value != current and value not in available():
+            raise serializers.ValidationError(
+                _("Diese Sprache ist auf diesem Server nicht freigeschaltet.")
+            )
+        return value
 
     def validate_unit_ids(self, value):
         if not isinstance(value, list) or not all(isinstance(v, int) for v in value):
