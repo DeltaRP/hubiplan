@@ -12,6 +12,8 @@ Feste Regeln von Ralf:
 - Keine Passwörter oder Geheimnisse ins Repo oder in Chats; Zugangsdaten nur in Dateien
   auf Ralfs Rechner.
 - Auf dem Testserver nur erfundene Daten.
+- **Jeder neue Text gleich auch auf Englisch** (Oberfläche `t()` + `src/i18n/en.json`, Backend
+  `gettext` + `locale/en`); `scripts/test.sh` schlägt sonst fehl. Siehe [docs/uebersetzung.md](docs/uebersetzung.md).
 - CI (GitHub Actions) läuft nur von Hand (workflow_dispatch); keine automatischen Auslöser.
 
 Details: [docs/testserver.md](docs/testserver.md), [docs/betrieb.md](docs/betrieb.md).
