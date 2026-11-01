@@ -226,10 +226,23 @@ class TestPreisschiessen:
         # Einzelstechen
         so = c.post(
             url(club, f"{comp_id}/shootoffs/"),
-            {"scoring": einzel, "keys": ein["open"][0]["keys"]},
+            # Regeln vor Ort festgelegt (Ralf 2026-11-01), statt 3 aus „Einrichten“
+            {"scoring": einzel, "keys": ein["open"][0]["keys"], "shots": 4, "counted_shots": 5},
+            "application/json",
+        )
+        assert so.status_code == 400  # mehr gewertet als geschossen
+        so = c.post(
+            url(club, f"{comp_id}/shootoffs/"),
+            {"scoring": einzel, "keys": ein["open"][0]["keys"], "shots": 4, "counted_shots": 3},
             "application/json",
         ).json()
-        assert so["shots"] == 3 and len(so["entries"]) == 2
+        assert so["shots"] == 4 and so["counted_shots"] == 3 and len(so["entries"]) == 2
+        so = c.patch(
+            url(club, f"{comp_id}/shootoffs/{so['id']}/"),
+            {"shots": 3, "counted_shots": None},
+            "application/json",
+        ).json()
+        assert so["shots"] == 3 and so["counted_shots"] is None
         by_name = {e["name"]: e for e in so["entries"]}
         c.patch(
             url(club, f"{comp_id}/shootoff-entries/{by_name['Max Muster']['id']}/"),
@@ -241,6 +254,11 @@ class TestPreisschiessen:
             {"value": 26},
             "application/json",
         )
+        # mit Werten lassen sich die Regeln nicht mehr ändern
+        resp = c.patch(
+            url(club, f"{comp_id}/shootoffs/{so['id']}/"), {"shots": 5}, "application/json"
+        )
+        assert resp.status_code == 400
         # Zugstechen: je Zug ein Mitglied, vorgeschlagen der beste Schütze des Zuges
         zso = c.post(
             url(club, f"{comp_id}/shootoffs/"),

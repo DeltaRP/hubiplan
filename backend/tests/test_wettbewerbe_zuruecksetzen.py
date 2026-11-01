@@ -133,3 +133,23 @@ def test_zwei_tablets_legen_dasselbe_mitglied_an(club, schuetzen, board_a, api):
     # direkt angelegt bleibt es bei der Meldung „schon eingetragen“
     resp = c.post(url(club, f"{comp_id}/starters/"), {"membership": m}, "application/json")
     assert resp.status_code == 400
+
+
+@pytest.mark.django_db
+def test_gast_fuer_einen_zug(club, zuege, board_a, api):  # noqa: F811
+    """Ralf 2026-11-01: beim Gast freie Eingabe oder eine Untereinheit wählen."""
+    import uuid
+
+    c = api(board_a)
+    resp = c.post(
+        url(club),
+        {"title": "Preisschießen 2027", "date": "2027-06-14", "template": "einfach"},
+        "application/json",
+    )
+    comp_id = resp.json()["id"]
+    key = str(uuid.uuid4())
+    ops = [{"op": "starter", "client_key": key, "name": "Gina Gast", "unit": zuege[1].pk}]
+    res = c.post(url(club, f"{comp_id}/sync/"), {"ops": ops}, "application/json").json()
+    assert res["results"][0]["ok"], res
+    gina = next(s for s in res["starters"] if s["name"] == "Gina Gast")
+    assert gina["guest"] and gina["unit"] == zuege[1].pk and gina["club"] == ""

@@ -77,6 +77,15 @@ zusammengeführt: Seine Gerätekennung wird zum zweiten Namen (`Starter.aliases`
 laufen wie sonst (der spätere gilt), und das Gerät zeigt einen Hinweis. Gäste werden nicht
 zusammengeführt (gleicher Name kann eine andere Person sein).
 
+**Abschluss im Standmodus** (angemeldet): unten „Abschluss“ mit den Schützen ohne Ergebnis,
+„Schießen beenden“ (Zustand vorläufig, nur verwalten), „Stechen anlegen …“ bei Gleichstand auf
+einem Preisplatz und die Werte im Stechen, danach „Endgültig abschließen“. Die Regeln des
+Stechens (Schüsse, davon gewertet) werden beim Anlegen festgelegt, vorbelegt aus dem vorigen
+Stechen oder dem Vorschlag unter „Einrichten“, und lassen sich ändern, solange kein Wert
+eingetragen ist (`PATCH shootoffs/<id>/`). Ein Gast kann statt eines Vereins eine Untereinheit
+bekommen (Vorschläge beim Tippen) und zählt dann für deren Wertung. Der Standmodus ist dunkel
+in der Vereinsfarbe.
+
 **Zurücksetzen** (`reset/`, „Einrichten“, nur verwalten, nicht bei endgültig): löscht Werte,
 Stechen, Plätze, Schüsse und gefallene Pfänder, wahlweise auch alle Starter; Regeln, Pfänder,
 Mannschaften, Standzugang und Termin bleiben, der Zustand geht auf „Vorbereitung“. Der Zähler

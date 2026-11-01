@@ -16,8 +16,9 @@ import {
   type SyncOp,
 } from '../../api/competitions.ts'
 import { confirmDialog } from '../../components/dialog.ts'
+import { StandEnd } from './StandEnd.tsx'
 import { StandFinish } from './StandFinish.tsx'
-import { describe, useStandStore } from './standStore.ts'
+import { describe, guestOrigin, useStandStore } from './standStore.ts'
 
 type Hit =
   | { kind: 'starter'; starter: Starter }
@@ -28,10 +29,13 @@ export function StandPanel({
   api,
   comp,
   fullscreen = false,
+  org,
 }: {
   api: StandApi
   comp: CompetitionDetail
   fullscreen?: boolean
+  /** angemeldet im Standmodus: Schießen beenden, Stechen und Abschluss hier */
+  org?: number
 }) {
   const scoring: Scoring | undefined = comp.scorings.find((s) => s.kind === 'einzel')
   const [notice, setNotice] = useState<string | null>(null)
@@ -142,15 +146,16 @@ export function StandPanel({
       const key = newRequestKey()
       ref = key
       name = chosen.kind === 'member' ? chosen.member.name : chosen.name
+      const origin = guestOrigin(guestClub, comp.units)
       const starter: Starter & { key: string } = {
         id: 0,
         key,
         name,
-        club: chosen.kind === 'guest' ? guestClub.trim() : '',
+        club: chosen.kind === 'guest' ? origin.club : '',
         guest: chosen.kind === 'guest',
         membership: chosen.kind === 'member' ? chosen.member.membership : null,
-        unit: chosen.kind === 'member' ? chosen.member.unit : null,
-        unit_name: chosen.kind === 'member' ? chosen.member.unit_name : '',
+        unit: chosen.kind === 'member' ? chosen.member.unit : origin.unit,
+        unit_name: chosen.kind === 'member' ? chosen.member.unit_name : origin.unit_name,
         number: '',
         out_of_competition: false,
         presence: '',
@@ -160,7 +165,7 @@ export function StandPanel({
       const op: SyncOp =
         chosen.kind === 'member'
           ? { op: 'starter', client_key: key, membership: chosen.member.membership }
-          : { op: 'starter', client_key: key, name, club: guestClub.trim() }
+          : { op: 'starter', client_key: key, name, club: origin.club, unit: origin.unit }
       setLocal((l) => ({ ...l, ops: [...l.ops, op], starters: [...l.starters, starter] }))
     }
     if (value !== '') {
@@ -313,14 +318,21 @@ export function StandPanel({
               {chosen.kind === 'guest' && (
                 <>
                   <label className="stand-label" htmlFor="stand-verein">
-                    Verein (optional)
+                    Verein oder Einheit (optional)
                   </label>
                   <input
                     id="stand-verein"
                     className="stand-input"
+                    list="stand-einheiten"
+                    autoComplete="off"
                     value={guestClub}
                     onChange={(e) => setGuestClub(e.target.value)}
                   />
+                  <datalist id="stand-einheiten">
+                    {comp.units.map((u) => (
+                      <option key={u.id} value={u.name} />
+                    ))}
+                  </datalist>
                 </>
               )}
               <label className="stand-label" htmlFor="stand-punkte">
@@ -423,14 +435,26 @@ export function StandPanel({
           ))}
         </ul>
       </details>
-      {!closed && (
-        <StandFinish
+      {!closed && org !== undefined && fullscreen ? (
+        <StandEnd
+          org={org}
           api={api}
           comp={comp}
+          status={local.status ?? comp.status}
           pending={pending}
           online={online}
-          onFinished={() => setLocal((l) => ({ ...l, status: 'endgueltig' }))}
+          onStatus={(status) => setLocal((l) => ({ ...l, status }))}
         />
+      ) : (
+        !closed && (
+          <StandFinish
+            api={api}
+            comp={comp}
+            pending={pending}
+            online={online}
+            onFinished={() => setLocal((l) => ({ ...l, status: 'endgueltig' }))}
+          />
+        )
       )}
     </div>
   )

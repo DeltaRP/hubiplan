@@ -23,7 +23,13 @@ export function StandPage() {
   const org = Number(params.org)
   const id = Number(params.id)
   const api = useMemo(() => orgStandApi(org, id), [org, id])
-  return <StandShell api={api} org={org} exit={<Link to={`/wettbewerbe/${id}`}>Beenden</Link>} />
+  return (
+    <StandShell
+      api={api}
+      org={org}
+      exit={<Link to={`/wettbewerbe/${id}`}>Standmodus verlassen</Link>}
+    />
+  )
 }
 
 export function StandTokenPage() {
@@ -94,7 +100,7 @@ function StandShell({ api, exit, org }: { api: StandApi; exit: ReactNode; org?: 
           <BirdStand api={api} comp={data} fullscreen />
         ) : (
           <div className="stand-layout">
-            <StandPanel api={api} comp={data} fullscreen />
+            <StandPanel api={api} comp={data} fullscreen org={org} />
             <LiveTables api={api} />
           </div>
         ))}

@@ -916,9 +916,10 @@ function ScoringCard({
           />
           {!foreign && (
             <Field
-              label="Schüsse im Stechen"
+              label="Schüsse im Stechen (Vorschlag)"
               type="number"
               min={1}
+              hint="beim Anlegen des Stechens vor Ort änderbar"
               value={v.shootoff_shots ?? ''}
               error={errors.shootoff_shots}
               onChange={(e) => set('shootoff_shots', numOrNull(e.target.value))}
@@ -926,7 +927,7 @@ function ScoringCard({
           )}
           {!unit && !foreign && (
             <Field
-              label="davon im Stechen gewertet"
+              label="davon gewertet (Vorschlag)"
               type="number"
               min={1}
               value={v.shootoff_counted ?? ''}
