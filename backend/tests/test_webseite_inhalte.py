@@ -87,13 +87,13 @@ class TestTexte:
         # zurücknehmen
         data = c.delete(url(orgs["a"], f"texts/{pk}/publish/")).json()
         assert data["is_published"] is False
-        # nur die letzten 5 Fassungen in der Liste, ältere bleiben gespeichert
+        # nur die letzten 5 Fassungen bleiben, ältere werden gelöscht
         for i in range(5):
             c.put(url(orgs["a"], f"texts/{pk}/"), {"body": f"F{i}"}, "application/json")
             c.post(url(orgs["a"], f"texts/{pk}/publish/"))
         data = c.get(url(orgs["a"], f"texts/{pk}/")).json()
         assert len(data["revisions"]) == 5
-        assert WebsiteRevision.objects.filter(text_id=pk).count() == 7
+        assert WebsiteRevision.objects.filter(text_id=pk).count() == 5
 
     def test_adresse_pruefen(self, orgs, editor, api, site):
         c = api(editor)

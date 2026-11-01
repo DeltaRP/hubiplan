@@ -100,7 +100,7 @@ def text_data(org_id: int, t: WebsiteText, full: bool = False) -> dict:
                         if r.published_by
                         else "",
                     }
-                    for r in t.revisions.select_related("published_by")[: content.SHOWN_REVISIONS]
+                    for r in t.revisions.select_related("published_by")[: content.MAX_REVISIONS]
                 ],
             }
         )
