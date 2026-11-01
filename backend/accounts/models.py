@@ -53,6 +53,8 @@ class User(AbstractUser):
     # ausgeblendet hat (nur Schlüssel). Reine Anzeigepräferenz.
     learning_aids = models.BooleanField("Lernhilfen zeigen", default=True)
     learning_hidden = models.JSONField("ausgeblendete Erklärungen", null=True, blank=True)
+    # Hilfe: abgehakte „Erste Schritte“ (nur Schlüssel der Anleitungen, nichts ausgewertet)
+    help_done = models.JSONField("erledigte erste Schritte", null=True, blank=True)
     # Nutzersprache (konzepte/englisch.md): Oberfläche, Fehlermeldungen, Hinweis-Mails und
     # Push an dieses Konto. Belege und Briefe folgen der Vereinssprache der Einheit.
     language = models.CharField(
