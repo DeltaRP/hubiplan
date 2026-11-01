@@ -60,7 +60,8 @@ Regeln (geprüft von `src/test/Hilfe.test.tsx`):
 
 Bilder stehen im Text als `![Beschreibung](bild:name)`; die Beschreibung ist der Alternativtext.
 Welche Stelle ein Bild zeigt, steht in `frontend/src/help/bilder.json` (Seite, Demozugang, Ausschnitt
-als CSS-Auswahl im Inhalt). Die Bilder werden nie von Hand gemacht:
+als CSS-Auswahl im Inhalt; mit `wurzel`, etwa `header.topbar`, auch außerhalb des Inhalts). Die
+Bilder werden nie von Hand gemacht:
 
 ```bash
 scripts/hilfe-bilder.sh              # alle Bilder
