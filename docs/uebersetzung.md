@@ -70,6 +70,26 @@ englische Bezeichnung ein (Felder `label_en`, `department_label_en`, Fachfrage F
 Auswahl-Beschriftungen (`TextChoices`) sind übersetzbar (`gettext_lazy`). Das
 Revisionsprotokoll speichert sie immer deutsch (`audit.log.record`).
 
+### Mails, Push und Belege
+
+- **Hinweis-Mails an ein Konto** (Einladung, Passwort, Anmelde-E-Mail, Geräte, 2FA,
+  Mitgliederzugang, Verbund) entstehen in der Nutzersprache des Empfängers: Text unter
+  `with language_of(user):` erzeugen und `outbox.mail.send(..., language=user_language(user))`
+  übergeben. Die Sprache gilt für die Fußzeile („im Auftrag von …“, Impressum, Datenschutz) und
+  das `lang`-Attribut der HTML-Mail. Geht eine Mail an mehrere Konten, je Sprache eine Mail.
+- Mails und Schreiben, die der **Verein herausgibt** (Rechnungen, Mahnungen, Lastschrift,
+  Quittungen, Rundschreiben, Termine, Meldungen, Kontaktformular), bleiben in der Vereinssprache
+  (vorerst Deutsch). `mail.send` ohne `language` schreibt die Fußzeile deutsch.
+- Finanzbelege sind immer deutsch (Fachfrage F1). Auswahl-Bezeichnungen darin über
+  `core.i18n.german(obj.get_x_display)`, sonst stünde dort die Sprache der Person, die den Beleg
+  erzeugt.
+- **Push-Titel**: `notify_membership(id, gettext_noop("…"), text)`; übersetzt wird beim Senden in
+  der Sprache des Kontos. Der Text (Vereinsname, Antwort des Vorstands) bleibt, wie er ist.
+- Hintergrundaufgaben bekommen keine Sprache mit, sondern bestimmen sie beim Ausführen aus dem
+  Empfänger. Texte für später als deutschen Schlüssel mit `gettext_noop` weitergeben.
+- Datum in Mails: `core.i18n.date_text`/`datetime_text` (01.11.2026 bzw. 01/11/2026).
+- Alarme an den Betreiber (`core.alarm`) bleiben deutsch.
+
 ## Prüfen
 
 - Backend: `python manage.py uebersetzung_pruefen [--liste] [--streng]` holt neue Texte in

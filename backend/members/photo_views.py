@@ -10,7 +10,7 @@ from django.db import transaction
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.utils.translation import gettext
+from django.utils.translation import gettext, gettext_noop
 from rest_framework import serializers, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny
@@ -169,7 +169,9 @@ class PhotoApproveView(_PhotoView):
                 {"Foto des Mitglieds": [None, "abgelehnt"]},
                 person=membership.person,
             )
-            notify_membership(membership.pk, "Dein Foto wurde nicht übernommen", self.org.name)
+            notify_membership(
+                membership.pk, gettext_noop("Dein Foto wurde nicht übernommen"), self.org.name
+            )
         else:
             photos.approve(membership)
             record(
@@ -180,7 +182,9 @@ class PhotoApproveView(_PhotoView):
                 {"Foto des Mitglieds": [None, "freigegeben"]},
                 person=membership.person,
             )
-            notify_membership(membership.pk, "Dein Foto wurde freigegeben", self.org.name)
+            notify_membership(
+                membership.pk, gettext_noop("Dein Foto wurde freigegeben"), self.org.name
+            )
         return self.respond(membership)
 
 

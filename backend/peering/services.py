@@ -11,7 +11,9 @@ import secrets
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
-from django.utils.translation import gettext
+from django.utils.translation import gettext, gettext_noop
+
+from core.i18n import datetime_text
 
 from . import crypto, identity, packets, transport
 from .models import Coupling, CouplingCode, Message, Peer
@@ -675,12 +677,16 @@ def _on_dropped(coupling: Coupling) -> None:
         transaction.on_commit(
             lambda: _mail(
                 unit,
-                f"Verbund: Pakete an {remote} verworfen",
-                f"{remote} ({base}) war 14 Tage lang nicht erreichbar. Die wartenden Pakete "
-                "wurden gelöscht, damit keine Daten unbegrenzt auf dem Server liegen. Sobald "
-                "die andere Seite wieder erreichbar ist, geht der aktuelle Stand neu hinaus. "
-                "Einzelne Mitteilungen (z. B. Korrekturvorschläge, Rundschreiben zur "
-                "Weitergabe) bitte bei Bedarf erneut senden.",
+                gettext_noop("Verbund: Pakete an {remote} verworfen"),
+                gettext_noop(
+                    "{remote} ({base}) war 14 Tage lang nicht erreichbar. Die wartenden Pakete "
+                    "wurden gelöscht, damit keine Daten unbegrenzt auf dem Server liegen. Sobald "
+                    "die andere Seite wieder erreichbar ist, geht der aktuelle Stand neu hinaus. "
+                    "Einzelne Mitteilungen (z. B. Korrekturvorschläge, Rundschreiben zur "
+                    "Weitergabe) bitte bei Bedarf erneut senden."
+                ),
+                remote=remote,
+                base=base,
             )
         )
 
@@ -1145,16 +1151,27 @@ def _notify_more(coupling_id: int) -> None:
     coupling = Coupling.objects.select_related("local_unit", "remote_unit", "peer").get(
         pk=coupling_id
     )
-    lines = [
-        f"- {w['label']}: {w['level_label']} (bisher {w['accepted_label']})"
-        for w in wants_more(coupling)
-    ]
+
+    def lines() -> str:
+        return "\n".join(
+            "- "
+            + gettext("{label}: {level} (bisher {accepted})").format(
+                label=w["label"], level=w["level_label"], accepted=w["accepted_label"]
+            )
+            for w in wants_more(coupling)
+        )
+
     _mail(
         coupling.local_unit,
-        f"Verbund: {coupling.remote_unit.name} möchte mehr Daten senden",
-        f"{coupling.remote_unit.name} ({coupling.peer.base_url}) möchte mehr senden, als ihr "
-        "beim Koppeln angenommen habt:\n\n" + "\n".join(lines) + "\n\nBis ihr in HUBIplan "
-        "unter Verbund zustimmt, nimmt diese Instanz nur die bisherige Stufe an.",
+        gettext_noop("Verbund: {remote} möchte mehr Daten senden"),
+        gettext_noop(
+            "{remote} ({base}) möchte mehr senden, als ihr beim Koppeln angenommen habt:"
+            "\n\n{lines}\n\nBis ihr in HUBIplan unter Verbund zustimmt, nimmt diese Instanz "
+            "nur die bisherige Stufe an."
+        ),
+        remote=coupling.remote_unit.name,
+        base=coupling.peer.base_url,
+        lines=lines,
     )
 
 
@@ -1181,30 +1198,47 @@ def _audit_unit(unit, user, text: str) -> None:
     record(unit, user, "update", unit, {"Verbund": [None, text]})
 
 
-def _managers(unit) -> list[str]:
+def _managers(unit) -> list:
     from access.models import RoleAssignment
 
     from .permissions import PEERING_MANAGE
 
-    emails = set()
+    users = {}
     for a in (
         RoleAssignment.objects.active().filter(organization=unit).select_related("role", "user")
     ):
         if a.user_id and PEERING_MANAGE in (a.role.permissions or []):
-            emails.add(a.user.email)
-    return sorted(emails)
+            users[a.user_id] = a.user
+    return list(users.values())
 
 
-def _mail(unit, subject: str, text: str) -> None:
+def _mail(unit, subject: str, text: str, /, **params) -> None:
+    """Hinweis an alle mit Verbund-Verwaltung, je in ihrer Nutzersprache.
+
+    ``subject`` und ``text`` sind die deutschen Schlüssel (``gettext_noop``); Werte in
+    ``params`` dürfen Funktionen sein, die erst in der Sprache der Empfänger rechnen.
+    """
     from django.core.mail import send_mail
+    from django.utils import translation
 
+    from core.i18n import user_language
     from core.tenancy import rls_bypass
 
     # Hinweis-Mails laufen oft nach dem Ende der Anfrage (on_commit): Empfänger ohne RLS suchen
     with rls_bypass():
-        recipients = _managers(unit)
-    if recipients:
-        send_mail(subject, text, None, recipients)
+        managers = _managers(unit)
+    by_language: dict[str, list[str]] = {}
+    for user in managers:
+        by_language.setdefault(user_language(user), []).append(user.email)
+    for language, emails in by_language.items():
+        with translation.override(language):
+            values = {k: v() if callable(v) else v for k, v in params.items()}
+            send_mail(
+                gettext(subject).format(**values),
+                gettext(text).format(**values),
+                None,
+                sorted(emails),
+            )
 
 
 def _notify_pending(coupling_id: int) -> None:
@@ -1213,10 +1247,14 @@ def _notify_pending(coupling_id: int) -> None:
     )
     _mail(
         coupling.local_unit,
-        f"Kopplungsanfrage: {coupling.remote_unit.name}",
-        f"{coupling.remote_unit.name} ({coupling.peer.base_url}) möchte sich unter "
-        f"{coupling.local_unit.name} koppeln.\n\nBitte in HUBIplan unter Einstellungen › "
-        "Verbund prüfen und bestätigen oder ablehnen.",
+        gettext_noop("Kopplungsanfrage: {remote}"),
+        gettext_noop(
+            "{remote} ({base}) möchte sich unter {local} koppeln.\n\nBitte in HUBIplan unter "
+            "Einstellungen › Verbund prüfen und bestätigen oder ablehnen."
+        ),
+        remote=coupling.remote_unit.name,
+        base=coupling.peer.base_url,
+        local=coupling.local_unit.name,
     )
 
 
@@ -1227,13 +1265,17 @@ def _notify_move(coupling_id: int) -> None:
     move = (coupling.options or {}).get("move") or {}
     _mail(
         coupling.local_unit,
-        f"Umzug angekündigt: {coupling.remote_unit.name}",
-        f"{coupling.remote_unit.name} meldet einen Umzug von {move.get('from', '')} nach "
-        f"{move.get('base_url', '')}.\n\nBis zur Bestätigung ruht die Kopplung, es gehen "
-        "keine Daten hinaus. Bitte in HUBIplan unter Verbund den Fingerabdruck der neuen "
-        "Instanz mit dem vergleichen, den euch die andere Seite auf anderem Weg (Telefon, "
-        "Mail) mitteilt, und erst dann bestätigen. Wenn ihr nichts von einem Umzug wisst: "
-        "ablehnen.",
+        gettext_noop("Umzug angekündigt: {remote}"),
+        gettext_noop(
+            "{remote} meldet einen Umzug von {old} nach {new}.\n\nBis zur Bestätigung ruht "
+            "die Kopplung, es gehen keine Daten hinaus. Bitte in HUBIplan unter Verbund den "
+            "Fingerabdruck der neuen Instanz mit dem vergleichen, den euch die andere Seite "
+            "auf anderem Weg (Telefon, Mail) mitteilt, und erst dann bestätigen. Wenn ihr "
+            "nichts von einem Umzug wisst: ablehnen."
+        ),
+        remote=coupling.remote_unit.name,
+        old=move.get("from", ""),
+        new=move.get("base_url", ""),
     )
 
 
@@ -1242,10 +1284,15 @@ def _notify_circular(coupling: Coupling, circular) -> None:
     transaction.on_commit(
         lambda: _mail(
             unit,
-            f"Rundschreiben von {coupling.remote_unit.name} zur Weitergabe",
-            f"{coupling.remote_unit.name} bittet, das Rundschreiben „{circular.subject}“ an die "
-            f"Mitglieder von {unit.name} weiterzugeben. Es liegt als Entwurf unter "
-            "Rundschreiben bereit: bitte prüfen, Empfänger wählen und versenden.",
+            gettext_noop("Rundschreiben von {remote} zur Weitergabe"),
+            gettext_noop(
+                "{remote} bittet, das Rundschreiben „{subject}“ an die Mitglieder von {local} "
+                "weiterzugeben. Es liegt als Entwurf unter Rundschreiben bereit: bitte prüfen, "
+                "Empfänger wählen und versenden."
+            ),
+            remote=coupling.remote_unit.name,
+            subject=circular.subject,
+            local=unit.name,
         )
     )
 
@@ -1257,10 +1304,15 @@ def warn_stuck() -> None:
     ).select_related("local_unit", "remote_unit", "peer"):
         _mail(
             coupling.local_unit,
-            f"Verbund: {coupling.remote_unit.name} seit einem Tag nicht erreichbar",
-            f"Pakete an {coupling.remote_unit.name} ({coupling.peer.base_url}) warten seit "
-            f"{timezone.localtime(coupling.error_since):%d.%m.%Y %H:%M}. Letzter Fehler: "
-            f"{coupling.last_error}\n\nDie Arbeit hier geht normal weiter; die Pakete werden "
-            "automatisch nachgeschickt.",
+            gettext_noop("Verbund: {remote} seit einem Tag nicht erreichbar"),
+            gettext_noop(
+                "Pakete an {remote} ({base}) warten seit {since}. Letzter Fehler: {error}\n\n"
+                "Die Arbeit hier geht normal weiter; die Pakete werden automatisch "
+                "nachgeschickt."
+            ),
+            remote=coupling.remote_unit.name,
+            base=coupling.peer.base_url,
+            since=lambda c=coupling: datetime_text(timezone.localtime(c.error_since)),
+            error=coupling.last_error,
         )
         Coupling.objects.filter(pk=coupling.pk).update(warned_at=timezone.now())

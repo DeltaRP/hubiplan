@@ -64,6 +64,26 @@ def language_of_org(org):
         yield
 
 
+def german(value) -> str:
+    """Text fest auf Deutsch, etwa Auswahl-Bezeichnungen in Finanzbelegen (Fachfrage F1).
+
+    Für ``Promise``-Werte (``gettext_lazy``) oder Funktionen ohne Argumente wie
+    ``obj.get_status_display``.
+    """
+    with translation.override(DEFAULT):
+        return str(value() if callable(value) else value)
+
+
+def date_text(value) -> str:
+    """Datum in der aktiven Sprache: 01.11.2026 bzw. 01/11/2026 (en-GB, Fachfrage F4)."""
+    return value.strftime("%d/%m/%Y" if translation.get_language() == "en" else "%d.%m.%Y")
+
+
+def datetime_text(value) -> str:
+    """Datum und Uhrzeit in der aktiven Sprache, ohne „Uhr“."""
+    return f"{date_text(value)} {value:%H:%M}"
+
+
 def activate_for(request, user=None) -> str:
     """Sprache für diese Anfrage setzen: Konto, sonst Cookie, sonst Deutsch."""
     if user is not None and getattr(user, "is_authenticated", False):

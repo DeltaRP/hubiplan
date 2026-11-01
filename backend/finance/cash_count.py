@@ -29,6 +29,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 
+from core.i18n import german
 from organizations.theme import effective_theme
 
 from . import services
@@ -235,7 +236,7 @@ def create(org, user, data: dict) -> CashCount:
     record.booking_ids = [b.pk for b in bookings]
     record.save()
     content = render(record, bookings)
-    name = f"{record.get_kind_display()}-{date:%Y-%m-%d}-{record.pk}.pdf"
+    name = f"{german(record.get_kind_display)}-{date:%Y-%m-%d}-{record.pk}.pdf"
     record.pdf.save(name, ContentFile(content), save=False)
     record.pdf_sha256 = hashlib.sha256(content).hexdigest()
     record.save(update_fields=["pdf", "pdf_sha256"])
@@ -258,7 +259,7 @@ def render(record: CashCount, bookings: list[Booking]) -> bytes:
     st = _styles()
     primary = colors.HexColor(effective_theme(org.ancestors())["primary"])
     r, rb = st["right"], st["right_bold"]
-    head = record.get_kind_display()
+    head = german(record.get_kind_display)
     if record.title:
         head += f": {record.title}"
     story: list = [

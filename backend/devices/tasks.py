@@ -20,5 +20,15 @@ def notify_membership(membership_id: int, title: str, text: str) -> int:
         )
     if access is None:
         return 0
+    from django.contrib.auth import get_user_model
+    from django.utils.translation import gettext
+
+    from core.i18n import language_of
+
+    with rls_bypass():
+        user = get_user_model().objects.filter(pk=access[1]).first()
+    # Sprache beim Senden bestimmen, damit eine zwischendurch geänderte Einstellung gilt
+    with language_of(user):
+        title = gettext(title)
     data = {"v": 1, "t": "info", "access": access[0], "title": title, "text": text}
     return send_to_user(access[1], data)

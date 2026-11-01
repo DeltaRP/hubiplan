@@ -7,6 +7,8 @@ from email.utils import parseaddr
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
+from django.utils import translation
+from django.utils.translation import gettext as _
 
 from .backend import KIND_HEADER, ORG_HEADER
 
@@ -27,23 +29,26 @@ def imprint_footer(organization) -> tuple[str, str] | None:
         logger.exception("Impressum-Links für die Mail fehlen")
         return None
     if org.type == Organization.Type.PLATFORM:
-        sender = "Diese Nachricht wurde über HUBIplan versandt."
+        sender = _("Diese Nachricht wurde über HUBIplan versandt.")
     else:
-        sender = f"Diese Nachricht wurde im Auftrag von {org.name} über HUBIplan versandt."
-    text = f"--\n{sender}\nImpressum: {urls['imprint']}\nDatenschutz: {urls['privacy']}"
+        sender = _("Diese Nachricht wurde im Auftrag von {name} über HUBIplan versandt.").format(
+            name=org.name
+        )
+    imprint_label, privacy_label = _("Impressum"), _("Datenschutz")
+    text = f"--\n{sender}\n{imprint_label}: {urls['imprint']}\n{privacy_label}: {urls['privacy']}"
     markup = (
         '<p style="margin-top:2em;font-size:12px;color:#666">'
         f"{escape(sender)}<br>"
-        f'<a href="{escape(urls["imprint"])}">Impressum</a> · '
-        f'<a href="{escape(urls["privacy"])}">Datenschutz</a></p>'
+        f'<a href="{escape(urls["imprint"])}">{escape(imprint_label)}</a> · '
+        f'<a href="{escape(urls["privacy"])}">{escape(privacy_label)}</a></p>'
     )
     return text, markup
 
 
-def html_document(html: str, subject: str = "") -> str:
-    """HTML-Teil als vollständiges Dokument mit Sprache Deutsch (WCAG 3.1.1).
+def html_document(html: str, subject: str = "", language: str = "de") -> str:
+    """HTML-Teil als vollständiges Dokument mit Angabe der Sprache (WCAG 3.1.1).
 
-    Mailprogramme und Screenreader lesen den Text dann mit deutscher Aussprache.
+    Mailprogramme und Screenreader lesen den Text dann mit passender Aussprache.
     Ein schon vollständiges Dokument bleibt unverändert.
     """
     from django.utils.html import escape
@@ -53,7 +58,7 @@ def html_document(html: str, subject: str = "") -> str:
         return html
     title = f"<title>{escape(subject)}</title>" if subject else ""
     return (
-        '<!doctype html>\n<html lang="de">\n<head><meta charset="utf-8">'
+        f'<!doctype html>\n<html lang="{language}">\n<head><meta charset="utf-8">'
         f"{title}</head>\n<body>\n{html}\n</body>\n</html>\n"
     )
 
@@ -81,6 +86,7 @@ def send(
     headers: dict[str, str] | None = None,
     stored_attachments: list[dict] | None = None,
     from_name: str = "",
+    language: str | None = None,
 ) -> bool:
     """Sendet eine Mail. Gibt False zurück, wenn der Versand scheiterte (fail_silently).
 
@@ -90,14 +96,22 @@ def send(
     statt sie für jede Mail zu kopieren (Rundschreiben an viele Mitglieder).
     ``from_name``: angezeigter Absendername; die Adresse bleibt DEFAULT_FROM_EMAIL
     (nur für sie darf der Server unterschreiben, sonst scheitert DMARC).
+    ``language``: Sprache der Mail für Fußzeile und ``lang``-Angabe. Hinweis-Mails an ein
+    Konto nehmen dessen Nutzersprache (``core.i18n.user_language``), alles, was der Verein
+    herausgibt, die Vereinssprache; ohne Angabe Deutsch. Den Text selbst erzeugt der
+    Aufrufer in derselben Sprache (``with language_of(user):``).
     """
+    from core.i18n import normalize
+
+    language = normalize(language)
     recipients = [to] if isinstance(to, str) else list(to)
     headers = dict(headers or {})
     if organization is not None:
         headers[ORG_HEADER] = str(organization.pk)
     if kind:
         headers[KIND_HEADER] = kind
-    footer = imprint_footer(organization)
+    with translation.override(language):
+        footer = imprint_footer(organization)
     if footer:
         text, markup = footer
         body = f"{body.rstrip()}\n\n{text}\n"
@@ -116,7 +130,7 @@ def send(
         headers=headers,
     )
     if html:
-        message.attach_alternative(html_document(html, subject), "text/html")
+        message.attach_alternative(html_document(html, subject, language), "text/html")
     for name, content, mimetype in attachments or []:
         message.attach(name, content, mimetype)
     if stored_attachments:

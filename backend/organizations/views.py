@@ -3,6 +3,7 @@ from __future__ import annotations
 from django.db import transaction
 from django.db.models import Count, ProtectedError, RestrictedError
 from django.shortcuts import get_object_or_404
+from django.utils import translation
 from django.utils.translation import gettext
 from rest_framework import generics, mixins, serializers, status, viewsets
 from rest_framework.decorators import action
@@ -496,6 +497,7 @@ def _tell_board(org, user, role_name: str, actor) -> None:
     deren Vorstand sofort (alle mit Rollenverwaltung dort, außer der neuen Person)."""
     from access.catalog import ROLES_MANAGE
     from core.alarm import send_alert
+    from core.i18n import user_language
     from outbox import mail
 
     with tenant_context(org.pk):
@@ -505,18 +507,34 @@ def _tell_board(org, user, role_name: str, actor) -> None:
             .exclude(user=user)
             .select_related("role", "user")
         )
-        to = sorted(
-            {a.user.email for a in holders if a.user and ROLES_MANAGE in a.role.permissions}
+        users = {a.user for a in holders if a.user and ROLES_MANAGE in a.role.permissions}
+    # Je Sprache eine Mail (Nutzersprache der Empfänger)
+    by_language: dict[str, list[str]] = {}
+    for holder in users:
+        by_language.setdefault(user_language(holder), []).append(holder.email)
+    for language, emails in by_language.items():
+        to = sorted(emails)
+        with translation.override(language):
+            text = (
+                gettext("Guten Tag,")
+                + "\n\n"
+                + gettext(
+                    "die Plattformverwaltung ({actor}) hat bei {org} die Rolle „{role}“ an "
+                    "{email} vergeben."
+                ).format(actor=actor.email, org=org.name, role=role_name, email=user.email)
+                + "\n\n"
+                + gettext(
+                    "Wenn das nicht abgesprochen war, entzieht die Rolle bitte unter „Rollen“ "
+                    "und meldet euch beim Betreiber. Der Eintrag steht im Protokoll."
+                )
+                + "\n"
+            )
+            subject = gettext("Rolle bei {org} durch die Plattform vergeben").format(org=org.name)
+        transaction.on_commit(
+            lambda to=to, subject=subject, text=text, language=language: mail.send(
+                to, subject, text, organization=org, kind="zugang", language=language
+            )
         )
-    text = (
-        f"Guten Tag,\n\ndie Plattformverwaltung ({actor.email}) hat bei {org.name} die Rolle "
-        f"„{role_name}“ an {user.email} vergeben.\n\nWenn das nicht abgesprochen war, entzieht "
-        "die Rolle bitte unter „Rollen“ und meldet euch beim Betreiber. Der Eintrag steht im "
-        "Protokoll.\n"
-    )
-    subject = f"Rolle bei {org.name} durch die Plattform vergeben"
-    if to:
-        transaction.on_commit(lambda: mail.send(to, subject, text, organization=org, kind="zugang"))
     transaction.on_commit(
         lambda: send_alert(
             "Rolle durch die Plattform vergeben",

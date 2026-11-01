@@ -14,6 +14,7 @@ from rest_framework.exceptions import APIException, ValidationError
 from access.catalog import DEPARTMENT_CODES
 from access.models import RoleAssignment
 from accounts.models import User
+from core.i18n import language_of, user_language
 from core.tenancy import tenant_context, user_view
 from members.models import DepartmentRoleHolder, Membership, today
 from members.services import contact_for
@@ -197,29 +198,41 @@ def ensure_access(
             organization=club, membership=membership, user=user, created_by=created_by
         )
     elif access.user_id != user.pk:
-        old_email = access.user.email
+        old_user = access.user
         access.user = user
         access.save(update_fields=["user"])
-        _notify_transfer(club, membership, old_email, email)
+        _notify_transfer(club, membership, old_user, email)
     return access
 
 
-def _notify_transfer(club: Organization, membership: Membership, old: str, new: str) -> None:
+def _notify_transfer(club: Organization, membership: Membership, old_user, new: str) -> None:
     """Mitteilung an die bisherige Adresse: ohne Link und ohne die neue Adresse ganz."""
+    old = old_user.email
     local, _, domain = new.partition("@")
     hint = f"{local[:1]}…@{domain}"
+    with language_of(old_user):
+        subject = gettext("Ihr Zugang zu HUBIplan – {org} wurde übertragen").format(org=club.name)
+        body = (
+            gettext("Hallo {name},").format(name=membership.person.first_name)
+            + "\n\n"
+            + gettext(
+                "{org} hat Ihren Zugang zum Mitgliederbereich auf eine neue E-Mail-Adresse "
+                "({hint}) übertragen. Mit dieser Adresse ({old}) ist der Zugang zu Ihrer "
+                "Mitgliedschaft nicht mehr möglich."
+            ).format(org=club.name, hint=hint, old=old)
+            + "\n\n"
+            + gettext(
+                "Wenn Sie das nicht veranlasst haben, wenden Sie sich bitte an {org}."
+            ).format(org=club.name)
+            + "\n"
+        )
     mail.send(
         old,
-        f"Ihr Zugang zu HUBIplan – {club.name} wurde übertragen",
-        (
-            f"Hallo {membership.person.first_name},\n\n"
-            f"{club.name} hat Ihren Zugang zum Mitgliederbereich auf eine neue E-Mail-Adresse "
-            f"({hint}) übertragen. Mit dieser Adresse ({old}) ist der Zugang zu Ihrer "
-            f"Mitgliedschaft nicht mehr möglich.\n\n"
-            f"Wenn Sie das nicht veranlasst haben, wenden Sie sich bitte an {club.name}.\n"
-        ),
+        subject,
+        body,
         organization=club,
         kind="zugang",
+        language=user_language(old_user),
     )
 
 
@@ -242,36 +255,57 @@ def send_access_mail(club: Organization, access: PortalAccess, created_by) -> st
     """
     user = access.user
     first_name = access.membership.person.first_name
-    if link_login_allowed(user):
-        url = create_login_link(user, club, created_by)
-        body = (
-            f"Hallo {first_name},\n\n"
-            f"{club.name} lädt Sie in den Mitgliederbereich von HUBIplan ein. Dort sehen "
-            f"Sie Ihre Daten und können Änderungen melden.\n\n"
-            f"Mit diesem persönlichen Link melden Sie sich ohne Passwort an "
-            f"(gültig {LINK_DAYS} Tage, einmal nutzbar):\n\n{url}\n\n"
-            f"Einen neuen Link können Sie jederzeit auf der Anmeldeseite anfordern. "
-            f"Wenn Sie lieber ein Passwort nutzen, wählen Sie dort „Passwort vergessen“.\n"
-        )
-        kind = "link"
-    else:
-        # Konten mit Verwaltungsrechten oder 2FA: kein Anmelde- oder Passwortlink aus dem
-        # Mitgliederbereich heraus (die Mail läge im Postausgang der Einheit).
-        body = (
-            f"Hallo {first_name},\n\n"
-            f"{club.name} hat Ihnen den Mitgliederbereich von HUBIplan freigeschaltet.\n\n"
-            f"Melden Sie sich wie gewohnt mit Ihrem bestehenden Konto ({user.email}) an: "
-            f"{settings.FRONTEND_URL}/anmelden\n\n"
-            f"Falls Sie Ihr Passwort nicht kennen, wählen Sie dort „Passwort vergessen“.\n"
-        )
-        kind = "password"
+    link = link_login_allowed(user)
+    url = create_login_link(user, club, created_by) if link else ""
+    with language_of(user):
+        greeting = gettext("Hallo {name},").format(name=first_name) + "\n\n"
+        if link:
+            body = (
+                greeting
+                + gettext(
+                    "{org} lädt Sie in den Mitgliederbereich von HUBIplan ein. Dort sehen Sie "
+                    "Ihre Daten und können Änderungen melden."
+                ).format(org=club.name)
+                + "\n\n"
+                + gettext(
+                    "Mit diesem persönlichen Link melden Sie sich ohne Passwort an "
+                    "(gültig {days} Tage, einmal nutzbar):"
+                ).format(days=LINK_DAYS)
+                + f"\n\n{url}\n\n"
+                + gettext(
+                    "Einen neuen Link können Sie jederzeit auf der Anmeldeseite anfordern. "
+                    "Wenn Sie lieber ein Passwort nutzen, wählen Sie dort „Passwort vergessen“."
+                )
+                + "\n"
+            )
+        else:
+            # Konten mit Verwaltungsrechten oder 2FA: kein Anmelde- oder Passwortlink aus dem
+            # Mitgliederbereich heraus (die Mail läge im Postausgang der Einheit).
+            body = (
+                greeting
+                + gettext(
+                    "{org} hat Ihnen den Mitgliederbereich von HUBIplan freigeschaltet."
+                ).format(org=club.name)
+                + "\n\n"
+                + gettext(
+                    "Melden Sie sich wie gewohnt mit Ihrem bestehenden Konto ({email}) an: {url}"
+                ).format(email=user.email, url=f"{settings.FRONTEND_URL}/anmelden")
+                + "\n\n"
+                + gettext(
+                    "Falls Sie Ihr Passwort nicht kennen, wählen Sie dort „Passwort vergessen“."
+                )
+                + "\n"
+            )
+        subject = gettext("Ihr Zugang zu HUBIplan – {org}").format(org=club.name)
     mail.send(
         user.email,
-        f"Ihr Zugang zu HUBIplan – {club.name}",
+        subject,
         body,
         organization=club,
         kind="zugang",
+        language=user_language(user),
     )
+    kind = "link" if link else "password"
     return kind
 
 

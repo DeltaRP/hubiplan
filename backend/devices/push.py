@@ -82,7 +82,11 @@ def send_to_user(user_id: int, data: dict, *, urgent: bool = True) -> int:
 
 
 def notify_membership(membership_id: int | None, title: str, text: str) -> None:
-    """Nach dem Speichern einen Hinweis an die App des Mitglieds schicken (falls vorhanden)."""
+    """Nach dem Speichern einen Hinweis an die App des Mitglieds schicken (falls vorhanden).
+
+    ``title`` ist der deutsche Schlüssel (mit ``gettext_noop`` markiert); übersetzt wird er
+    erst beim Senden in der Sprache des Kontos. ``text`` sind Vereinsdaten und bleibt, wie er ist.
+    """
     if not membership_id or not app_accesses([membership_id]):
         return
     from django.db import transaction

@@ -7,6 +7,22 @@ class AccountAdapter(DefaultAccountAdapter):
         # Konten werden von Verwaltenden angelegt, nicht selbst registriert.
         return False
 
+    def send_mail(self, template_prefix, email, context):
+        """Mails von allauth (z. B. „Passwort vergessen“) in der Sprache des Kontos."""
+        from django.utils import translation
+
+        from core.i18n import user_language
+
+        user = context.get("user")
+        if user is None:
+            from .models import User
+
+            user = User.objects.filter(email__iexact=email).first()
+        if user is None:
+            return super().send_mail(template_prefix, email, context)
+        with translation.override(user_language(user)):
+            return super().send_mail(template_prefix, email, context)
+
 
 class HeadlessAdapter(DefaultHeadlessAdapter):
     def serialize_user(self, user) -> dict:
