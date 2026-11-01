@@ -324,6 +324,9 @@ class CallsView(_Mixin, APIView):
         internal = bool(request.data.get("internal"))
         self.require_organizer(internal=internal)
         values = _clean_call(self.org, request.data, None)
+        # Fremder Veranstalter: kein Wettbewerb im eigenen Verein, außer ausdrücklich gewählt
+        # (Ralf, 01.11.); bei Ausschreibungen an die eigenen Untereinheiten sinnvoll an
+        values.setdefault("create_competition", internal)
         call = Call.objects.create(organization=self.org, internal=internal, **values)
         record(self.org, request.user, "create", call, diff({}, snapshot(call)))
         if request.data.get("template") == "mannschaften":
