@@ -11,6 +11,7 @@ from django.db.models import Count, Max, ProtectedError, Q
 from django.http import FileResponse, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.translation import gettext
 from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, PermissionDenied
@@ -87,7 +88,7 @@ class FinanceMixin(OrgScopedMixin):
     def initial(self, request, *args, **kwargs):
         super().initial(request, *args, **kwargs)
         if "finance" not in (self.org.enabled_modules or []):
-            raise NotFound("Die Kasse ist für diese Organisation nicht freigeschaltet.")
+            raise NotFound(gettext("Die Kasse ist für diese Organisation nicht freigeschaltet."))
 
     def get_serializer_context(self):
         ctx = super().get_serializer_context()
@@ -145,8 +146,10 @@ class AccountViewSet(FinanceMixin, AuditMixin, _ProtectedDeleteMixin, viewsets.M
             services.lock_years_from(self.org, first)
             if YearClosing.objects.filter(organization=self.org, year__gte=first).exists():
                 raise serializers.ValidationError(
-                    "Der Anfangsbestand betrifft ein abgeschlossenes Geschäftsjahr und lässt "
-                    "sich nicht mehr ändern."
+                    gettext(
+                        "Der Anfangsbestand betrifft ein abgeschlossenes Geschäftsjahr und lässt "
+                        "sich nicht mehr ändern."
+                    )
                 )
         with transaction.atomic():
             super().perform_update(serializer)
@@ -207,8 +210,9 @@ class CategoryViewSet(FinanceMixin, AuditMixin, viewsets.ModelViewSet):
         if reasons:
             return Response(
                 {
-                    "detail": f"„{category.name}“ wird noch verwendet und kann nur "
-                    "archiviert werden.",
+                    "detail": gettext(
+                        "„{name}“ wird noch verwendet und kann nur archiviert werden."
+                    ).format(name=category.name),
                     "reasons": reasons,
                     "can_archive": category.is_active,
                 },
@@ -218,7 +222,7 @@ class CategoryViewSet(FinanceMixin, AuditMixin, viewsets.ModelViewSet):
             self.perform_destroy(category)
         except ProtectedError as exc:  # gleichzeitig gebucht
             raise serializers.ValidationError(
-                "Die Kategorie wurde gerade gebucht. Bitte archivieren."
+                gettext("Die Kategorie wurde gerade gebucht. Bitte archivieren.")
             ) from exc
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -361,7 +365,9 @@ class BookingViewSet(FinanceMixin, AuditMixin, _ProtectedDeleteMixin, viewsets.M
         try:
             year = int(year)
         except (TypeError, ValueError) as exc:
-            raise serializers.ValidationError({"year": "Bitte ein Geschäftsjahr angeben."}) from exc
+            raise serializers.ValidationError(
+                {"year": gettext("Bitte ein Geschäftsjahr angeben.")}
+            ) from exc
         self._open(year=year)
         try:
             changed = services.renumber(self.org, year)
@@ -443,8 +449,10 @@ class BookingViewSet(FinanceMixin, AuditMixin, _ProtectedDeleteMixin, viewsets.M
             locked = ("amount", "kind", "account", "to_account", "date", "number", "category")
             if any(k in data and data[k] != getattr(instance, k) for k in locked):
                 raise serializers.ValidationError(
-                    "Die Buchung gehört zu einem Storno. Betrag, Art, Konto, Datum, Nummer und "
-                    "Kategorie bleiben, wie sie sind."
+                    gettext(
+                        "Die Buchung gehört zu einem Storno. Betrag, Art, Konto, Datum, Nummer "
+                        "und Kategorie bleiben, wie sie sind."
+                    )
                 )
         if _quittung_of(instance) is not None:
             data = serializer.validated_data
@@ -456,8 +464,10 @@ class BookingViewSet(FinanceMixin, AuditMixin, _ProtectedDeleteMixin, viewsets.M
             locked = ("amount", "kind", "account", "date")
             if any(k in data and data[k] != getattr(instance, k) for k in locked):
                 raise serializers.ValidationError(
-                    "Die Buchung gehört zu einem Zahlungseingang. Datum, Betrag und Konto "
-                    "bitte über die Zahlung unter Beiträge → Rechnungen ändern."
+                    gettext(
+                        "Die Buchung gehört zu einem Zahlungseingang. Datum, Betrag und Konto "
+                        "bitte über die Zahlung unter Beiträge → Rechnungen ändern."
+                    )
                 )
         if instance.bank_lines.exists():
             # Audit 31.10. FIN31-R03: zugeordneter Kontoumsatz muss zur Buchung passen
@@ -465,8 +475,10 @@ class BookingViewSet(FinanceMixin, AuditMixin, _ProtectedDeleteMixin, viewsets.M
             locked = ("amount", "kind", "account")
             if any(k in data and data[k] != getattr(instance, k) for k in locked):
                 raise serializers.ValidationError(
-                    "Die Buchung ist einem Kontoumsatz zugeordnet. Betrag, Art und Konto "
-                    "bitte nur ändern, nachdem die Zuordnung unter Kontoauszüge gelöst ist."
+                    gettext(
+                        "Die Buchung ist einem Kontoumsatz zugeordnet. Betrag, Art und Konto "
+                        "bitte nur ändern, nachdem die Zuordnung unter Kontoauszüge gelöst ist."
+                    )
                 )
         before = (instance.account, instance.to_account, instance.date)
         with transaction.atomic():
@@ -488,9 +500,11 @@ class BookingViewSet(FinanceMixin, AuditMixin, _ProtectedDeleteMixin, viewsets.M
         # GoBD: Löschen nur am Tag der Erfassung vor der Festschreibung, sonst Storno
         if not services.deletable(instance):
             raise serializers.ValidationError(
-                f"Die Buchung {instance.display_number} lässt sich nicht mehr löschen (nur am "
-                "Tag der Erfassung). Bitte stornieren: Das legt eine Gegenbuchung an, und "
-                "beides bleibt nachvollziehbar."
+                gettext(
+                    "Die Buchung {display_number} lässt sich nicht mehr löschen (nur am Tag "
+                    "der Erfassung). Bitte stornieren: Das legt eine Gegenbuchung an, und "
+                    "beides bleibt nachvollziehbar."
+                ).format(display_number=instance.display_number)
             )
         accounts, since = [instance.account, instance.to_account], instance.date
         with transaction.atomic():
@@ -559,18 +573,22 @@ class ReceiptUploadView(FinanceMixin, APIView):
 def attach_receipt(org, booking: Booking, upload, user) -> Receipt:
     """Beleg prüfen, speichern und protokollieren (Browser und App)."""
     if upload is None:
-        raise serializers.ValidationError({"file": "Bitte eine Datei wählen."})
+        raise serializers.ValidationError({"file": gettext("Bitte eine Datei wählen.")})
     if upload.size > MAX_RECEIPT_BYTES:
-        raise serializers.ValidationError({"file": "Die Datei ist größer als 15 MB."})
+        raise serializers.ValidationError({"file": gettext("Die Datei ist größer als 15 MB.")})
     content_type = (upload.content_type or mimetypes.guess_type(upload.name)[0] or "").lower()
     if content_type not in RECEIPT_TYPES:
         raise serializers.ValidationError(
-            {"file": "Erlaubt sind PDF, Fotos (JPEG, PNG, WebP, HEIC) und E-Rechnungen (XML)."}
+            {
+                "file": gettext(
+                    "Erlaubt sind PDF, Fotos (JPEG, PNG, WebP, HEIC) und E-Rechnungen (XML)."
+                )
+            }
         )
     head = upload.read(16)
     upload.seek(0)
     if content_type == "application/pdf" and not head.startswith(b"%PDF"):
-        raise serializers.ValidationError({"file": "Die Datei ist kein PDF."})
+        raise serializers.ValidationError({"file": gettext("Die Datei ist kein PDF.")})
     info: dict = {}
     if content_type in ("application/pdf", "application/xml", "text/xml"):
         from . import einvoice
@@ -639,9 +657,9 @@ class EInvoiceReadView(FinanceMixin, APIView):
 
         upload = request.FILES.get("file")
         if upload is None:
-            raise serializers.ValidationError({"file": "Bitte eine Datei wählen."})
+            raise serializers.ValidationError({"file": gettext("Bitte eine Datei wählen.")})
         if upload.size > MAX_RECEIPT_BYTES:
-            raise serializers.ValidationError({"file": "Die Datei ist größer als 15 MB."})
+            raise serializers.ValidationError({"file": gettext("Die Datei ist größer als 15 MB.")})
         data = upload.read()
         content_type = "application/pdf" if data.startswith(b"%PDF") else "application/xml"
         try:
@@ -650,7 +668,7 @@ class EInvoiceReadView(FinanceMixin, APIView):
             raise serializers.ValidationError({"file": str(exc)}) from exc
         if not found:
             raise serializers.ValidationError(
-                {"file": "In dieser PDF steckt keine E-Rechnung (ZUGFeRD/Factur-X)."}
+                {"file": gettext("In dieser PDF steckt keine E-Rechnung (ZUGFeRD/Factur-X).")}
             )
         info = einvoice.as_json(found)
         number = info["number"]
@@ -707,18 +725,20 @@ class ReceiptView(FinanceMixin, APIView):
 
         if CashReceipt.objects.filter(Q(document=receipt) | Q(cancel_document=receipt)).exists():
             raise serializers.ValidationError(
-                "Das ist das PDF einer unterschriebenen Quittung. Es bleibt erhalten."
+                gettext("Das ist das PDF einer unterschriebenen Quittung. Es bleibt erhalten.")
             )
         if receipt.hidden_at:
-            raise serializers.ValidationError("Der Beleg ist schon ausgeblendet.")
+            raise serializers.ValidationError(gettext("Der Beleg ist schon ausgeblendet."))
         if not receipt_deletable(receipt, request.user):
             # Aufbewahrungspflicht (§ 147 AO): ausblenden statt löschen, mit Grund
             reason = " ".join(str(request.data.get("reason") or "").split())
             if len(reason) < 3:
                 raise serializers.ValidationError(
                     {
-                        "reason": "Belege werden nicht gelöscht, nur ausgeblendet. Bitte einen "
-                        "Grund angeben (z. B. „falsche Datei, richtiger Beleg folgt“)."
+                        "reason": gettext(
+                            "Belege werden nicht gelöscht, nur ausgeblendet. Bitte einen Grund "
+                            "angeben (z. B. „falsche Datei, richtiger Beleg folgt“)."
+                        )
                     }
                 )
             receipt.hidden_at = timezone.now()
@@ -777,7 +797,9 @@ class FinanceSettingsView(FinanceMixin, APIView):
             return self._switch(request, "reserves_enabled", "Rücklagen führen")
         value = request.data.get("tax_areas_enabled")
         if not isinstance(value, bool):
-            raise serializers.ValidationError({"tax_areas_enabled": "Bitte ja oder nein angeben."})
+            raise serializers.ValidationError(
+                {"tax_areas_enabled": gettext("Bitte ja oder nein angeben.")}
+            )
         if value != self.org.tax_areas_enabled:
             record(
                 self.org,
@@ -798,7 +820,7 @@ class FinanceSettingsView(FinanceMixin, APIView):
     def _switch(self, request, field: str, label: str):
         value = request.data.get(field)
         if not isinstance(value, bool):
-            raise serializers.ValidationError({field: "Bitte ja oder nein angeben."})
+            raise serializers.ValidationError({field: gettext("Bitte ja oder nein angeben.")})
         if value != getattr(self.org, field):
             record(
                 self.org,
@@ -818,13 +840,15 @@ class FinanceSettingsView(FinanceMixin, APIView):
         org, data, changes = self.org, request.data, {}
         if "datev_enabled" in data:
             if not isinstance(data["datev_enabled"], bool):
-                raise serializers.ValidationError({"datev_enabled": "Bitte ja oder nein angeben."})
+                raise serializers.ValidationError(
+                    {"datev_enabled": gettext("Bitte ja oder nein angeben.")}
+                )
         for field, size in (("datev_consultant", 7), ("datev_client", 5)):
             if field in data:
                 value = str(data[field] or "").strip()
                 if value and (not value.isdigit() or len(value) > size):
                     raise serializers.ValidationError(
-                        {field: f"Bitte nur Ziffern (höchstens {size})."}
+                        {field: gettext("Bitte nur Ziffern (höchstens {size}).").format(size=size)}
                     )
         if "datev_account_length" in data:
             try:
@@ -833,7 +857,7 @@ class FinanceSettingsView(FinanceMixin, APIView):
                 length = 0
             if not 4 <= length <= 8:
                 raise serializers.ValidationError(
-                    {"datev_account_length": "Die Sachkontenlänge liegt zwischen 4 und 8."}
+                    {"datev_account_length": gettext("Die Sachkontenlänge liegt zwischen 4 und 8.")}
                 )
         for field, label in (
             ("datev_enabled", "DATEV-Export"),
@@ -873,7 +897,9 @@ class FinanceSettingsView(FinanceMixin, APIView):
         try:
             until = datetime.date.fromisoformat(str(request.data.get("locked_until")))
         except ValueError as exc:
-            raise serializers.ValidationError({"locked_until": "Bitte ein Datum angeben."}) from exc
+            raise serializers.ValidationError(
+                {"locked_until": gettext("Bitte ein Datum angeben.")}
+            ) from exc
         org = Organization.objects.select_for_update().get(pk=self.org.pk)
         before = org.finance_locked_until
         try:
@@ -967,11 +993,13 @@ class RetentionView(FinanceMixin, APIView):
 
     def post(self, request, org_id: int):
         if ROLES_MANAGE not in self.org_permissions:
-            raise PermissionDenied("Das dürfen nur Vorstände mit Rollenverwaltung.")
+            raise PermissionDenied(gettext("Das dürfen nur Vorstände mit Rollenverwaltung."))
         try:
             year = int(request.data.get("year"))
         except (TypeError, ValueError) as exc:
-            raise serializers.ValidationError({"year": "Bitte ein Geschäftsjahr angeben."}) from exc
+            raise serializers.ValidationError(
+                {"year": gettext("Bitte ein Geschäftsjahr angeben.")}
+            ) from exc
         try:
             result = retention.purge(self.org, year, request.user)
         except DjangoValidationError as exc:
@@ -1041,7 +1069,9 @@ class YearClosingView(FinanceMixin, APIView):
         try:
             year = int(request.data.get("year"))
         except (TypeError, ValueError) as exc:
-            raise serializers.ValidationError({"year": "Bitte ein Geschäftsjahr angeben."}) from exc
+            raise serializers.ValidationError(
+                {"year": gettext("Bitte ein Geschäftsjahr angeben.")}
+            ) from exc
         try:
             closing = services.close_year(self.org, year, request.user)
         except DjangoValidationError as exc:
@@ -1063,21 +1093,25 @@ class YearClosingView(FinanceMixin, APIView):
     @transaction.atomic
     def delete(self, request, org_id: int):
         if ROLES_MANAGE not in self.org_permissions:
-            raise PermissionDenied("Einen Abschluss heben nur Vorstände mit Rollenverwaltung auf.")
+            raise PermissionDenied(
+                gettext("Einen Abschluss heben nur Vorstände mit Rollenverwaltung auf.")
+            )
         year = request.query_params.get("jahr", "")
         closing = YearClosing.objects.filter(
             organization=self.org, year=int(year) if year.isdigit() else -1
         ).first()
         if closing is None:
-            raise NotFound("Kein Abschluss für dieses Geschäftsjahr.")
+            raise NotFound(gettext("Kein Abschluss für dieses Geschäftsjahr."))
         if closing.documents_purged_at or closing.records_purged_at:
             raise serializers.ValidationError(
-                "Nach Ablauf der Aufbewahrungsfrist bereinigte Jahre bleiben abgeschlossen."
+                gettext(
+                    "Nach Ablauf der Aufbewahrungsfrist bereinigte Jahre bleiben abgeschlossen."
+                )
             )
         later = YearClosing.objects.filter(organization=self.org, year__gt=closing.year).exists()
         if later:
             raise serializers.ValidationError(
-                "Bitte zuerst den Abschluss des Folgejahres aufheben."
+                gettext("Bitte zuerst den Abschluss des Folgejahres aufheben.")
             )
         label = self.org.fiscal_label(closing.year)
         # Erst protokollieren (braucht die ID), bei fehlendem Grund rollt alles zurück
@@ -1189,7 +1223,7 @@ def _file_response(content: bytes, name: str, fmt: str, download: bool) -> HttpR
 
 def _ids(value) -> list[int]:
     if not isinstance(value, list) or not all(isinstance(v, int) for v in value):
-        raise serializers.ValidationError("Bitte eine Liste von Nummern angeben.")
+        raise serializers.ValidationError(gettext("Bitte eine Liste von Nummern angeben."))
     return value
 
 
@@ -1397,7 +1431,9 @@ class ProjectViewSet(FinanceMixin, AuditMixin, viewsets.ModelViewSet):
         for e in Event.objects.filter(organization=self.org, pk__in=link).exclude(project=project):
             if e.project_id:
                 raise serializers.ValidationError(
-                    f"Der Termin „{e.title}“ gehört schon zu einer anderen Veranstaltung."
+                    gettext(
+                        "Der Termin „{title}“ gehört schon zu einer anderen Veranstaltung."
+                    ).format(title=e.title)
                 )
             e.project = project
             e.save(update_fields=["project"])

@@ -10,6 +10,7 @@ import io
 import logging
 
 from django.core.cache import cache
+from django.utils.translation import gettext
 
 from .models import StatuteVersion
 
@@ -44,7 +45,7 @@ def first_page_png(version: StatuteVersion) -> bytes | None:
                 page = pdf[0]
                 width, height = page.get_size()
                 if width <= 0 or height <= 0:
-                    raise ValueError("Seite ohne Größe")
+                    raise ValueError(gettext("Seite ohne Größe"))
                 scale = min(WIDTH / width, MAX_HEIGHT / height)
                 image = page.render(scale=scale).to_pil()
                 out = io.BytesIO()

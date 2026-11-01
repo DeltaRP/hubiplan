@@ -12,5 +12,3745 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+msgid "Mitglieder"
+msgstr "Members"
+
+msgid "Mitglieder lesen"
+msgstr "Read members"
+
+msgid "Mitglieder bearbeiten"
+msgstr "Edit members"
+
+msgid "Fotos verwalten"
+msgstr "Manage photos"
+
+msgid "Mitgliedsausweise (QR-Code) erstellen und sperren"
+msgstr "Create and block membership cards (QR code)"
+
+msgid "Einstellungen und Organisation"
+msgstr "Settings and organisation"
+
+#, python-brace-format
+msgid "Organisationsdaten und {pl} bearbeiten"
+msgstr "Edit organisation details and {pl}"
+
+msgid "Änderungsprotokoll einsehen"
+msgstr "View change log"
+
+msgid ""
+"Verbund mit anderen HUBIplan-Instanzen verwalten (Namen und Rechnungen nur "
+"zusammen mit den Rechten dafür)"
+msgstr ""
+"Manage federation with other HUBIplan instances (names and invoices only "
+"together with the rights for them)"
+
+msgid "Rollen und Benutzer"
+msgstr "Roles and users"
+
+msgid "Rollen und Benutzer verwalten"
+msgstr "Manage roles and users"
+
+msgid ""
+"Ansicht als Rolle: HUBIplan so ansehen, wie eine Rolle es sieht (nur lesen, "
+"nie mehr als die eigenen Rechte)"
+msgstr ""
+"View as role: see HUBIplan as a role sees it (read only, never more than "
+"your own rights)"
+
+msgid "Erscheinungsbild"
+msgstr "Appearance"
+
+msgid "Erscheinungsbild ändern"
+msgstr "Change appearance"
+
+msgid "Kasse"
+msgstr "Treasury"
+
+msgid "Kasse, Belege und Berichte lesen (z. B. Kassenprüfer)"
+msgstr "Read treasury, documents and reports (e.g. auditors)"
+
+msgid "Kasse führen: Konten, Kategorien, Buchungen, Belege"
+msgstr "Keep the treasury: accounts, categories, entries, documents"
+
+msgid "Beiträge und Rechnungen"
+msgstr "Fees and invoices"
+
+msgid "Beiträge, Rechnungen und Zahlungsstand lesen"
+msgstr "Read fees, invoices and payment status"
+
+msgid ""
+"Beitragsregeln, Beitragsläufe, Rechnungen, Mahnungen und Zahlungen bearbeiten"
+msgstr "Edit fee rules, fee runs, invoices, reminders and payments"
+
+msgid "Termine"
+msgstr "Events"
+
+msgid ""
+"Termine verwalten: Kalender der Organisation, Kategorien, öffentlicher Link"
+msgstr "Manage events: the organisation's calendar, categories, public link"
+
+msgid "Dokumente"
+msgstr "Documents"
+
+msgid "Dokumentenablage lesen"
+msgstr "Read the document store"
+
+msgid "Dokumentenablage verwalten: Ordner, Dokumente, Freigaben"
+msgstr "Manage the document store: folders, documents, sharing"
+
+msgid "Rundschreiben"
+msgstr "Circulars"
+
+msgid "Rundschreiben verfassen und versenden (E-Mails und Serienbriefe)"
+msgstr "Write and send circulars (emails and mail-merge letters)"
+
+msgid "Webseite"
+msgstr "Website"
+
+msgid "Webseite verwalten: einrichten, Zustand, Domains, Vorschau, Bausteine"
+msgstr "Manage the website: setup, status, domains, preview, blocks"
+
+msgid "Inhalte der Webseite bearbeiten (Texte und Bilder)"
+msgstr "Edit website content (texts and images)"
+
+msgid "Wettbewerbe"
+msgstr "Competitions"
+
+msgid "Wettbewerbe verwalten: anlegen, Wertungen, abschließen, Auswertung"
+msgstr "Manage competitions: create, rankings, close, evaluation"
+
+msgid ""
+"Ergebnisse erfassen: Starter, Werte und Stechen eintragen (z. B. "
+"Schießmeister)"
+msgstr ""
+"Record results: enter competitors, values and shoot-offs (e.g. range officer)"
+
+msgid "Meldungen"
+msgstr "Entries"
+
+msgid ""
+"Meldungen an Veranstalter zusammenstellen und abgeben (z. B. Mannschaften)"
+msgstr "Compile and submit entries to organisers (e.g. teams)"
+
+msgid ""
+"Ausschreibungen an die eigenen Untereinheiten verwalten, Meldungen bestätigen"
+msgstr "Manage calls for entries to your own sub-units, confirm entries"
+
+msgid "Export"
+msgstr "Export"
+
+msgid "Mitgliederlisten exportieren"
+msgstr "Export member lists"
+
+msgid "Vollständigen Datenexport erstellen (alle Daten als Datei)"
+msgstr "Create a full data export (all data as a file)"
+
+#, python-brace-format
+msgid "{Pl}"
+msgstr "{Pl}"
+
+#, python-brace-format
+msgid "{Pl} anlegen und aus einer Exportdatei importieren"
+msgstr "{Pl}: create and import from an export file"
+
+msgid "Plattform"
+msgstr "Platform"
+
+msgid "Einheiten und Plattform verwalten"
+msgstr "Manage units and platform"
+
+#, python-brace-format
+msgid "Mitglieder {gen}"
+msgstr "Members of {gen}"
+
+#, python-brace-format
+msgid "Mitglieder {gen} lesen"
+msgstr "Read members of {gen}"
+
+#, python-brace-format
+msgid "Mitgliederdaten {gen} ändern"
+msgstr "Change member data of {gen}"
+
+msgid "Zugänge und Anmeldelinks für Mitglieder"
+msgstr "Accounts and sign-in links for members"
+
+#, python-brace-format
+msgid "Mitgliedsausweise (QR-Code) {gen}"
+msgstr "Membership cards (QR code) of {gen}"
+
+#, python-brace-format
+msgid "Daten {gen} exportieren"
+msgstr "Export data of {gen}"
+
+#, python-brace-format
+msgid "Rechnungen {gen}"
+msgstr "Invoices of {gen}"
+
+#, python-brace-format
+msgid "Sammelrechnungen {gen} sehen (Kassierer)"
+msgstr "See collective invoices of {gen} (treasurer)"
+
+#, python-brace-format
+msgid "Termine {gen}"
+msgstr "Events of {gen}"
+
+#, python-brace-format
+msgid "Termine {gen} verwalten"
+msgstr "Manage events of {gen}"
+
+#, python-brace-format
+msgid "Dokumente {gen}"
+msgstr "Documents of {gen}"
+
+#, python-brace-format
+msgid "Dokumentenablage {gen} verwalten"
+msgstr "Manage the document store of {gen}"
+
+#, python-brace-format
+msgid "Rundschreiben {gen}"
+msgstr "Circulars of {gen}"
+
+#, python-brace-format
+msgid "Rundschreiben an die Mitglieder {gen} versenden"
+msgstr "Send circulars to the members of {gen}"
+
+#, python-brace-format
+msgid "Meldungen {gen}"
+msgstr "Entries of {gen}"
+
+#, python-brace-format
+msgid "Meldungen {gen} zu Ausschreibungen von oben abgeben"
+msgstr "Submit entries of {gen} for calls from above"
+
+#, python-brace-format
+msgid "Rollen {gen}"
+msgstr "Roles of {gen}"
+
+#, python-brace-format
+msgid "Rollen {gen} und ihre Rechte verwalten"
+msgstr "Manage roles of {gen} and their rights"
+
+#, python-brace-format
+msgid "Für diese Organisation nicht erlaubt: {x}"
+msgstr "Not allowed for this organisation: {x}"
+
+msgid "Das Ende liegt vor dem Beginn."
+msgstr "The end is before the start."
+
+msgid "Das Mitglied gehört nicht zu dieser Einheit."
+msgstr "The member does not belong to this unit."
+
+msgid "Bitte einen Namen eintragen."
+msgstr "Please enter a name."
+
+msgid "Bitte eine Datei auswählen."
+msgstr "Please choose a file."
+
+msgid "Die Datei darf höchstens 5 MB groß sein."
+msgstr "The file may be at most 5 MB."
+
+#, python-brace-format
+msgid "Höchstens {MAX_ROWS} Zeilen."
+msgstr "At most {MAX_ROWS} rows."
+
+#, python-brace-format
+msgid "Zeile {line}: {message}"
+msgstr "Row {line}: {message}"
+
+#, python-brace-format
+msgid "Zeile {line}: Unbekannte Untereinheit."
+msgstr "Row {line}: unknown sub-unit."
+
+#, python-brace-format
+msgid "Zeile {line}: Das Mitglied gehört nicht zu dieser Einheit."
+msgstr "Row {line}: the member does not belong to this unit."
+
+#, python-brace-format
+msgid "Zeile {line}: Name fehlt."
+msgstr "Row {line}: name missing."
+
+msgid "Diese Rolle gibt es schon."
+msgstr "This role already exists."
+
+msgid "Unbekanntes Mitglied."
+msgstr "Unknown member."
+
+msgid "Unbekannte Rolle."
+msgstr "Unknown role."
+
+msgid "Die eigene Zwei-Faktor-Anmeldung setzt eine zweite Person zurück."
+msgstr "A second person resets your own two-factor authentication."
+
+msgid "Zurücksetzen darf nur, wer selbst die Zwei-Faktor-Anmeldung nutzt."
+msgstr ""
+"Only someone who uses two-factor authentication themselves may reset it."
+
+msgid "Die Rolle ist nicht mehr aktiv."
+msgstr "The role is no longer active."
+
+msgid ""
+"Dieses Konto hat auch außerhalb dieses Vereins Rechte. Die Zwei-Faktor-"
+"Anmeldung setzt dann nur die Plattform-Verwaltung zurück."
+msgstr ""
+"This account also has permissions outside this club. Its two-factor "
+"authentication can then only be reset by the platform administration."
+
+msgid "Für dieses Konto ist keine Zwei-Faktor-Anmeldung eingerichtet."
+msgstr "This account has no two-factor authentication set up."
+
+msgid "Dafür fehlt dir die Berechtigung."
+msgstr "You do not have permission to do this."
+
+msgid "Bitte eine Rolle wählen."
+msgstr "Please choose a role."
+
+msgid "Diese Rolle gibt es hier nicht."
+msgstr "This role does not exist here."
+
 msgid "Diese Sprache gibt es nicht."
 msgstr "This language is not available."
+
+msgid "Nur das Zurücksetzen (leere Liste) ist möglich."
+msgstr "Only resetting (empty list) is possible."
+
+msgid "Unbekannte Erklärung."
+msgstr "Unknown explanation."
+
+msgid "Eine E-Mail-Adresse ist erforderlich."
+msgstr "An email address is required."
+
+msgid "Superuser brauchen is_staff=True und is_superuser=True."
+msgstr "Superusers need is_staff=True and is_superuser=True."
+
+msgid "Zu viele Versuche. Bitte später erneut."
+msgstr "Too many attempts. Please try again later."
+
+msgid "Das bisherige Passwort stimmt nicht."
+msgstr "The current password is incorrect."
+
+msgid "Das Passwort stimmt nicht."
+msgstr "The password is incorrect."
+
+msgid "Das ist schon Ihre Anmelde-E-Mail."
+msgstr "That is already your sign-in email."
+
+msgid "Diese E-Mail-Adresse gehört schon zu einem anderen Konto."
+msgstr "This email address already belongs to another account."
+
+msgid "Der Link ist ungültig, abgelaufen oder schon benutzt."
+msgstr "The link is invalid, expired or already used."
+
+msgid "Diese E-Mail-Adresse gehört inzwischen zu einem anderen Konto."
+msgstr "This email address now belongs to another account."
+
+msgid ""
+"Das Passwort ist zu leicht zu erraten: Es besteht fast nur aus naheliegenden "
+"Wörtern (z. B. Vereinsname, Ort, „Schützen“) und Ziffern."
+msgstr ""
+"The password is too easy to guess: it consists almost entirely of obvious "
+"words (e.g. club name, town, “Schützen”) and digits."
+
+msgid ""
+"Dieses Passwort taucht in bekannten Datenlecks auf. Bitte ein anderes wählen."
+msgstr ""
+"This password appears in known data breaches. Please choose another one."
+
+msgid "geändert"
+msgstr "changed"
+
+msgid "gelöscht"
+msgstr "deleted"
+
+msgid "jährlich"
+msgstr "yearly"
+
+msgid "halbjährlich"
+msgstr "half-yearly"
+
+msgid "vierteljährlich"
+msgstr "quarterly"
+
+msgid "Der Beitrag darf nicht negativ sein."
+msgstr "The fee must not be negative."
+
+msgid "Entwurf"
+msgstr "Draft"
+
+msgid "Mitglied"
+msgstr "Member"
+
+msgid "Abteilung"
+msgstr "Department"
+
+msgid "Verein"
+msgstr "Club"
+
+msgid "Überweisung"
+msgstr "Bank transfer"
+
+msgid "Lastschrift"
+msgstr "Direct debit"
+
+msgid "Die Gebühr darf nicht negativ sein."
+msgstr "The charge must not be negative."
+
+msgid "im Mitgliederbereich"
+msgstr "in the member area"
+
+msgid "gültig"
+msgstr "valid"
+
+msgid "Erstlastschrift"
+msgstr "First direct debit"
+
+msgid "Folgelastschrift"
+msgstr "Recurring direct debit"
+
+msgid "Bitte bestätige den Text des Mandats."
+msgstr "Please confirm the mandate text."
+
+msgid "Kein gültiges Mandat."
+msgstr "No valid mandate."
+
+msgid "Das Mandat ist schon widerrufen."
+msgstr "The mandate has already been revoked."
+
+msgid "Bitte mindestens eine Rechnung mit gültigem Mandat auswählen."
+msgstr "Please choose at least one invoice with a valid mandate."
+
+msgid "Nur noch nicht gebuchte Läufe lassen sich verwerfen."
+msgstr "Only runs that have not been booked can be discarded."
+
+msgid "Der Lauf ist schon gebucht oder verworfen."
+msgstr "The run has already been booked or discarded."
+
+#, python-brace-format
+msgid ""
+"Diese Rechnungen passen nicht mehr zum Betrag in der Lastschriftdatei (schon "
+"bezahlt oder storniert): {x}. Bitte prüfen; der Lauf wurde nicht gebucht."
+msgstr ""
+"These invoices no longer match the amount in the direct debit file (already "
+"paid or cancelled): {x}. Please check; the run was not booked."
+
+msgid "Die Gläubiger-Identifikationsnummer ist ungültig."
+msgstr "The creditor identifier is invalid."
+
+msgid "Lastschrift gibt es hier nicht."
+msgstr "Direct debit is not available here."
+
+msgid "Zwischen 1 und 30 Tagen."
+msgstr "Between 1 and 30 days."
+
+#, python-brace-format
+msgid "Unbekannte {label}."
+msgstr "Unknown {label}."
+
+msgid "Die Kategorie gilt nicht für Einnahmen."
+msgstr "The category does not apply to income."
+
+msgid "Höchstens 365 Tage."
+msgstr "At most 365 days."
+
+msgid "Der Betrag darf nicht negativ sein."
+msgstr "The amount must not be negative."
+
+msgid "Der Steuersatz liegt zwischen 0 und 100 Prozent."
+msgstr "The tax rate is between 0 and 100 per cent."
+
+#, python-brace-format
+msgid "Die Altersgrenzen überschneiden sich mit „{name}“."
+msgstr "The age limits overlap with “{name}”."
+
+msgid "Unbekannte Mitgliedsart."
+msgstr "Unknown membership type."
+
+msgid "Diese Art wird nicht mehr verwendet."
+msgstr "This type is no longer used."
+
+msgid "Bitte mindestens einen Posten angeben."
+msgstr "Please enter at least one item."
+
+msgid "Diesen Abrechnungszeitraum gibt es nicht."
+msgstr "This billing period does not exist."
+
+msgid "Die Rechnung ist schon festgeschrieben."
+msgstr "The invoice is already finalised."
+
+msgid "Der Rechnungsbetrag muss größer als 0 sein."
+msgstr "The invoice amount must be greater than 0."
+
+msgid "Nur offene Rechnungen lassen sich stornieren."
+msgstr "Only open invoices can be cancelled."
+
+msgid ""
+"Zu der Rechnung gibt es Zahlungen. Bitte zuerst die Zahlungen entfernen."
+msgstr "There are payments for this invoice. Please remove the payments first."
+
+msgid "Zahlungen gibt es nur zu festgeschriebenen Rechnungen."
+msgstr "Payments only exist for finalised invoices."
+
+msgid "Der Betrag muss größer als 0 sein."
+msgstr "The amount must be greater than 0."
+
+msgid ""
+"Bitte unter Beiträge → Einstellungen eine Kategorie für Beitragszahlungen "
+"wählen."
+msgstr "Please choose a category for fee payments under Fees → Settings."
+
+msgid "Bitte das Konto wählen."
+msgstr "Please choose the account."
+
+msgid ""
+"An der Buchung hängen Belege. Bitte diese zuerst in der Kasse entfernen."
+msgstr ""
+"Documents are attached to this entry. Please remove them in the treasury "
+"first."
+
+msgid "Gemahnt werden nur offene Rechnungen."
+msgstr "Only open invoices can be sent reminders."
+
+msgid "Diese Mahnstufe ist schon erreicht."
+msgstr "This reminder level has already been reached."
+
+msgid "Beiträge und Rechnungen sind hier nicht freigeschaltet."
+msgstr "Fees and invoices are not enabled here."
+
+#, python-brace-format
+msgid "Für {label} gibt es schon einen Beitragslauf."
+msgstr "There is already a fee run for {label}."
+
+msgid "Fällig vor dem Rechnungsdatum?"
+msgstr "Due before the invoice date?"
+
+#, python-brace-format
+msgid ""
+"{edited} Entwürfe wurden von Hand geändert. Neu berechnen verwirft diese "
+"Änderungen."
+msgstr ""
+"{edited} drafts were changed by hand. Recalculating discards these changes."
+
+msgid ""
+"Der Lauf hat schon festgeschriebene Rechnungen. Diese bitte einzeln "
+"stornieren."
+msgstr ""
+"The run already has finalised invoices. Please cancel them individually."
+
+msgid "Hier gibt es keine eigenen Mitglieder."
+msgstr "There are no members of its own here."
+
+msgid "Bitte ein Mitglied wählen."
+msgstr "Please choose a member."
+
+msgid "Hier gehen Rechnungen nur an Mitglieder."
+msgstr "Invoices here only go to members."
+
+msgid "Bitte den Empfänger wählen."
+msgstr "Please choose the recipient."
+
+msgid "Unbekannte Veranstaltung."
+msgstr "Unknown event."
+
+msgid "Die Posten wurden inzwischen geändert. Bitte die Rechnung neu laden."
+msgstr "The items have changed in the meantime. Please reload the invoice."
+
+msgid ""
+"Festgeschriebene Rechnungen lassen sich nicht mehr ändern. Bitte stornieren "
+"und neu anlegen."
+msgstr ""
+"Finalised invoices can no longer be changed. Please cancel and create a new "
+"one."
+
+msgid ""
+"Nur Entwürfe lassen sich löschen. Festgeschriebene Rechnungen bitte "
+"stornieren."
+msgstr "Only drafts can be deleted. Please cancel finalised invoices."
+
+msgid "Verschicken lassen sich nur offene Rechnungen."
+msgstr "Only open invoices can be sent."
+
+msgid "Für den Empfänger ist keine E-Mail-Adresse bekannt."
+msgstr "No email address is known for the recipient."
+
+msgid "Die E-Mail konnte nicht verschickt werden."
+msgstr "The email could not be sent."
+
+msgid "Diese Stufe gibt es schon."
+msgstr "This level already exists."
+
+msgid "Bitte mindestens eine fällige Rechnung auswählen."
+msgstr "Please choose at least one due invoice."
+
+msgid "Keine Mahnungen gefunden."
+msgstr "No reminders found."
+
+msgid "SEPA-Lastschrift ist ausgeschaltet."
+msgstr "SEPA direct debit is switched off."
+
+msgid "Das Datum liegt in der Zukunft."
+msgstr "The date is in the future."
+
+msgid "Der Lauf ist verworfen."
+msgstr "The run has been discarded."
+
+msgid "Die Plattform hat den Zugriff auf Mitgliedsdaten nicht freigegeben."
+msgstr "The platform has not granted access to member data."
+
+msgid "Zu viele Aufrufe. Bitte später erneut."
+msgstr "Too many requests. Please try again later."
+
+msgid ""
+"Diese Anfrage wurde schon mit anderen Angaben gesendet und ausgeführt. Bitte "
+"die Seite neu laden und den aktuellen Stand prüfen."
+msgstr ""
+"This request was already sent and carried out with different details. Please "
+"reload the page and check the current state."
+
+#, python-brace-format
+msgid ""
+"Die Kopfzeile {HEADER} fehlt (Schutz gegen doppeltes Buchen). Bitte die "
+"Seite neu laden und erneut senden."
+msgstr ""
+"The header {HEADER} is missing (protection against double booking). Please "
+"reload the page and send again."
+
+#, python-brace-format
+msgid "Ungültige Kopfzeile {HEADER}."
+msgstr "Invalid header {HEADER}."
+
+msgid "Das lässt sich nicht ohne Weiteres rückgängig machen."
+msgstr "This cannot easily be undone."
+
+#, python-brace-format
+msgid ""
+"„{value}“: nur Buchstaben, Ziffern, Punkt, Binde- und Unterstrich (nicht am "
+"Anfang oder Ende)."
+msgstr ""
+"“{value}”: only letters, digits, dot, hyphen and underscore (not at the "
+"start or end)."
+
+#, python-brace-format
+msgid "„{local}“ ist reserviert."
+msgstr "“{local}” is reserved."
+
+#, python-brace-format
+msgid "„{local}“ ist schon vergeben."
+msgstr "“{local}” is already taken."
+
+msgid "Ungültige Angabe."
+msgstr "Invalid value."
+
+#, python-brace-format
+msgid "Höchstens {MAX_ALIASES} weitere Adressen."
+msgstr "At most {MAX_ALIASES} further addresses."
+
+msgid "Dieses Rundschreiben wurde schon bearbeitet."
+msgstr "This circular has already been processed."
+
+msgid "Du darfst an diesen Verteiler nicht mehr schreiben."
+msgstr "You may no longer write to this mailing list."
+
+msgid "Information"
+msgstr "Information"
+
+msgid "Vereinsmitteilung"
+msgstr "Club announcement"
+
+msgid "Kurzmitteilung"
+msgstr "Short message"
+
+msgid "Vorstände der Vereine"
+msgstr "Boards of the clubs"
+
+msgid "Rolleninhaber der Abteilungen"
+msgstr "Role holders of the departments"
+
+msgid "Rolleninhaber des Vereins"
+msgstr "Role holders of the club"
+
+msgid "wird versendet"
+msgstr "sending"
+
+msgid "E-Mail"
+msgstr "Email"
+
+msgid "Brief"
+msgstr "Letter"
+
+msgid "App"
+msgstr "App"
+
+msgid "nur Mitgliederbereich"
+msgstr "member area only"
+
+msgid "Brief zum Drucken"
+msgstr "Letter for printing"
+
+msgid "Absender bestätigt per Link"
+msgstr "Sender confirms via link"
+
+msgid "als Entwurf in HUBIplan ablegen"
+msgstr "save as a draft in HUBIplan"
+
+msgid "direkt versenden (ohne Bestätigung)"
+msgstr "send directly (without confirmation)"
+
+msgid "wartet auf Bestätigung"
+msgstr "awaiting confirmation"
+
+msgid "als Entwurf abgelegt"
+msgstr "saved as draft"
+
+msgid "Fehler"
+msgstr "Error"
+
+msgid "Dieses Rundschreiben wurde bereits versendet."
+msgstr "This circular has already been sent."
+
+msgid "Für diese Auswahl gibt es keine Empfänger."
+msgstr "There are no recipients for this selection."
+
+#, python-brace-format
+msgid ""
+"Heute gingen schon {sent} Kurzmitteilungen hinaus (höchstens "
+"{MAX_SHORT_PER_DAY} je Tag). Bitte morgen erneut oder als Rundschreiben."
+msgstr ""
+"{sent} short messages have already gone out today (at most "
+"{MAX_SHORT_PER_DAY} per day). Please try again tomorrow or send a circular."
+
+msgid "Für dein Konto ist keine E-Mail-Adresse hinterlegt."
+msgstr "There is no email address on file for your account."
+
+msgid "Ungültige Empfängerauswahl."
+msgstr "Invalid recipient selection."
+
+msgid "Ungültiger Wert."
+msgstr "Invalid value."
+
+msgid "Das Höchstalter liegt unter dem Mindestalter."
+msgstr "The maximum age is below the minimum age."
+
+msgid "Das Muster eines Verteilers hat keinen Verteiler."
+msgstr "The mailing list template has no mailing list."
+
+msgid "Verteiler nicht gefunden."
+msgstr "Mailing list not found."
+
+#, python-brace-format
+msgid "Eine Kurzmitteilung hat höchstens {MAX_SHORT_BODY} Zeichen."
+msgstr "A short message has at most {MAX_SHORT_BODY} characters."
+
+msgid "Ungültiger Empfängerkreis."
+msgstr "Invalid group of recipients."
+
+msgid "Bitte einen Namen eingeben."
+msgstr "Please enter a name."
+
+msgid "Ein versendetes Rundschreiben lässt sich nicht mehr ändern."
+msgstr "A circular that has been sent can no longer be changed."
+
+msgid "Vorlage nicht gefunden."
+msgstr "Template not found."
+
+msgid "Rundschreiben nicht gefunden."
+msgstr "Circular not found."
+
+msgid "Bitte den Verteiler selbst löschen."
+msgstr "Please delete the mailing list itself."
+
+msgid "Das ist die Empfängerauswahl eines Verteilers."
+msgstr "This is the recipient selection of a mailing list."
+
+msgid "Das Rundschreiben ist noch nicht versendet."
+msgstr "The circular has not been sent yet."
+
+msgid "Kurzmitteilungen haben keine Anhänge."
+msgstr "Short messages have no attachments."
+
+msgid "Bitte eine Datei wählen."
+msgstr "Please choose a file."
+
+#, python-brace-format
+msgid "Die Datei ist größer als {mb} MB."
+msgstr "The file is larger than {mb} MB."
+
+#, python-brace-format
+msgid "Höchstens {MAX_ATTACHMENTS} Anhänge je Rundschreiben."
+msgstr "At most {MAX_ATTACHMENTS} attachments per circular."
+
+#, python-brace-format
+msgid "Alle Anhänge zusammen höchstens {x} MB."
+msgstr "All attachments together at most {x} MB."
+
+msgid "Bitte eine PDF-Datei hochladen."
+msgstr "Please upload a PDF file."
+
+msgid "Nur Personen mit dem Recht „Rundschreiben versenden“ sind möglich."
+msgstr "Only people with the permission “Send circulars” are possible."
+
+msgid "Probe-Eingänge gibt es nur ohne Sammelpostfach."
+msgstr "Test messages only exist without a shared mailbox."
+
+msgid "Der Verteiler ist ausgeschaltet."
+msgstr "The mailing list is switched off."
+
+msgid "Diese Mail wurde schon verarbeitet."
+msgstr "This email has already been processed."
+
+msgid "Dieser Link ist ungültig."
+msgstr "This link is invalid."
+
+msgid "Dieser Link ist ungültig oder abgelaufen."
+msgstr "This link is invalid or has expired."
+
+msgid "Unbekannte Aktion."
+msgstr "Unknown action."
+
+msgid "Der Wettbewerb ist endgültig abgeschlossen."
+msgstr "The competition is finally closed."
+
+msgid "Das ist kein Vogelschießen."
+msgstr "This is not a bird shoot."
+
+msgid "Alle Pfänder sind gefallen, der Schuss zählt nicht mehr."
+msgstr "All pieces have fallen; the shot no longer counts."
+
+msgid "Unbekanntes Pfand."
+msgstr "Unknown piece."
+
+#, python-brace-format
+msgid "{name} ist schon gefallen."
+msgstr "{name} has already fallen."
+
+#, python-brace-format
+msgid "Es gilt die feste Reihenfolge, als Nächstes fällt {name}."
+msgstr "The fixed order applies; {name} falls next."
+
+#, python-brace-format
+msgid "{name} hat schon ein Pfand und ist ausgeschieden."
+msgstr "{name} already has a piece and is out."
+
+msgid "Gleichzeitig ein anderer Schuss, bitte noch einmal."
+msgstr "Another shot at the same time, please try again."
+
+msgid "Nur der letzte Schuss lässt sich zurücknehmen."
+msgstr "Only the last shot can be withdrawn."
+
+msgid "Es gibt keinen Schuss zum Zurücknehmen."
+msgstr "There is no shot to withdraw."
+
+msgid "Bitte eine ganze Zahl eingeben."
+msgstr "Please enter a whole number."
+
+msgid "Bitte eine Zahl ab 1 eingeben."
+msgstr "Please enter a number from 1."
+
+msgid "Unbekannter Schütze."
+msgstr "Unknown shooter."
+
+#, python-brace-format
+msgid "Nummer {n} hat schon {name}."
+msgstr "Number {n} is already taken by {name}."
+
+msgid "Ungültige Kennung."
+msgstr "Invalid identifier."
+
+msgid "Bitte einen Namen angeben."
+msgstr "Please enter a name."
+
+msgid "Ungültig."
+msgstr "Invalid."
+
+msgid "Das Pfand ist schon gefallen. Erst das Ergebnis entfernen."
+msgstr "The piece has already fallen. Remove the result first."
+
+msgid "Unbekannter Termin."
+msgstr "Unknown event."
+
+msgid "Der Terminkalender ist nicht freigeschaltet."
+msgstr "The calendar is not enabled."
+
+msgid "Termine anlegen darf, wer Termine verwalten darf."
+msgstr "Anyone who may manage events may create events."
+
+msgid "Der Wettbewerb hat schon einen Termin."
+msgstr "The competition already has an event."
+
+msgid "Dem Wettbewerb ist kein Termin zugeordnet."
+msgstr "No event is assigned to the competition."
+
+msgid "Das ist kein fremder Wettbewerb."
+msgstr "This is not an external competition."
+
+msgid "Bitte einen Platz ab 1 eingeben."
+msgstr "Please enter a place from 1."
+
+#, python-brace-format
+msgid "Es gab nur {field_size} Teilnehmer."
+msgstr "There were only {field_size} participants."
+
+msgid "Vorbereitung"
+msgstr "Preparation"
+
+msgid "läuft"
+msgstr "running"
+
+msgid "vorläufig"
+msgstr "provisional"
+
+msgid "endgültig"
+msgstr "final"
+
+msgid "nicht auf der Webseite"
+msgstr "not on the website"
+
+msgid "live während des Wettbewerbs"
+msgstr "live during the competition"
+
+msgid "nach Abschluss"
+msgstr "after completion"
+
+msgid "Rangliste"
+msgstr "Ranking"
+
+msgid "Vogelschießen"
+msgstr "Bird shoot"
+
+msgid "Einzelwertung"
+msgstr "Individual ranking"
+
+msgid "Wertung der Untereinheiten"
+msgstr "Sub-unit ranking"
+
+msgid "Mannschaftswertung"
+msgstr "Team ranking"
+
+msgid "Wert frei eingeben"
+msgstr "Free value"
+
+msgid "Ringe"
+msgstr "Rings"
+
+msgid "Zehntel"
+msgstr "Tenths"
+
+msgid "Teiler"
+msgstr "Distance (Teiler)"
+
+msgid "Summe der besten"
+msgstr "Sum of the best"
+
+msgid "Summe aller"
+msgstr "Sum of all"
+
+msgid "Durchschnitt aller"
+msgstr "Average of all"
+
+msgid "zurückgezogen"
+msgstr "withdrawn"
+
+msgid "aus Foto erkannt"
+msgstr "recognised from photo"
+
+msgid "von Hand"
+msgstr "by hand"
+
+msgid "Zu viele Aufrufe. Bitte kurz warten."
+msgstr "Too many requests. Please wait a moment."
+
+#, python-brace-format
+msgid "{field}: Bitte eine Zahl angeben."
+msgstr "{field}: please enter a number."
+
+#, python-brace-format
+msgid "{field}: Treffer liegt außerhalb der Scheibe."
+msgstr "{field}: hit lies outside the target."
+
+msgid "Treffer gibt es nur in Einzelwertungen."
+msgstr "Hits only exist in individual rankings."
+
+msgid "Für diese Wertung ist keine Scheibe eingestellt."
+msgstr "No target is set for this ranking."
+
+msgid "Bitte eine Liste von Treffern senden."
+msgstr "Please send a list of hits."
+
+#, python-brace-format
+msgid "Höchstens {limit} Treffer je Schütze."
+msgstr "At most {limit} hits per shooter."
+
+msgid "Unbekannte Quelle."
+msgstr "Unknown source."
+
+msgid "Ungültiger Treffer."
+msgstr "Invalid hit."
+
+msgid "Ungültiger Spiegel."
+msgstr "Invalid target face."
+
+msgid "Zu viele Fotos in kurzer Zeit. Bitte kurz warten."
+msgstr "Too many photos in a short time. Please wait a moment."
+
+msgid "Bitte ein Foto der Scheibe senden."
+msgstr "Please send a photo of the target."
+
+msgid "Das Foto ist zu groß (höchstens 15 MB)."
+msgstr "The photo is too large (at most 15 MB)."
+
+msgid "Bitte ja oder nein angeben."
+msgstr "Please answer yes or no."
+
+msgid "Ungültige Gleichstandsregeln."
+msgstr "Invalid tie-break rules."
+
+#, python-brace-format
+msgid "Unbekannte Gleichstandsregel „{item}“."
+msgstr "Unknown tie-break rule “{item}”."
+
+msgid "Das Modul Wettbewerbe ist nicht freigeschaltet."
+msgstr "The competitions module is not enabled."
+
+msgid "Die Art des Wettbewerbs lässt sich nicht mehr ändern."
+msgstr "The type of competition can no longer be changed."
+
+msgid "Ein Vogelschießen lässt sich nur als eigener Wettbewerb anlegen."
+msgstr "A bird shoot can only be created as an own competition."
+
+msgid "Bitte einen Titel angeben."
+msgstr "Please enter a title."
+
+msgid "Höchstens 30 weitere Angaben."
+msgstr "At most 30 further details."
+
+msgid "Unbekannte Scheibe."
+msgstr "Unknown target."
+
+msgid "Bitte 1 bis 100 Schüsse je Serie."
+msgstr "Please 1 to 100 shots per series."
+
+msgid "Bitte die Maße der eigenen Scheibe angeben."
+msgstr "Please enter the dimensions of your own target."
+
+msgid "Ringe, Zehntel oder Teiler gibt es nur in Einzelwertungen."
+msgstr "Rings, tenths or distance only exist in individual rankings."
+
+msgid "Für Ringe, Zehntel oder Teiler bitte eine Scheibe wählen."
+msgstr "For rings, tenths or distance please choose a target."
+
+msgid "Höchstens 3 Nachkommastellen."
+msgstr "At most 3 decimal places."
+
+msgid "Bitte eine Bezeichnung angeben."
+msgstr "Please enter a label."
+
+msgid "Beim Vogelschießen gibt es keine Wertungen, nur Pfänder."
+msgstr "A bird shoot has no rankings, only pieces."
+
+msgid "Mannschaftswertungen gibt es nur bei fremden Wettbewerben."
+msgstr "Team rankings only exist for external competitions."
+
+msgid "Bei fremden Wettbewerben: Einzel- oder Mannschaftswertung."
+msgstr "For external competitions: individual or team ranking."
+
+msgid "Es können nicht mehr Schüsse zählen als geschossen werden."
+msgstr "No more shots can count than are fired."
+
+msgid "Zuerst eine Einzelwertung anlegen."
+msgstr "Create an individual ranking first."
+
+msgid "Bitte eine Einzelwertung wählen."
+msgstr "Please choose an individual ranking."
+
+msgid "Bitte angeben, wie viele der besten zählen."
+msgstr "Please state how many of the best count."
+
+#, python-brace-format
+msgid "{x} ist schon eingetragen."
+msgstr "{x} is already entered."
+
+msgid "Schon eingetragen."
+msgstr "Already entered."
+
+msgid "Unbekannte Untereinheit."
+msgstr "Unknown sub-unit."
+
+msgid "Losnummer: bitte eine ganze Zahl ab 1."
+msgstr "Draw number: please a whole number from 1."
+
+msgid "Unbekannte Angabe."
+msgstr "Unknown detail."
+
+msgid "Bitte eine Zahl eingeben."
+msgstr "Please enter a number."
+
+msgid "Bitte eine gültige Zahl eingeben."
+msgstr "Please enter a valid number."
+
+#, python-brace-format
+msgid "Höchstens {decimals} Nachkommastellen."
+msgstr "At most {decimals} decimal places."
+
+#, python-brace-format
+msgid "Höchstens {x}."
+msgstr "At most {x}."
+
+msgid "Höchstens 2000 Eingaben auf einmal."
+msgstr "At most 2000 entries at once."
+
+msgid "Unbekannte Eingabe."
+msgstr "Unknown entry."
+
+msgid "Gerätekennung fehlt."
+msgstr "Device identifier missing."
+
+msgid "Unbekannter Teilnehmer im Stechen."
+msgstr "Unknown participant in the shoot-off."
+
+msgid "Unbekannter Zustand."
+msgstr "Unknown state."
+
+msgid "Erst die offenen Stechen entscheiden, dann endgültig setzen."
+msgstr "Decide the open shoot-offs first, then set to final."
+
+msgid "Ein endgültiger Wettbewerb lässt sich nicht zurücksetzen."
+msgstr "A final competition cannot be reset."
+
+msgid "Höchstens so viele wie Schüsse."
+msgstr "At most as many as shots."
+
+msgid "Für diese Gruppe ist kein Stechen nötig."
+msgstr "No shoot-off is needed for this group."
+
+msgid "Es sind schon Werte eingetragen; erst die Werte löschen."
+msgstr "Values have already been entered; delete the values first."
+
+msgid "Erst das spätere Stechen entfernen."
+msgstr "Remove the later shoot-off first."
+
+msgid "Das Bild lässt sich nicht lesen."
+msgstr "The image cannot be read."
+
+msgid "Das Bild ist zu groß."
+msgstr "The image is too large."
+
+msgid "Kein Spiegel gefunden. Bitte die ganze Scheibe gerade fotografieren."
+msgstr "No target face found. Please photograph the whole target straight on."
+
+msgid "Ausschnitt ließ sich nicht speichern."
+msgstr "The detail could not be saved."
+
+msgid "Abbildung nicht bestimmbar"
+msgstr "Scale cannot be determined"
+
+msgid "Für diese Art von Organisation nicht verfügbar."
+msgstr "Not available for this type of organisation."
+
+msgid ""
+"Die verschlüsselten Daten sind gerade nicht verfügbar. Bitte in einigen "
+"Minuten erneut versuchen."
+msgstr ""
+"The encrypted data is not available right now. Please try again in a few "
+"minutes."
+
+msgid "Unbekanntes Format eines verpackten Schlüssels."
+msgstr "Unknown format of a wrapped key."
+
+msgid ""
+"Datenschlüssel wurde mit einem anderen Hauptschlüssel verpackt "
+"(Hauptschlüssel falsch oder der alte fehlt)."
+msgstr ""
+"Data key was wrapped with a different master key (master key wrong or the "
+"old one is missing)."
+
+msgid "Datenschlüssel lässt sich nicht entpacken."
+msgstr "Data key cannot be unwrapped."
+
+#, python-brace-format
+msgid "Datenschlüssel {key_id} fehlt (Verein gelöscht?)."
+msgstr "Data key {key_id} is missing (club deleted?)."
+
+msgid "Verschlüsselte Datei ist abgeschnitten."
+msgstr "Encrypted file is truncated."
+
+msgid "Keine verschlüsselte Datei."
+msgstr "Not an encrypted file."
+
+msgid "Negative Position"
+msgstr "Negative position"
+
+msgid "Verschlüsselte Datei ist beschädigt oder verändert."
+msgstr "Encrypted file is damaged or altered."
+
+msgid "Verschlüsselter Wert ist beschädigt."
+msgstr "Encrypted value is damaged."
+
+msgid "Verschlüsselter Wert ist verändert."
+msgstr "Encrypted value has been altered."
+
+msgid "Bitte PNG, JPG oder WebP hochladen."
+msgstr "Please upload PNG, JPG or WebP."
+
+msgid "Das Logo hat zu viele Pixel."
+msgstr "The logo has too many pixels."
+
+msgid "Die Datei ist kein gültiges Bild."
+msgstr "The file is not a valid image."
+
+#, python-brace-format
+msgid ""
+"Es laufen schon {max_active} {what}. Bitte warten, bis einer fertig ist."
+msgstr ""
+"{max_active} {what} are already running. Please wait until one has finished."
+
+#, python-brace-format
+msgid ""
+"In der letzten Stunde wurden schon {max_per_hour} {what} begonnen. Bitte "
+"später erneut versuchen."
+msgstr ""
+"{max_per_hour} {what} have already been started in the last hour. Please try "
+"again later."
+
+msgid "Private Dateien nur über save() schreiben."
+msgstr "Only write private files via save()."
+
+msgid "Erwartet eine Liste von Nummern."
+msgstr "Expects a list of numbers."
+
+msgid "Ein Eintrag kommt doppelt vor."
+msgstr "An entry occurs twice."
+
+msgid "Die Liste hat sich inzwischen geändert. Bitte neu laden."
+msgstr "The list has changed in the meantime. Please reload."
+
+#, python-brace-format
+msgid "{host} ist nicht auflösbar."
+msgstr "{host} cannot be resolved."
+
+msgid "Nur https-Adressen sind erlaubt."
+msgstr "Only https addresses are allowed."
+
+msgid "Ungültige Adresse."
+msgstr "Invalid address."
+
+#, python-brace-format
+msgid "nicht erreichbar ({name2})"
+msgstr "not reachable ({name2})"
+
+msgid "Bitte ein gültiges Datum angeben."
+msgstr "Please enter a valid date."
+
+msgid "Bitte Monat oder Jahr wählen."
+msgstr "Please choose month or year."
+
+msgid "Zu viele Monate. Bitte einen kürzeren Zeitraum oder Jahre wählen."
+msgstr "Too many months. Please choose a shorter period or years."
+
+msgid "Der Zeitraum ist zu lang."
+msgstr "The period is too long."
+
+msgid "Die Datei enthält Schadsoftware und wurde abgelehnt."
+msgstr "The file contains malware and was rejected."
+
+msgid ""
+"Die Virenprüfung ist gerade nicht erreichbar. Bitte später noch einmal "
+"hochladen."
+msgstr "The virus scan is not reachable right now. Please upload again later."
+
+#, python-brace-format
+msgid "clamd nicht erreichbar: {exc}"
+msgstr "clamd not reachable: {exc}"
+
+#, python-brace-format
+msgid "clamd hat die Verbindung beendet: {exc}"
+msgstr "clamd closed the connection: {exc}"
+
+#, python-brace-format
+msgid "clamd antwortet nicht: {exc}"
+msgstr "clamd does not respond: {exc}"
+
+#, python-brace-format
+msgid "clamd meldet: {x}"
+msgstr "clamd reports: {x}"
+
+#, python-brace-format
+msgid "Höchstens {MAX_TEXT} Zeichen (jetzt {x})."
+msgstr "At most {MAX_TEXT} characters (now {x})."
+
+msgid "Bitte eine Zahl angeben."
+msgstr "Please enter a number."
+
+#, python-brace-format
+msgid "Höchstens {MAX_DIGITS} Stellen."
+msgstr "At most {MAX_DIGITS} digits."
+
+#, python-brace-format
+msgid ""
+"Die Zahl ist zu groß oder zu klein (höchstens {MAX_DIGITS} Stellen vor und "
+"{MAX_DIGITS2} nach dem Komma)."
+msgstr ""
+"The number is too large or too small (at most {MAX_DIGITS} digits before and "
+"{MAX_DIGITS2} after the decimal point)."
+
+msgid "Bitte ein Datum angeben."
+msgstr "Please enter a date."
+
+#, python-brace-format
+msgid "„{value}“ ist kein erlaubter Wert."
+msgstr "“{value}” is not an allowed value."
+
+msgid "Unbekannter Feldtyp."
+msgstr "Unknown field type."
+
+msgid "Bitte ein Jahr oder einen Zeitraum wie 2010/2015 angeben."
+msgstr "Please enter a year or a period such as 2010/2015."
+
+#, python-brace-format
+msgid "Jahre bitte zwischen {MIN_YEAR} und {MAX_YEAR}."
+msgstr "Years must be between {MIN_YEAR} and {MAX_YEAR}."
+
+msgid "Das Endjahr liegt vor dem Startjahr."
+msgstr "The end year is before the start year."
+
+msgid "Bitte eine Liste von Einträgen angeben."
+msgstr "Please provide a list of entries."
+
+msgid "Ungültiger Eintrag."
+msgstr "Invalid entry."
+
+msgid "Ein Feld mit dieser Bezeichnung gibt es schon."
+msgstr "A field with this label already exists."
+
+#, python-brace-format
+msgid ""
+"„{label}“ ist bei {x} Personen ausgefüllt. Bitte archivieren oder "
+"ausdrücklich samt Werten löschen."
+msgstr ""
+"“{label}” is filled in for {x} people. Please archive it or explicitly "
+"delete it together with its values."
+
+msgid "Ungültige Daten."
+msgstr "Invalid data."
+
+#, python-brace-format
+msgid "Logo „{path}“: {x}"
+msgstr "Logo “{path}”: {x}"
+
+msgid "Import"
+msgstr "Import"
+
+msgid "Organisation"
+msgstr "Organisation"
+
+msgid "geprüft"
+msgstr "checked"
+
+#, python-brace-format
+msgid "Datei „{fname}“: Diese Dateiart ist nicht erlaubt."
+msgstr "File “{fname}”: this file type is not allowed."
+
+#, python-brace-format
+msgid "Datei „{fname}“ ist keine Textdatei."
+msgstr "File “{fname}” is not a text file."
+
+#, python-brace-format
+msgid "Datei „{fname}“: Inhalt und Dateiendung passen nicht."
+msgstr "File “{fname}”: content and file extension do not match."
+
+#, python-brace-format
+msgid "Datei „{path}“ passt nicht zu ihrer Prüfsumme."
+msgstr "File “{path}” does not match its checksum."
+
+#, python-brace-format
+msgid "Datei „{path}“ ist kein lesbarer Kontoauszug."
+msgstr "File “{path}” is not a readable bank statement."
+
+#, python-brace-format
+msgid "Datei „{path}“ wird hier nicht übernommen."
+msgstr "File “{path}” is not taken over here."
+
+#, python-brace-format
+msgid "Datei „{path}“: Diese Dateiart ist nicht erlaubt."
+msgstr "File “{path}”: this file type is not allowed."
+
+#, python-brace-format
+msgid "Tabelle „{x}“ darf hier nicht importiert werden."
+msgstr "Table “{x}” may not be imported here."
+
+msgid "Bitte eine Exportdatei auswählen."
+msgstr "Please choose an export file."
+
+msgid "Die Datei ist größer als 500 MB."
+msgstr "The file is larger than 500 MB."
+
+msgid "Dieser Import ist schon abgeschlossen oder läuft."
+msgstr "This import has already been completed or is running."
+
+msgid "Die Datei ist nicht mehr vorhanden."
+msgstr "The file no longer exists."
+
+msgid "Bitte zuerst die Prüfung abwarten."
+msgstr "Please wait for the check to finish first."
+
+msgid "Die Datei hat noch Fehler. Bitte zuerst beheben."
+msgstr "The file still has errors. Please fix them first."
+
+msgid "Ungültiger Schlüssel."
+msgstr "Invalid key."
+
+msgid "Zu viele Versuche. Bitte in einer Viertelstunde erneut."
+msgstr "Too many attempts. Please try again in a quarter of an hour."
+
+msgid "Dein Konto hat keine Verwaltungsrechte."
+msgstr "Your account has no administration rights."
+
+msgid ""
+"Für die Verwaltung in der App ist die Zwei-Faktor-Anmeldung nötig. Bitte "
+"zuerst im Browser unter „Mein Konto“ einrichten."
+msgstr ""
+"Administration in the app requires two-factor authentication. Please set it "
+"up first in the browser under “My account”."
+
+msgid ""
+"Für die Verwaltung in der App ist eine aktuelle App-Version nötig. Bitte die "
+"App aktualisieren."
+msgstr ""
+"Administration in the app requires a current app version. Please update the "
+"app."
+
+msgid "Passwort oder Code stimmt nicht."
+msgstr "Password or code is incorrect."
+
+msgid "Zu viele Anfragen. Bitte etwas später erneut."
+msgstr "Too many requests. Please try again a little later."
+
+msgid "Aus der App nur mit Belegfoto."
+msgstr "From the app only with a photo of the receipt."
+
+msgid "Bitte eine Barkasse wählen."
+msgstr "Please choose a cash box."
+
+msgid "Bitte angeben."
+msgstr "Please specify."
+
+msgid "Zu diesem Datum keine laufende Mitgliedschaft."
+msgstr "No current membership on this date."
+
+msgid ""
+"Die bisherige Zugehörigkeit beginnt erst an diesem Tag. Bitte ein späteres "
+"Datum wählen oder im Browser korrigieren."
+msgstr ""
+"The previous membership only starts on this day. Please choose a later date "
+"or correct it in the browser."
+
+msgid "Das Gerät ist nicht mehr angemeldet. Bitte die App neu verbinden."
+msgstr "The device is no longer signed in. Please reconnect the app."
+
+msgid "Der Geräteschlüssel muss erneuert werden."
+msgstr "The device key must be renewed."
+
+msgid "Mit dem Geräteschlüssel ist das nicht erreichbar."
+msgstr "This cannot be reached with the device key."
+
+msgid "Mit dem Vorstandszugang ist das nicht erreichbar."
+msgstr "This cannot be reached with the board access."
+
+msgid ""
+"Der Vorstandszugang gilt nur zusammen mit dem Geräteschlüssel dieses Geräts."
+msgstr "The board access is only valid together with this device's device key."
+
+msgid ""
+"Die Anfrage ist nicht gültig unterschrieben. Bitte die App neu freischalten."
+msgstr "The request is not validly signed. Please unlock the app again."
+
+msgid ""
+"Die Uhrzeit des Telefons weicht zu stark ab oder die Unterschrift fehlt."
+msgstr "The phone's clock is too far off or the signature is missing."
+
+msgid "Die Anfrage ist zu groß."
+msgstr "The request is too large."
+
+msgid "Diese Anfrage wurde schon einmal geschickt."
+msgstr "This request has already been sent once."
+
+msgid ""
+"Die Verwaltung ist gesperrt. Bitte mit Passwort und Zwei-Faktor-Code "
+"freischalten."
+msgstr ""
+"Administration is locked. Please unlock with password and two-factor code."
+
+msgid "Android"
+msgstr "Android"
+
+msgid "kein Push (Abruf)"
+msgstr "no push (polling)"
+
+msgid "UnifiedPush"
+msgstr "UnifiedPush"
+
+msgid "Google (FCM)"
+msgstr "Google (FCM)"
+
+msgid ""
+"Die App gibt es für den Mitgliederbereich. Für dieses Konto ist kein "
+"Mitgliederbereich freigeschaltet."
+msgstr ""
+"The app is for the member area. No member area is enabled for this account."
+
+msgid "Bitte den QR-Code scannen oder einen Anmeldelink öffnen."
+msgstr "Please scan the QR code or open a sign-in link."
+
+msgid "Der Code ist ungültig oder abgelaufen. Bitte einen neuen erzeugen."
+msgstr "The code is invalid or has expired. Please create a new one."
+
+msgid ""
+"Für dieses Konto bitte mit Passwort oder QR-Code aus „Mein Konto“ anmelden."
+msgstr ""
+"For this account please sign in with password or QR code from “My account”."
+
+msgid "Für dieses Konto ist kein Mitgliederbereich freigeschaltet."
+msgstr "No member area is enabled for this account."
+
+msgid "Geräte werden in der App angemeldet."
+msgstr "Devices are signed in within the app."
+
+msgid "Diese Instanz nimmt keinen Google-Push über dieses Gateway an."
+msgstr "This instance does not accept Google push via this gateway."
+
+msgid "Für dieses Gerät ist schon ein anderer Schlüssel gemeldet."
+msgstr "A different key has already been registered for this device."
+
+msgid "Für dieses Gerät ist kein Schlüsselpaar gemeldet."
+msgstr "No key pair has been registered for this device."
+
+msgid "Die Aufgabe ist abgelaufen. Bitte erneut."
+msgstr "The task has expired. Please try again."
+
+msgid "Die Unterschrift stimmt nicht."
+msgstr "The signature is incorrect."
+
+msgid "Bitte mit dem neuen Geräteschlüssel erneuern."
+msgstr "Please renew with the new device key."
+
+msgid "Push-Endpunkt muss eine https-Adresse sein."
+msgstr "Push endpoint must be an https address."
+
+#, python-brace-format
+msgid "{hostname} ist nicht auflösbar."
+msgstr "{hostname} cannot be resolved."
+
+#, python-brace-format
+msgid "{hostname} zeigt auf eine interne Adresse."
+msgstr "{hostname} points to an internal address."
+
+msgid "Nachricht zu groß."
+msgstr "Message too large."
+
+msgid "nur Vorstand"
+msgstr "board only"
+
+msgid "Vereine des Dachverbands"
+msgstr "Clubs of the umbrella association"
+
+msgid "alle Mitglieder"
+msgstr "all members"
+
+msgid "öffentlich per Link"
+msgstr "public via link"
+
+msgid "Die Datei ist größer als 20 MB."
+msgstr "The file is larger than 20 MB."
+
+#, python-brace-format
+msgid "Erlaubt sind {ALLOWED_HINT}."
+msgstr "Allowed are {ALLOWED_HINT}."
+
+msgid "Das ist keine Textdatei."
+msgstr "This is not a text file."
+
+msgid "Inhalt und Dateiendung passen nicht zusammen."
+msgstr "Content and file extension do not match."
+
+#, python-brace-format
+msgid ""
+"Der Speicherplatz der Ablage ({x} GB) ist voll. Bitte alte Fassungen oder "
+"den Papierkorb leeren oder die Plattform um mehr Platz bitten."
+msgstr ""
+"The storage space of the document store ({x} GB) is full. Please delete old "
+"versions or empty the bin, or ask the platform for more space."
+
+msgid "Diese Sichtbarkeit gibt es hier nicht."
+msgstr "This visibility does not exist here."
+
+msgid "Hier gibt es keine höhere Ebene zum Freigeben."
+msgstr "There is no higher level to share with here."
+
+msgid "Der Ordner ist nicht leer. Bitte zuerst die Dokumente verschieben."
+msgstr "The folder is not empty. Please move the documents first."
+
+msgid "Dokumente lassen sich nur innerhalb einer Ablage verschieben."
+msgstr "Documents can only be moved within one document store."
+
+msgid "Die einzige Fassung lässt sich nicht löschen. Lösche das Dokument."
+msgstr "The only version cannot be deleted. Delete the document."
+
+msgid "Bitte zuerst das Datum des Anlasses angeben."
+msgstr "Please enter the date of the occasion first."
+
+msgid "Zu- und Absagen gibt es nur bei Terminen eines Vereins."
+msgstr "RSVPs only exist for events of a club."
+
+msgid "Die Ausschreibung hat schon einen Termin."
+msgstr "The call for entries already has an event."
+
+msgid "Die Zusagen sieht nur, wer die Mitglieder sehen darf."
+msgstr "Only those who may see the members can see the RSVPs."
+
+msgid "je Mannschaft"
+msgstr "per team"
+
+msgid "je Person"
+msgstr "per person"
+
+msgid "nach Meldeschluss keine Änderungen"
+msgstr "no changes after the entry deadline"
+
+msgid "nach Meldeschluss nur Ersatz von Personen"
+msgstr "after the entry deadline only replacement of people"
+
+msgid "Änderungen bis zum Anlass"
+msgstr "changes until the occasion"
+
+msgid "Mannschaften"
+msgstr "Teams"
+
+msgid "Personenliste"
+msgstr "List of people"
+
+msgid "Zahl"
+msgstr "Number"
+
+msgid "Auswahl"
+msgstr "Choice"
+
+msgid "Text"
+msgstr "Text"
+
+msgid "bestätigt"
+msgstr "confirmed"
+
+msgid "Rückfrage"
+msgstr "Query"
+
+msgid "Meldung"
+msgstr "Entry"
+
+msgid "Änderungsmeldung"
+msgstr "Change of entry"
+
+msgid "Rückzug"
+msgstr "Withdrawal"
+
+msgid "Tabelle"
+msgstr "Spreadsheet"
+
+msgid "sonstiger Weg"
+msgstr "other channel"
+
+msgid "in HUBIplan"
+msgstr "in HUBIplan"
+
+#, python-brace-format
+msgid "Unbekannte Angabe „{key}“."
+msgstr "Unknown detail “{key}”."
+
+msgid "Bitte eine ganze Zahl angeben."
+msgstr "Please enter a whole number."
+
+#, python-brace-format
+msgid "Bitte eine Zahl von {low} bis {high} angeben."
+msgstr "Please enter a number from {low} to {high}."
+
+msgid "Höchstens 10 Aufgaben."
+msgstr "At most 10 tasks."
+
+msgid "Höchstzahl unter der Mindestzahl."
+msgstr "Maximum below the minimum."
+
+msgid "Bitte 1 bis 30 Antworten angeben."
+msgstr "Please give 1 to 30 answers."
+
+msgid "Seit der letzten Fassung hat sich nichts geändert."
+msgstr "Nothing has changed since the last version."
+
+msgid "Das Modul Meldungen ist nicht freigeschaltet."
+msgstr "The entries module is not enabled."
+
+msgid "Die Ausschreibung ändert nur der Veranstalter."
+msgstr "Only the organiser changes the call for entries."
+
+msgid "Zu dieser Ausschreibung gibt es noch keine Meldung."
+msgstr "There is no entry for this call for entries yet."
+
+msgid "Zu dieser Ausschreibung melden die Untereinheiten."
+msgstr "The sub-units submit entries for this call for entries."
+
+msgid "Die Meldung ist zurückgezogen."
+msgstr "The entry has been withdrawn."
+
+#, python-brace-format
+msgid "Höchstens {x} Zeichen."
+msgstr "At most {x} characters."
+
+msgid "Bitte den Veranstalter angeben."
+msgstr "Please enter the organiser."
+
+msgid "Keine gültige E-Mail-Adresse."
+msgstr "Not a valid email address."
+
+msgid "Bitte einen Betrag angeben."
+msgstr "Please enter an amount."
+
+msgid "Ungültiger Betrag."
+msgstr "Invalid amount."
+
+msgid "Unbekannter Wettbewerb."
+msgstr "Unknown competition."
+
+msgid ""
+"Zu dieser Ausschreibung gibt es eine abgegebene Meldung; sie bleibt als "
+"Beleg."
+msgstr ""
+"There is a submitted entry for this call for entries; it is kept as a record."
+
+msgid "Unbekannte Art des Bausteins."
+msgstr "Unknown type of block."
+
+msgid "Die Art eines Bausteins lässt sich nicht ändern."
+msgstr "The type of a block cannot be changed."
+
+#, python-brace-format
+msgid "Höchstens {MAX_BLOCKS} Bausteine."
+msgstr "At most {MAX_BLOCKS} blocks."
+
+msgid ""
+"Der Baustein enthält schon abgegebene Einträge. Bitte erst die Einträge "
+"entfernen."
+msgstr ""
+"The block already contains submitted items. Please remove the items first."
+
+msgid "Unbekannter Baustein."
+msgstr "Unknown block."
+
+msgid "Dieser Baustein passt nicht."
+msgstr "This block does not fit."
+
+#, python-brace-format
+msgid "Höchstens {MAX_TEAMS} Mannschaften."
+msgstr "At most {MAX_TEAMS} teams."
+
+msgid "Mitglieder auswählen darf nur, wer die Mitglieder sehen darf."
+msgstr "Only those who may see the members may select members."
+
+msgid "Bitte eine Mannschaft wählen."
+msgstr "Please choose a team."
+
+#, python-brace-format
+msgid "Höchstens {MAX_PERSONS} Personen."
+msgstr "At most {MAX_PERSONS} people."
+
+msgid "Bitte ein Mitglied wählen oder einen Namen angeben."
+msgstr "Please choose a member or enter a name."
+
+msgid "Unbekannte Aufgabe."
+msgstr "Unknown task."
+
+msgid "Unbekannte Mannschaft."
+msgstr "Unknown team."
+
+#, python-brace-format
+msgid "Mindestens {x}."
+msgstr "At least {x}."
+
+msgid "Unbekannte Antwort."
+msgstr "Unknown answer."
+
+msgid "Nur eine Antwort möglich."
+msgstr "Only one answer possible."
+
+msgid "Höchstens 2000 Zeichen."
+msgstr "At most 2000 characters."
+
+msgid "Bitte einen Meldeweg wählen."
+msgstr "Please choose a way of submitting."
+
+msgid "Ein Entwurf lässt sich löschen, nicht zurückziehen."
+msgstr "A draft can be deleted, not withdrawn."
+
+msgid "Bitte eine gültige E-Mail-Adresse angeben."
+msgstr "Please enter a valid email address."
+
+msgid "Bestätigen kann nur der Veranstalter."
+msgstr "Only the organiser can confirm."
+
+msgid "Bestätigen lässt sich nur eine abgegebene Meldung."
+msgstr "Only a submitted entry can be confirmed."
+
+msgid "Die Meldung ist nicht als bestätigt vermerkt."
+msgstr "The entry is not recorded as confirmed."
+
+msgid "Zurückgeben kann nur der Veranstalter."
+msgstr "Only the organiser can return it."
+
+msgid "Zurückgeben lässt sich nur eine abgegebene Meldung."
+msgstr "Only a submitted entry can be returned."
+
+msgid "Bitte die Rückfrage angeben."
+msgstr "Please enter the query."
+
+msgid "Die Ausschreibung geht nicht an Untereinheiten."
+msgstr "The call for entries does not go to sub-units."
+
+msgid "Unbekanntes Format."
+msgstr "Unknown format."
+
+msgid "Die Meldung ist schon abgegeben; ziehe sie zuerst zurück."
+msgstr "The entry has already been submitted; withdraw it first."
+
+msgid "Nur eine zurückgezogene Meldung lässt sich wieder öffnen."
+msgstr "Only a withdrawn entry can be reopened."
+
+msgid "nach außen öffentlich"
+msgstr "public to the outside"
+
+msgid "wöchentlich"
+msgstr "weekly"
+
+msgid "Zusage"
+msgstr "Yes"
+
+msgid "Absage"
+msgstr "No"
+
+msgid "Vorstand"
+msgstr "Board"
+
+msgid "Leider sind alle Plätze vergeben."
+msgstr "Unfortunately all places are taken."
+
+#, python-brace-format
+msgid "Es sind nur noch {free} Plätze frei (mit Ihnen selbst)."
+msgstr "Only {free} places are left (including yourself)."
+
+msgid "Diese Kategorie gibt es schon."
+msgstr "This category already exists."
+
+msgid "Unbekannte Kategorie."
+msgstr "Unknown category."
+
+msgid "Bitte den Beginn angeben."
+msgstr "Please enter the start."
+
+msgid "Bitte auch den Beginn angeben."
+msgstr "Please also enter the start."
+
+msgid "Diesen Termin kannst du hier nicht bearbeiten."
+msgstr "You cannot edit this event here."
+
+msgid "Der Terminkalender ist für diese Organisation nicht freigeschaltet."
+msgstr "The calendar is not enabled for this organisation."
+
+msgid ""
+"Das entscheidet die übergeordnete Einheit, solange es hier keine eigene "
+"Verwaltung des Kalenders gibt."
+msgstr ""
+"The higher unit decides this as long as there is no separate calendar "
+"administration here."
+
+msgid "Passt nicht zum Termin."
+msgstr "Does not match the event."
+
+msgid "Das ist kein Serientermin."
+msgstr "This is not a recurring event."
+
+msgid "Zu diesem Zeitpunkt gibt es keinen Termin der Serie."
+msgstr "There is no event of the series at this time."
+
+msgid "Bitte eine PDF-, JPEG- oder PNG-Datei hochladen."
+msgstr "Please upload a PDF, JPEG or PNG file."
+
+msgid "Die Datei ist größer als 15 MB."
+msgstr "The file is larger than 15 MB."
+
+#, python-brace-format
+msgid "Höchstens {MAX_ATTACHMENTS} Anhänge je Termin."
+msgstr "At most {MAX_ATTACHMENTS} attachments per event."
+
+msgid "Die Rückmeldungen sieht der Vorstand, der den Termin anlegt."
+msgstr "The board member who creates the event sees the responses."
+
+msgid "Dieses Mitglied ist zu dem Termin nicht eingeladen."
+msgstr "This member is not invited to the event."
+
+msgid "Für diesen Termin sind Zu- und Absagen aus."
+msgstr "RSVPs are switched off for this event."
+
+msgid "Für diesen Termin gibt es keine Rückmeldung."
+msgstr "There is no response for this event."
+
+msgid "Zu diesem Termin sind Sie nicht eingeladen."
+msgstr "You are not invited to this event."
+
+msgid "Dafür fehlt dir das Recht, die Kasse zu bearbeiten."
+msgstr "You do not have the right to edit the treasury."
+
+#, python-brace-format
+msgid "Zweistellige Jahreszahl ist mehrdeutig: {text}"
+msgstr "Two-digit year is ambiguous: {text}"
+
+#, python-brace-format
+msgid "Kein gültiges Datum: {text}"
+msgstr "Not a valid date: {text}"
+
+#, python-brace-format
+msgid "Unbekannte Mitgliedsart: {raw}"
+msgstr "Unknown membership type: {raw}"
+
+#, python-brace-format
+msgid "Unbekannter Austrittsgrund: {raw}"
+msgstr "Unknown reason for leaving: {raw}"
+
+#, python-brace-format
+msgid "Unbekannte Vorstandsrolle: {raw}"
+msgstr "Unknown board role: {raw}"
+
+msgid "wird geprüft"
+msgstr "being checked"
+
+msgid "wird importiert"
+msgstr "being imported"
+
+msgid "rückgängig gemacht"
+msgstr "undone"
+
+msgid "Bitte eine Excel-Datei (.xlsx) oder CSV-Datei hochladen."
+msgstr "Please upload an Excel file (.xlsx) or CSV file."
+
+msgid "Die Datei ist leer."
+msgstr "The file is empty."
+
+#, python-brace-format
+msgid "Höchstens {MAX_ROWS} Zeilen je Datei."
+msgstr "At most {MAX_ROWS} rows per file."
+
+msgid "Die Excel-Datei lässt sich nicht lesen."
+msgstr "The Excel file cannot be read."
+
+msgid "Die Excel-Datei ist entpackt zu groß. Bitte als CSV speichern."
+msgstr "The Excel file is too large when unpacked. Please save it as CSV."
+
+msgid "Unbekannte Zeichenkodierung."
+msgstr "Unknown character encoding."
+
+msgid "Dachverbände exportieren die Verbandsliste."
+msgstr "Umbrella associations export the association list."
+
+msgid "Kein Zugriff auf Mitgliedsdaten freigegeben."
+msgstr "No access to member data granted."
+
+msgid "Unbekannte Liste."
+msgstr "Unknown list."
+
+msgid "Bitte Excel oder PDF wählen."
+msgstr "Please choose Excel or PDF."
+
+msgid "Hoch- oder Querformat."
+msgstr "Portrait or landscape."
+
+msgid "Zeitraum (von, bis) angeben."
+msgstr "Enter a period (from, to)."
+
+#, python-brace-format
+msgid "Unbekannte Spalten: {x}"
+msgstr "Unknown columns: {x}"
+
+#, python-brace-format
+msgid ""
+"Die Datei wurde nach {EXPORT_KEEP_DAYS} Tagen gelöscht. Bitte neu erstellen."
+msgstr ""
+"The file was deleted after {EXPORT_KEEP_DAYS} days. Please create it again."
+
+#, python-brace-format
+msgid "Unbekanntes Feld: {target}"
+msgstr "Unknown field: {target}"
+
+#, python-brace-format
+msgid "„{x}“ ist mehrfach zugeordnet."
+msgstr "“{x}” is assigned more than once."
+
+msgid "Die Datei ist größer als 10 MB."
+msgstr "The file is larger than 10 MB."
+
+#, python-brace-format
+msgid "Dieser Import ist älter als {IMPORT_KEEP_DAYS} Tage und abgelaufen."
+msgstr "This import is older than {IMPORT_KEEP_DAYS} days and has expired."
+
+msgid "Dieser Import ist schon gelaufen."
+msgstr "This import has already run."
+
+#, python-brace-format
+msgid ""
+"Dieser Import ist älter als {IMPORT_KEEP_DAYS} Tage; Datei und „Rückgängig“ "
+"stehen nicht mehr zur Verfügung."
+msgstr ""
+"This import is older than {IMPORT_KEEP_DAYS} days; the file and “Undo” are "
+"no longer available."
+
+msgid "Name, Vorname und Geburtsdatum müssen zugeordnet sein."
+msgstr "Surname, first name and date of birth must be assigned."
+
+msgid ""
+"Dieser Import ist schon übernommen oder wird gerade bearbeitet. Für eine "
+"neue Prüfung bitte die Datei erneut hochladen."
+msgstr ""
+"This import has already been taken over or is being processed. For a new "
+"check please upload the file again."
+
+msgid "Bitte zuerst prüfen."
+msgstr "Please check first."
+
+msgid "Keine fehlerfreien Zeilen zum Importieren."
+msgstr "No error-free rows to import."
+
+msgid "Der Import läuft schon oder ist fertig."
+msgstr "The import is already running or finished."
+
+msgid "Keine Fehlerliste vorhanden."
+msgstr "No error list available."
+
+msgid "Unbekanntes Konto."
+msgstr "Unknown account."
+
+#, python-brace-format
+msgid ""
+"Der Auszug gehört zur IBAN {iban}, das Konto „{name}“ hat {own}. Bitte das "
+"passende Konto wählen."
+msgstr ""
+"The statement belongs to IBAN {iban}; the account “{name}” has {own}. Please "
+"choose the matching account."
+
+#, python-brace-format
+msgid ""
+"Zur IBAN {x} gibt es kein eindeutiges Konto. Bitte das Konto wählen oder die "
+"IBAN beim Konto eintragen."
+msgstr ""
+"There is no unique account for IBAN {x}. Please choose the account or enter "
+"the IBAN on the account."
+
+#, python-brace-format
+msgid "Nur Konten in Euro (Auszug in {currency})."
+msgstr "Only accounts in euros (statement in {currency})."
+
+msgid "Der Umsatz ist schon erledigt."
+msgstr "The transaction has already been dealt with."
+
+msgid "Nur Gutschriften lassen sich einer Rechnung zuordnen."
+msgstr "Only credits can be assigned to an invoice."
+
+msgid "Unbekannte Rechnung."
+msgstr "Unknown invoice."
+
+msgid ""
+"Das ist eine Sammelbuchung mit mehreren Einzelposten. Sie lässt sich nicht "
+"einer einzelnen Rechnung zuordnen; bitte die Zahlungen bei den Rechnungen "
+"erfassen und den Umsatz der Buchung zuordnen oder mit Kategorie buchen."
+msgstr ""
+"This is a batch booking with several individual items. It cannot be assigned "
+"to a single invoice; please record the payments on the invoices and assign "
+"the transaction to the entry, or book it with a category."
+
+msgid "Der Lastschriftlauf gehört zu einem anderen Konto."
+msgstr "The direct debit run belongs to a different account."
+
+msgid "Der Betrag passt nicht zum Lastschriftlauf."
+msgstr "The amount does not match the direct debit run."
+
+msgid "Die Buchung gehört zu einem anderen Konto."
+msgstr "The entry belongs to a different account."
+
+msgid "Betrag oder Richtung der Buchung passen nicht zu diesem Umsatz."
+msgstr "Amount or direction of the entry do not match this transaction."
+
+msgid "Die Buchung ist schon einem Umsatz zugeordnet."
+msgstr "The entry is already assigned to a transaction."
+
+msgid "Bitte eine Kategorie wählen."
+msgstr "Please choose a category."
+
+msgid "Die Kategorie passt nicht zu dieser Richtung."
+msgstr "The category does not match this direction."
+
+msgid ""
+"Nur übergangene Umsätze lassen sich wieder öffnen. Gebuchte bitte im "
+"Kassenbuch korrigieren."
+msgstr ""
+"Only skipped transactions can be reopened. Please correct booked ones in the "
+"cash book."
+
+msgid "Bitte die CAMT-Datei wählen."
+msgstr "Please choose the CAMT file."
+
+msgid ""
+"Aus diesem Auszug ist schon etwas gebucht oder zugeordnet. Er bleibt "
+"erhalten."
+msgstr ""
+"Something from this statement has already been booked or assigned. It is "
+"kept."
+
+msgid "Bitte auswählen."
+msgstr "Please choose."
+
+msgid "Für diesen Umsatz gibt es keinen Vorschlag."
+msgstr "There is no suggestion for this transaction."
+
+#, python-brace-format
+msgid "Ungültiger Betrag „{raw}“."
+msgstr "Invalid amount “{raw}”."
+
+#, python-brace-format
+msgid ""
+"Ungültiger Betrag „{raw}“ (Beträge stehen ohne Vorzeichen in der Datei)."
+msgstr "Invalid amount “{raw}” (amounts appear without sign in the file)."
+
+#, python-brace-format
+msgid "Nur Beträge in Euro (Umsatz in {ccy})."
+msgstr "Only amounts in euros (transaction in {ccy})."
+
+msgid "Die Datei enthält eine DTD und wird aus Sicherheitsgründen abgelehnt."
+msgstr "The file contains a DTD and is rejected for security reasons."
+
+msgid "Die Datei ist kein gültiges XML."
+msgstr "The file is not valid XML."
+
+msgid ""
+"Das ist ein Tagesumsatz (CAMT.052). Bitte den Kontoauszug als CAMT.053 laden."
+msgstr ""
+"This is an intraday report (CAMT.052). Please load the bank statement as "
+"CAMT.053."
+
+msgid "Keine CAMT.053-Datei (Kontoauszug) gefunden."
+msgstr "No CAMT.053 file (bank statement) found."
+
+#, python-brace-format
+msgid "Umsatz Nr. {pos} im Auszug {iban} hat keinen Betrag."
+msgstr "Transaction no. {pos} in statement {iban} has no amount."
+
+#, python-brace-format
+msgid ""
+"Umsatz Nr. {pos} im Auszug {iban} ({raw_amount} €) hat kein gültiges "
+"Buchungsdatum. Bitte den Auszug bei der Bank neu herunterladen; eingelesen "
+"wurde nichts."
+msgstr ""
+"Transaction no. {pos} in statement {iban} ({raw_amount} €) has no valid "
+"booking date. Please download the statement from the bank again; nothing was "
+"imported."
+
+msgid "Die Datei enthält keinen Kontoauszug."
+msgstr "The file contains no bank statement."
+
+msgid "Das ZIP-Archiv ist beschädigt."
+msgstr "The ZIP archive is damaged."
+
+msgid "Im ZIP-Archiv ist keine XML-Datei."
+msgstr "There is no XML file in the ZIP archive."
+
+#, python-brace-format
+msgid "Höchstens {MAX_FILES} Auszüge je ZIP-Archiv."
+msgstr "At most {MAX_FILES} statements per ZIP archive."
+
+#, python-brace-format
+msgid "{filename} ist entpackt zu groß."
+msgstr "{filename} is too large when unpacked."
+
+msgid "Bitte ganze Stückzahlen angeben."
+msgstr "Please enter whole quantities."
+
+msgid "Unbekannte Stückelung oder Anzahl."
+msgstr "Unknown denomination or quantity."
+
+#, python-brace-format
+msgid "Die Kategorie „{name}“ passt nicht zur Buchungsart."
+msgstr "The category “{name}” does not match the type of entry."
+
+msgid "Zählprotokoll und Kassenbericht sind nicht eingeschaltet."
+msgstr "Count record and treasurer's report are not switched on."
+
+msgid "Bitte Zählprotokoll oder Kassenbericht wählen."
+msgstr "Please choose count record or treasurer's report."
+
+msgid "Bitte eine aktive Barkasse wählen."
+msgstr "Please choose an active cash box."
+
+msgid "Gezählt wird heute oder an einem vergangenen Tag."
+msgstr "Counting happens today or on a past day."
+
+msgid "Bitte angeben, wer gezählt hat."
+msgstr "Please state who counted."
+
+msgid "Bei einer Differenz bitte den Grund angeben (mind. 5 Zeichen)."
+msgstr ""
+"If there is a difference, please give the reason (at least 5 characters)."
+
+msgid "Bitte das Fest bzw. den Verkaufsstand angeben."
+msgstr "Please enter the festival or sales stand."
+
+msgid ""
+"Die Tageseinnahme wäre negativ. Bitte Anfangsbestand, Ausgaben und Entnahmen "
+"prüfen."
+msgstr ""
+"The day's takings would be negative. Please check opening balance, expenses "
+"and withdrawals."
+
+#, python-brace-format
+msgid "Die Aufteilung ergibt {x}, die Tageseinnahme ist {x2}."
+msgstr "The breakdown comes to {x}; the day's takings are {x2}."
+
+msgid "Zuwendungsbestätigungen gibt es nicht für die Plattform."
+msgstr "Donation receipts do not exist for the platform."
+
+msgid "Bitte ein Jahr angeben."
+msgstr "Please enter a year."
+
+msgid "Bitte ein gültiges Jahr angeben."
+msgstr "Please enter a valid year."
+
+msgid "Unbekannte Zuwendung."
+msgstr "Unknown donation."
+
+#, python-brace-format
+msgid ""
+"Die Zuwendung ist in der Bestätigung {number} enthalten. Bitte erst die "
+"Bestätigung stornieren."
+msgstr ""
+"The donation is included in receipt {number}. Please cancel the receipt "
+"first."
+
+msgid ""
+"Zuwendungsbestätigungen gibt es nur für steuerbegünstigte Einheiten mit "
+"eigenem Bescheid."
+msgstr ""
+"Donation receipts only exist for tax-privileged units with their own tax "
+"notice."
+
+msgid "Bitte mindestens eine Zuwendung wählen."
+msgstr "Please choose at least one donation."
+
+msgid "Mindestens eine Zuwendung ist schon bestätigt."
+msgstr "At least one donation has already been confirmed."
+
+msgid "Eine Bestätigung gilt immer nur für einen Zuwendenden."
+msgstr "A receipt is always for one donor only."
+
+msgid "Eine Sammelbestätigung umfasst nur Zuwendungen eines Jahres."
+msgstr "A collective receipt only covers donations from one year."
+
+msgid "Die Summe ist zu groß für eine Zuwendungsbestätigung."
+msgstr "The total is too large for a donation receipt."
+
+msgid "Sachzuwendungen werden einzeln bestätigt, nicht gesammelt."
+msgstr "Donations in kind are confirmed individually, not collectively."
+
+msgid "Mitgliedsbeiträge werden nach den Einstellungen nicht bestätigt."
+msgstr "According to the settings, membership fees are not confirmed."
+
+msgid "Die Bestätigung ist schon storniert."
+msgstr "The receipt has already been cancelled."
+
+msgid "Bitte einen Grund für das Storno angeben."
+msgstr "Please give a reason for the cancellation."
+
+msgid "Die XML-Datei ist größer als 5 MB."
+msgstr "The XML file is larger than 5 MB."
+
+msgid ""
+"Keine E-Rechnung erkannt. Unterstützt werden XRechnung (UBL oder CII) und "
+"ZUGFeRD."
+msgstr ""
+"No e-invoice recognised. XRechnung (UBL or CII) and ZUGFeRD are supported."
+
+msgid "Die E-Rechnung enthält keine Rechnungsnummer oder keinen Betrag."
+msgstr "The e-invoice contains no invoice number or no amount."
+
+msgid "ideeller Bereich"
+msgstr "non-profit sphere (ideeller Bereich)"
+
+msgid "Vermögensverwaltung"
+msgstr "asset management (Vermögensverwaltung)"
+
+msgid "Zweckbetrieb"
+msgstr "special-purpose operation (Zweckbetrieb)"
+
+msgid "wirtschaftlicher Geschäftsbetrieb"
+msgstr "commercial operation (wirtschaftlicher Geschäftsbetrieb)"
+
+msgid "Bankkonto"
+msgstr "Bank account"
+
+msgid "Barkasse"
+msgstr "Cash box"
+
+msgid "Sparkonto"
+msgstr "Savings account"
+
+msgid "Die IBAN ist ungültig."
+msgstr "The IBAN is invalid."
+
+msgid "Einnahmen"
+msgstr "Income"
+
+msgid "Ausgaben"
+msgstr "Expenses"
+
+msgid "Einnahmen und Ausgaben"
+msgstr "Income and expenses"
+
+msgid "Einnahme"
+msgstr "Income"
+
+msgid "Ausgabe"
+msgstr "Expense"
+
+msgid "Umbuchung"
+msgstr "Transfer"
+
+msgid "Verein erhält Geld"
+msgstr "Club receives money"
+
+msgid "Verein zahlt Geld aus"
+msgstr "Club pays out money"
+
+msgid "Freistellungsbescheid bzw. Anlage zum Körperschaftsteuerbescheid"
+msgstr "Exemption notice or annex to the corporation tax notice"
+
+msgid "Feststellung der Satzungsmäßigkeit nach § 60a AO"
+msgstr "Determination of statutory compliance under § 60a AO"
+
+msgid "Einzelbestätigung"
+msgstr "Individual receipt"
+
+msgid "Sammelbestätigung"
+msgstr "Collective receipt"
+
+msgid "Geldzuwendung"
+msgstr "Monetary donation"
+
+msgid "Mitgliedsbeitrag"
+msgstr "Membership fee"
+
+msgid "Sachzuwendung"
+msgstr "Donation in kind"
+
+msgid "aus dem Betriebsvermögen"
+msgstr "from business assets"
+
+msgid "aus dem Privatvermögen"
+msgstr "from private assets"
+
+msgid "keine Angaben zur Herkunft"
+msgstr "no information on origin"
+
+msgid "übergangen"
+msgstr "skipped"
+
+msgid "kein Vorschlag"
+msgstr "no suggestion"
+
+msgid "Zahlung zu Rechnung"
+msgstr "Payment for invoice"
+
+msgid "Lastschriftlauf"
+msgstr "Direct debit run"
+
+msgid "schon im Kassenbuch"
+msgstr "already in the cash book"
+
+msgid "Rücklastschrift"
+msgstr "Returned direct debit"
+
+msgid "Zählprotokoll"
+msgstr "Count record"
+
+msgid "Kassenbericht"
+msgstr "Treasurer's report"
+
+msgid "Projektrücklage (§ 62 Abs. 1 Nr. 1 AO)"
+msgstr "Project reserve (§ 62 (1) no. 1 AO)"
+
+msgid "Wiederbeschaffungsrücklage (§ 62 Abs. 1 Nr. 2 AO)"
+msgstr "Replacement reserve (§ 62 (1) no. 2 AO)"
+
+msgid "freie Rücklage (§ 62 Abs. 1 Nr. 3 AO)"
+msgstr "Free reserve (§ 62 (1) no. 3 AO)"
+
+msgid "sonstige Rücklage"
+msgstr "other reserve"
+
+msgid "Zuführung"
+msgstr "Allocation"
+
+msgid "Auflösung"
+msgstr "Release"
+
+msgid "Der Zeitpunkt liegt in der Zukunft."
+msgstr "The time is in the future."
+
+msgid "Die Unterschrift ist älter als 30 Tage. Bitte neu unterschreiben."
+msgstr "The signature is older than 30 days. Please sign again."
+
+msgid "Die Quittung ist abgeschlossen und lässt sich nicht mehr ändern."
+msgstr "The receipt is completed and can no longer be changed."
+
+msgid "Du hast keine Unterschrift hinterlegt."
+msgstr "You have no signature on file."
+
+msgid ""
+"Bei einer Auszahlung muss der Empfänger unterschreiben: das ist der "
+"eigentliche Beleg."
+msgstr "For a payout the recipient must sign: that is the actual record."
+
+msgid "Bitte kurz begründen, warum der Zahler nicht unterschreibt."
+msgstr "Please briefly explain why the payer does not sign."
+
+msgid "Unbekannte Kasse."
+msgstr "Unknown cash box."
+
+msgid "Quittungen gibt es nur für eine Barkasse."
+msgstr "Receipts only exist for a cash box."
+
+msgid ""
+"Abschließen kann nur, wer als Kassierer unterschrieben hat. Bitte selbst "
+"unterschreiben."
+msgstr ""
+"Only the person who signed as cashier can complete it. Please sign yourself."
+
+msgid "Bitte bestätigen, dass du den Betrag erhalten bzw. ausgezahlt hast."
+msgstr "Please confirm that you received or paid out the amount."
+
+msgid "Stornieren lassen sich nur abgeschlossene Quittungen."
+msgstr "Only completed receipts can be cancelled."
+
+msgid "Verschicken lässt sich erst die abgeschlossene Quittung."
+msgstr "Only a completed receipt can be sent."
+
+msgid "Bitte eine E-Mail-Adresse angeben."
+msgstr "Please enter an email address."
+
+msgid "Bitte den Namen angeben."
+msgstr "Please enter the name."
+
+msgid "Bitte den Zweck angeben."
+msgstr "Please enter the purpose."
+
+msgid "Bitte einen Steuersatz zwischen 0 und 100 angeben."
+msgstr "Please enter a tax rate between 0 and 100."
+
+msgid ""
+"Richtung und Betrag kommen aus der Rechnung und lassen sich nicht ändern."
+msgstr "Direction and amount come from the invoice and cannot be changed."
+
+msgid "Abgeschlossene Quittungen werden nicht gelöscht. Bitte stornieren."
+msgstr "Completed receipts are not deleted. Please cancel them."
+
+msgid "Unbekannte Unterschrift."
+msgstr "Unknown signature."
+
+msgid "Beiträge sind nicht freigeschaltet."
+msgstr "Fees are not enabled."
+
+msgid "Die Rechnung ist nicht offen."
+msgstr "The invoice is not open."
+
+#, python-brace-format
+msgid "Offen sind nur noch {x}."
+msgstr "Only {x} is still open."
+
+msgid "Rücklagen sind für diese Einheit nicht eingeschaltet."
+msgstr "Reserves are not switched on for this unit."
+
+msgid "Die Rücklage hat Bewegungen; bitte stattdessen archivieren."
+msgstr "The reserve has movements; please archive it instead."
+
+msgid "Die Rücklage „{name}“ fiele am {day:%d.%m.%Y} unter null."
+msgstr "The reserve “{name}” would fall below zero on {day:%d/%m/%Y}."
+
+msgid "Bitte den Zweck bzw. das Vorhaben angeben (§ 62 Abs. 1 Nr. 1/2 AO)."
+msgstr "Please enter the purpose or project (§ 62 (1) no. 1/2 AO)."
+
+msgid "Bitte Zuführung oder Auflösung wählen."
+msgstr "Please choose allocation or release."
+
+msgid "Der Betrag muss größer als null sein."
+msgstr "The amount must be greater than zero."
+
+msgid "Einer archivierten Rücklage lässt sich nichts zuführen."
+msgstr "Nothing can be allocated to an archived reserve."
+
+msgid "Nur abgeschlossene Geschäftsjahre lassen sich bereinigen."
+msgstr "Only closed financial years can be cleaned up."
+
+msgid ""
+"Die Aufbewahrungsfrist läuft noch: Belege ab {x:%d.%m.%Y}, Bücher ab {x2:%d."
+"%m.%Y}."
+msgstr ""
+"The retention period is still running: receipts from {x:%d/%m/%Y}, books "
+"from {x2:%d/%m/%Y}."
+
+msgid "Ein Konto mit diesem Namen gibt es schon."
+msgstr "An account with this name already exists."
+
+msgid "Es gibt schon Buchungen vor diesem Stichtag."
+msgstr "There are already entries before this cut-off date."
+
+msgid "Eine Kategorie mit diesem Namen gibt es schon."
+msgstr "A category with this name already exists."
+
+msgid ""
+"Das Geschäftsjahr einer Buchung lässt sich nicht ändern. Bitte die Buchung "
+"stornieren und neu anlegen."
+msgstr ""
+"The financial year of an entry cannot be changed. Please cancel the entry "
+"and create a new one."
+
+msgid "Diese Nummer ist im Geschäftsjahr schon vergeben."
+msgstr "This number is already taken in the financial year."
+
+msgid "Eine Reihe mit diesem Namen gibt es schon."
+msgstr "A series with this name already exists."
+
+msgid "Bitte nur Ziffern (höchstens 9)."
+msgstr "Digits only, please (at most 9)."
+
+#, python-brace-format
+msgid ""
+"Das Geschäftsjahr {x} ist abgeschlossen. Korrekturen bitte als neue Buchung "
+"im laufenden Geschäftsjahr."
+msgstr ""
+"The financial year {x} is closed. Please make corrections as a new entry in "
+"the current financial year."
+
+msgid "Das Geschäftsjahr {x} läuft noch bis {last:%d.%m.%Y}."
+msgstr "The financial year {x} runs until {last:%d/%m/%Y}."
+
+#, python-brace-format
+msgid "Bitte zuerst das Geschäftsjahr {x} abschließen."
+msgstr "Please close the financial year {x} first."
+
+msgid "Das Geschäftsjahr ist schon abgeschlossen."
+msgstr "The financial year is already closed."
+
+msgid ""
+"Die Barkasse „{name}“ fiele am {day:%d.%m.%Y} um {shown} € unter null. Bitte "
+"zuerst die fehlenden Einnahmen erfassen oder Datum und Betrag prüfen."
+msgstr ""
+"The cash box “{name}” would fall {shown} € below zero on {day:%d/%m/%Y}. "
+"Please record the missing income first or check date and amount."
+
+msgid "Eine Stornobuchung lässt sich nicht stornieren."
+msgstr "A cancellation entry cannot be cancelled."
+
+#, python-brace-format
+msgid "Die Buchung {display_number} ist schon storniert."
+msgstr "The entry {display_number} has already been cancelled."
+
+msgid ""
+"Die Buchung gehört zu einer unterschriebenen Quittung. Bitte die Quittung "
+"stornieren."
+msgstr "The entry belongs to a signed receipt. Please cancel the receipt."
+
+msgid ""
+"Die Buchung gehört zu einer Zahlung. Bitte die Zahlung bei der Rechnung "
+"entfernen; das storniert die Buchung."
+msgstr ""
+"The entry belongs to a payment. Please remove the payment from the invoice; "
+"that cancels the entry."
+
+#, python-brace-format
+msgid ""
+"Die Buchung ist als Zuwendung in der Bestätigung {number} enthalten. Bitte "
+"erst die Bestätigung stornieren."
+msgstr ""
+"The entry is included as a donation in receipt {number}. Please cancel the "
+"receipt first."
+
+msgid "Festschreiben geht nur bis heute."
+msgstr "Entries can only be locked up to today."
+
+msgid ""
+"Die Kasse ist schon bis {finance_locked_until:%d.%m.%Y} festgeschrieben."
+msgstr "The treasury is already locked up to {finance_locked_until:%d/%m/%Y}."
+
+msgid ""
+"In diesem Geschäftsjahr gibt es unterschriebene Quittungen. Ihre "
+"Belegnummern stehen auf dem Papier bzw. PDF und dürfen sich nicht ändern."
+msgstr ""
+"There are signed receipts in this financial year. Their document numbers are "
+"on paper or PDF and must not change."
+
+msgid ""
+"In diesem Geschäftsjahr gibt es festgeschriebene oder stornierte Buchungen. "
+"Ihre Nummern dürfen sich nicht mehr ändern."
+msgstr ""
+"There are locked or cancelled entries in this financial year. Their numbers "
+"must no longer change."
+
+msgid "Bitte einen Grund angeben, warum der Abschluss aufgehoben wird."
+msgstr "Please give a reason why the closing is being reopened."
+
+msgid "Die Unterschrift ist ungültig."
+msgstr "The signature is invalid."
+
+msgid "Die Unterschrift hat zu viele Striche."
+msgstr "The signature has too many strokes."
+
+msgid "Die Unterschrift hat zu viele Punkte."
+msgstr "The signature has too many points."
+
+msgid "Die Kasse ist für diese Organisation nicht freigeschaltet."
+msgstr "The treasury is not enabled for this organisation."
+
+msgid ""
+"Der Anfangsbestand betrifft ein abgeschlossenes Geschäftsjahr und lässt sich "
+"nicht mehr ändern."
+msgstr ""
+"The opening balance concerns a closed financial year and can no longer be "
+"changed."
+
+#, python-brace-format
+msgid "„{name}“ wird noch verwendet und kann nur archiviert werden."
+msgstr "“{name}” is still in use and can only be archived."
+
+msgid "Die Kategorie wurde gerade gebucht. Bitte archivieren."
+msgstr "The category has just been used in an entry. Please archive it."
+
+msgid "Bitte ein Geschäftsjahr angeben."
+msgstr "Please enter a financial year."
+
+msgid ""
+"Die Buchung gehört zu einem Storno. Betrag, Art, Konto, Datum, Nummer und "
+"Kategorie bleiben, wie sie sind."
+msgstr ""
+"The entry belongs to a cancellation. Amount, type, account, date, number and "
+"category stay as they are."
+
+msgid ""
+"Die Buchung gehört zu einem Zahlungseingang. Datum, Betrag und Konto bitte "
+"über die Zahlung unter Beiträge → Rechnungen ändern."
+msgstr ""
+"The entry belongs to an incoming payment. Please change date, amount and "
+"account via the payment under Fees → Invoices."
+
+msgid ""
+"Die Buchung ist einem Kontoumsatz zugeordnet. Betrag, Art und Konto bitte "
+"nur ändern, nachdem die Zuordnung unter Kontoauszüge gelöst ist."
+msgstr ""
+"The entry is assigned to a bank transaction. Only change amount, type and "
+"account after removing the assignment under Bank statements."
+
+#, python-brace-format
+msgid ""
+"Die Buchung {display_number} lässt sich nicht mehr löschen (nur am Tag der "
+"Erfassung). Bitte stornieren: Das legt eine Gegenbuchung an, und beides "
+"bleibt nachvollziehbar."
+msgstr ""
+"The entry {display_number} can no longer be deleted (only on the day it was "
+"recorded). Please cancel it: this creates a reversing entry, and both remain "
+"traceable."
+
+msgid "Erlaubt sind PDF, Fotos (JPEG, PNG, WebP, HEIC) und E-Rechnungen (XML)."
+msgstr "Allowed are PDF, photos (JPEG, PNG, WebP, HEIC) and e-invoices (XML)."
+
+msgid "Die Datei ist kein PDF."
+msgstr "The file is not a PDF."
+
+msgid "In dieser PDF steckt keine E-Rechnung (ZUGFeRD/Factur-X)."
+msgstr "This PDF contains no e-invoice (ZUGFeRD/Factur-X)."
+
+msgid "Das ist das PDF einer unterschriebenen Quittung. Es bleibt erhalten."
+msgstr "This is the PDF of a signed receipt. It is kept."
+
+msgid "Der Beleg ist schon ausgeblendet."
+msgstr "The document is already hidden."
+
+msgid ""
+"Belege werden nicht gelöscht, nur ausgeblendet. Bitte einen Grund angeben "
+"(z. B. „falsche Datei, richtiger Beleg folgt“)."
+msgstr ""
+"Documents are not deleted, only hidden. Please give a reason (e.g. “wrong "
+"file, correct document follows”)."
+
+#, python-brace-format
+msgid "Bitte nur Ziffern (höchstens {size})."
+msgstr "Digits only, please (at most {size})."
+
+msgid "Die Sachkontenlänge liegt zwischen 4 und 8."
+msgstr "The length of ledger accounts is between 4 and 8."
+
+msgid "Das dürfen nur Vorstände mit Rollenverwaltung."
+msgstr "Only board members with role administration may do this."
+
+msgid "Einen Abschluss heben nur Vorstände mit Rollenverwaltung auf."
+msgstr "Only board members with role administration can reopen a closing."
+
+msgid "Kein Abschluss für dieses Geschäftsjahr."
+msgstr "No closing for this financial year."
+
+msgid ""
+"Nach Ablauf der Aufbewahrungsfrist bereinigte Jahre bleiben abgeschlossen."
+msgstr "Years cleaned up after the retention period remain closed."
+
+msgid "Bitte zuerst den Abschluss des Folgejahres aufheben."
+msgstr "Please reopen the closing of the following year first."
+
+msgid "Bitte eine Liste von Nummern angeben."
+msgstr "Please provide a list of numbers."
+
+#, python-brace-format
+msgid "Der Termin „{title}“ gehört schon zu einer anderen Veranstaltung."
+msgstr "The event “{title}” already belongs to another occasion."
+
+msgid "Zahl außerhalb des Bereichs"
+msgstr "Number out of range"
+
+msgid "Bitte ein Jahr oder einen Zeitraum angeben."
+msgstr "Please enter a year or a period."
+
+msgid "Bitte ein vierstelliges Jahr angeben."
+msgstr "Please enter a four-digit year."
+
+msgid "Bitte zuerst das Startjahr angeben."
+msgstr "Please enter the start year first."
+
+msgid "Bitte eine Zahl von 1 bis 3999 angeben."
+msgstr "Please enter a number from 1 to 3999."
+
+msgid "Diese Würde gibt es schon."
+msgstr "This title already exists."
+
+msgid "Unbekannte Einheit."
+msgstr "Unknown unit."
+
+#, python-brace-format
+msgid ""
+"Zu dieser Würde gibt es {x} Regentschaften. Bitte bestätigen, dass sie "
+"mitgelöscht werden, oder „nicht mehr verwendet“ setzen."
+msgstr ""
+"There are {x} reigns for this title. Please confirm that they will be "
+"deleted too, or set it to “no longer used”."
+
+msgid "Bitte ein Mitglied dieser Einheit wählen."
+msgstr "Please choose a member of this unit."
+
+msgid "Unbekannte Würde."
+msgstr "Unknown title."
+
+msgid "Bitte eine Einheit unterhalb wählen."
+msgstr "Please choose a unit below."
+
+msgid "Bitte für jede Begleitperson einen Namen."
+msgstr "Please enter a name for each companion."
+
+msgid "Bitte ein Foto auswählen."
+msgstr "Please choose a photo."
+
+#, python-brace-format
+msgid "Zeile {line}: Das Endjahr liegt vor dem Startjahr."
+msgstr "Row {line}: the end year is before the start year."
+
+#, python-brace-format
+msgid "Zeile {line}: Unbekannte Einheit bei „aus“."
+msgstr "Row {line}: unknown unit for “from”."
+
+msgid "eigener Briefbogen"
+msgstr "own letterhead"
+
+msgid "Briefbogen der übergeordneten Einheit"
+msgstr "letterhead of the higher unit"
+
+msgid "DIN 5008 Form A (Anschriftfeld 27 mm von oben)"
+msgstr "DIN 5008 form A (address field 27 mm from the top)"
+
+msgid "DIN 5008 Form B (Anschriftfeld 45 mm von oben)"
+msgstr "DIN 5008 form B (address field 45 mm from the top)"
+
+msgid "ohne Logo/Wappen"
+msgstr "without logo/coat of arms"
+
+msgid "Arial"
+msgstr "Arial"
+
+msgid "Calibri"
+msgstr "Calibri"
+
+msgid "Cambria"
+msgstr "Cambria"
+
+msgid "Georgia"
+msgstr "Georgia"
+
+msgid "Times New Roman"
+msgstr "Times New Roman"
+
+msgid "Verdana"
+msgstr "Verdana"
+
+msgid "Nur Untereinheiten übernehmen einen Briefbogen."
+msgstr "Only sub-units take over a letterhead."
+
+msgid "Einen eigenen Briefbogen gibt es nur mit eigenem Arbeitsbereich."
+msgstr "An own letterhead only exists with an own workspace."
+
+msgid "Bitte ein aktives Bankkonto mit IBAN wählen."
+msgstr "Please choose an active bank account with IBAN."
+
+msgid "Bitte dotx oder docx wählen."
+msgstr "Please choose dotx or docx."
+
+msgid "Dafür fehlt dir die Berechtigung für die Dokumentenablage."
+msgstr "You do not have permission for the document store."
+
+msgid "Diesen Ordner gibt es nicht."
+msgstr "This folder does not exist."
+
+msgid "Unbekannter Kontaktweg."
+msgstr "Unknown contact channel."
+
+msgid "Die Unterschrift ist größer als 1 MB."
+msgstr "The signature is larger than 1 MB."
+
+msgid "Dafür hast du keine passende Funktion."
+msgstr "You do not have a matching function for this."
+
+msgid "Bitte eine deiner Funktionen wählen."
+msgstr "Please choose one of your functions."
+
+msgid "Das ist kein lesbares Bild."
+msgstr "This is not a readable image."
+
+msgid "Der Dachverband darf Mitgliedsdaten nur lesen."
+msgstr "The umbrella association may only read member data."
+
+msgid ""
+"Die Person gehört zu einer Einheit auf einer anderen Instanz. Bitte eine "
+"Korrektur vorschlagen."
+msgstr ""
+"The person belongs to a unit on another instance. Please suggest a "
+"correction."
+
+msgid "Keine Änderungen."
+msgstr "No changes."
+
+msgid "Diese Ehrung gibt es schon."
+msgstr "This honour already exists."
+
+msgid "Der Abschlag liegt zwischen 0 und 100 Prozent."
+msgstr "The discount is between 0 and 100 per cent."
+
+#, python-brace-format
+msgid "„{name}“ ist verliehen und kann nur archiviert werden."
+msgstr "“{name}” has been awarded and can only be archived."
+
+msgid "Diese Ehrung ist archiviert."
+msgstr "This honour is archived."
+
+msgid "Das Mitglied hat diese Ehrung im Zeitraum bereits."
+msgstr "The member already has this honour in this period."
+
+msgid "Bitte gültige Daten angeben."
+msgstr "Please enter valid data."
+
+msgid "Höchstens drei Jahre auf einmal."
+msgstr "At most three years at once."
+
+msgid "Höchstens ein Jahr auf einmal."
+msgstr "At most one year at once."
+
+msgid "männlich"
+msgstr "male"
+
+msgid "Austritt"
+msgstr "Resignation"
+
+msgid "Ausschluss"
+msgstr "Expulsion"
+
+msgid "Streichung"
+msgstr "Removal from the register"
+
+msgid "Tod"
+msgstr "Death"
+
+msgid "Wechsel in anderen Verein"
+msgstr "Move to another club"
+
+msgid "Der Austritt liegt vor dem Eintritt."
+msgstr "Leaving is before joining."
+
+msgid "Bitte einen Austrittsgrund angeben."
+msgstr "Please give a reason for leaving."
+
+msgid "keine Beitragsänderung"
+msgstr "no fee change"
+
+msgid "fester Jahresbeitrag"
+msgstr "fixed annual fee"
+
+msgid "Abschlag in Prozent"
+msgstr "discount in per cent"
+
+msgid "Austritt im alten Verein"
+msgstr "leaving the old club"
+
+msgid "Wechsel zu nicht aktiver Art"
+msgstr "switch to inactive type"
+
+msgid "wartet auf Freigabe"
+msgstr "awaiting approval"
+
+msgid "Mitglied (Upload-Link)"
+msgstr "Member (upload link)"
+
+msgid "Mitglied (App)"
+msgstr "Member (app)"
+
+msgid "Bitte ein Bild wählen."
+msgstr "Please choose an image."
+
+msgid "Bitte bestätigen, dass die Einwilligung des Mitglieds vorliegt."
+msgstr "Please confirm that the member's consent has been given."
+
+msgid "Kein Foto vorhanden."
+msgstr "No photo available."
+
+msgid "Für dieses Mitglied ist keine E-Mail-Adresse hinterlegt."
+msgstr "There is no email address on file for this member."
+
+msgid "Bitte stimmen Sie der Verwendung des Fotos zu."
+msgstr "Please agree to the use of the photo."
+
+msgid "Bitte stimme der Verwendung des Fotos zu."
+msgstr "Please agree to the use of the photo."
+
+msgid "Das Bild darf höchstens 10 MB groß sein."
+msgstr "The image may be at most 10 MB."
+
+msgid "Bitte ein JPEG-, PNG- oder WebP-Bild hochladen."
+msgstr "Please upload a JPEG, PNG or WebP image."
+
+msgid "Das Bild hat zu viele Pixel."
+msgstr "The image has too many pixels."
+
+msgid "Ein Mitgliederfoto in der Datei ist kein gültiges Bild."
+msgstr "A member photo in the file is not a valid image."
+
+msgid "Es wartet kein Foto auf Freigabe."
+msgstr "No photo is awaiting approval."
+
+msgid "Bitte ein Datum zwischen {EARLIEST:%Y} und {latest:%Y} angeben."
+msgstr "Please enter a date between {EARLIEST:%Y} and {latest:%Y}."
+
+msgid "Diese Mitgliedsart gibt es schon."
+msgstr "This membership type already exists."
+
+msgid "Der Eintritt liegt vor der Geburt."
+msgstr "Joining is before birth."
+
+msgid "Nachgetragene Zeiträume brauchen ein Austrittsdatum."
+msgstr "Periods added afterwards need a leaving date."
+
+msgid "Bitte einen Grund angeben."
+msgstr "Please give a reason."
+
+msgid "Der Zeitraum überschneidet sich mit einem anderen Zeitraum."
+msgstr "The period overlaps with another period."
+
+#, python-brace-format
+msgid ""
+"In diesem Zeitraum war die Person schon aktives Mitglied in „{other}“. Bitte "
+"eine nicht aktive Art wählen."
+msgstr ""
+"In this period the person was already an active member in “{other}”. Please "
+"choose an inactive type."
+
+msgid "Das Geburtsdatum liegt in der Zukunft."
+msgstr "The date of birth is in the future."
+
+msgid "Das Geburtsdatum liegt nach dem Eintritt am {first:%d.%m.%Y}."
+msgstr "The date of birth is after joining on {first:%d/%m/%Y}."
+
+msgid "Unbekannte Person."
+msgstr "Unknown person."
+
+msgid ""
+"Stammdaten und Kontakt pflegt die ausgegliederte Untereinheit auf ihrer "
+"Instanz. Bitte eine Korrektur vorschlagen."
+msgstr ""
+"The separated sub-unit maintains personal and contact data on its instance. "
+"Please suggest a correction."
+
+msgid "Der einzige Zeitraum kann nicht gelöscht werden."
+msgstr "The only period cannot be deleted."
+
+msgid "Die Person ist (noch) kein Verbandsmitglied."
+msgstr "The person is not (yet) a member of the association."
+
+msgid "Löschen geht nur bei ehemaligen Mitgliedern nach dem Austritt."
+msgstr "Deletion is only possible for former members after leaving."
+
+msgid "Bitte die vollständige Anschrift angeben."
+msgstr "Please enter the full address."
+
+msgid "Zu diesem Datum besteht keine Mitgliedschaft."
+msgstr "There is no membership on this date."
+
+msgid "Diese Mitgliedsart ist nicht verfügbar."
+msgstr "This membership type is not available."
+
+msgid "Das ist bereits die aktuelle Art."
+msgstr "This is already the current type."
+
+msgid "Der Stichtag muss nach dem Beginn der jetzigen Art liegen."
+msgstr "The cut-off date must be after the start of the current type."
+
+msgid "Unbekannter Austrittsgrund."
+msgstr "Unknown reason for leaving."
+
+msgid "Die Mitgliedschaft ist bereits beendet."
+msgstr "The membership has already ended."
+
+msgid "Die Person ist noch Mitglied."
+msgstr "The person is still a member."
+
+msgid "Der Wiedereintritt muss nach dem letzten Austritt liegen."
+msgstr "Rejoining must be after the last leaving."
+
+msgid "Bitte die Kontaktdaten neu erfassen."
+msgstr "Please enter the contact details again."
+
+msgid "Eine Wechselanfrage braucht es nur für eine aktive Mitgliedsart."
+msgstr "A change request is only needed for an active membership type."
+
+msgid "Es gibt bereits eine offene Wechselanfrage."
+msgstr "There is already an open change request."
+
+msgid "Die Anfrage ist bereits erledigt."
+msgstr "The request has already been dealt with."
+
+msgid "Bitte eine nicht aktive Art wählen."
+msgstr "Please choose an inactive type."
+
+msgid "Unbekannte Entscheidung."
+msgstr "Unknown decision."
+
+msgid "Weiterleitung ohne gültiges Ziel."
+msgstr "Redirect without a valid target."
+
+msgid "Antwort zu groß."
+msgstr "Response too large."
+
+msgid "Zu viele Weiterleitungen."
+msgstr "Too many redirects."
+
+msgid "Die Plattform braucht ein eigenes Impressum."
+msgstr "The platform needs its own legal notice."
+
+msgid "Der Entwurf ist leer."
+msgstr "The draft is empty."
+
+msgid ""
+"Einheiten unter dieser Einheit führen immer eigene Mitglieder. Gruppen ohne "
+"eigene Mitglieder gibt es (noch) nur unter Einheiten mit eigenen Mitgliedern "
+"(dort in den Einstellungen)."
+msgstr ""
+"Units below this unit always have their own members. Groups without their "
+"own members (so far) only exist under units with their own members (in their "
+"settings)."
+
+msgid ""
+"Unter dieser Einheit lassen sich hier keine Einheiten anlegen. "
+"Untereinheiten ohne eigene Mitglieder legt die Einheit selbst in ihren "
+"Einstellungen an."
+msgstr ""
+"No units can be created here under this unit. The unit itself creates sub-"
+"units without their own members in its settings."
+
+msgid ""
+"Unter einer übergeordneten Einheit führen Einheiten immer eigene Mitglieder."
+msgstr "Under a higher unit, units always have their own members."
+
+msgid "Es gibt schon eigene Mitglieder. Bitte diese zuerst entfernen."
+msgstr "There are already members of its own. Please remove them first."
+
+msgid "Bitte zuerst die Untereinheiten entfernen oder umhängen."
+msgstr "Please remove or move the sub-units first."
+
+msgid ""
+"Es gibt noch Untereinheiten. Bitte diese zuerst entfernen oder umhängen."
+msgstr "There are still sub-units. Please remove or move them first."
+
+msgid "Das Logo darf höchstens 2 MB groß sein."
+msgstr "The logo may be at most 2 MB."
+
+msgid "Diesen Tag gibt es in dem Monat nicht (in jedem Jahr)."
+msgstr "This day does not exist in that month (in every year)."
+
+msgid "Dachverband"
+msgstr "Umbrella association"
+
+msgid "Untereinheit"
+msgstr "Sub-unit"
+
+msgid "kein Zugriff"
+msgstr "no access"
+
+msgid "nur lesen"
+msgstr "read only"
+
+msgid "lesen und ändern"
+msgstr "read and change"
+
+msgid "eigene Angaben"
+msgstr "own details"
+
+msgid "von einer Vorstandsrolle übernehmen"
+msgstr "take over from a board role"
+
+msgid "gemeinsam gepflegt"
+msgstr "maintained jointly"
+
+msgid "eigene Kopie je Verein"
+msgstr "own copy per club"
+
+msgid "von der übergeordneten Einheit übernehmen"
+msgstr "take over from the higher unit"
+
+msgid "eigenes Impressum"
+msgstr "own legal notice"
+
+msgid "auf eigenes Impressum verlinken"
+msgstr "link to own legal notice"
+
+msgid "Text in HUBIplan"
+msgstr "Text in HUBIplan"
+
+msgid "auf eigene Seite verlinken"
+msgstr "link to own page"
+
+msgid "Facebook"
+msgstr "Facebook"
+
+msgid "Instagram"
+msgstr "Instagram"
+
+msgid "YouTube"
+msgstr "YouTube"
+
+msgid "TikTok"
+msgstr "TikTok"
+
+msgid "Mastodon"
+msgstr "Mastodon"
+
+msgid "Bluesky"
+msgstr "Bluesky"
+
+msgid "Threads"
+msgstr "Threads"
+
+msgid "WhatsApp-Kanal"
+msgstr "WhatsApp channel"
+
+msgid "LinkedIn"
+msgstr "LinkedIn"
+
+msgid "Sonstiges"
+msgstr "Other"
+
+msgid "Bitte ganze Jahre angeben."
+msgstr "Please enter whole years."
+
+msgid ""
+"Es gibt schon Buchungen in der Kasse. Das Geschäftsjahr lässt sich dann "
+"nicht mehr ändern."
+msgstr ""
+"There are already entries in the treasury. The financial year can then no "
+"longer be changed."
+
+msgid ""
+"Eigene Mitglieder neben denen darunter gibt es nur in der obersten Einheit."
+msgstr "Own members alongside those below only exist in the top unit."
+
+msgid "Jubiläen zwischen 1 und 100 Jahren."
+msgstr "Anniversaries between 1 and 100 years."
+
+msgid "Jubiläen zwischen 1 und 1000 Jahren."
+msgstr "Anniversaries between 1 and 1000 years."
+
+msgid "Die Rolle gehört nicht zu dieser Organisation."
+msgstr "The role does not belong to this organisation."
+
+msgid "Das Bild darf höchstens 4 MB groß sein."
+msgstr "The image may be at most 4 MB."
+
+#, python-brace-format
+msgid "Unbekannte Berechtigungen: {x}"
+msgstr "Unknown permissions: {x}"
+
+msgid "Bitte eine gültige Adresse angeben, z. B. https://www.beispiel.de"
+msgstr "Please enter a valid address, e.g. https://www.example.com"
+
+msgid "Diesen Namen gibt es hier schon."
+msgstr "This name already exists here."
+
+msgid ""
+"Mit eigenem Arbeitsbereich verwaltet sich die Einheit selbst. Bitte zuerst "
+"den Arbeitsbereich ausschalten."
+msgstr ""
+"With its own workspace the unit manages itself. Please switch off the "
+"workspace first."
+
+msgid "Dafür muss hier das Modul „Webseite“ freigeschaltet sein."
+msgstr "The “Website” module must be enabled here for this."
+
+#, python-brace-format
+msgid "Unbekannte Module: {x}"
+msgstr "Unknown modules: {x}"
+
+msgid "Bitte erst umhängen und danach den Schalter ändern."
+msgstr "Please move it first and then change the switch."
+
+msgid "Bitte eine Adresse mit https:// angeben."
+msgstr "Please enter an address starting with https://."
+
+#, python-brace-format
+msgid "Mehr als {MAX_LINKS} Kanäle sind nicht möglich."
+msgstr "More than {MAX_LINKS} channels are not possible."
+
+msgid "Bitte eine Farbe im Format #RRGGBB angeben."
+msgstr "Please enter a colour in the format #RRGGBB."
+
+msgid "Weitere Farben bitte als Liste angeben."
+msgstr "Please give further colours as a list."
+
+#, python-brace-format
+msgid "Höchstens {MAX_EXTRA_COLORS} weitere Farben (zusammen sechs)."
+msgstr "At most {MAX_EXTRA_COLORS} further colours (six in total)."
+
+#, python-brace-format
+msgid "Text auf der {i}. Farbe wäre schlecht lesbar."
+msgstr "Text on colour {i} would be hard to read."
+
+#, python-brace-format
+msgid "Farbnamen bitte höchstens {MAX_COLOR_NAME} Zeichen."
+msgstr "Colour names at most {MAX_COLOR_NAME} characters, please."
+
+msgid ""
+"Diese Einheit liegt auf einer anderen Instanz. Zum Entfernen die Kopplung "
+"unter Verbund lösen."
+msgstr ""
+"This unit is on another instance. To remove it, release the link under "
+"Federation."
+
+msgid "Diese Einheit liegt auf einer anderen Instanz und pflegt sich dort."
+msgstr "This unit is on another instance and is maintained there."
+
+msgid "Diese Einheit liegt auf einer anderen Instanz (Verbund)."
+msgstr "This unit is on another instance (federation)."
+
+msgid "nur gespeichert (kein Mailserver)"
+msgstr "only saved (no mail server)"
+
+msgid "Versand fehlgeschlagen"
+msgstr "Sending failed"
+
+msgid "Die Kopplung ist nicht aktiv."
+msgstr "The link is not active."
+
+msgid ""
+"Einen Notfallwechsel der Schlüssel bestätigt die Plattformverwaltung, weil "
+"er für alle Kopplungen mit dieser Instanz gilt."
+msgstr ""
+"An emergency key change is confirmed by the platform administration because "
+"it applies to all links with this instance."
+
+msgid "Buchen in der Kasse braucht das Recht „Kasse führen“."
+msgstr "Booking in the treasury requires the permission “Keep the treasury”."
+
+msgid "Konto nicht gefunden."
+msgstr "Account not found."
+
+msgid "Ungültige Auswahl."
+msgstr "Invalid selection."
+
+msgid "Dafür braucht es das Recht, Mitglieder zu bearbeiten."
+msgstr "This requires the permission to edit members."
+
+msgid "Der Vorschlag ist an den Verein unterwegs."
+msgstr "The suggestion is on its way to the club."
+
+#, python-brace-format
+msgid "Die neue Instanz antwortet nicht: {exc}"
+msgstr "The new instance does not respond: {exc}"
+
+msgid "Zum Bestätigen bitte das angezeigte Wort eintippen."
+msgstr "To confirm, please type the word shown."
+
+msgid "confirm oder decline"
+msgstr "confirm or decline"
+
+msgid "Nur Einheiten mit eigenem Datenbereich gliedern aus."
+msgstr "Only units with their own data area can be separated."
+
+msgid "Bitte einen Stichtag angeben."
+msgstr "Please enter a cut-off date."
+
+msgid "kein verschlüsseltes Paket"
+msgstr "not an encrypted packet"
+
+msgid "Paket ist nicht für diese Instanz"
+msgstr "packet is not for this instance"
+
+msgid "Paket lässt sich nicht entschlüsseln"
+msgstr "packet cannot be decrypted"
+
+msgid "Für diese Instanz wartet kein Schlüsselwechsel."
+msgstr "No key change is pending for this instance."
+
+msgid ""
+"Der Fingerabdruck passt nicht. Bitte nicht bestätigen und bei der anderen "
+"Seite nachfragen."
+msgstr ""
+"The fingerprint does not match. Please do not confirm and ask the other side."
+
+#, python-brace-format
+msgid "Die andere Instanz antwortet nicht: {exc}"
+msgstr "The other instance does not respond: {exc}"
+
+msgid "Die andere Instanz meldet andere Schlüssel als angekündigt."
+msgstr "The other instance reports different keys than announced."
+
+msgid "ferne Einheit darüber"
+msgstr "remote unit above"
+
+msgid "ferne Einheit darunter"
+msgstr "remote unit below"
+
+msgid "angefragt, wartet auf die andere Seite"
+msgstr "requested, waiting for the other side"
+
+msgid "Anfrage eingegangen, wartet auf Bestätigung"
+msgstr "request received, awaiting confirmation"
+
+msgid "Umzug angekündigt, wartet auf Bestätigung"
+msgstr "move announced, awaiting confirmation"
+
+msgid "gelöst"
+msgstr "released"
+
+msgid "Klärfall: Person schon bekannt?"
+msgstr "To be clarified: person already known?"
+
+msgid "nicht mehr gemeldet"
+msgstr "no longer reported"
+
+msgid "bisheriger Verein"
+msgstr "previous club"
+
+msgid "neuer Verein"
+msgstr "new club"
+
+msgid "Aufnahme fehlgeschlagen"
+msgstr "Admission failed"
+
+msgid "liegt als Entwurf vor"
+msgstr "available as a draft"
+
+msgid "nicht weitergegeben"
+msgstr "not passed on"
+
+msgid "Mitglieder bleiben Vereinsmitglieder"
+msgstr "members remain club members"
+
+msgid "Mitglieder werden Mitglieder der Untereinheit"
+msgstr "members become members of the sub-unit"
+
+msgid "vorbereitet (Export und Code erstellt)"
+msgstr "prepared (export and code created)"
+
+msgid "Kopplung angefragt"
+msgstr "link requested"
+
+msgid "Das ist diese Instanz."
+msgstr "This is this instance."
+
+msgid "Der Fingerabdruck passt nicht zur neuen Instanz."
+msgstr "The fingerprint does not match the new instance."
+
+msgid "Diese Einheit hat keine aktiven Kopplungen."
+msgstr "This unit has no active links."
+
+msgid "Die neue Instanz meldet andere Schlüssel als angekündigt."
+msgstr "The new instance reports different keys than announced."
+
+msgid "Die neue Instanz ist diese Instanz selbst."
+msgstr "The new instance is this instance itself."
+
+msgid "Für diese Kopplung ist kein Umzug angekündigt."
+msgstr "No move has been announced for this link."
+
+msgid ""
+"Der Fingerabdruck passt nicht zur neuen Instanz. Bitte nicht bestätigen und "
+"bei der anderen Seite nachfragen."
+msgstr ""
+"The fingerprint does not match the new instance. Please do not confirm and "
+"ask the other side."
+
+msgid "Die neue Instanz meldet inzwischen andere Schlüssel."
+msgstr "The new instance now reports different keys."
+
+msgid "Keine offene Berichtigung."
+msgstr "No open correction."
+
+msgid "Kein offener Klärfall."
+msgstr "No open case to clarify."
+
+msgid "Die gemeldeten Angaben sind unvollständig."
+msgstr "The reported details are incomplete."
+
+msgid "Diese Person steht nicht zur Auswahl."
+msgstr "This person is not available for selection."
+
+msgid "Die Person ist nicht mehr gemeldet."
+msgstr "The person is no longer reported."
+
+msgid "Unbekannte Instanz."
+msgstr "Unknown instance."
+
+msgid "Die Selbstauskunft passt nicht zum Absender."
+msgstr "The self-description does not match the sender."
+
+msgid "Der Verbund ist auf dieser Instanz nicht eingeschaltet."
+msgstr "Federation is not switched on on this instance."
+
+msgid "Diese Einheit kann keine fernen Einheiten aufnehmen."
+msgstr "This unit cannot take in remote units."
+
+msgid "Das ist kein HUBIplan-Kopplungscode."
+msgstr "This is not a HUBIplan link code."
+
+msgid "Der Kopplungscode ist unvollständig oder beschädigt."
+msgstr "The link code is incomplete or damaged."
+
+msgid "Der Kopplungscode ist ungültig oder abgelaufen."
+msgstr "The link code is invalid or has expired."
+
+msgid ""
+"Der Fingerabdruck der anderen Instanz passt nicht zum Kopplungscode. Bitte "
+"nicht koppeln und die andere Seite fragen."
+msgstr ""
+"The other instance's fingerprint does not match the link code. Please do not "
+"link and ask the other side."
+
+msgid "Der Code stammt von dieser Instanz selbst."
+msgstr "The code comes from this instance itself."
+
+msgid "Diese Einheit kann sich nicht unter eine ferne Einheit koppeln."
+msgstr "This unit cannot link itself under a remote unit."
+
+#, python-brace-format
+msgid "Abfrage bei der anderen Instanz fehlgeschlagen: {exc}"
+msgstr "Query to the other instance failed: {exc}"
+
+msgid "Der Kopplungscode passt nicht zur Art der anderen Einheit."
+msgstr "The link code does not match the type of the other unit."
+
+msgid "Die andere Instanz meldet einen anderen Schlüssel als bisher bekannt."
+msgstr "The other instance reports a different key than previously known."
+
+#, python-brace-format
+msgid "Die andere Instanz lehnt ab: {exc}"
+msgstr "The other instance declines: {exc}"
+
+#, python-brace-format
+msgid "Kopplung fehlgeschlagen: {exc}"
+msgstr "Linking failed: {exc}"
+
+msgid "Der Kopplungscode ist schon benutzt."
+msgstr "The link code has already been used."
+
+msgid "Ungültige Kennung der Einheit."
+msgstr "Invalid unit identifier."
+
+msgid "Diese Einheit ist hier schon gekoppelt."
+msgstr "This unit is already linked here."
+
+msgid "Diese Kopplung wartet nicht auf eine Bestätigung."
+msgstr "This link is not awaiting confirmation."
+
+msgid "Dazu liegt keine Anfrage vor."
+msgstr "There is no request for this."
+
+msgid "Diese Einheit liegt schon auf einer anderen Instanz."
+msgstr "This unit is already on another instance."
+
+msgid "Die Untereinheit ist stillgelegt."
+msgstr "The sub-unit has been shut down."
+
+msgid ""
+"Die Untereinheit hat selbst Untereinheiten. Bitte diese vorher umhängen; "
+"ausgegliedert wird immer eine Untereinheit ohne eigene Untereinheiten."
+msgstr ""
+"The sub-unit itself has sub-units. Please move them first; only a sub-unit "
+"without sub-units of its own is ever separated."
+
+msgid "Für diese Untereinheit ist schon eine Ausgliederung vorbereitet."
+msgstr "A separation has already been prepared for this sub-unit."
+
+msgid "Bitte einen Weg wählen."
+msgstr "Please choose a way."
+
+msgid ""
+"Die Ausgliederung ist schon angefragt. Bitte die Kopplung unter Verbund "
+"ablehnen."
+msgstr ""
+"The separation has already been requested. Please decline the link under "
+"Federation."
+
+msgid "Diese Untereinheit ist schon gekoppelt."
+msgstr "This sub-unit is already linked."
+
+msgid "Nur bei „Mitglieder werden Mitglieder der Untereinheit“."
+msgstr "Only with “members become members of the sub-unit”."
+
+msgid "Erst nach der bestätigten Kopplung."
+msgstr "Only after the link has been confirmed."
+
+msgid "Der Sammelaustritt ist schon ausgeführt."
+msgstr "The collective leaving has already been carried out."
+
+msgid "Mit dieser Instanz besteht keine Kopplung."
+msgstr "There is no link with this instance."
+
+msgid "Unbekannter Zweck."
+msgstr "Unknown purpose."
+
+msgid ""
+"Die Anmeldung über gekoppelte Instanzen ist auf dieser Instanz nicht "
+"eingeschaltet."
+msgstr "Sign-in via linked instances is not switched on on this instance."
+
+msgid "Zum Verknüpfen bitte zuerst hier anmelden."
+msgstr "To connect, please sign in here first."
+
+msgid "Zugänge der Plattformverwaltung werden nicht verknüpft."
+msgstr "Platform administration accounts are not connected."
+
+msgid "Der Code stimmt nicht."
+msgstr "The code is incorrect."
+
+msgid "Bitte zuerst anmelden."
+msgstr "Please sign in first."
+
+msgid "Die Anfrage ist unvollständig."
+msgstr "The request is incomplete."
+
+msgid "Zugänge der Plattformverwaltung melden sich nicht anderswo an."
+msgstr "Platform administration accounts do not sign in elsewhere."
+
+msgid ""
+"Diese Anmeldung stammt selbst von einer anderen Instanz. Bitte hier direkt "
+"mit Passwort anmelden."
+msgstr ""
+"This sign-in itself comes from another instance. Please sign in here "
+"directly with your password."
+
+msgid "Die Anmeldung ist abgelaufen. Bitte erneut beginnen."
+msgstr "The sign-in has expired. Please start again."
+
+msgid "Die Anmeldung über gekoppelte Instanzen ist ausgeschaltet."
+msgstr "Sign-in via linked instances is switched off."
+
+msgid "Die Anmeldebestätigung ist beschädigt."
+msgstr "The sign-in confirmation is damaged."
+
+msgid "Die Bestätigung kommt von einer anderen Instanz."
+msgstr "The confirmation comes from a different instance."
+
+msgid "Die Unterschrift der Anmeldebestätigung stimmt nicht."
+msgstr "The signature of the sign-in confirmation is incorrect."
+
+msgid "Die Anmeldebestätigung lässt sich nicht öffnen."
+msgstr "The sign-in confirmation cannot be opened."
+
+msgid "Die Anmeldebestätigung passt nicht zu dieser Anmeldung."
+msgstr "The sign-in confirmation does not match this sign-in."
+
+msgid ""
+"Die andere Instanz bestätigt die Anmeldung nicht ausreichend (zu alt oder "
+"veraltete Version). Bitte dort neu anmelden oder die andere Instanz "
+"aktualisieren."
+msgstr ""
+"The other instance does not sufficiently confirm the sign-in (too old or "
+"outdated version). Please sign in again there or update the other instance."
+
+msgid "Die Anmeldebestätigung wurde schon benutzt."
+msgstr "The sign-in confirmation has already been used."
+
+msgid "Die Verknüpfung gehört zu einem anderen Konto."
+msgstr "The connection belongs to a different account."
+
+msgid "Dieser Zugang ist hier schon mit einem anderen Konto verknüpft."
+msgstr "This account is already connected to a different account here."
+
+msgid ""
+"Dieser Zugang ist hier mit keinem Konto verknüpft. Bitte einmal mit dem "
+"Zugang dieser Instanz anmelden und unter Mein Konto verknüpfen."
+msgstr ""
+"This account is not connected to any account here. Please sign in once with "
+"this instance's account and connect it under My account."
+
+msgid "Für dieses Konto ist die Anmeldung über eine andere Instanz gesperrt."
+msgstr "Sign-in via another instance is blocked for this account."
+
+msgid ""
+"Dieses Konto nutzt hier die Zwei-Faktor-Anmeldung. Bitte auf der anderen "
+"Instanz ebenfalls die Zwei-Faktor-Anmeldung einrichten."
+msgstr ""
+"This account uses two-factor authentication here. Please also set up two-"
+"factor authentication on the other instance."
+
+msgid ""
+"Für Konten mit Vorstands-, Kassen- oder Prüferrollen braucht die Anmeldung "
+"über eine andere Instanz hier eine eigene Zwei-Faktor-Anmeldung. Bitte "
+"einmal direkt mit Passwort anmelden und unter Mein Konto die Zwei-Faktor-"
+"Anmeldung einrichten."
+msgstr ""
+"For accounts with board, treasury or auditor roles, sign-in via another "
+"instance needs its own two-factor authentication here. Please sign in once "
+"directly with your password and set up two-factor authentication under My "
+"account."
+
+msgid "Die Anmeldung ist nicht mehr möglich."
+msgstr "Sign-in is no longer possible."
+
+msgid "Der Code stimmt nicht. Bitte die Anmeldung erneut beginnen."
+msgstr "The code is incorrect. Please start the sign-in again."
+
+#, python-brace-format
+msgid "{name} ist derzeit nicht erreichbar gekoppelt."
+msgstr "{name} is currently not reachably linked."
+
+msgid "Die Person ist beim bisherigen Verein nicht namentlich gemeldet."
+msgstr "The person is not reported by name at the previous club."
+
+msgid "Die Kopplung nach oben ist nicht aktiv."
+msgstr "The link upwards is not active."
+
+msgid "Wechselanfragen brauchen die namentliche Meldung."
+msgstr "Change requests need reporting by name."
+
+msgid "Bitte eine aktive Mitgliedsart wählen."
+msgstr "Please choose an active membership type."
+
+msgid "Bitte Name, Vorname, Geburtsdatum und Eintritt angeben."
+msgstr "Please enter surname, first name, date of birth and joining date."
+
+msgid "Mitgliedschaft unbekannt."
+msgstr "Membership unknown."
+
+msgid "Ungültige Wechselanfrage."
+msgstr "Invalid change request."
+
+msgid "Unpassende Wechselmeldung."
+msgstr "Unsuitable change notice."
+
+msgid "Andere Instanzen sind nur über https erreichbar."
+msgstr "Other instances can only be reached via https."
+
+#, python-brace-format
+msgid "{host} steht nicht in der Liste erlaubter Instanzen."
+msgstr "{host} is not on the list of allowed instances."
+
+#, python-brace-format
+msgid "Selbstauskunft nicht abrufbar (HTTP {status})."
+msgstr "Self-description not retrievable (HTTP {status})."
+
+msgid "Selbstauskunft ist kein JSON."
+msgstr "Self-description is not JSON."
+
+msgid "Dort läuft keine HUBIplan-Instanz."
+msgstr "No HUBIplan instance is running there."
+
+msgid "Selbstauskunft ohne gültigen Schlüssel."
+msgstr "Self-description without a valid key."
+
+#, python-brace-format
+msgid "Antwort ohne gültige Unterschrift (HTTP {status})."
+msgstr "Response without a valid signature (HTTP {status})."
+
+msgid "Antwort lässt sich nicht entschlüsseln."
+msgstr "Response cannot be decrypted."
+
+msgid "übernommen"
+msgstr "taken over"
+
+msgid "Bitte ein aktuelles Mitglied auswählen."
+msgstr "Please choose a current member."
+
+msgid "Die Einheit ist inaktiv."
+msgstr "The unit is inactive."
+
+msgid "Diese Meldung ist schon bearbeitet."
+msgstr "This report has already been processed."
+
+#, python-brace-format
+msgid ""
+"Seit der Meldung wurde im Verein geändert: {names}. Annehmen überschreibt "
+"diese Angaben mit der Meldung."
+msgstr ""
+"Since the report, the club has changed: {names}. Accepting overwrites these "
+"details with the report."
+
+msgid "Du kannst dir die Rollenverwaltung nicht selbst entziehen."
+msgstr "You cannot remove role administration from yourself."
+
+msgid "Es wurde nichts geändert."
+msgstr "Nothing was changed."
+
+msgid ""
+"Wenn zu dieser Adresse ein Mitgliederzugang besteht, ist ein Anmeldelink "
+"unterwegs."
+msgstr ""
+"If a member account exists for this address, a sign-in link is on its way."
+
+msgid ""
+"Der Link ist ungültig oder abgelaufen. Bitte fordern Sie einen neuen an."
+msgstr "The link is invalid or has expired. Please request a new one."
+
+msgid "Für dieses Konto ist die Anmeldung nur mit Passwort möglich."
+msgstr "For this account sign-in is only possible with a password."
+
+msgid "Satzung"
+msgstr "Constitution"
+
+msgid "Beitragsordnung"
+msgstr "Fee regulations"
+
+msgid "Gründungsurkunde"
+msgstr "Founding charter"
+
+msgid "Seite ohne Größe"
+msgstr "Page without size"
+
+msgid "Bitte eine PDF-Datei wählen."
+msgstr "Please choose a PDF file."
+
+msgid "Unbekannte Dokumentart."
+msgstr "Unknown document type."

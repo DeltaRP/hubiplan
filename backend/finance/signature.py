@@ -17,6 +17,7 @@ from __future__ import annotations
 import math
 
 from django.core.exceptions import ValidationError
+from django.utils.translation import gettext
 from reportlab.graphics.shapes import Drawing, PolyLine
 from reportlab.lib import colors
 
@@ -31,25 +32,25 @@ EMPTY = "Bitte unterschreiben."
 
 def _number(value) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise ValidationError("Die Unterschrift ist ungültig.")
+        raise ValidationError(gettext("Die Unterschrift ist ungültig."))
     if not math.isfinite(value):
-        raise ValidationError("Die Unterschrift ist ungültig.")
+        raise ValidationError(gettext("Die Unterschrift ist ungültig."))
     return float(value)
 
 
 def normalize(data) -> dict:
     """Eingabe prüfen und in die gespeicherte Form bringen (ValidationError sonst)."""
     if not isinstance(data, dict):
-        raise ValidationError("Die Unterschrift ist ungültig.")
+        raise ValidationError(gettext("Die Unterschrift ist ungültig."))
     width = _number(data.get("width"))
     height = _number(data.get("height"))
     if not (10 <= width <= 10000 and 10 <= height <= 10000):
-        raise ValidationError("Die Unterschrift ist ungültig.")
+        raise ValidationError(gettext("Die Unterschrift ist ungültig."))
     strokes = data.get("strokes")
     if not isinstance(strokes, list) or not strokes:
         raise ValidationError(EMPTY)
     if len(strokes) > MAX_STROKES:
-        raise ValidationError("Die Unterschrift hat zu viele Striche.")
+        raise ValidationError(gettext("Die Unterschrift hat zu viele Striche."))
     scale = WIDTH / width
     box_h = round(height * scale)
     result: list[list[int]] = []
@@ -57,12 +58,12 @@ def normalize(data) -> dict:
     length = 0.0
     for stroke in strokes:
         if not isinstance(stroke, list):
-            raise ValidationError("Die Unterschrift ist ungültig.")
+            raise ValidationError(gettext("Die Unterschrift ist ungültig."))
         flat: list[int] = []
         last = None
         for point in stroke:
             if not isinstance(point, (list, tuple)) or len(point) != 2:
-                raise ValidationError("Die Unterschrift ist ungültig.")
+                raise ValidationError(gettext("Die Unterschrift ist ungültig."))
             x = min(max(_number(point[0]), 0.0), width) * scale
             y = min(max(_number(point[1]), 0.0), height) * scale
             xi, yi = round(x), round(y)
@@ -74,7 +75,7 @@ def normalize(data) -> dict:
             last = (xi, yi)
             total += 1
             if total > MAX_POINTS:
-                raise ValidationError("Die Unterschrift hat zu viele Punkte.")
+                raise ValidationError(gettext("Die Unterschrift hat zu viele Punkte."))
         if flat:
             result.append(flat)
     if length < MIN_LENGTH:

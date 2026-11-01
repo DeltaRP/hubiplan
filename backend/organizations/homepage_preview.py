@@ -19,6 +19,7 @@ from html.parser import HTMLParser
 
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
+from django.utils.translation import gettext
 from PIL import Image, UnidentifiedImageError
 
 from core import safehttp
@@ -83,15 +84,15 @@ def _get(url: str, max_body: int) -> tuple[str, safehttp.Response]:
             location = {k.lower(): v for k, v in resp.headers.items()}.get("location")
             nxt = _https(urllib.parse.urljoin(url, location or ""))
             if not nxt:
-                raise safehttp.SafeHTTPError("Weiterleitung ohne gültiges Ziel.")
+                raise safehttp.SafeHTTPError(gettext("Weiterleitung ohne gültiges Ziel."))
             url = nxt
             continue
         if resp.status != 200:
             raise safehttp.SafeHTTPError(f"HTTP {resp.status}")
         if len(resp.body) > max_body:
-            raise safehttp.SafeHTTPError("Antwort zu groß.")
+            raise safehttp.SafeHTTPError(gettext("Antwort zu groß."))
         return url, resp
-    raise safehttp.SafeHTTPError("Zu viele Weiterleitungen.")
+    raise safehttp.SafeHTTPError(gettext("Zu viele Weiterleitungen."))
 
 
 def clean_preview(content: bytes) -> bytes:
@@ -99,16 +100,16 @@ def clean_preview(content: bytes) -> bytes:
     try:
         probe = Image.open(io.BytesIO(content))
         if probe.format not in FORMATS:
-            raise ValidationError("Bitte PNG, JPG oder WebP hochladen.")
+            raise ValidationError(gettext("Bitte PNG, JPG oder WebP hochladen."))
         if probe.width * probe.height > MAX_PIXELS:
-            raise ValidationError("Das Bild hat zu viele Pixel.")
+            raise ValidationError(gettext("Das Bild hat zu viele Pixel."))
         probe.verify()
         img = Image.open(io.BytesIO(content))
         img.load()
     except ValidationError:
         raise
     except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError) as exc:
-        raise ValidationError("Die Datei ist kein gültiges Bild.") from exc
+        raise ValidationError(gettext("Die Datei ist kein gültiges Bild.")) from exc
     if img.mode in ("RGBA", "LA", "P", "PA"):
         rgba = img.convert("RGBA")
         img = Image.new("RGB", rgba.size, (255, 255, 255))

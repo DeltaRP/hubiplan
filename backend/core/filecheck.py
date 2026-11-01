@@ -10,6 +10,7 @@ from __future__ import annotations
 import io
 
 from django.core.exceptions import ValidationError
+from django.utils.translation import gettext
 from PIL import Image, ImageChops, ImageDraw, ImageFilter, UnidentifiedImageError
 
 MAX_LOGO_PIXELS = 25_000_000
@@ -60,16 +61,16 @@ def clean_logo(content: bytes, *, remove_background: bool = False) -> bytes:
     try:
         probe = Image.open(io.BytesIO(content))
         if probe.format not in LOGO_FORMATS:
-            raise ValidationError("Bitte PNG, JPG oder WebP hochladen.")
+            raise ValidationError(gettext("Bitte PNG, JPG oder WebP hochladen."))
         if probe.width * probe.height > MAX_LOGO_PIXELS:
-            raise ValidationError("Das Logo hat zu viele Pixel.")
+            raise ValidationError(gettext("Das Logo hat zu viele Pixel."))
         probe.verify()
         img = Image.open(io.BytesIO(content))
         img.load()
     except ValidationError:
         raise
     except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError) as exc:
-        raise ValidationError("Die Datei ist kein gültiges Bild.") from exc
+        raise ValidationError(gettext("Die Datei ist kein gültiges Bild.")) from exc
     img = img.convert("RGBA") if img.mode in ("RGBA", "LA", "P", "PA") else img.convert("RGB")
     img.thumbnail((LOGO_MAX_SIDE, LOGO_MAX_SIDE), Image.Resampling.LANCZOS)
     if remove_background:

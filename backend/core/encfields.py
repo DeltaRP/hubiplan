@@ -26,6 +26,7 @@ from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from django.core.exceptions import FieldError
 from django.db import models
+from django.utils.translation import gettext
 
 from . import crypto
 
@@ -55,12 +56,12 @@ def decrypt_text(value: str, field) -> str:
         raw = base64.b64decode(value[len(PREFIX) :])
         key_id = struct.unpack(">Q", raw[:8])[0]
     except (ValueError, struct.error) as exc:
-        raise crypto.DecryptionError("Verschlüsselter Wert ist beschädigt.") from exc
+        raise crypto.DecryptionError(gettext("Verschlüsselter Wert ist beschädigt.")) from exc
     key = crypto.key_by_id(key_id)
     try:
         return AESGCM(key).decrypt(raw[8:20], raw[20:], _aad(field)).decode()
     except InvalidTag as exc:
-        raise crypto.DecryptionError("Verschlüsselter Wert ist verändert.") from exc
+        raise crypto.DecryptionError(gettext("Verschlüsselter Wert ist verändert.")) from exc
 
 
 def owner_org_id(instance) -> int | None:

@@ -14,6 +14,7 @@ from django.db import transaction
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.translation import gettext
 from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
@@ -41,7 +42,7 @@ class DonationMixin(FinanceMixin):
     def initial(self, request, *args, **kwargs):
         super().initial(request, *args, **kwargs)
         if not svc.available(self.org):
-            raise NotFound("Zuwendungsbestätigungen gibt es nicht für die Plattform.")
+            raise NotFound(gettext("Zuwendungsbestätigungen gibt es nicht für die Plattform."))
 
 
 def _year(request, default: int | None = None) -> int:
@@ -50,9 +51,9 @@ def _year(request, default: int | None = None) -> int:
     try:
         year = int(raw)
     except (TypeError, ValueError):
-        raise serializers.ValidationError({"year": "Bitte ein Jahr angeben."}) from None
+        raise serializers.ValidationError({"year": gettext("Bitte ein Jahr angeben.")}) from None
     if not 1900 <= year <= 2200:
-        raise serializers.ValidationError({"year": "Bitte ein gültiges Jahr angeben."})
+        raise serializers.ValidationError({"year": gettext("Bitte ein gültiges Jahr angeben.")})
     return year
 
 
@@ -355,7 +356,7 @@ class DonationStatementViewSet(
             Donation.objects.filter(organization=self.org, pk__in=ser.validated_data["donations"])
         )
         if len(donations) != len(set(ser.validated_data["donations"])):
-            raise serializers.ValidationError({"donations": "Unbekannte Zuwendung."})
+            raise serializers.ValidationError({"donations": gettext("Unbekannte Zuwendung.")})
         try:
             with transaction.atomic():
                 statement = svc.issue(

@@ -14,6 +14,8 @@ from __future__ import annotations
 
 import re
 
+from django.utils import translation
+
 FEMININE = "f"
 MASCULINE = "m"
 NEUTER = "n"
@@ -111,6 +113,95 @@ def build_terms(
 DEFAULT_TERMS = build_terms(DEFAULT_LABEL, DEFAULT_PLURAL, FEMININE)
 
 
+# Englisch (Konzept englisch.md, 4.3): keine Fälle, ein Artikel. Dieselben Platzhalter
+# liefern dort „the platoon“, „a platoon“, „in the platoon“ usw.
+_FORMS_EN = {
+    "nom": "the",
+    "akk": "the",
+    "dat": "the",
+    "gen": "the",
+    "ein": "a",
+    "einen": "a",
+    "einem": "a",
+    "eines": "a",
+    "kein": "no",
+    "diese": "this",
+    "diesem": "this",
+    "dieses": "this",
+    "diesen": "this",
+    "deinem": "your",
+    "deines": "your",
+    "deinen": "your",
+    "ihrem": "their",
+    "ihres": "their",
+    "ihren": "their",
+    "im": "in the",
+    "zum": "to the",
+    "vom": "from the",
+    "beim": "at the",
+    "unser": "our",
+    "ein_anderer": "another",
+    "einen_anderen": "another",
+    "einem_anderen": "another",
+    "eines_anderen": "another",
+    "der_andere": "the other",
+    "den_anderen": "the other",
+    "beim_anderen": "at the other",
+}
+# Vorgaben übersetzt; eigene Bezeichnungen ohne englische Form bleiben deutsch (F7)
+ENGLISH_DEFAULTS = {
+    "Abteilung": ("department", "departments"),
+    "Verein": ("club", "clubs"),
+    "Dachverband": ("umbrella association", "umbrella associations"),
+    "Plattform": ("platform", "platforms"),
+    "Einheit": ("unit", "units"),
+    "Gruppe": ("group", "groups"),
+}
+
+
+def english_label(label: str, plural: str, label_en: str = "", plural_en: str = ""):
+    """Englische Einzahl/Mehrzahl: eigene Angabe, sonst Vorgabe, sonst die deutsche."""
+    if label_en:
+        return label_en, plural_en or label_en
+    if label in ENGLISH_DEFAULTS:
+        return ENGLISH_DEFAULTS[label]
+    return label, plural or label
+
+
+def _article_a(noun: str) -> str:
+    """„a“ oder „an“ nach dem Anlaut (unit, union, user: „a“)."""
+    return "an" if re.match(r"(?!uni|use|eu|one)[aeiou]", noun.lower()) else "a"
+
+
+def build_terms_en(label: str, plural: str, gender: str = FEMININE) -> dict[str, str]:
+    label, plural = english_label(label or DEFAULT_LABEL, plural or DEFAULT_PLURAL)
+    if gender not in GENDERS:
+        gender = FEMININE
+    terms = {"sg": label, "pl": plural, "sg_gen": label, "pl_dat": plural, "gender": gender}
+    for key, article in _FORMS_EN.items():
+        word = _article_a(label) if article == "a" else article
+        terms[key] = f"{word} {label}"
+    terms["adj"] = ""
+    for key in list(terms):
+        if key not in ("gender", "adj"):
+            terms[_cap(key)] = _cap(terms[key])
+    return terms
+
+
+def _english() -> bool:
+    return (translation.get_language() or "de").startswith("en")
+
+
+def terms_for(label, plural, gender=FEMININE, genitive_form="", label_en="", plural_en=""):
+    """Formen in der aktiven Sprache (Deutsch oder Englisch)."""
+    if _english():
+        en, en_pl = english_label(
+            label or DEFAULT_LABEL, plural or DEFAULT_PLURAL, label_en, plural_en
+        )
+        return build_terms_en(en, en_pl, gender)
+    return build_terms(label, plural, gender, genitive_form)
+
+
 # Dachverband: Vereine sehen statt „Dachverband“ dessen Namen (Kurzname, sonst
 # voller Name). Platzhalter mit Vorsilbe ``dv_``: ``{dv_im}`` „im BSV“,
 # ``{dv_akk}`` „den BSV“, ``{dv_gen}`` „des BSV“, ``{dv_sg}`` „BSV“,
@@ -130,15 +221,19 @@ def build_federation_terms(
     außer der Dachverband trägt eine eigene Form ein.
     """
     if name:
-        base = build_terms(name, name, gender or MASCULINE, genitive_form or name)
+        base = terms_for(name, name, gender or MASCULINE, genitive_form or name, name)
     else:
-        base = build_terms(FED_LABEL, "Dachverbände", MASCULINE, "Dachverbands")
+        base = terms_for(FED_LABEL, "Dachverbände", MASCULINE, "Dachverbands")
     terms = {FED_PREFIX + k: v for k, v in base.items() if not k.lower().startswith("pl")}
     terms[FED_PREFIX + "has"] = "1" if name else ""
     return terms
 
 
-DEFAULT_FED_TERMS = build_federation_terms()
+DEFAULT_FED_TERMS = build_federation_terms()  # deutsch (beim Import)
+
+
+def default_fed_terms() -> dict[str, str]:
+    return build_federation_terms() if _english() else DEFAULT_FED_TERMS
 
 
 def federation_of(org):
@@ -154,10 +249,10 @@ def federation_of(org):
 def federation_terms(org) -> dict[str, str]:
     """``dv_``-Formen für Texte, die ``org`` sieht (Verein: Name seines Dachverbands)."""
     if org is None or getattr(org, "type", None) != "club":
-        return DEFAULT_FED_TERMS
+        return default_fed_terms()
     fed = federation_of(org)
     if fed is None:
-        terms = dict(DEFAULT_FED_TERMS)
+        terms = dict(default_fed_terms())
         terms[FED_PREFIX + "has"] = ""
         return terms
     return build_federation_terms(
@@ -173,26 +268,41 @@ OWN_DEFAULT = ("Einheit", "Einheiten", FEMININE, "")
 
 
 def build_own_terms(
-    label: str = "", plural: str = "", gender: str = FEMININE, genitive_form: str = ""
+    label: str = "",
+    plural: str = "",
+    gender: str = FEMININE,
+    genitive_form: str = "",
+    label_en: str = "",
+    plural_en: str = "",
 ) -> dict[str, str]:
     if not label:
         label, plural, gender, genitive_form = OWN_DEFAULT
-    base = build_terms(label, plural or label, gender, genitive_form)
+    base = terms_for(label, plural or label, gender, genitive_form, label_en, plural_en)
     return {OWN_PREFIX + k: v for k, v in base.items()}
 
 
-DEFAULT_OWN_TERMS = build_own_terms()
+DEFAULT_OWN_TERMS = build_own_terms()  # deutsch (beim Import)
+
+
+def default_own_terms() -> dict[str, str]:
+    return build_own_terms() if _english() else DEFAULT_OWN_TERMS
+
+
+def default_dept_terms() -> dict[str, str]:
+    return terms_for(DEFAULT_LABEL, DEFAULT_PLURAL) if _english() else DEFAULT_TERMS
 
 
 def own_terms(org) -> dict[str, str]:
     """``e_``-Formen der eigenen Bezeichnung einer Einheit."""
     if org is None:
-        return DEFAULT_OWN_TERMS
+        return default_own_terms()
     return build_own_terms(
         getattr(org, "label", "") or "",
         getattr(org, "label_plural", "") or "",
         getattr(org, "label_gender", FEMININE) or FEMININE,
         getattr(org, "label_genitive", "") or "",
+        getattr(org, "label_en", "") or "",
+        getattr(org, "label_plural_en", "") or "",
     )
 
 
@@ -205,12 +315,14 @@ def department_terms(org) -> dict[str, str]:
     - ``dv_``: Name der übergeordneten Einheit (siehe oben).
     """
     if org is None:
-        return {**DEFAULT_TERMS, **DEFAULT_FED_TERMS, **DEFAULT_OWN_TERMS}
-    terms = build_terms(
+        return {**default_dept_terms(), **default_fed_terms(), **default_own_terms()}
+    terms = terms_for(
         getattr(org, "department_label", "") or DEFAULT_LABEL,
         getattr(org, "department_label_plural", "") or DEFAULT_PLURAL,
         getattr(org, "department_label_gender", FEMININE) or FEMININE,
         getattr(org, "department_label_genitive", "") or "",
+        getattr(org, "department_label_en", "") or "",
+        getattr(org, "department_label_plural_en", "") or "",
     )
     terms.update(federation_terms(org))
     terms.update(own_terms(org))
@@ -222,10 +334,10 @@ def default_terms_for(org_type: str) -> dict[str, str]:
     from .models import DEFAULT_CHILD_LABELS, DEFAULT_LABELS
 
     child = DEFAULT_CHILD_LABELS.get(org_type)
-    terms = build_terms(*child) if child else dict(DEFAULT_TERMS)
-    terms.update(DEFAULT_FED_TERMS)
+    terms = terms_for(*child) if child else dict(default_dept_terms())
+    terms.update(default_fed_terms())
     own = DEFAULT_LABELS.get(org_type)
-    terms.update(build_own_terms(*own) if own else DEFAULT_OWN_TERMS)
+    terms.update(build_own_terms(*own) if own else default_own_terms())
     return terms
 
 
@@ -238,9 +350,9 @@ def fill(text: str, terms_or_org=None) -> str:
     """Platzhalter in ``text`` füllen; unbekannte Platzhalter bleiben stehen."""
     terms = terms_or_org if isinstance(terms_or_org, dict) else department_terms(terms_or_org)
     if FED_PREFIX + "sg" not in terms:
-        terms = {**DEFAULT_FED_TERMS, **terms}
+        terms = {**default_fed_terms(), **terms}
     if OWN_PREFIX + "sg" not in terms:
-        terms = {**DEFAULT_OWN_TERMS, **terms}
+        terms = {**default_own_terms(), **terms}
     return text.format_map(_Keep(terms))
 
 

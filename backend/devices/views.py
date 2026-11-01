@@ -16,6 +16,7 @@ from django.conf import settings
 from django.contrib.sessions.backends.base import SessionBase
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext
 from rest_framework import serializers
 from rest_framework.authentication import BaseAuthentication, SessionAuthentication
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
@@ -76,7 +77,7 @@ class DeviceSerializer(serializers.Serializer):
 
     def validate_device_key(self, value):
         if value and not devicekey.valid_public_key(value):
-            raise serializers.ValidationError("Ungültiger Schlüssel.")
+            raise serializers.ValidationError(gettext("Ungültiger Schlüssel."))
         return value
 
 
@@ -156,11 +157,15 @@ class PairingCodeView(APIView):
 
     def post(self, request):
         if too_many(f"app:pairing:{request.user.pk}", RATE[0], RATE[1]):
-            return Response({"detail": "Zu viele Versuche. Bitte später erneut."}, status=429)
+            return Response(
+                {"detail": gettext("Zu viele Versuche. Bitte später erneut.")}, status=429
+            )
         if not portal_services.portal_accesses(request.user):
             raise ValidationError(
-                "Die App gibt es für den Mitgliederbereich. Für dieses Konto ist kein "
-                "Mitgliederbereich freigeschaltet."
+                gettext(
+                    "Die App gibt es für den Mitgliederbereich. Für dieses Konto ist kein "
+                    "Mitgliederbereich freigeschaltet."
+                )
             )
         now = timezone.now()
         # Ältere offene Codes gelten nicht mehr
@@ -208,12 +213,16 @@ class PairView(APIView):
 
     def post(self, request):
         if _rate_limited(request, "pair"):
-            return Response({"detail": "Zu viele Versuche. Bitte später erneut."}, status=429)
+            return Response(
+                {"detail": gettext("Zu viele Versuche. Bitte später erneut.")}, status=429
+            )
         data = PairSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         v = data.validated_data
         if bool(v["code"]) == bool(v["login_link"]):
-            raise ValidationError("Bitte den QR-Code scannen oder einen Anmeldelink öffnen.")
+            raise ValidationError(
+                gettext("Bitte den QR-Code scannen oder einen Anmeldelink öffnen.")
+            )
         with transaction.atomic():
             if v["code"]:
                 item = (
@@ -230,17 +239,22 @@ class PairView(APIView):
                     .first()
                 )
             if item is None or not item.is_open or not item.user.is_active:
-                raise NotFound("Der Code ist ungültig oder abgelaufen. Bitte einen neuen erzeugen.")
+                raise NotFound(
+                    gettext("Der Code ist ungültig oder abgelaufen. Bitte einen neuen erzeugen.")
+                )
             user = item.user
             set_rls(None, user.pk)
             # Anmeldelinks gelten wie im Browser nicht für Vorstände und Konten mit 2FA
             if v["login_link"] and not portal_services.link_login_allowed(user):
                 raise PermissionDenied(
-                    "Für dieses Konto bitte mit Passwort oder QR-Code aus „Mein Konto“ anmelden."
+                    gettext(
+                        "Für dieses Konto bitte mit Passwort oder QR-Code aus „Mein Konto“ "
+                        "anmelden."
+                    )
                 )
             if not portal_services.portal_accesses(user):
                 raise PermissionDenied(
-                    "Für dieses Konto ist kein Mitgliederbereich freigeschaltet."
+                    gettext("Für dieses Konto ist kein Mitgliederbereich freigeschaltet.")
                 )
             device, token = _create_device(user, v)
             item.used_at = timezone.now()
@@ -282,12 +296,14 @@ class DeviceListView(APIView):
     def post(self, request):
         # Nur direkt nach der Anmeldung in der App (X-Session-Token), nicht aus dem Browser
         if not isinstance(request.auth, SessionBase):
-            raise PermissionDenied("Geräte werden in der App angemeldet.")
+            raise PermissionDenied(gettext("Geräte werden in der App angemeldet."))
         data = DeviceSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         set_rls(None, request.user.pk)
         if not portal_services.portal_accesses(request.user):
-            raise PermissionDenied("Für dieses Konto ist kein Mitgliederbereich freigeschaltet.")
+            raise PermissionDenied(
+                gettext("Für dieses Konto ist kein Mitgliederbereich freigeschaltet.")
+            )
         device, token = _create_device(request.user, data.validated_data)
         # Die Sitzung der Anmeldung wird nicht mehr gebraucht
         request.auth.delete()
@@ -374,18 +390,22 @@ class PushSerializer(serializers.Serializer):
             gateway = getattr(settings, "PUSH_GATEWAY_URL", "").rstrip("/")
             if not gateway or not attrs["endpoint"].startswith(gateway + "/fcm/"):
                 raise serializers.ValidationError(
-                    {"endpoint": "Diese Instanz nimmt keinen Google-Push über dieses Gateway an."}
+                    {
+                        "endpoint": gettext(
+                            "Diese Instanz nimmt keinen Google-Push über dieses Gateway an."
+                        )
+                    }
                 )
         return attrs
 
     def validate_p256dh(self, value):
         if not webpush.valid_p256dh(value):
-            raise serializers.ValidationError("Ungültiger Schlüssel.")
+            raise serializers.ValidationError(gettext("Ungültiger Schlüssel."))
         return value
 
     def validate_auth(self, value):
         if not webpush.valid_auth(value):
-            raise serializers.ValidationError("Ungültiger Schlüssel.")
+            raise serializers.ValidationError(gettext("Ungültiger Schlüssel."))
         return value
 
 
@@ -420,7 +440,7 @@ class DeviceKeySerializer(serializers.Serializer):
 
     def validate_device_key(self, value):
         if not devicekey.valid_public_key(value):
-            raise serializers.ValidationError("Ungültiger Schlüssel.")
+            raise serializers.ValidationError(gettext("Ungültiger Schlüssel."))
         return value
 
 
@@ -437,7 +457,7 @@ class DeviceKeyView(APIView):
         key = data.validated_data["device_key"]
         if device.device_key and device.device_key != key:
             return Response(
-                {"detail": "Für dieses Gerät ist schon ein anderer Schlüssel gemeldet."},
+                {"detail": gettext("Für dieses Gerät ist schon ein anderer Schlüssel gemeldet.")},
                 status=409,
             )
         updated = Device.objects.filter(pk=device.pk, device_key="").update(
@@ -446,7 +466,7 @@ class DeviceKeyView(APIView):
         device.refresh_from_db()
         if not updated and device.device_key != key:
             return Response(
-                {"detail": "Für dieses Gerät ist schon ein anderer Schlüssel gemeldet."},
+                {"detail": gettext("Für dieses Gerät ist schon ein anderer Schlüssel gemeldet.")},
                 status=409,
             )
         return Response(device_data(device, device))
@@ -474,11 +494,15 @@ class DeviceRenewView(APIView):
 
         device: Device = request.auth
         if not device.device_key:
-            raise ValidationError({"detail": "Für dieses Gerät ist kein Schlüsselpaar gemeldet."})
+            raise ValidationError(
+                {"detail": gettext("Für dieses Gerät ist kein Schlüsselpaar gemeldet.")}
+            )
         cache_key = f"app-renew:{device.pk}"
         if not request.data:
             if _rate_limited(request, "renew"):
-                return Response({"detail": "Zu viele Versuche. Bitte später erneut."}, status=429)
+                return Response(
+                    {"detail": gettext("Zu viele Versuche. Bitte später erneut.")}, status=429
+                )
             challenge = secrets.token_urlsafe(24)
             cache.set(cache_key, challenge, devicekey.CHALLENGE_SECONDS)
             return Response(
@@ -491,19 +515,19 @@ class DeviceRenewView(APIView):
         # Jede Aufgabe nur einmal
         cache.delete(cache_key)
         if not expected or expected != v["challenge"]:
-            raise ValidationError({"detail": "Die Aufgabe ist abgelaufen. Bitte erneut."})
+            raise ValidationError({"detail": gettext("Die Aufgabe ist abgelaufen. Bitte erneut.")})
         if not devicekey.verify(
             device.device_key, devicekey.renew_message(device.pk, expected), v["signature"]
         ):
             logger.warning("Erneuerung mit falscher Unterschrift: Gerät %s", device.pk)
-            raise PermissionDenied("Die Unterschrift stimmt nicht.")
+            raise PermissionDenied(gettext("Die Unterschrift stimmt nicht."))
         token = Device.new_token()
         with transaction.atomic():
             current = Device.objects.select_for_update().get(pk=device.pk)
             used = hash_token(request.headers.get("Authorization", "").partition(" ")[2].strip())
             if used == current.previous_token_hash and current.previous_until is not None:
                 return Response(
-                    {"detail": "Bitte mit dem neuen Geräteschlüssel erneuern."}, status=409
+                    {"detail": gettext("Bitte mit dem neuen Geräteschlüssel erneuern.")}, status=409
                 )
             if used == current.previous_token_hash:
                 # Antwort der letzten Erneuerung kam nicht an: der nie genutzte Schlüssel

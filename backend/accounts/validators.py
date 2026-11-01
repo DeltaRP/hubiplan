@@ -15,6 +15,7 @@ from pathlib import Path
 
 from django.contrib.auth.password_validation import CommonPasswordValidator
 from django.core.exceptions import ValidationError
+from django.utils.translation import gettext
 
 FIXED_WORDS = (
     "hubiplan",
@@ -77,8 +78,10 @@ class ContextWordValidator:
         rest = re.sub(r"[\W\d_]+", "", rest)
         if len(rest) < MIN_REST:
             raise ValidationError(
-                "Das Passwort ist zu leicht zu erraten: Es besteht fast nur aus "
-                "naheliegenden Wörtern (z. B. Vereinsname, Ort, „Schützen“) und Ziffern.",
+                gettext(
+                    "Das Passwort ist zu leicht zu erraten: Es besteht fast nur aus "
+                    "naheliegenden Wörtern (z. B. Vereinsname, Ort, „Schützen“) und Ziffern."
+                ),
                 code="password_context",
             )
 
@@ -95,6 +98,8 @@ class LeakedPasswordValidator(CommonPasswordValidator):
     def validate(self, password: str, user=None) -> None:
         if password.lower().strip() in self.passwords:
             raise ValidationError(
-                "Dieses Passwort taucht in bekannten Datenlecks auf. Bitte ein anderes wählen.",
+                gettext(
+                    "Dieses Passwort taucht in bekannten Datenlecks auf. Bitte ein anderes wählen."
+                ),
                 code="password_leaked",
             )

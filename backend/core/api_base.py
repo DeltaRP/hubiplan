@@ -7,6 +7,7 @@ import copy
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound, PermissionDenied
 
@@ -41,14 +42,14 @@ class OrgScopedMixin:
         if not perms:
             raise NotFound()
         if self.allowed_org_types and org.type not in self.allowed_org_types:
-            raise NotFound("Für diese Art von Organisation nicht verfügbar.")
+            raise NotFound(gettext("Für diese Art von Organisation nicht verfügbar."))
         needed = (
             self.read_permission
             if request.method in ("GET", "HEAD", "OPTIONS")
             else self.write_permission
         )
         if needed and needed not in perms:
-            raise PermissionDenied("Dafür fehlt dir die Berechtigung.")
+            raise PermissionDenied(gettext("Dafür fehlt dir die Berechtigung."))
         self.org = org
         self.org_permissions = perms
         # Dachverband: Zugriff auf Mitgliedsdaten seiner Vereine nur gemäß Plattform-Freigabe

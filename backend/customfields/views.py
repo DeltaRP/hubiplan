@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext
 from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
@@ -77,7 +78,7 @@ class FieldDefinitionSerializer(ModelCleanMixin, serializers.ModelSerializer):
                 qs = qs.exclude(pk=self.instance.pk)
             if qs.exists():
                 raise serializers.ValidationError(
-                    {"label": "Ein Feld mit dieser Bezeichnung gibt es schon."}
+                    {"label": gettext("Ein Feld mit dieser Bezeichnung gibt es schon.")}
                 )
         subfields = attrs.get("subfields")
         if subfields is not None:
@@ -214,8 +215,10 @@ class FieldDefinitionViewSet(OrgScopedMixin, AuditMixin, viewsets.ModelViewSet):
         if usage["value_count"] and not with_values:
             return Response(
                 {
-                    "detail": f"„{field.label}“ ist bei {usage['value_count']} Personen "
-                    "ausgefüllt. Bitte archivieren oder ausdrücklich samt Werten löschen.",
+                    "detail": gettext(
+                        "„{label}“ ist bei {x} Personen ausgefüllt. Bitte archivieren oder "
+                        "ausdrücklich samt Werten löschen."
+                    ).format(label=field.label, x=usage["value_count"]),
                     **usage,
                     "can_archive": not field.is_archived,
                 },
@@ -295,7 +298,7 @@ class MemberFieldsView(OrgScopedMixin, APIView):
         membership = self.membership()
         incoming = request.data.get("values", {})
         if not isinstance(incoming, dict):
-            raise serializers.ValidationError({"values": "Ungültige Daten."})
+            raise serializers.ValidationError({"values": gettext("Ungültige Daten.")})
         definitions = {str(d.pk): d for d in definitions_for(self.org) if not d.is_archived}
         errors = {}
         changes = {}

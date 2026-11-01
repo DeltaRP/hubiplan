@@ -19,6 +19,7 @@ from __future__ import annotations
 import datetime
 
 from django.utils import timezone
+from django.utils.translation import gettext
 
 from .models import Coupling, RemoteMember, RemoteState
 
@@ -487,7 +488,7 @@ def decide_correction(rm: RemoteMember, apply: bool) -> RemoteMember:
 
     proposal = (rm.data or {}).get(CORRECTION)
     if not proposal or rm.membership_id is None:
-        raise ValidationError("Keine offene Berichtigung.")
+        raise ValidationError(gettext("Keine offene Berichtigung."))
     if apply:
         person = rm.membership.person
         fields = []
@@ -511,16 +512,16 @@ def resolve(rm: RemoteMember, person_id: int | None) -> RemoteMember:
     from members.models import Person
 
     if rm.status != RemoteMember.Status.UNCLEAR:
-        raise ValidationError("Kein offener Klärfall.")
+        raise ValidationError(gettext("Kein offener Klärfall."))
     row = _row_from_json((rm.data or {}).get("row") or {})
     if row is None:
-        raise ValidationError("Die gemeldeten Angaben sind unvollständig.")
+        raise ValidationError(gettext("Die gemeldeten Angaben sind unvollständig."))
     coupling = rm.coupling
     federation = coupling.remote_unit.parent
     person = None
     if person_id is not None:
         if person_id not in (rm.data or {}).get("candidates", []):
-            raise ValidationError("Diese Person steht nicht zur Auswahl.")
+            raise ValidationError(gettext("Diese Person steht nicht zur Auswahl."))
         person = Person.objects.get(pk=person_id, scope=federation)
     else:
         person = Person.objects.create(
@@ -647,9 +648,9 @@ def suggest(rm: RemoteMember, values: dict, message: str, user) -> None:
     from . import services
 
     if rm.status != RemoteMember.Status.ACTIVE or rm.membership is None:
-        raise ValidationError("Die Person ist nicht mehr gemeldet.")
+        raise ValidationError(gettext("Die Person ist nicht mehr gemeldet."))
     if not rm.coupling.is_open:
-        raise ValidationError("Die Kopplung ist nicht aktiv.")
+        raise ValidationError(gettext("Die Kopplung ist nicht aktiv."))
     person = rm.membership.person
     data, previous = {}, {}
     for field in SUGGEST_FIELDS:
@@ -661,7 +662,7 @@ def suggest(rm: RemoteMember, values: dict, message: str, user) -> None:
             data[field] = new.isoformat() if hasattr(new, "isoformat") else str(new)
             previous[field] = old.isoformat() if hasattr(old, "isoformat") else str(old)
     if not data:
-        raise ValidationError("Keine Änderungen.")
+        raise ValidationError(gettext("Keine Änderungen."))
     services.enqueue(
         rm.coupling,
         "register.suggest",

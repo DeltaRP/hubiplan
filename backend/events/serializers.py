@@ -5,6 +5,7 @@ from __future__ import annotations
 import datetime
 
 from django.utils import timezone
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from core.api_base import ModelCleanMixin
@@ -24,7 +25,7 @@ class CategorySerializer(ModelCleanMixin, serializers.ModelSerializer):
         if self.instance is not None:
             qs = qs.exclude(pk=self.instance.pk)
         if qs.exists():
-            raise serializers.ValidationError("Diese Kategorie gibt es schon.")
+            raise serializers.ValidationError(gettext("Diese Kategorie gibt es schon."))
         return value
 
 
@@ -85,12 +86,12 @@ class EventWriteSerializer(ModelCleanMixin, serializers.ModelSerializer):
     def validate_title(self, value):
         value = value.strip()
         if not value:
-            raise serializers.ValidationError("Bitte einen Titel angeben.")
+            raise serializers.ValidationError(gettext("Bitte einen Titel angeben."))
         return value
 
     def validate_category(self, value):
         if value is not None and value.organization_id != self.context["org"].pk:
-            raise serializers.ValidationError("Unbekannte Kategorie.")
+            raise serializers.ValidationError(gettext("Unbekannte Kategorie."))
         return value
 
     def validate(self, attrs):
@@ -99,7 +100,7 @@ class EventWriteSerializer(ModelCleanMixin, serializers.ModelSerializer):
         starts = attrs.get("starts_at", inst.starts_at if inst else None)
         ends = attrs.get("ends_at", inst.ends_at if inst else None)
         if starts is None:
-            raise serializers.ValidationError({"starts_at": "Bitte den Beginn angeben."})
+            raise serializers.ValidationError({"starts_at": gettext("Bitte den Beginn angeben.")})
         if ends is None:
             ends = starts if all_day else starts + datetime.timedelta(hours=2)
         if all_day:
@@ -128,9 +129,13 @@ class ExceptionSerializer(serializers.Serializer):
     def validate(self, attrs):
         starts, ends = attrs.get("starts_at"), attrs.get("ends_at")
         if ends and not starts:
-            raise serializers.ValidationError({"starts_at": "Bitte auch den Beginn angeben."})
+            raise serializers.ValidationError(
+                {"starts_at": gettext("Bitte auch den Beginn angeben.")}
+            )
         if starts and ends and ends < starts:
-            raise serializers.ValidationError({"ends_at": "Das Ende liegt vor dem Beginn."})
+            raise serializers.ValidationError(
+                {"ends_at": gettext("Das Ende liegt vor dem Beginn.")}
+            )
         return attrs
 
 

@@ -15,6 +15,7 @@ import secrets
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy
 
 from core.privatefiles import PrivateFileField
 from exchange.models import private_storage
@@ -23,9 +24,9 @@ MAX_STATUTE_BYTES = 20 * 1024 * 1024
 
 
 class Kind(models.TextChoices):
-    STATUTE = "statute", "Satzung"
-    FEE_RULES = "fee_rules", "Beitragsordnung"
-    FOUNDING_DEED = "founding_deed", "Gründungsurkunde"
+    STATUTE = "statute", gettext_lazy("Satzung")
+    FEE_RULES = "fee_rules", gettext_lazy("Beitragsordnung")
+    FOUNDING_DEED = "founding_deed", gettext_lazy("Gründungsurkunde")
 
 
 def kind_label(kind: str) -> str:

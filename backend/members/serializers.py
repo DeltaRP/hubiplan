@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 
 from django.utils import timezone
+from django.utils.translation import gettext
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -36,7 +37,11 @@ def check_plausible(attrs: dict, *fields: str) -> None:
         value = attrs.get(name)
         if value is not None and not EARLIEST <= value <= latest:
             raise serializers.ValidationError(
-                {name: f"Bitte ein Datum zwischen {EARLIEST:%Y} und {latest:%Y} angeben."}
+                {
+                    name: gettext(
+                        "Bitte ein Datum zwischen {EARLIEST:%Y} und {latest:%Y} angeben."
+                    ).format(EARLIEST=EARLIEST, latest=latest)
+                }
             )
 
 
@@ -67,7 +72,7 @@ class MemberTypeSerializer(serializers.ModelSerializer):
         if self.instance:
             qs = qs.exclude(pk=self.instance.pk)
         if qs.exists():
-            raise serializers.ValidationError("Diese Mitgliedsart gibt es schon.")
+            raise serializers.ValidationError(gettext("Diese Mitgliedsart gibt es schon."))
         return value
 
 
@@ -119,10 +124,12 @@ class AdmitSerializer(ContactSerializer):
                 raise serializers.ValidationError({f: "Pflichtfeld." for f in missing})
         birth = attrs.get("birth_date") or getattr(attrs.get("person"), "birth_date", None)
         if birth and attrs["entry_date"] < birth:
-            raise serializers.ValidationError({"entry_date": "Der Eintritt liegt vor der Geburt."})
+            raise serializers.ValidationError(
+                {"entry_date": gettext("Der Eintritt liegt vor der Geburt.")}
+            )
         if attrs["member_type"].is_archived:
             raise serializers.ValidationError(
-                {"member_type": "Diese Art wird nicht mehr verwendet."}
+                {"member_type": gettext("Diese Art wird nicht mehr verwendet.")}
             )
         wanted = set(attrs.pop("department_ids"))
         deps = list(Department.objects.filter(organization=org, pk__in=wanted))
@@ -242,21 +249,27 @@ class PeriodSerializer(serializers.ModelSerializer):
         reason = attrs.get("exit_reason", getattr(self.instance, "exit_reason", ""))
         if self.instance is None and not exit_:
             raise serializers.ValidationError(
-                {"exit_date": "Nachgetragene Zeiträume brauchen ein Austrittsdatum."}
+                {"exit_date": gettext("Nachgetragene Zeiträume brauchen ein Austrittsdatum.")}
             )
         if exit_ and exit_ < entry:
-            raise serializers.ValidationError({"exit_date": "Der Austritt liegt vor dem Eintritt."})
+            raise serializers.ValidationError(
+                {"exit_date": gettext("Der Austritt liegt vor dem Eintritt.")}
+            )
         if entry < membership.person.birth_date:
-            raise serializers.ValidationError({"entry_date": "Der Eintritt liegt vor der Geburt."})
+            raise serializers.ValidationError(
+                {"entry_date": gettext("Der Eintritt liegt vor der Geburt.")}
+            )
         if exit_ and not reason:
-            raise serializers.ValidationError({"exit_reason": "Bitte einen Grund angeben."})
+            raise serializers.ValidationError(
+                {"exit_reason": gettext("Bitte einen Grund angeben.")}
+            )
         others = membership.periods.all()
         if self.instance:
             others = others.exclude(pk=self.instance.pk)
         for other in others:
             if overlaps(entry, exit_, other.entry_date, other.exit_date):
                 raise serializers.ValidationError(
-                    "Der Zeitraum überschneidet sich mit einem anderen Zeitraum."
+                    gettext("Der Zeitraum überschneidet sich mit einem anderen Zeitraum.")
                 )
         member_type = attrs.get("member_type")
         if self.instance is None and member_type is not None:
@@ -264,7 +277,7 @@ class PeriodSerializer(serializers.ModelSerializer):
 
             if member_type.is_archived:
                 raise serializers.ValidationError(
-                    {"member_type": "Diese Art wird nicht mehr verwendet."}
+                    {"member_type": gettext("Diese Art wird nicht mehr verwendet.")}
                 )
             # Nur eine aktive Mitgliedschaft je Dachverband, auch in nachgetragenen Zeiten
             # (Audit 31.10. M31-04)
@@ -275,8 +288,11 @@ class PeriodSerializer(serializers.ModelSerializer):
                 if other:
                     raise serializers.ValidationError(
                         {
-                            "member_type": f"In diesem Zeitraum war die Person schon aktives "
-                            f"Mitglied in „{other}“. Bitte eine nicht aktive Art wählen."
+                            "member_type": gettext(
+                                "In diesem Zeitraum war die Person schon aktives Mitglied in "
+                                "„{other}“. "
+                                "Bitte eine nicht aktive Art wählen."
+                            ).format(other=other)
                         }
                     )
         return attrs
@@ -318,7 +334,9 @@ class DepartmentMembershipSerializer(serializers.ModelSerializer):
         start = attrs.get("valid_from", getattr(self.instance, "valid_from", None))
         end = attrs.get("valid_until", getattr(self.instance, "valid_until", None))
         if end and start and end < start:
-            raise serializers.ValidationError({"valid_until": "Das Ende liegt vor dem Beginn."})
+            raise serializers.ValidationError(
+                {"valid_until": gettext("Das Ende liegt vor dem Beginn.")}
+            )
         department = attrs.get("department", getattr(self.instance, "department", None))
         if department.is_remote:
             raise serializers.ValidationError({"department": REMOTE_UNIT})
@@ -352,7 +370,9 @@ class DepartmentRoleHolderSerializer(serializers.ModelSerializer):
         start = attrs.get("valid_from", getattr(self.instance, "valid_from", None))
         end = attrs.get("valid_until", getattr(self.instance, "valid_until", None))
         if end and start and end < start:
-            raise serializers.ValidationError({"valid_until": "Das Ende liegt vor dem Beginn."})
+            raise serializers.ValidationError(
+                {"valid_until": gettext("Das Ende liegt vor dem Beginn.")}
+            )
         return attrs
 
 
@@ -377,7 +397,7 @@ class MemberUpdateSerializer(serializers.Serializer):
         # Dieselbe Prüfung wie bei der Aufnahme (Audit 31.10. M31-03)
         check_plausible({"birth_date": value}, "birth_date")
         if value > timezone.localdate():
-            raise serializers.ValidationError("Das Geburtsdatum liegt in der Zukunft.")
+            raise serializers.ValidationError(gettext("Das Geburtsdatum liegt in der Zukunft."))
         return value
 
 
@@ -393,7 +413,11 @@ def check_birth_before_entries(person, birth) -> None:
     )
     if first is not None and birth > first:
         raise serializers.ValidationError(
-            {"birth_date": f"Das Geburtsdatum liegt nach dem Eintritt am {first:%d.%m.%Y}."}
+            {
+                "birth_date": gettext(
+                    "Das Geburtsdatum liegt nach dem Eintritt am {first:%d.%m.%Y}."
+                ).format(first=first)
+            }
         )
 
 

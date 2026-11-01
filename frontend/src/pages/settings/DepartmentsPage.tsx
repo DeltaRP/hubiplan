@@ -16,7 +16,7 @@ import {
 } from '../../components/forms.ts'
 import type { DatePrecision } from '../../components/forms.ts'
 import { useActiveOrg, useOrg } from '../../org/OrgContext.tsx'
-import { buildTerms, fillTerms, useTerms } from '../../org/terms.ts'
+import { fillTerms, termsFor, useTerms } from '../../org/terms.ts'
 import type { DeptTerms } from '../../org/terms.ts'
 import { LabelFields } from '../../components/LabelFields.tsx'
 import type { Gender } from '../../components/LabelFields.tsx'
@@ -231,7 +231,14 @@ export function DepartmentsPage() {
 /** Formen für die Bezeichnung einer Untereinheit selbst (z. B. „Gruppe“). */
 function ownTerms(dep: Department, fallback: DeptTerms): DeptTerms {
   if (!dep.label || dep.depth === 0) return fallback
-  return buildTerms(dep.label, dep.label_plural ?? dep.label, dep.label_gender ?? 'f')
+  return termsFor(
+    dep.label,
+    dep.label_plural ?? dep.label,
+    dep.label_gender ?? 'f',
+    '',
+    dep.label_en,
+    dep.label_plural_en,
+  )
 }
 
 /** Formen für Untereinheiten unter ``parent`` (oder direkt unter der Einheit). */
@@ -413,6 +420,8 @@ function DepartmentCard({
     department_label_plural: dep.department_label_plural ?? 'Gruppen',
     department_label_gender: (dep.department_label_gender ?? 'f') as Gender,
     department_label_genitive: dep.department_label_genitive ?? '',
+    department_label_en: dep.department_label_en ?? '',
+    department_label_plural_en: dep.department_label_plural_en ?? '',
     own_workspace: !!dep.own_workspace,
     self_managed: !!dep.self_managed,
     own_website: !!dep.own_website,
@@ -652,6 +661,8 @@ function DepartmentCard({
                   plural: form.values.department_label_plural,
                   gender: form.values.department_label_gender,
                   genitive: form.values.department_label_genitive,
+                  labelEn: form.values.department_label_en,
+                  pluralEn: form.values.department_label_plural_en,
                 }}
                 errors={{
                   label: form.errors.department_label,
@@ -664,6 +675,8 @@ function DepartmentCard({
                   form.set('department_label_plural', v.plural)
                   form.set('department_label_gender', v.gender)
                   form.set('department_label_genitive', v.genitive)
+                  form.set('department_label_en', v.labelEn ?? '')
+                  form.set('department_label_plural_en', v.pluralEn ?? '')
                 }}
               />
             </>

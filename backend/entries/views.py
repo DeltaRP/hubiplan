@@ -15,6 +15,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.dateparse import parse_date
+from django.utils.translation import gettext
 from rest_framework import status
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.response import Response
@@ -77,12 +78,12 @@ class _Mixin(OrgScopedMixin):
             return
         super().initial(request, *args, **kwargs)
         if MODULE not in (self.org.enabled_modules or []):
-            raise NotFound("Das Modul Meldungen ist nicht freigeschaltet.")
+            raise NotFound(gettext("Das Modul Meldungen ist nicht freigeschaltet."))
         if not self.org_permissions & {ENTRIES_SUBMIT, ENTRIES_MANAGE}:
-            raise PermissionDenied("Dafür fehlt dir die Berechtigung.")
+            raise PermissionDenied(gettext("Dafür fehlt dir die Berechtigung."))
         if self._unit_id is not None:
             if ENTRIES_MANAGE not in self.org_permissions:
-                raise PermissionDenied("Dafür fehlt dir die Berechtigung.")
+                raise PermissionDenied(gettext("Dafür fehlt dir die Berechtigung."))
             self.department = get_object_or_404(Department, pk=self._unit_id, organization=self.org)
 
     def _init_unit_side(self, request):
@@ -92,9 +93,9 @@ class _Mixin(OrgScopedMixin):
         if ctx is None:
             raise NotFound()
         if MODULE not in (ctx.club.enabled_modules or []):
-            raise NotFound("Das Modul Meldungen ist nicht freigeschaltet.")
+            raise NotFound(gettext("Das Modul Meldungen ist nicht freigeschaltet."))
         if DEPT_ENTRIES_SUBMIT not in ctx.permissions:
-            raise PermissionDenied("Dafür fehlt dir die Berechtigung.")
+            raise PermissionDenied(gettext("Dafür fehlt dir die Berechtigung."))
         self.org = ctx.club
         self.department = ctx.department
         self.unit_side = True
@@ -112,12 +113,12 @@ class _Mixin(OrgScopedMixin):
         """Ausschreibung anlegen oder ändern: nicht aus einer Untereinheit heraus; eine
         Ausschreibung an Untereinheiten braucht ``entries.manage``."""
         if self.unit_side or self.department is not None:
-            raise PermissionDenied("Die Ausschreibung ändert nur der Veranstalter.")
+            raise PermissionDenied(gettext("Die Ausschreibung ändert nur der Veranstalter."))
         if internal is None:
             internal = call.internal if call else False
         needed = ENTRIES_MANAGE if internal else ENTRIES_SUBMIT
         if needed not in self.org_permissions:
-            raise PermissionDenied("Dafür fehlt dir die Berechtigung.")
+            raise PermissionDenied(gettext("Dafür fehlt dir die Berechtigung."))
 
     def call(self, pk) -> Call:
         call = get_object_or_404(Call, pk=pk, organization=self.org)
@@ -139,9 +140,9 @@ class _Mixin(OrgScopedMixin):
         entry = self.find_entry(call)
         if entry is None:
             if not create:
-                raise NotFound("Zu dieser Ausschreibung gibt es noch keine Meldung.")
+                raise NotFound(gettext("Zu dieser Ausschreibung gibt es noch keine Meldung."))
             if call.internal and self.department is None:
-                raise ValidationError("Zu dieser Ausschreibung melden die Untereinheiten.")
+                raise ValidationError(gettext("Zu dieser Ausschreibung melden die Untereinheiten."))
             entry = Entry.objects.create(
                 organization=self.org, call=call, department=self.department
             )
@@ -152,7 +153,7 @@ class _Mixin(OrgScopedMixin):
         """Meldung zum Bearbeiten (legt den Entwurf beim ersten Mal an)."""
         entry = self.entry(call_id, create=True)
         if entry.status == Entry.Status.WITHDRAWN:
-            raise ValidationError("Die Meldung ist zurückgezogen.")
+            raise ValidationError(gettext("Die Meldung ist zurückgezogen."))
         return entry
 
 
@@ -220,17 +221,17 @@ def _clean_call(org, data: dict, instance: Call | None) -> dict:
         if f in data:
             value = str(data[f] or "").strip()
             if limits.get(f) and len(value) > limits[f]:
-                raise ValidationError({f: f"Höchstens {limits[f]} Zeichen."})
+                raise ValidationError({f: gettext("Höchstens {x} Zeichen.").format(x=limits[f])})
             out[f] = value
     if instance is None or "title" in out:
         if not out.get("title", instance.title if instance else ""):
-            raise ValidationError({"title": "Bitte einen Titel angeben."})
+            raise ValidationError({"title": gettext("Bitte einen Titel angeben.")})
     internal = bool(data.get("internal")) if instance is None else instance.internal
     if internal and not out.get("organizer", instance.organizer if instance else ""):
         out["organizer"] = org.name[:200]
     if instance is None or "organizer" in out:
         if not out.get("organizer", instance.organizer if instance else ""):
-            raise ValidationError({"organizer": "Bitte den Veranstalter angeben."})
+            raise ValidationError({"organizer": gettext("Bitte den Veranstalter angeben.")})
     if out.get("organizer_email"):
         from django.core.exceptions import ValidationError as DjangoError
         from django.core.validators import validate_email
@@ -238,7 +239,9 @@ def _clean_call(org, data: dict, instance: Call | None) -> dict:
         try:
             validate_email(out["organizer_email"])
         except DjangoError:
-            raise ValidationError({"organizer_email": "Keine gültige E-Mail-Adresse."}) from None
+            raise ValidationError(
+                {"organizer_email": gettext("Keine gültige E-Mail-Adresse.")}
+            ) from None
     for f in DATE_FIELDS:
         if f in data:
             raw = data[f]
@@ -247,7 +250,7 @@ def _clean_call(org, data: dict, instance: Call | None) -> dict:
             else:
                 d = parse_date(str(raw))
                 if d is None:
-                    raise ValidationError({f: "Bitte ein Datum angeben."})
+                    raise ValidationError({f: gettext("Bitte ein Datum angeben.")})
                 out[f] = d
     if "person_fields" in data:
         out["person_fields"] = services.clean_person_fields(org, data["person_fields"])
@@ -261,17 +264,19 @@ def _clean_call(org, data: dict, instance: Call | None) -> dict:
             try:
                 amount = Decimal(str(raw).replace(",", "."))
             except InvalidOperation:
-                raise ValidationError({"fee_amount": "Bitte einen Betrag angeben."}) from None
+                raise ValidationError(
+                    {"fee_amount": gettext("Bitte einen Betrag angeben.")}
+                ) from None
             if amount < 0 or amount >= Decimal("10000000"):
-                raise ValidationError({"fee_amount": "Ungültiger Betrag."})
+                raise ValidationError({"fee_amount": gettext("Ungültiger Betrag.")})
             out["fee_amount"] = amount.quantize(Decimal("0.01"))
     if "fee_per" in data:
         if data["fee_per"] not in Call.FeePer.values:
-            raise ValidationError({"fee_per": "Ungültige Angabe."})
+            raise ValidationError({"fee_per": gettext("Ungültige Angabe.")})
         out["fee_per"] = data["fee_per"]
     if "changes_after_deadline" in data:
         if data["changes_after_deadline"] not in Call.Changes.values:
-            raise ValidationError({"changes_after_deadline": "Ungültige Angabe."})
+            raise ValidationError({"changes_after_deadline": gettext("Ungültige Angabe.")})
         out["changes_after_deadline"] = data["changes_after_deadline"]
     if "create_competition" in data:
         out["create_competition"] = bool(data["create_competition"])
@@ -288,7 +293,7 @@ def _clean_call(org, data: dict, instance: Call | None) -> dict:
 
             comp = Competition.objects.filter(pk=raw, organization=org, own=True).first()
             if comp is None:
-                raise ValidationError({"competition": "Unbekannter Wettbewerb."})
+                raise ValidationError({"competition": gettext("Unbekannter Wettbewerb.")})
             out["competition"] = comp
     return out
 
@@ -387,7 +392,9 @@ class CallView(_Mixin, APIView):
         self.require_organizer(call)
         if EntryVersion.objects.filter(entry__call=call).exists():
             raise ValidationError(
-                "Zu dieser Ausschreibung gibt es eine abgegebene Meldung; sie bleibt als Beleg."
+                gettext(
+                    "Zu dieser Ausschreibung gibt es eine abgegebene Meldung; sie bleibt als Beleg."
+                )
             )
         record(self.org, request.user, "delete", call, diff(snapshot(call), {}))
         call.delete()
@@ -412,10 +419,10 @@ def _clean_block(data: dict, block: CallBlock | None) -> dict:
     kind = data.get("kind", block.kind if block else None)
     if block is None:
         if kind not in CallBlock.Kind.values:
-            raise ValidationError({"kind": "Unbekannte Art des Bausteins."})
+            raise ValidationError({"kind": gettext("Unbekannte Art des Bausteins.")})
         out["kind"] = kind
     elif "kind" in data and data["kind"] != block.kind:
-        raise ValidationError({"kind": "Die Art eines Bausteins lässt sich nicht ändern."})
+        raise ValidationError({"kind": gettext("Die Art eines Bausteins lässt sich nicht ändern.")})
     if "label" in data or block is None:
         label = str(data.get("label", "") or "").strip()[:200]
         if not label:
@@ -431,7 +438,7 @@ def _clean_block(data: dict, block: CallBlock | None) -> dict:
         try:
             out["sort_order"] = max(0, min(int(data["sort_order"]), 1000))
         except (TypeError, ValueError):
-            raise ValidationError({"sort_order": "Ungültige Angabe."}) from None
+            raise ValidationError({"sort_order": gettext("Ungültige Angabe.")}) from None
     return out
 
 
@@ -443,7 +450,9 @@ class BlocksView(_Mixin, APIView):
         call = self.call(call_id)
         self.require_organizer(call)
         if call.blocks.count() >= services.MAX_BLOCKS:
-            raise ValidationError(f"Höchstens {services.MAX_BLOCKS} Bausteine.")
+            raise ValidationError(
+                gettext("Höchstens {MAX_BLOCKS} Bausteine.").format(MAX_BLOCKS=services.MAX_BLOCKS)
+            )
         values = _clean_block(request.data, None)
         values.setdefault("sort_order", (call.blocks.aggregate(m=Max("sort_order"))["m"] or 0) + 1)
         b = CallBlock.objects.create(organization=self.org, call=call, **values)
@@ -482,7 +491,10 @@ class BlockView(_Mixin, APIView):
         )
         if used and EntryVersion.objects.filter(entry__call=b.call).exists():
             raise ValidationError(
-                "Der Baustein enthält schon abgegebene Einträge. Bitte erst die Einträge entfernen."
+                gettext(
+                    "Der Baustein enthält schon abgegebene Einträge. Bitte erst die Einträge "
+                    "entfernen."
+                )
             )
         record(self.org, request.user, "delete", b, diff(snapshot(b), {}))
         b.delete()
@@ -607,9 +619,9 @@ def _block_of(entry: Entry, raw, kinds) -> CallBlock:
     try:
         block = CallBlock.objects.get(pk=int(raw), call=entry.call)
     except (TypeError, ValueError, CallBlock.DoesNotExist):
-        raise ValidationError({"block": "Unbekannter Baustein."}) from None
+        raise ValidationError({"block": gettext("Unbekannter Baustein.")}) from None
     if block.kind not in kinds:
-        raise ValidationError({"block": "Dieser Baustein passt nicht."})
+        raise ValidationError({"block": gettext("Dieser Baustein passt nicht.")})
     return block
 
 
@@ -623,7 +635,9 @@ class TeamsView(_Mixin, APIView):
         _check_change_allowed(entry, substitute_only=False)
         block = _block_of(entry, request.data.get("block"), [CallBlock.Kind.TEAMS])
         if entry.teams.count() >= services.MAX_TEAMS:
-            raise ValidationError(f"Höchstens {services.MAX_TEAMS} Mannschaften.")
+            raise ValidationError(
+                gettext("Höchstens {MAX_TEAMS} Mannschaften.").format(MAX_TEAMS=services.MAX_TEAMS)
+            )
         name = str(request.data.get("name", "") or "").strip()[:100]
         existing = entry.teams.filter(block=block).count()
         if not name:
@@ -677,13 +691,13 @@ class TeamView(_Mixin, APIView):
         if "name" in request.data:
             name = str(request.data["name"] or "").strip()[:100]
             if not name:
-                raise ValidationError({"name": "Bitte einen Namen angeben."})
+                raise ValidationError({"name": gettext("Bitte einen Namen angeben.")})
             t.name = name
         if "sort_order" in request.data:
             try:
                 t.sort_order = max(0, min(int(request.data["sort_order"]), 1000))
             except (TypeError, ValueError):
-                raise ValidationError({"sort_order": "Ungültige Angabe."}) from None
+                raise ValidationError({"sort_order": gettext("Ungültige Angabe.")}) from None
         t.save()
         changes = diff(before, snapshot(t))
         if changes:
@@ -703,7 +717,9 @@ class TeamView(_Mixin, APIView):
 
 def _membership(view: _Mixin, raw) -> Membership:
     if not view.can_pick_members:
-        raise PermissionDenied("Mitglieder auswählen darf nur, wer die Mitglieder sehen darf.")
+        raise PermissionDenied(
+            gettext("Mitglieder auswählen darf nur, wer die Mitglieder sehen darf.")
+        )
     qs = Membership.objects.select_related("person").filter(
         organization=view.org, purged_at__isnull=True
     )
@@ -715,7 +731,7 @@ def _membership(view: _Mixin, raw) -> Membership:
     try:
         return qs.get(pk=int(raw))
     except (TypeError, ValueError, Membership.DoesNotExist):
-        raise ValidationError({"membership": "Unbekanntes Mitglied."}) from None
+        raise ValidationError({"membership": gettext("Unbekanntes Mitglied.")}) from None
 
 
 def _member_name(m: Membership) -> str:
@@ -736,9 +752,13 @@ class PersonsView(_Mixin, APIView):
             try:
                 team = EntryTeam.objects.get(pk=int(d.get("team")), entry=entry, block=block)
             except (TypeError, ValueError, EntryTeam.DoesNotExist):
-                raise ValidationError({"team": "Bitte eine Mannschaft wählen."}) from None
+                raise ValidationError({"team": gettext("Bitte eine Mannschaft wählen.")}) from None
         if entry.persons.count() >= services.MAX_PERSONS:
-            raise ValidationError(f"Höchstens {services.MAX_PERSONS} Personen.")
+            raise ValidationError(
+                gettext("Höchstens {MAX_PERSONS} Personen.").format(
+                    MAX_PERSONS=services.MAX_PERSONS
+                )
+            )
         values = _person_values(self, d, block, require_name=True)
         last = entry.persons.aggregate(m=Max("sort_order"))["m"] or 0
         p = EntryPerson.objects.create(
@@ -762,7 +782,9 @@ def _person_values(view: _Mixin, d: dict, block: CallBlock, require_name: bool) 
     elif "name" in d or require_name:
         name = str(d.get("name", "") or "").strip()[:200]
         if not name:
-            raise ValidationError({"name": "Bitte ein Mitglied wählen oder einen Namen angeben."})
+            raise ValidationError(
+                {"name": gettext("Bitte ein Mitglied wählen oder einen Namen angeben.")}
+            )
         out.update(membership=None, name=name, club=str(d.get("club", "") or "").strip()[:200])
     elif "club" in d:
         out["club"] = str(d.get("club") or "").strip()[:200]
@@ -770,7 +792,7 @@ def _person_values(view: _Mixin, d: dict, block: CallBlock, require_name: bool) 
         position = str(d["position"] or "").strip()[:100]
         allowed = (block.settings or {}).get("positions") or []
         if position and allowed and position not in allowed:
-            raise ValidationError({"position": "Unbekannte Aufgabe."})
+            raise ValidationError({"position": gettext("Unbekannte Aufgabe.")})
         out["position"] = position
     if "substitute" in d:
         out["substitute"] = bool(d["substitute"]) and block.kind == CallBlock.Kind.TEAMS
@@ -798,12 +820,12 @@ class PersonView(_Mixin, APIView):
             try:
                 p.team = EntryTeam.objects.get(pk=int(d["team"]), entry=entry, block=p.block)
             except (TypeError, ValueError, EntryTeam.DoesNotExist):
-                raise ValidationError({"team": "Unbekannte Mannschaft."}) from None
+                raise ValidationError({"team": gettext("Unbekannte Mannschaft.")}) from None
         if "sort_order" in d:
             try:
                 p.sort_order = max(0, min(int(d["sort_order"]), 10000))
             except (TypeError, ValueError):
-                raise ValidationError({"sort_order": "Ungültige Angabe."}) from None
+                raise ValidationError({"sort_order": gettext("Ungültige Angabe.")}) from None
         p.save()
         changes = diff(before, snapshot(p))
         if changes:
@@ -829,24 +851,24 @@ def _clean_answer(block: CallBlock, value):
         try:
             n = int(value)
         except (TypeError, ValueError):
-            raise ValidationError({"value": "Bitte eine ganze Zahl angeben."}) from None
+            raise ValidationError({"value": gettext("Bitte eine ganze Zahl angeben.")}) from None
         if s.get("min") is not None and n < s["min"]:
-            raise ValidationError({"value": f"Mindestens {s['min']}."})
+            raise ValidationError({"value": gettext("Mindestens {x}.").format(x=s["min"])})
         if s.get("max") is not None and n > s["max"]:
-            raise ValidationError({"value": f"Höchstens {s['max']}."})
+            raise ValidationError({"value": gettext("Höchstens {x}.").format(x=s["max"])})
         return n
     if block.kind == CallBlock.Kind.CHOICE:
         options = s.get("options") or []
         values = value if isinstance(value, list) else [value]
         values = [str(v) for v in values]
         if any(v not in options for v in values):
-            raise ValidationError({"value": "Unbekannte Antwort."})
+            raise ValidationError({"value": gettext("Unbekannte Antwort.")})
         if not s.get("multiple") and len(values) > 1:
-            raise ValidationError({"value": "Nur eine Antwort möglich."})
+            raise ValidationError({"value": gettext("Nur eine Antwort möglich.")})
         return values if s.get("multiple") else values[0]
     text = str(value).strip()
     if len(text) > 2000:
-        raise ValidationError({"value": "Höchstens 2000 Zeichen."})
+        raise ValidationError({"value": gettext("Höchstens 2000 Zeichen.")})
     return text
 
 
@@ -893,7 +915,9 @@ class CandidatesView(_Mixin, APIView):
 
     def get(self, request, org_id: int, call_id: int):
         if not self.can_pick_members:
-            raise PermissionDenied("Mitglieder auswählen darf nur, wer die Mitglieder sehen darf.")
+            raise PermissionDenied(
+                gettext("Mitglieder auswählen darf nur, wer die Mitglieder sehen darf.")
+            )
         call = self.call(call_id)
         term = request.query_params.get("suche", "").strip()
         if len(term) < 2:
@@ -1011,7 +1035,7 @@ class SubmitView(_Mixin, APIView):
     def post(self, request, org_id: int, call_id: int):
         entry = self.entry(call_id)
         if entry.status == Entry.Status.WITHDRAWN:
-            raise ValidationError("Die Meldung ist zurückgezogen.")
+            raise ValidationError(gettext("Die Meldung ist zurückgezogen."))
         d = request.data
         channel = d.get("channel")
         call = entry.call
@@ -1036,12 +1060,12 @@ class SubmitView(_Mixin, APIView):
                 )
                 return Response(_entry_detail(self, entry), status=status.HTTP_201_CREATED)
         elif channel == EntryVersion.Channel.HUBIPLAN:
-            raise ValidationError({"channel": "Bitte einen Meldeweg wählen."})
+            raise ValidationError({"channel": gettext("Bitte einen Meldeweg wählen.")})
         if channel not in EntryVersion.Channel.values:
-            raise ValidationError({"channel": "Bitte einen Meldeweg wählen."})
+            raise ValidationError({"channel": gettext("Bitte einen Meldeweg wählen.")})
         withdraw = bool(d.get("withdraw", False))
         if withdraw and entry.status == Entry.Status.DRAFT:
-            raise ValidationError("Ein Entwurf lässt sich löschen, nicht zurückziehen.")
+            raise ValidationError(gettext("Ein Entwurf lässt sich löschen, nicht zurückziehen."))
         call = entry.call
         sent_to = str(d.get("sent_to", "") or "").strip()[:300]
         if channel == EntryVersion.Channel.EMAIL:
@@ -1053,7 +1077,7 @@ class SubmitView(_Mixin, APIView):
                 validate_email(sent_to)
             except DjangoError:
                 raise ValidationError(
-                    {"email": "Bitte eine gültige E-Mail-Adresse angeben."}
+                    {"email": gettext("Bitte eine gültige E-Mail-Adresse angeben.")}
                 ) from None
         name, functions = _signer(request.user, self.org)
         function = str(d.get("function", "") or "").strip()[:200]
@@ -1140,14 +1164,14 @@ class ConfirmView(_Mixin, APIView):
     def _entry(self, call_id) -> Entry:
         entry = self.entry(call_id)
         if entry.call.internal and self.unit_side:
-            raise PermissionDenied("Bestätigen kann nur der Veranstalter.")
+            raise PermissionDenied(gettext("Bestätigen kann nur der Veranstalter."))
         return entry
 
     @transaction.atomic
     def post(self, request, org_id: int, call_id: int):
         entry = self._entry(call_id)
         if entry.status != Entry.Status.SUBMITTED:
-            raise ValidationError("Bestätigen lässt sich nur eine abgegebene Meldung.")
+            raise ValidationError(gettext("Bestätigen lässt sich nur eine abgegebene Meldung."))
         entry.status = Entry.Status.CONFIRMED
         entry.confirmed_note = str(request.data.get("note", "") or "").strip()[:300]
         entry.save(update_fields=["status", "confirmed_note", "updated_at"])
@@ -1160,7 +1184,7 @@ class ConfirmView(_Mixin, APIView):
     def delete(self, request, org_id: int, call_id: int):
         entry = self._entry(call_id)
         if entry.status != Entry.Status.CONFIRMED:
-            raise ValidationError("Die Meldung ist nicht als bestätigt vermerkt.")
+            raise ValidationError(gettext("Die Meldung ist nicht als bestätigt vermerkt."))
         entry.status = Entry.Status.SUBMITTED
         entry.confirmed_note = ""
         entry.save(update_fields=["status", "confirmed_note", "updated_at"])
@@ -1175,13 +1199,13 @@ class ReturnView(_Mixin, APIView):
     @transaction.atomic
     def post(self, request, org_id: int, call_id: int):
         if self.unit_side or self.department is None:
-            raise PermissionDenied("Zurückgeben kann nur der Veranstalter.")
+            raise PermissionDenied(gettext("Zurückgeben kann nur der Veranstalter."))
         entry = self.entry(call_id)
         if entry.status not in (Entry.Status.SUBMITTED, Entry.Status.CONFIRMED):
-            raise ValidationError("Zurückgeben lässt sich nur eine abgegebene Meldung.")
+            raise ValidationError(gettext("Zurückgeben lässt sich nur eine abgegebene Meldung."))
         question = str(request.data.get("question", "") or "").strip()[:500]
         if not question:
-            raise ValidationError({"question": "Bitte die Rückfrage angeben."})
+            raise ValidationError({"question": gettext("Bitte die Rückfrage angeben.")})
         before = entry.get_status_display()
         entry.status = Entry.Status.RETURNED
         entry.question = question
@@ -1247,7 +1271,7 @@ class UnitsOverviewView(_Mixin, APIView):
         call = self.call(call_id)
         self.require_organizer(call)
         if not call.internal:
-            raise ValidationError("Die Ausschreibung geht nicht an Untereinheiten.")
+            raise ValidationError(gettext("Die Ausschreibung geht nicht an Untereinheiten."))
         ids = services.addressed_units(call)
         depts = {d.pk: d for d in Department.objects.filter(pk__in=ids)}
         entries = {
@@ -1264,7 +1288,7 @@ class RemindView(_Mixin, APIView):
         call = self.call(call_id)
         self.require_organizer(call)
         if not call.internal:
-            raise ValidationError("Die Ausschreibung geht nicht an Untereinheiten.")
+            raise ValidationError(gettext("Die Ausschreibung geht nicht an Untereinheiten."))
         ids = services.addressed_units(call)
         wanted = request.data.get("units")
         if wanted:
@@ -1311,7 +1335,7 @@ class UnitsListDownloadView(_Mixin, APIView):
         self.require_organizer(call)
         fmt = request.query_params.get("als", "xlsx")
         if fmt not in ("xlsx", "csv"):
-            raise ValidationError({"als": "Unbekanntes Format."})
+            raise ValidationError({"als": gettext("Unbekanntes Format.")})
         entries = (
             Entry.objects.filter(
                 call=call,
@@ -1351,7 +1375,9 @@ class EntryDeleteView(_Mixin, APIView):
         entry = self.entry(call_id)
         withdrawn = _withdrawn_last(entry)
         if entry.versions.exists() and not withdrawn:
-            raise ValidationError("Die Meldung ist schon abgegeben; ziehe sie zuerst zurück.")
+            raise ValidationError(
+                gettext("Die Meldung ist schon abgegeben; ziehe sie zuerst zurück.")
+            )
         data = snapshot(entry)
         if withdrawn:
             data["Fassungen"] = entry.versions.count()
@@ -1369,7 +1395,9 @@ class EntryReopenView(_Mixin, APIView):
     def post(self, request, org_id: int, call_id: int):
         entry = self.entry(call_id)
         if entry.status != Entry.Status.WITHDRAWN:
-            raise ValidationError("Nur eine zurückgezogene Meldung lässt sich wieder öffnen.")
+            raise ValidationError(
+                gettext("Nur eine zurückgezogene Meldung lässt sich wieder öffnen.")
+            )
         entry.status = Entry.Status.DRAFT
         entry.changed = False
         entry.confirmed_note = ""
@@ -1403,7 +1431,7 @@ class VersionDownloadView(_Mixin, APIView):
         version = get_object_or_404(EntryVersion, entry=entry, number=number)
         fmt = request.query_params.get("als", "pdf")
         if fmt not in FORMATS:
-            raise ValidationError({"als": "Unbekanntes Format."})
+            raise ValidationError({"als": gettext("Unbekanntes Format.")})
         content_type, render = FORMATS[fmt]
         resp = HttpResponse(render(version), content_type=content_type)
         disposition = "inline" if fmt == "pdf" else "attachment"
@@ -1420,7 +1448,7 @@ class PreviewDownloadView(_Mixin, APIView):
         entry = self.entry(call_id)
         fmt = request.query_params.get("als", "pdf")
         if fmt not in FORMATS:
-            raise ValidationError({"als": "Unbekanntes Format."})
+            raise ValidationError({"als": gettext("Unbekanntes Format.")})
         last = entry.versions.order_by("-number").first()
         name, functions = _signer(request.user, self.org)
         preview = EntryVersion(

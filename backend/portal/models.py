@@ -16,6 +16,7 @@ import secrets
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy
 
 
 def hash_token(token: str) -> str:
@@ -90,7 +91,7 @@ class LoginLink(models.Model):
 class ChangeRequest(models.Model):
     class Status(models.TextChoices):
         PENDING = "pending", "offen"
-        ACCEPTED = "accepted", "übernommen"
+        ACCEPTED = "accepted", gettext_lazy("übernommen")
         REJECTED = "rejected", "abgelehnt"
 
     organization = models.ForeignKey(

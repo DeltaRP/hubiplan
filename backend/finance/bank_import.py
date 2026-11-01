@@ -30,6 +30,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext
 
 from . import camt, services
 from .models import Account, BankLine, BankStatement, Booking, Category
@@ -41,13 +42,15 @@ DAYS_RUN = 10
 def _account_for(org, iban: str, chosen: Account | None) -> Account:
     if chosen is not None:
         if chosen.organization_id != org.pk:
-            raise ValidationError({"account": "Unbekanntes Konto."})
+            raise ValidationError({"account": gettext("Unbekanntes Konto.")})
         own = chosen.iban.replace(" ", "").upper()
         if own and iban and own != iban:
             raise ValidationError(
                 {
-                    "account": f"Der Auszug gehört zur IBAN {iban}, das Konto „{chosen.name}“ hat "
-                    f"{own}. Bitte das passende Konto wählen."
+                    "account": gettext(
+                        "Der Auszug gehört zur IBAN {iban}, das Konto „{name}“ hat {own}. Bitte "
+                        "das passende Konto wählen."
+                    ).format(iban=iban, name=chosen.name, own=own)
                 }
             )
         return chosen
@@ -60,8 +63,10 @@ def _account_for(org, iban: str, chosen: Account | None) -> Account:
         return matches[0]
     raise ValidationError(
         {
-            "account": f"Zur IBAN {iban or '(ohne)'} gibt es kein eindeutiges Konto. "
-            "Bitte das Konto wählen oder die IBAN beim Konto eintragen."
+            "account": gettext(
+                "Zur IBAN {x} gibt es kein eindeutiges Konto. Bitte das Konto wählen "
+                "oder die IBAN beim Konto eintragen."
+            ).format(x=iban or "(ohne)")
         }
     )
 
@@ -77,7 +82,9 @@ def import_file(org, data: bytes, file_name: str, user, account: Account | None 
     safe = "".join(c if c.isalnum() or c in ".-_" else "_" for c in file_name)[-100:] or "auszug"
     for st in statements:
         if st.currency and st.currency != "EUR":
-            raise ValidationError(f"Nur Konten in Euro (Auszug in {st.currency}).")
+            raise ValidationError(
+                gettext("Nur Konten in Euro (Auszug in {currency}).").format(currency=st.currency)
+            )
         acc = _account_for(org, st.iban, account)
         record = BankStatement.objects.create(
             organization=org,
@@ -321,7 +328,7 @@ def _lock(line: BankLine) -> BankLine:
         .get(pk=line.pk)
     )
     if line.status != BankLine.Status.OPEN:
-        raise ValidationError("Der Umsatz ist schon erledigt.")
+        raise ValidationError(gettext("Der Umsatz ist schon erledigt."))
     return line
 
 
@@ -331,14 +338,17 @@ def pay_invoice(line: BankLine, invoice, user) -> BankLine:
 
     line = _lock(line)
     if not line.credit:
-        raise ValidationError("Nur Gutschriften lassen sich einer Rechnung zuordnen.")
+        raise ValidationError(gettext("Nur Gutschriften lassen sich einer Rechnung zuordnen."))
     if invoice.organization_id != line.organization_id:
-        raise ValidationError({"invoice": "Unbekannte Rechnung."})
+        raise ValidationError({"invoice": gettext("Unbekannte Rechnung.")})
     if line.batch_count > 1:
         raise ValidationError(
-            "Das ist eine Sammelbuchung mit mehreren Einzelposten. Sie lässt sich nicht einer "
-            "einzelnen Rechnung zuordnen; bitte die Zahlungen bei den Rechnungen erfassen und "
-            "den Umsatz der Buchung zuordnen oder mit Kategorie buchen."
+            gettext(
+                "Das ist eine Sammelbuchung mit mehreren Einzelposten. Sie lässt sich "
+                "nicht einer einzelnen Rechnung zuordnen; bitte die Zahlungen bei den "
+                "Rechnungen erfassen und den Umsatz der Buchung zuordnen oder mit "
+                "Kategorie buchen."
+            )
         )
     payment = billing_services.add_payment(
         invoice,
@@ -357,9 +367,11 @@ def book_debit_run(line: BankLine, run, user) -> BankLine:
 
     line = _lock(line)
     if run.organization_id != line.organization_id or run.account_id != line.account_id:
-        raise ValidationError({"run": "Der Lastschriftlauf gehört zu einem anderen Konto."})
+        raise ValidationError(
+            {"run": gettext("Der Lastschriftlauf gehört zu einem anderen Konto.")}
+        )
     if run.total != line.amount:
-        raise ValidationError({"run": "Der Betrag passt nicht zum Lastschriftlauf."})
+        raise ValidationError({"run": gettext("Der Betrag passt nicht zum Lastschriftlauf.")})
     sepa.book_run(run, user)
     return _done(line, user, None)
 
@@ -369,14 +381,16 @@ def link_booking(line: BankLine, booking: Booking, user) -> BankLine:
     line = _lock(line)
     booking = Booking.objects.select_for_update().get(pk=booking.pk)
     if booking.organization_id != line.organization_id or booking.account_id != line.account_id:
-        raise ValidationError({"booking": "Die Buchung gehört zu einem anderen Konto."})
+        raise ValidationError({"booking": gettext("Die Buchung gehört zu einem anderen Konto.")})
     kind = Booking.Kind.INCOME if line.credit else Booking.Kind.EXPENSE
     if booking.kind != kind or booking.amount != line.amount:
         raise ValidationError(
-            {"booking": "Betrag oder Richtung der Buchung passen nicht zu diesem Umsatz."}
+            {"booking": gettext("Betrag oder Richtung der Buchung passen nicht zu diesem Umsatz.")}
         )
     if BankLine.objects.filter(booking=booking).exists():
-        raise ValidationError({"booking": "Die Buchung ist schon einem Umsatz zugeordnet."})
+        raise ValidationError(
+            {"booking": gettext("Die Buchung ist schon einem Umsatz zugeordnet.")}
+        )
     return _done(line, user, booking)
 
 
@@ -394,9 +408,11 @@ def book(
     org = line.organization
     kind = Booking.Kind.INCOME if line.credit else Booking.Kind.EXPENSE
     if category is None or category.organization_id != org.pk:
-        raise ValidationError({"category": "Bitte eine Kategorie wählen."})
+        raise ValidationError({"category": gettext("Bitte eine Kategorie wählen.")})
     if not category.allows(kind):
-        raise ValidationError({"category": "Die Kategorie passt nicht zu dieser Richtung."})
+        raise ValidationError(
+            {"category": gettext("Die Kategorie passt nicht zu dieser Richtung.")}
+        )
     services.ensure_open(org, date=line.date)
     year = org.fiscal_year_of(line.date)
     booking = Booking(
@@ -432,8 +448,10 @@ def reopen(line: BankLine) -> BankLine:
     line = BankLine.objects.select_for_update().get(pk=line.pk)
     if line.status != BankLine.Status.IGNORED:
         raise ValidationError(
-            "Nur übergangene Umsätze lassen sich wieder öffnen. Gebuchte bitte im Kassenbuch "
-            "korrigieren."
+            gettext(
+                "Nur übergangene Umsätze lassen sich wieder öffnen. Gebuchte bitte im "
+                "Kassenbuch korrigieren."
+            )
         )
     line.status = BankLine.Status.OPEN
     line.done_by = None

@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from django.conf import settings
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.translation import gettext
 from rest_framework.exceptions import APIException, ValidationError
 
 from access.catalog import DEPARTMENT_CODES
@@ -156,7 +157,7 @@ def link_login_allowed(user) -> bool:
 def member_email(club: Organization, membership: Membership) -> str:
     contact = contact_for(membership.person, club)
     if not contact or not contact.email:
-        raise ValidationError("Für dieses Mitglied ist keine E-Mail-Adresse hinterlegt.")
+        raise ValidationError(gettext("Für dieses Mitglied ist keine E-Mail-Adresse hinterlegt."))
     return contact.email.lower()
 
 

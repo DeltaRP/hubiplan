@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.translation import gettext
 from rest_framework.exceptions import ValidationError
 
 from members.models import (
@@ -54,7 +55,7 @@ def field_label(org, key: str) -> str:
 
 def clean_person_fields(org, value) -> list[str]:
     if not isinstance(value, list):
-        raise ValidationError({"person_fields": "Ungültige Angabe."})
+        raise ValidationError({"person_fields": gettext("Ungültige Angabe.")})
     from customfields.models import FieldDefinition
 
     custom = set(
@@ -69,7 +70,9 @@ def clean_person_fields(org, value) -> list[str]:
             key.startswith(FIELD_PREFIX) and key[len(FIELD_PREFIX) :] in custom
         )
         if not ok:
-            raise ValidationError({"person_fields": f"Unbekannte Angabe „{key}“."})
+            raise ValidationError(
+                {"person_fields": gettext("Unbekannte Angabe „{key}“.").format(key=key)}
+            )
         if key not in out:
             out.append(key)
     return out
@@ -81,9 +84,15 @@ def _int_or_none(value, name: str, low: int = 0, high: int = 10000) -> int | Non
     try:
         n = int(value)
     except (TypeError, ValueError):
-        raise ValidationError({name: "Bitte eine ganze Zahl angeben."}) from None
+        raise ValidationError({name: gettext("Bitte eine ganze Zahl angeben.")}) from None
     if n < low or n > high:
-        raise ValidationError({name: f"Bitte eine Zahl von {low} bis {high} angeben."})
+        raise ValidationError(
+            {
+                name: gettext("Bitte eine Zahl von {low} bis {high} angeben.").format(
+                    low=low, high=high
+                )
+            }
+        )
     return n
 
 
@@ -91,7 +100,7 @@ def _positions(value) -> list[str]:
     if value in (None, ""):
         return []
     if not isinstance(value, list) or len(value) > 10:
-        raise ValidationError({"positions": "Höchstens 10 Aufgaben."})
+        raise ValidationError({"positions": gettext("Höchstens 10 Aufgaben.")})
     return [str(v).strip()[:100] for v in value if str(v).strip()]
 
 
@@ -99,7 +108,7 @@ def clean_conditions(org, value) -> dict:
     if value in (None, ""):
         return {}
     if not isinstance(value, dict):
-        raise ValidationError({"conditions": "Ungültige Angabe."})
+        raise ValidationError({"conditions": gettext("Ungültige Angabe.")})
     from members.models import MemberType
 
     out: dict = {
@@ -113,22 +122,24 @@ def clean_conditions(org, value) -> dict:
             out[key] = n
     if out.get("min_age") is not None and out.get("max_age") is not None:
         if out["min_age"] > out["max_age"]:
-            raise ValidationError({"max_age": "Das Höchstalter liegt unter dem Mindestalter."})
+            raise ValidationError(
+                {"max_age": gettext("Das Höchstalter liegt unter dem Mindestalter.")}
+            )
     types = value.get("member_types") or []
     units = value.get("units") or []
     if not isinstance(types, list) or not isinstance(units, list):
-        raise ValidationError({"conditions": "Ungültige Angabe."})
+        raise ValidationError({"conditions": gettext("Ungültige Angabe.")})
     known_types = set(MemberType.objects.filter(organization=org).values_list("pk", flat=True))
     known_units = set(Department.objects.filter(organization=org).values_list("pk", flat=True))
     try:
         types = [int(t) for t in types]
         units = [int(u) for u in units]
     except (TypeError, ValueError):
-        raise ValidationError({"conditions": "Ungültige Angabe."}) from None
+        raise ValidationError({"conditions": gettext("Ungültige Angabe.")}) from None
     if not set(types) <= known_types:
-        raise ValidationError({"member_types": "Unbekannte Mitgliedsart."})
+        raise ValidationError({"member_types": gettext("Unbekannte Mitgliedsart.")})
     if not set(units) <= known_units:
-        raise ValidationError({"units": "Unbekannte Untereinheit."})
+        raise ValidationError({"units": gettext("Unbekannte Untereinheit.")})
     if types:
         out["member_types"] = types
     if units:
@@ -140,7 +151,7 @@ def clean_block_settings(kind: str, value) -> dict:
     if value in (None, ""):
         value = {}
     if not isinstance(value, dict):
-        raise ValidationError({"settings": "Ungültige Angabe."})
+        raise ValidationError({"settings": gettext("Ungültige Angabe.")})
     out: dict = {}
     if kind == CallBlock.Kind.TEAMS:
         for key in ("min_teams", "max_teams", "min_size", "max_size", "substitutes"):
@@ -148,9 +159,9 @@ def clean_block_settings(kind: str, value) -> dict:
             if n is not None:
                 out[key] = n
         if out.get("max_teams") is not None and out["max_teams"] < out.get("min_teams", 0):
-            raise ValidationError({"max_teams": "Höchstzahl unter der Mindestzahl."})
+            raise ValidationError({"max_teams": gettext("Höchstzahl unter der Mindestzahl.")})
         if out.get("max_size") is not None and out["max_size"] < out.get("min_size", 0):
-            raise ValidationError({"max_size": "Höchstzahl unter der Mindestzahl."})
+            raise ValidationError({"max_size": gettext("Höchstzahl unter der Mindestzahl.")})
         out["positions"] = _positions(value.get("positions"))
     elif kind == CallBlock.Kind.PERSONS:
         for key in ("min", "max"):
@@ -158,7 +169,7 @@ def clean_block_settings(kind: str, value) -> dict:
             if n is not None:
                 out[key] = n
         if out.get("max") is not None and out["max"] < out.get("min", 0):
-            raise ValidationError({"max": "Höchstzahl unter der Mindestzahl."})
+            raise ValidationError({"max": gettext("Höchstzahl unter der Mindestzahl.")})
         out["positions"] = _positions(value.get("positions"))
     elif kind == CallBlock.Kind.NUMBER:
         for key in ("min", "max"):
@@ -168,10 +179,10 @@ def clean_block_settings(kind: str, value) -> dict:
     elif kind == CallBlock.Kind.CHOICE:
         options = value.get("options") or []
         if not isinstance(options, list):
-            raise ValidationError({"options": "Ungültige Angabe."})
+            raise ValidationError({"options": gettext("Ungültige Angabe.")})
         options = [str(o).strip()[:100] for o in options if str(o).strip()]
         if not options or len(options) > 30:
-            raise ValidationError({"options": "Bitte 1 bis 30 Antworten angeben."})
+            raise ValidationError({"options": gettext("Bitte 1 bis 30 Antworten angeben.")})
         out["options"] = list(dict.fromkeys(options))
         out["multiple"] = bool(value.get("multiple", False))
     elif kind == CallBlock.Kind.TEXT:
@@ -636,7 +647,7 @@ def record_version(
         kind = EntryVersion.Kind.CHANGE
         changes = describe_changes(last.data or {}, data)
         if not changes:
-            raise ValidationError("Seit der letzten Fassung hat sich nichts geändert.")
+            raise ValidationError(gettext("Seit der letzten Fassung hat sich nichts geändert."))
     version = EntryVersion.objects.create(
         organization=entry.organization,
         entry=entry,
@@ -1004,16 +1015,16 @@ def clean_units(org, raw) -> list[int]:
     if raw in (None, ""):
         return []
     if not isinstance(raw, list):
-        raise ValidationError({"units": "Ungültige Angabe."})
+        raise ValidationError({"units": gettext("Ungültige Angabe.")})
     allowed = {d.pk for d in unit_choices(org)}
     out = []
     for v in raw:
         try:
             pk = int(v)
         except (TypeError, ValueError):
-            raise ValidationError({"units": "Ungültige Angabe."}) from None
+            raise ValidationError({"units": gettext("Ungültige Angabe.")}) from None
         if pk not in allowed:
-            raise ValidationError({"units": "Unbekannte Untereinheit."})
+            raise ValidationError({"units": gettext("Unbekannte Untereinheit.")})
         if pk not in out:
             out.append(pk)
     return out

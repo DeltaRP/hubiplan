@@ -16,6 +16,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils.translation import gettext, gettext_lazy
 
 from core.encfields import EncryptedCharField
 from core.privatefiles import PrivateFileField
@@ -25,9 +26,9 @@ ZERO = Decimal("0.00")
 
 
 class Rhythm(models.TextChoices):
-    YEARLY = "yearly", "jährlich"
-    HALFYEARLY = "halfyearly", "halbjährlich"
-    QUARTERLY = "quarterly", "vierteljährlich"
+    YEARLY = "yearly", gettext_lazy("jährlich")
+    HALFYEARLY = "halfyearly", gettext_lazy("halbjährlich")
+    QUARTERLY = "quarterly", gettext_lazy("vierteljährlich")
     MONTHLY = "monthly", "monatlich"
 
 
@@ -129,7 +130,7 @@ class FeeRate(models.Model):
 
     def clean(self):
         if self.amount is not None and self.amount < 0:
-            raise ValidationError({"amount": "Der Beitrag darf nicht negativ sein."})
+            raise ValidationError({"amount": gettext("Der Beitrag darf nicht negativ sein.")})
 
 
 class AgeRate(models.Model):
@@ -230,15 +231,15 @@ def invoice_pdf_path(instance, filename: str) -> str:
 
 class Invoice(models.Model):
     class Status(models.TextChoices):
-        DRAFT = "draft", "Entwurf"
+        DRAFT = "draft", gettext_lazy("Entwurf")
         OPEN = "open", "offen"
         PAID = "paid", "bezahlt"
         CANCELLED = "cancelled", "storniert"
 
     class Recipient(models.TextChoices):
-        MEMBER = "member", "Mitglied"
-        DEPARTMENT = "department", "Abteilung"
-        CLUB = "club", "Verein"
+        MEMBER = "member", gettext_lazy("Mitglied")
+        DEPARTMENT = "department", gettext_lazy("Abteilung")
+        CLUB = "club", gettext_lazy("Verein")
 
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE, related_name="+"
@@ -381,9 +382,9 @@ class InvoiceLine(models.Model):
 
 class Payment(models.Model):
     class Method(models.TextChoices):
-        TRANSFER = "transfer", "Überweisung"
+        TRANSFER = "transfer", gettext_lazy("Überweisung")
         CASH = "cash", "bar"
-        DEBIT = "debit", "Lastschrift"
+        DEBIT = "debit", gettext_lazy("Lastschrift")
 
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE, related_name="+"
@@ -440,7 +441,7 @@ class DunningLevel(models.Model):
 
     def clean(self):
         if self.fee is not None and self.fee < 0:
-            raise ValidationError({"fee": "Die Gebühr darf nicht negativ sein."})
+            raise ValidationError({"fee": gettext("Die Gebühr darf nicht negativ sein.")})
 
 
 class Dunning(models.Model):
@@ -476,10 +477,10 @@ class Mandate(models.Model):
 
     class Source(models.TextChoices):
         PAPER = "paper", "schriftlich"
-        ONLINE = "online", "im Mitgliederbereich"
+        ONLINE = "online", gettext_lazy("im Mitgliederbereich")
 
     class Status(models.TextChoices):
-        ACTIVE = "active", "gültig"
+        ACTIVE = "active", gettext_lazy("gültig")
         REVOKED = "revoked", "widerrufen"
 
     organization = models.ForeignKey(
@@ -572,8 +573,8 @@ class DebitRun(models.Model):
 
 class DebitItem(models.Model):
     class Sequence(models.TextChoices):
-        FIRST = "FRST", "Erstlastschrift"
-        RECURRING = "RCUR", "Folgelastschrift"
+        FIRST = "FRST", gettext_lazy("Erstlastschrift")
+        RECURRING = "RCUR", gettext_lazy("Folgelastschrift")
 
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE, related_name="+"

@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.utils.translation import gettext_lazy
 
 from core.encfields import EncryptedJSONField
 
@@ -9,8 +10,8 @@ class AuditEntry(models.Model):
 
     class Action(models.TextChoices):
         CREATE = "create", "angelegt"
-        UPDATE = "update", "geändert"
-        DELETE = "delete", "gelöscht"
+        UPDATE = "update", gettext_lazy("geändert")
+        DELETE = "delete", gettext_lazy("gelöscht")
         VIEW = "view", "angesehen"
 
     organization = models.ForeignKey(

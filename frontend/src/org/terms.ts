@@ -2,6 +2,7 @@
 // Das Backend liefert die Formen fertig (organizations/terms.py); hier nur
 // Platzhalter füllen und Vorgaben für „Abteilung“.
 import { useOptionalOrg } from './OrgContext.tsx'
+import { lang } from '../i18n/index.ts'
 
 export type DeptTerms = Record<string, string>
 
@@ -78,6 +79,95 @@ export function buildTerms(
   return tm
 }
 
+// Englisch (Konzept englisch.md, 4.3): keine Fälle, ein Artikel; gleiche Platzhalter.
+const FORMS_EN: Record<string, string> = {
+  nom: 'the',
+  akk: 'the',
+  dat: 'the',
+  gen: 'the',
+  ein: 'a',
+  einen: 'a',
+  einem: 'a',
+  eines: 'a',
+  kein: 'no',
+  diese: 'this',
+  diesem: 'this',
+  dieses: 'this',
+  diesen: 'this',
+  deinem: 'your',
+  deines: 'your',
+  deinen: 'your',
+  ihrem: 'their',
+  ihres: 'their',
+  ihren: 'their',
+  im: 'in the',
+  zum: 'to the',
+  vom: 'from the',
+  beim: 'at the',
+  unser: 'our',
+  ein_anderer: 'another',
+  einen_anderen: 'another',
+  einem_anderen: 'another',
+  eines_anderen: 'another',
+  der_andere: 'the other',
+  den_anderen: 'the other',
+  beim_anderen: 'at the other',
+}
+
+/** Vorgaben auf Englisch; eigene Bezeichnungen ohne englische Form bleiben deutsch (F7). */
+export const ENGLISH_DEFAULTS: Record<string, [string, string]> = {
+  Abteilung: ['department', 'departments'],
+  Verein: ['club', 'clubs'],
+  Dachverband: ['umbrella association', 'umbrella associations'],
+  Plattform: ['platform', 'platforms'],
+  Einheit: ['unit', 'units'],
+  Gruppe: ['group', 'groups'],
+}
+
+export function englishLabel(
+  label: string,
+  plural: string,
+  labelEn = '',
+  pluralEn = '',
+): [string, string] {
+  if (labelEn) return [labelEn, pluralEn || labelEn]
+  return ENGLISH_DEFAULTS[label] ?? [label, plural || label]
+}
+
+/** Englische Formen (wie organizations/terms.py ``build_terms_en``). */
+export function buildTermsEn(
+  label: string,
+  plural: string,
+  gender: string = 'f',
+  labelEn = '',
+  pluralEn = '',
+): DeptTerms {
+  const [sg, pl] = englishLabel(label || 'Abteilung', plural || 'Abteilungen', labelEn, pluralEn)
+  const tm: DeptTerms = { sg, pl, sg_gen: sg, pl_dat: pl }
+  const an = /^(?!uni|use|eu|one)[aeiou]/i.test(sg) ? 'an' : 'a'
+  for (const [key, article] of Object.entries(FORMS_EN)) {
+    tm[key] = `${article === 'a' ? an : article} ${sg}`
+  }
+  for (const key of Object.keys(tm)) tm[cap(key)] = cap(tm[key])
+  tm.gender = GENDERS.includes(gender as Gender) ? gender : 'f'
+  tm.adj = ''
+  return tm
+}
+
+/** Formen in der Sprache der Oberfläche. */
+export function termsFor(
+  label: string,
+  plural: string,
+  gender: string = 'f',
+  genitive = '',
+  labelEn = '',
+  pluralEn = '',
+): DeptTerms {
+  return lang() === 'en'
+    ? buildTermsEn(label, plural, gender, labelEn, pluralEn)
+    : buildTerms(label, plural, gender, genitive)
+}
+
 /**
  * Name des Dachverbands in Texten eines Vereins (Platzhalter mit ``dv_``,
  * z. B. {dv_im} „im BSV“, {dv_akk} „den BSV“). Ohne Namen: „Dachverband“.
@@ -85,8 +175,8 @@ export function buildTerms(
  */
 export function buildFederationTerms(name = '', gender = 'm', genitive = ''): DeptTerms {
   const base = name
-    ? buildTerms(name, name, gender || 'm', genitive || name)
-    : buildTerms('Dachverband', 'Dachverbände', 'm', 'Dachverbands')
+    ? termsFor(name, name, gender || 'm', genitive || name, name)
+    : termsFor('Dachverband', 'Dachverbände', 'm', 'Dachverbands')
   const tm: DeptTerms = {}
   for (const [key, value] of Object.entries(base)) {
     if (!/^pl/i.test(key)) tm[`dv_${key}`] = value
@@ -102,10 +192,17 @@ export const DEFAULT_FED_TERMS: DeptTerms = buildFederationTerms()
  * {e_sg} „Verein“, {e_im} „im Verein“, {e_gen} „des Vereins“, {e_pl} „Vereine“,
  * {e_eines_anderen} „eines anderen Vereins“. Ohne Bezeichnung: „Einheit“.
  */
-export function buildOwnTerms(label = '', plural = '', gender = 'f', genitive = ''): DeptTerms {
+export function buildOwnTerms(
+  label = '',
+  plural = '',
+  gender = 'f',
+  genitive = '',
+  labelEn = '',
+  pluralEn = '',
+): DeptTerms {
   const base = label
-    ? buildTerms(label, plural || label, gender, genitive)
-    : buildTerms('Einheit', 'Einheiten', 'f')
+    ? termsFor(label, plural || label, gender, genitive, labelEn, pluralEn)
+    : termsFor('Einheit', 'Einheiten', 'f')
   const tm: DeptTerms = {}
   for (const [key, value] of Object.entries(base)) tm[`e_${key}`] = value
   return tm
@@ -114,7 +211,7 @@ export function buildOwnTerms(label = '', plural = '', gender = 'f', genitive = 
 export const DEFAULT_OWN_TERMS: DeptTerms = buildOwnTerms()
 
 export const DEFAULT_TERMS: DeptTerms = {
-  ...buildTerms('Abteilung', 'Abteilungen', 'f'),
+  ...termsFor('Abteilung', 'Abteilungen', 'f'),
   ...DEFAULT_FED_TERMS,
   ...DEFAULT_OWN_TERMS,
 }
@@ -134,11 +231,20 @@ function ownFallback(
     label_plural?: string
     label_gender?: string
     label_genitive?: string
+    label_en?: string
+    label_plural_en?: string
     type?: string
   } | null,
 ): DeptTerms {
   if (org?.label)
-    return buildOwnTerms(org.label, org.label_plural, org.label_gender, org.label_genitive)
+    return buildOwnTerms(
+      org.label,
+      org.label_plural,
+      org.label_gender,
+      org.label_genitive,
+      org.label_en,
+      org.label_plural_en,
+    )
   if (org?.type === 'federation')
     return buildOwnTerms('Dachverband', 'Dachverbände', 'm', 'Dachverbands')
   if (org?.type === 'club') return buildOwnTerms('Verein', 'Vereine', 'm', 'Vereins')
@@ -153,9 +259,7 @@ export function useTerms(): DeptTerms {
     const terms = active.department_terms
     const children =
       terms ??
-      (active.type === 'federation'
-        ? buildTerms('Verein', 'Vereine', 'm', 'Vereins')
-        : DEFAULT_TERMS)
+      (active.type === 'federation' ? termsFor('Verein', 'Vereine', 'm', 'Vereins') : DEFAULT_TERMS)
     return terms?.e_sg ? terms : { ...DEFAULT_FED_TERMS, ...children, ...ownFallback(active) }
   }
   return ctx?.activeDept?.terms ?? ctx?.activePortal?.terms ?? DEFAULT_TERMS

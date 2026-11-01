@@ -21,6 +21,7 @@ import logging
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext
 
 from . import identity, services, transport
 from .models import Coupling, Peer, RemoteMember
@@ -164,7 +165,7 @@ def inspect_target(base_url: str) -> dict:
     """Neue Instanz prüfen: Selbstauskunft mit Fingerabdruck zum Abgleich."""
     info = transport.fetch_info(base_url)
     if str(info["instance_id"]) == identity.identity().instance_id:
-        raise ValidationError("Das ist diese Instanz.")
+        raise ValidationError(gettext("Das ist diese Instanz."))
     return info
 
 
@@ -172,10 +173,10 @@ def announce(org, base_url: str, fingerprint: str, user) -> dict:
     """Allen Gegenstellen den Umzug melden. Danach gelten die Kopplungen hier als umgezogen."""
     info = inspect_target(base_url)
     if fingerprint.replace(" ", "").upper() != info["fingerprint"].replace(" ", "").upper():
-        raise ValidationError("Der Fingerabdruck passt nicht zur neuen Instanz.")
+        raise ValidationError(gettext("Der Fingerabdruck passt nicht zur neuen Instanz."))
     couplings = list(Coupling.objects.filter(local_unit=org, state__in=OPEN).select_related("peer"))
     if not couplings:
-        raise ValidationError("Diese Einheit hat keine aktiven Kopplungen.")
+        raise ValidationError(gettext("Diese Einheit hat keine aktiven Kopplungen."))
     done, failed = 0, []
     for coupling in couplings:
         payload = services._envelope(
@@ -218,9 +219,9 @@ def receive_moved(coupling: Coupling, data: dict) -> None:
         or info["public_key"] != data.get("public_key")
         or info["enc_public_key"] != data.get("enc_public_key")
     ):
-        raise ValidationError("Die neue Instanz meldet andere Schlüssel als angekündigt.")
+        raise ValidationError(gettext("Die neue Instanz meldet andere Schlüssel als angekündigt."))
     if str(info["instance_id"]) == identity.identity().instance_id:
-        raise ValidationError("Die neue Instanz ist diese Instanz selbst.")
+        raise ValidationError(gettext("Die neue Instanz ist diese Instanz selbst."))
     options = dict(coupling.options or {})
     previous = options.get("move", {}).get("previous") or coupling.state
     if previous not in OPEN:
@@ -267,23 +268,27 @@ def confirm_move(coupling: Coupling, fingerprint: str, user) -> Coupling:
         coupling = Coupling.objects.select_for_update().select_related("peer").get(pk=coupling.pk)
         pending = (coupling.options or {}).get("move")
         if coupling.state != Coupling.State.MOVING or not pending:
-            raise ValidationError("Für diese Kopplung ist kein Umzug angekündigt.")
+            raise ValidationError(gettext("Für diese Kopplung ist kein Umzug angekündigt."))
         if not fingerprint or _norm(fingerprint) != _norm(pending["fingerprint"]):
             raise ValidationError(
-                "Der Fingerabdruck passt nicht zur neuen Instanz. Bitte nicht bestätigen und "
-                "bei der anderen Seite nachfragen."
+                gettext(
+                    "Der Fingerabdruck passt nicht zur neuen Instanz. Bitte nicht bestätigen "
+                    "und bei der anderen Seite nachfragen."
+                )
             )
         # Frisch prüfen: meldet die neue Adresse noch dieselben Schlüssel?
         try:
             info = transport.fetch_info(pending["base_url"])
         except transport.PeerError as exc:
-            raise ValidationError(f"Die neue Instanz antwortet nicht: {exc}") from exc
+            raise ValidationError(
+                gettext("Die neue Instanz antwortet nicht: {exc}").format(exc=exc)
+            ) from exc
         if (
             str(info["instance_id"]) != pending["instance_id"]
             or info["public_key"] != pending["public_key"]
             or info["enc_public_key"] != pending["enc_public_key"]
         ):
-            raise ValidationError("Die neue Instanz meldet inzwischen andere Schlüssel.")
+            raise ValidationError(gettext("Die neue Instanz meldet inzwischen andere Schlüssel."))
         peer = services._store_peer(info)
         old = coupling.peer.base_url
         options = dict(coupling.options or {})
@@ -315,5 +320,5 @@ def confirm_move(coupling: Coupling, fingerprint: str, user) -> Coupling:
 def decline_move(coupling: Coupling, user) -> None:
     """Umzug ablehnen: Die Kopplung wird gelöst (die alte Instanz nimmt ohnehin nichts mehr an)."""
     if coupling.state != Coupling.State.MOVING:
-        raise ValidationError("Für diese Kopplung ist kein Umzug angekündigt.")
+        raise ValidationError(gettext("Für diese Kopplung ist kein Umzug angekündigt."))
     services.end(coupling, user, reason="gelöst (Umzug abgelehnt)", notify=False)

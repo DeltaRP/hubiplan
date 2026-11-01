@@ -16,6 +16,7 @@ from django.contrib.auth import password_validation, update_session_auth_hash
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext
 from rest_framework import serializers, status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -90,11 +91,13 @@ class PasswordView(APIView):
         data.is_valid(raise_exception=True)
         user = request.user
         if _too_many(user.pk, "passwort"):
-            return Response({"detail": "Zu viele Versuche. Bitte später erneut."}, status=429)
+            return Response(
+                {"detail": gettext("Zu viele Versuche. Bitte später erneut.")}, status=429
+            )
         had_password = user.has_usable_password()
         if had_password and not user.check_password(data.validated_data.get("current_password")):
             raise serializers.ValidationError(
-                {"current_password": "Das bisherige Passwort stimmt nicht."}
+                {"current_password": gettext("Das bisherige Passwort stimmt nicht.")}
             )
         new = data.validated_data["new_password"]
         try:
@@ -137,17 +140,21 @@ class EmailChangeView(APIView):
         data.is_valid(raise_exception=True)
         user = request.user
         if _too_many(user.pk, "email", limit=5):
-            return Response({"detail": "Zu viele Versuche. Bitte später erneut."}, status=429)
+            return Response(
+                {"detail": gettext("Zu viele Versuche. Bitte später erneut.")}, status=429
+            )
         if user.has_usable_password() and not user.check_password(
             data.validated_data.get("password")
         ):
-            raise serializers.ValidationError({"password": "Das Passwort stimmt nicht."})
+            raise serializers.ValidationError({"password": gettext("Das Passwort stimmt nicht.")})
         new = User.objects.normalize_email(data.validated_data["email"]).lower()
         if new == user.email:
-            raise serializers.ValidationError({"email": "Das ist schon Ihre Anmelde-E-Mail."})
+            raise serializers.ValidationError(
+                {"email": gettext("Das ist schon Ihre Anmelde-E-Mail.")}
+            )
         if User.objects.filter(email__iexact=new).exists():
             raise serializers.ValidationError(
-                {"email": "Diese E-Mail-Adresse gehört schon zu einem anderen Konto."}
+                {"email": gettext("Diese E-Mail-Adresse gehört schon zu einem anderen Konto.")}
             )
         request_email_change(user, new)
         return Response(account_data(user), status=status.HTTP_201_CREATED)
@@ -219,11 +226,16 @@ class EmailConfirmView(APIView):
         )
         if change is None:
             return Response(
-                {"detail": "Der Link ist ungültig, abgelaufen oder schon benutzt."}, status=404
+                {"detail": gettext("Der Link ist ungültig, abgelaufen oder schon benutzt.")},
+                status=404,
             )
         if User.objects.filter(email__iexact=change.new_email).exclude(pk=change.user_id).exists():
             return Response(
-                {"detail": "Diese E-Mail-Adresse gehört inzwischen zu einem anderen Konto."},
+                {
+                    "detail": gettext(
+                        "Diese E-Mail-Adresse gehört inzwischen zu einem anderen Konto."
+                    )
+                },
                 status=409,
             )
         change.used_at = timezone.now()

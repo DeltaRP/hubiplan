@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from django.core.exceptions import ValidationError
 from django.db.models import Q, Sum
 from django.utils import timezone
+from django.utils.translation import gettext
 
 from changes.models import RETENTION_DAYS
 from core.tenancy import rls_bypass
@@ -59,22 +60,24 @@ ALLOWED_HINT = "PDF, Word, Excel, PowerPoint, OpenDocument, JPEG, PNG, Text oder
 def check_upload(upload) -> str:
     """Prüft Größe und Dateiart, gibt die Dateiart zurück."""
     if upload is None:
-        raise ValidationError({"file": "Bitte eine Datei wählen."})
+        raise ValidationError({"file": gettext("Bitte eine Datei wählen.")})
     if upload.size > MAX_DOCUMENT_BYTES:
-        raise ValidationError({"file": "Die Datei ist größer als 20 MB."})
+        raise ValidationError({"file": gettext("Die Datei ist größer als 20 MB.")})
     ext = clean_name(upload.name).rsplit(".", 1)[-1].lower() if "." in upload.name else ""
     if ext not in ALLOWED_TYPES:
-        raise ValidationError({"file": f"Erlaubt sind {ALLOWED_HINT}."})
+        raise ValidationError(
+            {"file": gettext("Erlaubt sind {ALLOWED_HINT}.").format(ALLOWED_HINT=ALLOWED_HINT)}
+        )
     ctype, magic = ALLOWED_TYPES[ext]
     head = upload.read(8)
     upload.seek(0)
     if magic is None:
         if b"\x00" in upload.read(4096):
             upload.seek(0)
-            raise ValidationError({"file": "Das ist keine Textdatei."})
+            raise ValidationError({"file": gettext("Das ist keine Textdatei.")})
         upload.seek(0)
     elif not head.startswith(magic):
-        raise ValidationError({"file": "Inhalt und Dateiendung passen nicht zusammen."})
+        raise ValidationError({"file": gettext("Inhalt und Dateiendung passen nicht zusammen.")})
     return ctype
 
 
@@ -218,9 +221,10 @@ def check_budget(org: Organization, size: int) -> None:
     if total_bytes(org) + (size or 0) > limit:
         raise ValidationError(
             {
-                "file": f"Der Speicherplatz der Ablage ({limit // 1024**3} GB) ist voll. Bitte "
-                "alte Fassungen oder den Papierkorb leeren oder die Plattform um mehr Platz "
-                "bitten."
+                "file": gettext(
+                    "Der Speicherplatz der Ablage ({x} GB) ist voll. Bitte alte Fassungen "
+                    "oder den Papierkorb leeren oder die Plattform um mehr Platz bitten."
+                ).format(x=limit // 1024**3)
             }
         )
 

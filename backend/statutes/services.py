@@ -3,19 +3,20 @@
 from __future__ import annotations
 
 from django.core.exceptions import ValidationError
+from django.utils.translation import gettext
 
 from .models import MAX_STATUTE_BYTES, Kind, StatutePublication, StatuteVersion
 
 
 def check_pdf(upload) -> None:
     if upload is None:
-        raise ValidationError({"file": "Bitte eine PDF-Datei wählen."})
+        raise ValidationError({"file": gettext("Bitte eine PDF-Datei wählen.")})
     if upload.size > MAX_STATUTE_BYTES:
-        raise ValidationError({"file": "Die Datei ist größer als 20 MB."})
+        raise ValidationError({"file": gettext("Die Datei ist größer als 20 MB.")})
     head = upload.read(5)
     upload.seek(0)
     if head != b"%PDF-":
-        raise ValidationError({"file": "Bitte eine PDF-Datei hochladen."})
+        raise ValidationError({"file": gettext("Bitte eine PDF-Datei hochladen.")})
 
 
 def safe_name(name: str, kind: str = Kind.STATUTE) -> str:

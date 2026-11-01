@@ -26,6 +26,7 @@ import math
 
 import cv2
 import numpy as np
+from django.utils.translation import gettext
 from PIL import Image
 
 from .. import targets
@@ -49,13 +50,13 @@ def _decode(image: bytes) -> np.ndarray:
         with Image.open(io.BytesIO(image)) as probe:
             w, h = probe.size
     except (OSError, ValueError) as exc:
-        raise DetectError("Das Bild lässt sich nicht lesen.") from exc
+        raise DetectError(gettext("Das Bild lässt sich nicht lesen.")) from exc
     if w * h > MAX_PIXELS:
-        raise DetectError("Das Bild ist zu groß.")
+        raise DetectError(gettext("Das Bild ist zu groß."))
     arr = np.frombuffer(image, dtype=np.uint8)
     img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
     if img is None:
-        raise DetectError("Das Bild lässt sich nicht lesen.")
+        raise DetectError(gettext("Das Bild lässt sich nicht lesen."))
     h, w = img.shape[:2]
     scale = MAX_SIDE / max(h, w)
     if scale < 1:
@@ -108,7 +109,9 @@ def find_blacks(gray: np.ndarray, count: int = 1) -> list[Ellipse]:
             found.append((score, ((cx, cy), (a, b), ang, quality)))
     found.sort(key=lambda f: f[0], reverse=True)
     if not found or found[0][1][3] < 0.5:
-        raise DetectError("Kein Spiegel gefunden. Bitte die ganze Scheibe gerade fotografieren.")
+        raise DetectError(
+            gettext("Kein Spiegel gefunden. Bitte die ganze Scheibe gerade fotografieren.")
+        )
     best = found[0][1]
     size = math.sqrt(best[1][0] * best[1][1])
     chosen: list[Ellipse] = [best]
@@ -483,7 +486,7 @@ def detect(
     (JPEG, ``PX_PER_MM``), zum Sammeln mit Einwilligung des Vereins."""
     t = targets.BY_KEY.get(target) if isinstance(target, str) else target
     if t is None:
-        raise DetectError("Unbekannte Scheibe.")
+        raise DetectError(gettext("Unbekannte Scheibe."))
     reason = unsupported(t)
     if reason:
         raise DetectError(reason)
@@ -599,7 +602,7 @@ def encode_crop(norm: np.ndarray) -> bytes:
     """Entzerrten Spiegel als JPEG (Graubild, Mitte in der Bildmitte, ``PX_PER_MM``)."""
     ok, buf = cv2.imencode(".jpg", norm, [cv2.IMWRITE_JPEG_QUALITY, 90])
     if not ok:
-        raise DetectError("Ausschnitt ließ sich nicht speichern.")
+        raise DetectError(gettext("Ausschnitt ließ sich nicht speichern."))
     return buf.tobytes()
 
 

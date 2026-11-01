@@ -10,6 +10,7 @@ from __future__ import annotations
 from django.db import transaction
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext
 from rest_framework import serializers, status
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
@@ -139,9 +140,9 @@ def start_export(
 
 def start_import(org, user, upload, options: dict) -> TransferJob:
     if upload is None:
-        raise serializers.ValidationError({"file": "Bitte eine Exportdatei auswählen."})
+        raise serializers.ValidationError({"file": gettext("Bitte eine Exportdatei auswählen.")})
     if upload.size > MAX_UPLOAD_BYTES:
-        raise serializers.ValidationError({"file": "Die Datei ist größer als 500 MB."})
+        raise serializers.ValidationError({"file": gettext("Die Datei ist größer als 500 MB.")})
     _capacity(org)
     kind = "department" if org.type == Organization.Type.CLUB else "organization"
     job = TransferJob(
@@ -172,9 +173,11 @@ def _lock(job: TransferJob) -> None:
 def update_import(job: TransferJob, options: dict) -> TransferJob:
     _lock(job)
     if job.status in (TransferJob.Status.DONE, TransferJob.Status.RUNNING):
-        raise serializers.ValidationError("Dieser Import ist schon abgeschlossen oder läuft.")
+        raise serializers.ValidationError(
+            gettext("Dieser Import ist schon abgeschlossen oder läuft.")
+        )
     if not job.file:
-        raise serializers.ValidationError("Die Datei ist nicht mehr vorhanden.")
+        raise serializers.ValidationError(gettext("Die Datei ist nicht mehr vorhanden."))
     persons = options.pop("persons", None)
     job.options = {**(job.options or {}), **options}
     if persons is not None:
@@ -192,9 +195,11 @@ def update_import(job: TransferJob, options: dict) -> TransferJob:
 def run_import(job: TransferJob) -> TransferJob:
     _lock(job)
     if job.status != TransferJob.Status.CHECKED:
-        raise serializers.ValidationError("Bitte zuerst die Prüfung abwarten.")
+        raise serializers.ValidationError(gettext("Bitte zuerst die Prüfung abwarten."))
     if (job.preview or {}).get("error_count"):
-        raise serializers.ValidationError("Die Datei hat noch Fehler. Bitte zuerst beheben.")
+        raise serializers.ValidationError(
+            gettext("Die Datei hat noch Fehler. Bitte zuerst beheben.")
+        )
     job.status = TransferJob.Status.RUNNING
     job.save(update_fields=["status"])
     transaction.on_commit(
@@ -205,7 +210,7 @@ def run_import(job: TransferJob) -> TransferJob:
 
 def download(job: TransferJob):
     if not job.file or job.status != TransferJob.Status.DONE:
-        raise NotFound("Die Datei ist nicht mehr vorhanden.")
+        raise NotFound(gettext("Die Datei ist nicht mehr vorhanden."))
     return FileResponse(job.file.open("rb"), as_attachment=True, filename=job.file_name)
 
 
@@ -273,7 +278,7 @@ class _ImportPermission:
         super().initial(request, *args, **kwargs)
         needed = CLUBS_MANAGE if self.org.type == Organization.Type.FEDERATION else ORG_EDIT
         if needed not in self.org_permissions:
-            raise PermissionDenied("Dafür fehlt dir die Berechtigung.")
+            raise PermissionDenied(gettext("Dafür fehlt dir die Berechtigung."))
 
 
 class OrgImportView(_ImportPermission, OrgScopedMixin, APIView):

@@ -21,6 +21,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
+from django.utils.translation import gettext
 
 from core.alarm import send_alert
 
@@ -281,23 +282,29 @@ def confirm(peer: Peer, fingerprint: str, user) -> Peer:
         peer = Peer.objects.select_for_update().get(pk=peer.pk)
         pending = peer.pending_keys or {}
         if not pending:
-            raise ValidationError("Für diese Instanz wartet kein Schlüsselwechsel.")
+            raise ValidationError(gettext("Für diese Instanz wartet kein Schlüsselwechsel."))
         if not fingerprint or _norm(fingerprint) != _norm(pending["fingerprint"]):
             raise ValidationError(
-                "Der Fingerabdruck passt nicht. Bitte nicht bestätigen und bei der anderen Seite "
-                "nachfragen."
+                gettext(
+                    "Der Fingerabdruck passt nicht. Bitte nicht bestätigen und bei der "
+                    "anderen Seite nachfragen."
+                )
             )
         # Frisch prüfen: meldet die Gegenstelle selbst diese Schlüssel?
         try:
             info = transport.fetch_info(peer.base_url)
         except transport.PeerError as exc:
-            raise ValidationError(f"Die andere Instanz antwortet nicht: {exc}") from exc
+            raise ValidationError(
+                gettext("Die andere Instanz antwortet nicht: {exc}").format(exc=exc)
+            ) from exc
         if (
             str(info["instance_id"]) != str(peer.instance_id)
             or info["public_key"] != pending["public_key"]
             or info["enc_public_key"] != pending["enc_public_key"]
         ):
-            raise ValidationError("Die andere Instanz meldet andere Schlüssel als angekündigt.")
+            raise ValidationError(
+                gettext("Die andere Instanz meldet andere Schlüssel als angekündigt.")
+            )
         peer.public_key = pending["public_key"]
         peer.enc_public_key = pending["enc_public_key"]
         peer.fingerprint = pending["fingerprint"]
@@ -329,7 +336,7 @@ def decline(peer: Peer, user) -> None:
     with transaction.atomic():
         peer = Peer.objects.select_for_update().get(pk=peer.pk)
         if not peer.pending_keys:
-            raise ValidationError("Für diese Instanz wartet kein Schlüsselwechsel.")
+            raise ValidationError(gettext("Für diese Instanz wartet kein Schlüsselwechsel."))
         peer.pending_keys = {}
         peer.save(update_fields=["pending_keys"])
         for c in _open_couplings(peer):

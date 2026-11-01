@@ -14,6 +14,8 @@ import ssl
 import urllib.parse
 from dataclasses import dataclass
 
+from django.utils.translation import gettext
+
 
 class SafeHTTPError(Exception):
     """Nicht erreichbar, nicht erlaubt oder ungültige Antwort."""
@@ -35,10 +37,10 @@ def resolve(host: str, port: int, *, allow_internal: bool = False) -> str:
     try:
         infos = socket.getaddrinfo(host, port, proto=socket.IPPROTO_TCP)
     except OSError as exc:
-        raise SafeHTTPError(f"{host} ist nicht auflösbar.") from exc
+        raise SafeHTTPError(gettext("{host} ist nicht auflösbar.").format(host=host)) from exc
     addresses = [info[4][0] for info in infos]
     if not addresses:
-        raise SafeHTTPError(f"{host} ist nicht auflösbar.")
+        raise SafeHTTPError(gettext("{host} ist nicht auflösbar.").format(host=host))
     if not allow_internal:
         for address in addresses:
             if not ipaddress.ip_address(address).is_global:
@@ -82,9 +84,9 @@ def request(
 ) -> Response:
     parts = urllib.parse.urlsplit(url)
     if parts.scheme not in (("https", "http") if allow_http else ("https",)):
-        raise SafeHTTPError("Nur https-Adressen sind erlaubt.")
+        raise SafeHTTPError(gettext("Nur https-Adressen sind erlaubt."))
     if not parts.hostname or parts.username or parts.password:
-        raise SafeHTTPError("Ungültige Adresse.")
+        raise SafeHTTPError(gettext("Ungültige Adresse."))
     port = parts.port or (443 if parts.scheme == "https" else 80)
     address = resolve(parts.hostname, port, allow_internal=allow_internal)
     cls = _PinnedHTTPS if parts.scheme == "https" else _PinnedHTTP
@@ -98,6 +100,8 @@ def request(
         data = resp.read(max_body + 1)
         return Response(resp.status, dict(resp.getheaders()), data)
     except (OSError, ssl.SSLError, http.client.HTTPException) as exc:
-        raise SafeHTTPError(f"nicht erreichbar ({exc.__class__.__name__})") from exc
+        raise SafeHTTPError(
+            gettext("nicht erreichbar ({name2})").format(name2=exc.__class__.__name__)
+        ) from exc
     finally:
         conn.close()

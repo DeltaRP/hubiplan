@@ -14,6 +14,7 @@ import logging
 from allauth.mfa.models import Authenticator
 from allauth.mfa.totp.internal.auth import TOTP
 from django.utils import timezone
+from django.utils.translation import gettext
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
 from rest_framework.exceptions import Throttled, ValidationError
@@ -139,7 +140,7 @@ class UnlockSerializer(serializers.Serializer):
         from .devicekey import valid_public_key
 
         if value and not valid_public_key(value):
-            raise serializers.ValidationError("Ungültiger Schlüssel.")
+            raise serializers.ValidationError(gettext("Ungültiger Schlüssel."))
         return value
 
 
@@ -154,15 +155,19 @@ class AdminUnlockView(APIView):
         device: Device = request.auth
         user = request.user
         if too_many(f"app-admin-unlock:{device.pk}", *UNLOCK_LIMIT):
-            raise Throttled(detail="Zu viele Versuche. Bitte in einer Viertelstunde erneut.")
+            raise Throttled(
+                detail=gettext("Zu viele Versuche. Bitte in einer Viertelstunde erneut.")
+            )
         if not admin_units(user) and not admin_departments(user):
-            raise ValidationError({"detail": "Dein Konto hat keine Verwaltungsrechte."})
+            raise ValidationError({"detail": gettext("Dein Konto hat keine Verwaltungsrechte.")})
         totp = Authenticator.objects.filter(user=user, type=Authenticator.Type.TOTP).first()
         if totp is None:
             raise ValidationError(
                 {
-                    "detail": "Für die Verwaltung in der App ist die Zwei-Faktor-Anmeldung nötig. "
-                    "Bitte zuerst im Browser unter „Mein Konto“ einrichten."
+                    "detail": gettext(
+                        "Für die Verwaltung in der App ist die Zwei-Faktor-Anmeldung nötig. "
+                        "Bitte zuerst im Browser unter „Mein Konto“ einrichten."
+                    )
                 }
             )
         data = UnlockSerializer(data=request.data)
@@ -171,8 +176,10 @@ class AdminUnlockView(APIView):
         if not device.device_key or not data.validated_data["admin_key"]:
             raise ValidationError(
                 {
-                    "detail": "Für die Verwaltung in der App ist eine aktuelle App-Version nötig. "
-                    "Bitte die App aktualisieren."
+                    "detail": gettext(
+                        "Für die Verwaltung in der App ist eine aktuelle App-Version nötig. "
+                        "Bitte die App aktualisieren."
+                    )
                 }
             )
         code = data.validated_data["code"].replace(" ", "")
@@ -183,7 +190,7 @@ class AdminUnlockView(APIView):
                 from . import notify
 
                 notify.admin_unlock_failed(user, device)
-            raise ValidationError({"detail": "Passwort oder Code stimmt nicht."})
+            raise ValidationError({"detail": gettext("Passwort oder Code stimmt nicht.")})
         token = Device.new_admin_token()
         now = timezone.now()
         device.admin_token_hash = hash_token(token)
@@ -217,7 +224,7 @@ class AppAdminAccess:
         device = request.auth  # meldet an
         if device is not None:
             if too_many(f"app-admin:{device.pk}", 600, 60 * 60):
-                raise Throttled(detail="Zu viele Anfragen. Bitte etwas später erneut.")
+                raise Throttled(detail=gettext("Zu viele Anfragen. Bitte etwas später erneut."))
             # Änderungspaket gehört der Person (für Rückgängig), Protokoll nennt das Gerät
             ctx = tracking.active()
             if ctx is not None:

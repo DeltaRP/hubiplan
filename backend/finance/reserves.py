@@ -13,6 +13,7 @@ from decimal import Decimal, InvalidOperation
 
 from django.core.exceptions import ValidationError
 from django.db.models import Sum
+from django.utils.translation import gettext
 
 from . import services
 from .models import Reserve, ReserveMovement
@@ -24,7 +25,7 @@ NEEDS_PURPOSE = {Reserve.Kind.PURPOSE, Reserve.Kind.REPLACEMENT}
 
 def check_enabled(org) -> None:
     if not org.reserves_enabled:
-        raise ValidationError("Rücklagen sind für diese Einheit nicht eingeschaltet.")
+        raise ValidationError(gettext("Rücklagen sind für diese Einheit nicht eingeschaltet."))
 
 
 def balance(reserve: Reserve, until: datetime.date | None = None) -> Decimal:
@@ -75,7 +76,9 @@ def _never_negative(reserve: Reserve, extra: list[tuple[datetime.date, Decimal]]
         running += amount
         if running < 0:
             raise ValidationError(
-                f"Die Rücklage „{reserve.name}“ fiele am {day:%d.%m.%Y} unter null."
+                gettext("Die Rücklage „{name}“ fiele am {day:%d.%m.%Y} unter null.").format(
+                    name=reserve.name, day=day
+                )
             )
 
 
@@ -83,7 +86,11 @@ def validate_reserve(data: dict) -> None:
     kind = data.get("kind")
     if kind in NEEDS_PURPOSE and not (data.get("purpose") or "").strip():
         raise ValidationError(
-            {"purpose": "Bitte den Zweck bzw. das Vorhaben angeben (§ 62 Abs. 1 Nr. 1/2 AO)."}
+            {
+                "purpose": gettext(
+                    "Bitte den Zweck bzw. das Vorhaben angeben (§ 62 Abs. 1 Nr. 1/2 AO)."
+                )
+            }
         )
 
 
@@ -92,19 +99,19 @@ def add_movement(org, reserve: Reserve, data: dict, user) -> ReserveMovement:
     check_enabled(org)
     direction = data.get("direction")
     if direction not in ReserveMovement.Direction.values:
-        raise ValidationError({"direction": "Bitte Zuführung oder Auflösung wählen."})
+        raise ValidationError({"direction": gettext("Bitte Zuführung oder Auflösung wählen.")})
     try:
         day = datetime.date.fromisoformat(str(data.get("date") or ""))
     except ValueError as exc:
-        raise ValidationError({"date": "Bitte ein Datum angeben."}) from exc
+        raise ValidationError({"date": gettext("Bitte ein Datum angeben.")}) from exc
     try:
         amount = Decimal(str(data.get("amount") or "")).quantize(Decimal("0.01"))
     except InvalidOperation as exc:
-        raise ValidationError({"amount": "Bitte einen Betrag angeben."}) from exc
+        raise ValidationError({"amount": gettext("Bitte einen Betrag angeben.")}) from exc
     if amount <= 0:
-        raise ValidationError({"amount": "Der Betrag muss größer als null sein."})
+        raise ValidationError({"amount": gettext("Der Betrag muss größer als null sein.")})
     if direction == ReserveMovement.Direction.ADD and not reserve.is_active:
-        raise ValidationError("Einer archivierten Rücklage lässt sich nichts zuführen.")
+        raise ValidationError(gettext("Einer archivierten Rücklage lässt sich nichts zuführen."))
     services.ensure_open(org, date=day)
     signed = amount if direction == ReserveMovement.Direction.ADD else -amount
     _never_negative(reserve, [(day, signed)])

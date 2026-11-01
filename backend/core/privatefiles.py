@@ -22,6 +22,7 @@ from django.core.files import File
 from django.core.files.storage import FileSystemStorage
 from django.db import models
 from django.db.models.fields.files import FieldFile
+from django.utils.translation import gettext
 
 from . import crypto
 
@@ -61,7 +62,7 @@ class _StoredFile(File):
 
     def open(self, mode=None, *args, **kwargs):
         if mode and any(c in mode for c in "wa+"):
-            raise ValueError("Private Dateien nur über save() schreiben.")
+            raise ValueError(gettext("Private Dateien nur über save() schreiben."))
         if not self.closed:
             self.seek(0)
         else:
@@ -76,7 +77,7 @@ class EncryptedStorage(FileSystemStorage):
 
     def _open(self, name, mode="rb"):
         if "w" in mode or "a" in mode or "+" in mode:
-            raise ValueError("Private Dateien nur über save() schreiben.")
+            raise ValueError(gettext("Private Dateien nur über save() schreiben."))
         return _StoredFile(self, name)
 
     def _open_plain(self, name):

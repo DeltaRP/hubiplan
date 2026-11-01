@@ -23,6 +23,7 @@ from __future__ import annotations
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy
 
 from core.privatefiles import PrivateFileField
 from exchange.models import private_storage
@@ -37,20 +38,20 @@ MAX_SHORT_PER_DAY = 10
 
 class Circular(models.Model):
     class Kind(models.TextChoices):
-        INFO = "info", "Information"
-        NOTICE = "notice", "Vereinsmitteilung"
-        SHORT = "short", "Kurzmitteilung"
+        INFO = "info", gettext_lazy("Information")
+        NOTICE = "notice", gettext_lazy("Vereinsmitteilung")
+        SHORT = "short", gettext_lazy("Kurzmitteilung")
 
     class Audience(models.TextChoices):
-        MEMBERS = "members", "Mitglieder"
-        BOARDS = "boards", "Vorstände der Vereine"
-        DEPARTMENTS = "departments", "Rolleninhaber der Abteilungen"
+        MEMBERS = "members", gettext_lazy("Mitglieder")
+        BOARDS = "boards", gettext_lazy("Vorstände der Vereine")
+        DEPARTMENTS = "departments", gettext_lazy("Rolleninhaber der Abteilungen")
         # Inhaber von Rollen des Vereins selbst (Vorstand, Kassierer, Schriftführer …)
-        ROLES = "roles", "Rolleninhaber des Vereins"
+        ROLES = "roles", gettext_lazy("Rolleninhaber des Vereins")
 
     class Status(models.TextChoices):
-        DRAFT = "draft", "Entwurf"
-        SENDING = "sending", "wird versendet"
+        DRAFT = "draft", gettext_lazy("Entwurf")
+        SENDING = "sending", gettext_lazy("wird versendet")
         # Fachfrage 14 (Audit 31.10.): „abgearbeitet“ – ob jede Mail ankam, zeigen die Zahlen
         SENT = "sent", "abgearbeitet"
 
@@ -148,21 +149,21 @@ class CircularRecipient(models.Model):
     """Empfänger eines versendeten Rundschreibens (Versandprotokoll)."""
 
     class Channel(models.TextChoices):
-        MAIL = "mail", "E-Mail"
-        LETTER = "letter", "Brief"
-        APP = "app", "App"
+        MAIL = "mail", gettext_lazy("E-Mail")
+        LETTER = "letter", gettext_lazy("Brief")
+        APP = "app", gettext_lazy("App")
         # Kurzmitteilung an Mitglieder ohne App und Mail
-        PORTAL = "portal", "nur Mitgliederbereich"
+        PORTAL = "portal", gettext_lazy("nur Mitgliederbereich")
 
     class Status(models.TextChoices):
         PENDING = "pending", "wartet"
         # Beansprucht, Ergebnis steht noch aus. Bleibt es länger so (Absturz mitten
         # im Versand), zeigt HUBIplan „Versand unklar“ (Audit 29.10. B-V04)
-        SENDING = "sending", "wird versendet"
+        SENDING = "sending", gettext_lazy("wird versendet")
         SENT = "sent", "versendet"
         FAILED = "failed", "fehlgeschlagen"
-        LETTER = "letter", "Brief zum Drucken"
-        PORTAL = "portal", "im Mitgliederbereich"
+        LETTER = "letter", gettext_lazy("Brief zum Drucken")
+        PORTAL = "portal", gettext_lazy("im Mitgliederbereich")
 
     # Absender (wie das Rundschreiben)
     organization = models.ForeignKey(
@@ -254,9 +255,9 @@ class MailingList(models.Model):
     """
 
     class Mode(models.TextChoices):
-        CONFIRM = "confirm", "Absender bestätigt per Link"
-        DRAFT = "draft", "als Entwurf in HUBIplan ablegen"
-        DIRECT = "direct", "direkt versenden (ohne Bestätigung)"
+        CONFIRM = "confirm", gettext_lazy("Absender bestätigt per Link")
+        DRAFT = "draft", gettext_lazy("als Entwurf in HUBIplan ablegen")
+        DIRECT = "direct", gettext_lazy("direkt versenden (ohne Bestätigung)")
 
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE, related_name="+"
@@ -300,10 +301,10 @@ class InboundMail(models.Model):
 
     class Status(models.TextChoices):
         REJECTED = "rejected", "abgewiesen"
-        WAITING = "waiting", "wartet auf Bestätigung"
-        DRAFT = "draft", "als Entwurf abgelegt"
+        WAITING = "waiting", gettext_lazy("wartet auf Bestätigung")
+        DRAFT = "draft", gettext_lazy("als Entwurf abgelegt")
         SENT = "sent", "versendet"
-        FAILED = "failed", "Fehler"
+        FAILED = "failed", gettext_lazy("Fehler")
 
     # Leer, solange keinem Verteiler zugeordnet (nur im Betriebsprotokoll)
     organization = models.ForeignKey(

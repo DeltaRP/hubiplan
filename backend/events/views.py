@@ -18,6 +18,7 @@ from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.translation import gettext
 from rest_framework import serializers, status
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -234,7 +235,7 @@ class _CalendarMixin:
 
     def require_manage(self) -> None:
         if not self.viewer.can_manage:
-            raise PermissionDenied("Dafür fehlt dir die Berechtigung.")
+            raise PermissionDenied(gettext("Dafür fehlt dir die Berechtigung."))
 
     def visible_event(self, pk: int) -> Event:
         event = (
@@ -247,7 +248,7 @@ class _CalendarMixin:
     def own_event(self, pk: int) -> Event:
         event = self.visible_event(pk)
         if not self.viewer.can_edit(event):
-            raise PermissionDenied("Diesen Termin kannst du hier nicht bearbeiten.")
+            raise PermissionDenied(gettext("Diesen Termin kannst du hier nicht bearbeiten."))
         return event
 
 
@@ -259,7 +260,9 @@ class OrgCalendarMixin(_CalendarMixin, OrgScopedMixin):
     def initial(self, request, *args, **kwargs):
         super().initial(request, *args, **kwargs)
         if not services.module_on(self.org):
-            raise NotFound("Der Terminkalender ist für diese Organisation nicht freigeschaltet.")
+            raise NotFound(
+                gettext("Der Terminkalender ist für diese Organisation nicht freigeschaltet.")
+            )
         self.viewer = services.org_viewer(request.user, self.org, self.org_permissions)
         self.base_url = f"/api/orgs/{self.org.pk}/events/"
 
@@ -390,8 +393,10 @@ class _Sharing(APIView):
         if ser.validated_data:
             if not self.owner_editable():
                 raise PermissionDenied(
-                    "Das entscheidet die übergeordnete Einheit, solange es hier keine "
-                    "eigene Verwaltung des Kalenders gibt."
+                    gettext(
+                        "Das entscheidet die übergeordnete Einheit, solange es hier keine eigene "
+                        "Verwaltung des Kalenders gibt."
+                    )
                 )
             self._apply(self.owner(), ser.validated_data)
         units = request.data.get("units") or []
@@ -550,7 +555,7 @@ class _EventNotify(APIView):
         elif kind == notify.CHANGE and not event.is_cancelled:
             mails(event, notify.CHANGE)
         else:
-            raise serializers.ValidationError({"kind": "Passt nicht zum Termin."})
+            raise serializers.ValidationError({"kind": gettext("Passt nicht zum Termin.")})
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -560,13 +565,13 @@ class _EventOccurrence(APIView):
     def _target(self, request, pk: int):
         event = self.own_event(pk)
         if not event.is_series:
-            raise serializers.ValidationError("Das ist kein Serientermin.")
+            raise serializers.ValidationError(gettext("Das ist kein Serientermin."))
         data = ExceptionSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         original = data.validated_data["original_start"]
         if not is_rule_start(event, original):
             raise serializers.ValidationError(
-                {"original_start": "Zu diesem Zeitpunkt gibt es keinen Termin der Serie."}
+                {"original_start": gettext("Zu diesem Zeitpunkt gibt es keinen Termin der Serie.")}
             )
         return event, data.validated_data, original
 
@@ -606,7 +611,9 @@ def _sniff(upload) -> str:
     for ctype, magic in ATTACHMENT_TYPES.items():
         if head.startswith(magic):
             return ctype
-    raise serializers.ValidationError({"file": "Bitte eine PDF-, JPEG- oder PNG-Datei hochladen."})
+    raise serializers.ValidationError(
+        {"file": gettext("Bitte eine PDF-, JPEG- oder PNG-Datei hochladen.")}
+    )
 
 
 def _safe_name(name: str) -> str:
@@ -623,12 +630,16 @@ class _AttachmentList(APIView):
         event = self.own_event(pk)
         upload = request.FILES.get("file")
         if upload is None:
-            raise serializers.ValidationError({"file": "Bitte eine Datei wählen."})
+            raise serializers.ValidationError({"file": gettext("Bitte eine Datei wählen.")})
         if upload.size > MAX_ATTACHMENT_BYTES:
-            raise serializers.ValidationError({"file": "Die Datei ist größer als 15 MB."})
+            raise serializers.ValidationError({"file": gettext("Die Datei ist größer als 15 MB.")})
         if event.attachments.count() >= MAX_ATTACHMENTS:
             raise serializers.ValidationError(
-                {"file": f"Höchstens {MAX_ATTACHMENTS} Anhänge je Termin."}
+                {
+                    "file": gettext("Höchstens {MAX_ATTACHMENTS} Anhänge je Termin.").format(
+                        MAX_ATTACHMENTS=MAX_ATTACHMENTS
+                    )
+                }
             )
         ctype = _sniff(upload)
         att = EventAttachment(
@@ -808,7 +819,9 @@ class _ResponsesMixin:
         event = self.visible_event(pk)
         scope = self.viewer.response_scope(event)
         if scope is None:
-            raise PermissionDenied("Die Rückmeldungen sieht der Vorstand, der den Termin anlegt.")
+            raise PermissionDenied(
+                gettext("Die Rückmeldungen sieht der Vorstand, der den Termin anlegt.")
+            )
         return event, scope
 
     def lists(self, event: Event, scope):
@@ -823,7 +836,7 @@ class _ResponsesMixin:
         membership = members.filter(pk=membership_id).first()
         if membership is None:
             raise serializers.ValidationError(
-                {"membership_id": "Dieses Mitglied ist zu dem Termin nicht eingeladen."}
+                {"membership_id": gettext("Dieses Mitglied ist zu dem Termin nicht eingeladen.")}
             )
         return membership
 
@@ -860,7 +873,9 @@ class _Responses(_ResponsesMixin, APIView):
         _lock_event(pk)
         event, scope = self.scoped_event(pk)
         if not event.rsvp_enabled:
-            raise serializers.ValidationError("Für diesen Termin sind Zu- und Absagen aus.")
+            raise serializers.ValidationError(
+                gettext("Für diesen Termin sind Zu- und Absagen aus.")
+            )
         data = BoardResponseSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         v = data.validated_data
@@ -964,10 +979,10 @@ class _MyResponse(APIView):
         allowed, reason = rsvp.member_can_respond(event)
         if not allowed:
             raise serializers.ValidationError(
-                reason or "Für diesen Termin gibt es keine Rückmeldung."
+                reason or gettext("Für diesen Termin gibt es keine Rückmeldung.")
             )
         if not rsvp.is_invited(event, self.viewer.membership_id):
-            raise PermissionDenied("Zu diesem Termin sind Sie nicht eingeladen.")
+            raise PermissionDenied(gettext("Zu diesem Termin sind Sie nicht eingeladen."))
         return event
 
     @transaction.atomic
@@ -1176,7 +1191,7 @@ class OrgEventProjectView(OrgCalendarMixin, APIView):
 
         event = self.own_event(pk)
         if self.viewer.finance != "edit":
-            raise PermissionDenied("Dafür fehlt dir das Recht, die Kasse zu bearbeiten.")
+            raise PermissionDenied(gettext("Dafür fehlt dir das Recht, die Kasse zu bearbeiten."))
         before = event.project.name if event.project else None
         if request.data.get("create"):
             start = timezone.localtime(event.starts_at).date()
@@ -1198,7 +1213,9 @@ class OrgEventProjectView(OrgCalendarMixin, APIView):
                 wanted = int(request.data["project"])
                 project = Project.objects.get(organization=self.org, pk=wanted)
             except (Project.DoesNotExist, TypeError, ValueError) as exc:
-                raise serializers.ValidationError({"project": "Unbekannte Veranstaltung."}) from exc
+                raise serializers.ValidationError(
+                    {"project": gettext("Unbekannte Veranstaltung.")}
+                ) from exc
         event.project = project
         event.save(update_fields=["project"])
         after = project.name if project else None

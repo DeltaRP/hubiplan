@@ -15,6 +15,7 @@ from django.conf import settings
 from django.contrib.postgres.indexes import GinIndex
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy
 
 # Ein Gerät, das so lange nicht mehr da war, muss sich neu verbinden
 IDLE_DAYS = 180
@@ -36,14 +37,14 @@ def hash_token(token: str) -> str:
 
 class Device(models.Model):
     class Platform(models.TextChoices):
-        ANDROID = "android", "Android"
+        ANDROID = "android", gettext_lazy("Android")
         IOS = "ios", "iOS"
         OTHER = "other", "anderes"
 
     class Push(models.TextChoices):
-        NONE = "none", "kein Push (Abruf)"
-        UNIFIEDPUSH = "unifiedpush", "UnifiedPush"
-        FCM = "fcm", "Google (FCM)"
+        NONE = "none", gettext_lazy("kein Push (Abruf)")
+        UNIFIEDPUSH = "unifiedpush", gettext_lazy("UnifiedPush")
+        FCM = "fcm", gettext_lazy("Google (FCM)")
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="devices"

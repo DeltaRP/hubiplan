@@ -30,6 +30,7 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from django.conf import settings
+from django.utils.translation import gettext
 
 # Nur für die App (Eigentümer) und die Gruppe lesbar: Der Backup-Container gehört zur
 # Gruppe der App (group_add in docker-compose.server.yml) und muss die Datei mitsichern.
@@ -82,16 +83,22 @@ def check_endpoint(url: str) -> None:
     """Nur https und keine internen Adressen (Schutz vor Missbrauch des Servers)."""
     parts = urllib.parse.urlsplit(url or "")
     if parts.scheme != "https" or not parts.hostname or parts.username or parts.password:
-        raise PushError("Push-Endpunkt muss eine https-Adresse sein.")
+        raise PushError(gettext("Push-Endpunkt muss eine https-Adresse sein."))
     if getattr(settings, "PUSH_ALLOW_INTERNAL", False):
         return
     try:
         infos = socket.getaddrinfo(parts.hostname, parts.port or 443, proto=socket.IPPROTO_TCP)
     except OSError as exc:
-        raise PushError(f"{parts.hostname} ist nicht auflösbar.") from exc
+        raise PushError(
+            gettext("{hostname} ist nicht auflösbar.").format(hostname=parts.hostname)
+        ) from exc
     for info in infos:
         if not ipaddress.ip_address(info[4][0]).is_global:
-            raise PushError(f"{parts.hostname} zeigt auf eine interne Adresse.")
+            raise PushError(
+                gettext("{hostname} zeigt auf eine interne Adresse.").format(
+                    hostname=parts.hostname
+                )
+            )
 
 
 # --- VAPID-Schlüssel der Instanz ---
@@ -198,7 +205,7 @@ def encrypt(
     ``pad_to``: Klartext mit Füllbytes auf diese Länge bringen (RFC 8291 erlaubt das), damit
     der Push-Dienst an der Größe nicht ablesen kann, was für eine Nachricht es ist."""
     if len(payload) > RECORD_SIZE - 17:
-        raise PushError("Nachricht zu groß.")
+        raise PushError(gettext("Nachricht zu groß."))
     ua_public = unb64(p256dh)
     auth_secret = unb64(auth)
     ua_key = ec.EllipticCurvePublicKey.from_encoded_point(ec.SECP256R1(), ua_public)

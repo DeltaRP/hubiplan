@@ -28,6 +28,7 @@ from django.core.files.base import ContentFile
 from django.db import connection, transaction
 from django.db.models import Max
 from django.utils import timezone
+from django.utils.translation import gettext
 
 from .models import Booking, Donation, DonationSettings, DonationStatement
 
@@ -176,8 +177,10 @@ def incomplete(donation: Donation) -> str:
 def ensure_editable(donation: Donation) -> None:
     if donation.statement_id:
         raise ValidationError(
-            f"Die Zuwendung ist in der Bestätigung {donation.statement.number} enthalten. "
-            "Bitte erst die Bestätigung stornieren."
+            gettext(
+                "Die Zuwendung ist in der Bestätigung {number} enthalten. Bitte erst die "
+                "Bestätigung stornieren."
+            ).format(number=donation.statement.number)
         )
 
 
@@ -257,8 +260,10 @@ def issue(org, donations: list[Donation], user, *, signer_name: str = "") -> Don
 
     if not is_enabled(org):
         raise ValidationError(
-            "Zuwendungsbestätigungen gibt es nur für steuerbegünstigte Einheiten mit eigenem "
-            "Bescheid."
+            gettext(
+                "Zuwendungsbestätigungen gibt es nur für steuerbegünstigte Einheiten mit "
+                "eigenem Bescheid."
+            )
         )
     cfg = settings_for(org)
     if issues := problems(cfg):
@@ -268,22 +273,26 @@ def issue(org, donations: list[Donation], user, *, signer_name: str = "") -> Don
         Donation.objects.select_for_update().filter(organization=org, pk__in=ids).order_by("date")
     )
     if not donations:
-        raise ValidationError("Bitte mindestens eine Zuwendung wählen.")
+        raise ValidationError(gettext("Bitte mindestens eine Zuwendung wählen."))
     if any(d.statement_id for d in donations):
-        raise ValidationError("Mindestens eine Zuwendung ist schon bestätigt.")
+        raise ValidationError(gettext("Mindestens eine Zuwendung ist schon bestätigt."))
     if len({donor_key(d) for d in donations}) > 1:
-        raise ValidationError("Eine Bestätigung gilt immer nur für einen Zuwendenden.")
+        raise ValidationError(gettext("Eine Bestätigung gilt immer nur für einen Zuwendenden."))
     if reason := next((r for d in donations if (r := incomplete(d))), ""):
         raise ValidationError(f"{reason}. Bitte zuerst in der Zuwendung ergänzen.")
     if len({d.date.year for d in donations}) > 1:
-        raise ValidationError("Eine Sammelbestätigung umfasst nur Zuwendungen eines Jahres.")
+        raise ValidationError(
+            gettext("Eine Sammelbestätigung umfasst nur Zuwendungen eines Jahres.")
+        )
     if sum((d.amount for d in donations), Decimal("0")) > MAX_AMOUNT:
-        raise ValidationError("Die Summe ist zu groß für eine Zuwendungsbestätigung.")
+        raise ValidationError(gettext("Die Summe ist zu groß für eine Zuwendungsbestätigung."))
     goods = [d for d in donations if d.kind == Donation.Kind.GOODS]
     if goods and len(donations) > 1:
-        raise ValidationError("Sachzuwendungen werden einzeln bestätigt, nicht gesammelt.")
+        raise ValidationError(gettext("Sachzuwendungen werden einzeln bestätigt, nicht gesammelt."))
     if not cfg.fees_allowed and any(d.kind == Donation.Kind.FEE for d in donations):
-        raise ValidationError("Mitgliedsbeiträge werden nach den Einstellungen nicht bestätigt.")
+        raise ValidationError(
+            gettext("Mitgliedsbeiträge werden nach den Einstellungen nicht bestätigt.")
+        )
     first = donations[0]
     today = timezone.localdate()
     year = first.date.year
@@ -363,10 +372,10 @@ def cancel(statement: DonationStatement, user, reason: str) -> DonationStatement
     """Storno: die Bestätigung bleibt als Doppel erhalten, die Zuwendungen werden wieder frei."""
     statement = DonationStatement.objects.select_for_update().get(pk=statement.pk)
     if statement.cancelled_at:
-        raise ValidationError("Die Bestätigung ist schon storniert.")
+        raise ValidationError(gettext("Die Bestätigung ist schon storniert."))
     reason = " ".join((reason or "").split())
     if len(reason) < 3:
-        raise ValidationError({"reason": "Bitte einen Grund für das Storno angeben."})
+        raise ValidationError({"reason": gettext("Bitte einen Grund für das Storno angeben.")})
     statement.cancelled_at = timezone.now()
     statement.cancelled_by = user
     statement.cancel_reason = reason[:300]

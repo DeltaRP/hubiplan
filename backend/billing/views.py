@@ -12,6 +12,7 @@ from django.db.models import Count, Q, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.translation import gettext
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status, viewsets
@@ -86,7 +87,7 @@ class BillingMixin(OrgScopedMixin):
     def initial(self, request, *args, **kwargs):
         super().initial(request, *args, **kwargs)
         if "billing" not in (self.org.enabled_modules or []):
-            raise NotFound("Beiträge und Rechnungen sind hier nicht freigeschaltet.")
+            raise NotFound(gettext("Beiträge und Rechnungen sind hier nicht freigeschaltet."))
 
     @property
     def is_federation(self) -> bool:
@@ -234,7 +235,7 @@ class FeeRatesView(BillingMixin, APIView):
         for item in items:
             mt = types.get(item.get("member_type"))
             if mt is None:
-                raise serializers.ValidationError("Unbekannte Mitgliedsart.")
+                raise serializers.ValidationError(gettext("Unbekannte Mitgliedsart."))
             amount = item.get("amount")
             existing = FeeRate.objects.filter(member_type=mt).first()
             if amount in (None, ""):
@@ -453,12 +454,18 @@ class FeeRunViewSet(BillingMixin, viewsets.ReadOnlyModelViewSet):
             organization=self.org, start_date=p.start, end_date=p.end
         ).exists():
             raise serializers.ValidationError(
-                {"period": f"Für {p.label} gibt es schon einen Beitragslauf."}
+                {
+                    "period": gettext("Für {label} gibt es schon einen Beitragslauf.").format(
+                        label=p.label
+                    )
+                }
             )
         cfg = services.settings_for(self.org)
         due = data.get("due_date") or data["invoice_date"] + datetime.timedelta(days=cfg.due_days)
         if due < data["invoice_date"]:
-            raise serializers.ValidationError({"due_date": "Fällig vor dem Rechnungsdatum?"})
+            raise serializers.ValidationError(
+                {"due_date": gettext("Fällig vor dem Rechnungsdatum?")}
+            )
         run = FeeRun.objects.create(
             organization=self.org,
             year=p.year,
@@ -492,8 +499,10 @@ class FeeRunViewSet(BillingMixin, viewsets.ReadOnlyModelViewSet):
             # Neu berechnen verwirft Handänderungen an Entwürfen: erst nachfragen
             return Response(
                 {
-                    "detail": f"{edited} Entwürfe wurden von Hand geändert. Neu berechnen "
-                    "verwirft diese Änderungen.",
+                    "detail": gettext(
+                        "{edited} Entwürfe wurden von Hand geändert. Neu berechnen verwirft "
+                        "diese Änderungen."
+                    ).format(edited=edited),
                     "edited": edited,
                 },
                 status=status.HTTP_409_CONFLICT,
@@ -587,7 +596,10 @@ class FeeRunViewSet(BillingMixin, viewsets.ReadOnlyModelViewSet):
         run = self.get_object()
         if run.invoices.exclude(status=Invoice.Status.DRAFT).exists():
             raise serializers.ValidationError(
-                "Der Lauf hat schon festgeschriebene Rechnungen. Diese bitte einzeln stornieren."
+                gettext(
+                    "Der Lauf hat schon festgeschriebene Rechnungen. Diese bitte einzeln "
+                    "stornieren."
+                )
             )
         record(self.org, request.user, "delete", run, {"Beitragslauf": [run.label, None]})
         run.delete()
@@ -662,7 +674,7 @@ class InvoiceViewSet(BillingMixin, viewsets.ModelViewSet):
         if kind == Invoice.Recipient.MEMBER:
             if not (self.is_unit or self.org.keeps_members):
                 raise serializers.ValidationError(
-                    {"recipient_kind": "Hier gibt es keine eigenen Mitglieder."}
+                    {"recipient_kind": gettext("Hier gibt es keine eigenen Mitglieder.")}
                 )
             mid = data.get("membership") or (invoice.membership_id if invoice else None)
             if self.is_unit:
@@ -670,14 +682,18 @@ class InvoiceViewSet(BillingMixin, viewsets.ModelViewSet):
             else:
                 membership = Membership.objects.filter(organization=self.org, pk=mid or 0).first()
             if membership is None:
-                raise serializers.ValidationError({"membership": "Bitte ein Mitglied wählen."})
+                raise serializers.ValidationError(
+                    {"membership": gettext("Bitte ein Mitglied wählen.")}
+                )
             return {**empty, "recipient_kind": kind, "membership": membership}
         if self.is_unit:
             raise serializers.ValidationError(
-                {"recipient_kind": "Hier gehen Rechnungen nur an Mitglieder."}
+                {"recipient_kind": gettext("Hier gehen Rechnungen nur an Mitglieder.")}
             )
         if kind is None and not self.is_federation:
-            raise serializers.ValidationError({"recipient_kind": "Bitte den Empfänger wählen."})
+            raise serializers.ValidationError(
+                {"recipient_kind": gettext("Bitte den Empfänger wählen.")}
+            )
         field = "unit" if data.get("unit") is not None or kind == "unit" else None
         if self.is_federation:
             field = field or "club"
@@ -689,7 +705,9 @@ class InvoiceViewSet(BillingMixin, viewsets.ModelViewSet):
                 raise serializers.ValidationError({field: fill("Bitte {einen} wählen.", self.org)})
             return {**empty, "recipient_kind": Invoice.Recipient.CLUB, "club": club}
         if kind not in ("unit", Invoice.Recipient.DEPARTMENT):
-            raise serializers.ValidationError({"recipient_kind": "Bitte den Empfänger wählen."})
+            raise serializers.ValidationError(
+                {"recipient_kind": gettext("Bitte den Empfänger wählen.")}
+            )
         field = field or "department"
         did = data.get(field) or (invoice.department_id if invoice else None)
         dept = Department.objects.filter(organization=self.org, pk=did or 0).first()
@@ -705,7 +723,7 @@ class InvoiceViewSet(BillingMixin, viewsets.ModelViewSet):
         if project_id:
             project = Project.objects.filter(organization=self.org, pk=project_id).first()
             if project is None:
-                raise serializers.ValidationError({"project": "Unbekannte Veranstaltung."})
+                raise serializers.ValidationError({"project": gettext("Unbekannte Veranstaltung.")})
         if invoice.pk and invoice.project_id != (project.pk if project else None):
             from finance.models import Booking
 
@@ -725,7 +743,9 @@ class InvoiceViewSet(BillingMixin, viewsets.ModelViewSet):
         if "project" in data:
             self._set_project(invoice, data["project"])
         if invoice.due_date < invoice.date:
-            raise serializers.ValidationError({"due_date": "Fällig vor dem Rechnungsdatum?"})
+            raise serializers.ValidationError(
+                {"due_date": gettext("Fällig vor dem Rechnungsdatum?")}
+            )
         services.refresh_recipient(invoice)
         invoice.save()
         if "lines" in data:
@@ -748,7 +768,11 @@ class InvoiceViewSet(BillingMixin, viewsets.ModelViewSet):
         unknown = [i for i in sent_ids if i not in existing]
         if unknown or len(sent_ids) != len(set(sent_ids)):
             raise serializers.ValidationError(
-                {"lines": "Die Posten wurden inzwischen geändert. Bitte die Rechnung neu laden."}
+                {
+                    "lines": gettext(
+                        "Die Posten wurden inzwischen geändert. Bitte die Rechnung neu laden."
+                    )
+                }
             )
         keep = set(sent_ids)
         invoice.lines.exclude(pk__in=keep).delete()
@@ -783,7 +807,9 @@ class InvoiceViewSet(BillingMixin, viewsets.ModelViewSet):
         ser.is_valid(raise_exception=True)
         data = ser.validated_data
         if "lines" not in data:
-            raise serializers.ValidationError({"lines": "Bitte mindestens einen Posten angeben."})
+            raise serializers.ValidationError(
+                {"lines": gettext("Bitte mindestens einen Posten angeben.")}
+            )
         claim = idempotency.claim(request, f"billing.invoice.new.{self.org.pk}")
         if claim.done:
             invoice = get_object_or_404(self.get_queryset(), pk=claim.result.get("invoice", 0))
@@ -834,8 +860,10 @@ class InvoiceViewSet(BillingMixin, viewsets.ModelViewSet):
             allowed = {"note", "due_date", "project"}
             if set(data) - allowed:
                 raise serializers.ValidationError(
-                    "Festgeschriebene Rechnungen lassen sich nicht mehr ändern. "
-                    "Bitte stornieren und neu anlegen."
+                    gettext(
+                        "Festgeschriebene Rechnungen lassen sich nicht mehr ändern. Bitte "
+                        "stornieren und neu anlegen."
+                    )
                 )
             before = snapshot(invoice)
             if "project" in data:
@@ -843,7 +871,9 @@ class InvoiceViewSet(BillingMixin, viewsets.ModelViewSet):
             for key, value in data.items():
                 setattr(invoice, key, value)
             if invoice.due_date < invoice.date:
-                raise serializers.ValidationError({"due_date": "Fällig vor dem Rechnungsdatum?"})
+                raise serializers.ValidationError(
+                    {"due_date": gettext("Fällig vor dem Rechnungsdatum?")}
+                )
             invoice.save(update_fields=[*data, "project", "updated_at"])
             record(self.org, request.user, "update", invoice, diff(before, snapshot(invoice)))
         else:
@@ -856,7 +886,10 @@ class InvoiceViewSet(BillingMixin, viewsets.ModelViewSet):
         invoice = self._locked_object()
         if invoice.status != Invoice.Status.DRAFT:
             raise serializers.ValidationError(
-                "Nur Entwürfe lassen sich löschen. Festgeschriebene Rechnungen bitte stornieren."
+                gettext(
+                    "Nur Entwürfe lassen sich löschen. Festgeschriebene Rechnungen bitte "
+                    "stornieren."
+                )
             )
         record(
             self.org,
@@ -910,11 +943,15 @@ class InvoiceViewSet(BillingMixin, viewsets.ModelViewSet):
     def send(self, request, org_id: int, pk: int):
         invoice = self.get_object()
         if invoice.status != Invoice.Status.OPEN:
-            raise serializers.ValidationError("Verschicken lassen sich nur offene Rechnungen.")
+            raise serializers.ValidationError(
+                gettext("Verschicken lassen sich nur offene Rechnungen.")
+            )
         if not invoice.recipient_email:
-            raise serializers.ValidationError("Für den Empfänger ist keine E-Mail-Adresse bekannt.")
+            raise serializers.ValidationError(
+                gettext("Für den Empfänger ist keine E-Mail-Adresse bekannt.")
+            )
         if not send_invoice(invoice):
-            raise serializers.ValidationError("Die E-Mail konnte nicht verschickt werden.")
+            raise serializers.ValidationError(gettext("Die E-Mail konnte nicht verschickt werden."))
         record(
             self.org,
             request.user,
@@ -1064,7 +1101,7 @@ class DunningLevelViewSet(BillingMixin, viewsets.ModelViewSet):
         if serializer.instance is not None:
             qs = qs.exclude(pk=serializer.instance.pk)
         if level is not None and qs.exists():
-            raise serializers.ValidationError({"level": "Diese Stufe gibt es schon."})
+            raise serializers.ValidationError({"level": gettext("Diese Stufe gibt es schon.")})
 
     @transaction.atomic
     def perform_create(self, serializer):
@@ -1154,7 +1191,9 @@ class DunningsView(BillingMixin, APIView):
         send = bool(request.data.get("send", True))
         proposals = [(i, lv) for i, lv in self._proposals() if i.pk in ids]
         if not proposals:
-            raise serializers.ValidationError("Bitte mindestens eine fällige Rechnung auswählen.")
+            raise serializers.ValidationError(
+                gettext("Bitte mindestens eine fällige Rechnung auswählen.")
+            )
         created: list[Dunning] = []
         sent = 0
         for invoice, level in proposals:
@@ -1191,7 +1230,7 @@ class DunningPdfView(BillingMixin, APIView):
             .order_by("invoice__recipient_name", "pk")
         )
         if not dunnings:
-            raise NotFound("Keine Mahnungen gefunden.")
+            raise NotFound(gettext("Keine Mahnungen gefunden."))
         invoices = [d.invoice for d in dunnings]
         by_invoice = {d.invoice_id: d for d in dunnings}
         name = pdf.dunning_filename(dunnings[0]) if len(dunnings) == 1 else "Mahnungen.pdf"
@@ -1264,7 +1303,7 @@ class ReceivedInvoicesMixin(OrgScopedMixin):
     def initial(self, request, *args, **kwargs):
         super().initial(request, *args, **kwargs)
         if not {BILLING_VIEW, FINANCE_VIEW} & self.org_permissions:
-            raise PermissionDenied("Dafür fehlt dir die Berechtigung.")
+            raise PermissionDenied(gettext("Dafür fehlt dir die Berechtigung."))
 
     def federation_qs(self):
         fed = self.org.parent
@@ -1317,7 +1356,7 @@ class SepaMixin(BillingMixin):
     def initial(self, request, *args, **kwargs):
         super().initial(request, *args, **kwargs)
         if not services.settings_for(self.org).sepa_enabled:
-            raise NotFound("SEPA-Lastschrift ist ausgeschaltet.")
+            raise NotFound(gettext("SEPA-Lastschrift ist ausgeschaltet."))
 
 
 class MandateViewSet(SepaMixin, viewsets.ReadOnlyModelViewSet):
@@ -1366,9 +1405,13 @@ class MandateViewSet(SepaMixin, viewsets.ReadOnlyModelViewSet):
                 organization=self.org, pk=data.get("membership") or 0
             ).first()
             if membership is None:
-                raise serializers.ValidationError({"membership": "Bitte ein Mitglied wählen."})
+                raise serializers.ValidationError(
+                    {"membership": gettext("Bitte ein Mitglied wählen.")}
+                )
         if data["signed_on"] > timezone.localdate():
-            raise serializers.ValidationError({"signed_on": "Das Datum liegt in der Zukunft."})
+            raise serializers.ValidationError(
+                {"signed_on": gettext("Das Datum liegt in der Zukunft.")}
+            )
         try:
             mandate = sepa.create_mandate(
                 self.org,
@@ -1500,7 +1543,7 @@ class DebitRunViewSet(SepaMixin, viewsets.ReadOnlyModelViewSet):
     def xml(self, request, org_id: int, pk: int):
         run = self.get_object()
         if run.status == DebitRun.Status.CANCELLED:
-            raise serializers.ValidationError("Der Lauf ist verworfen.")
+            raise serializers.ValidationError(gettext("Der Lauf ist verworfen."))
         problems = sepa.run_problems(run)
         if problems:
             raise serializers.ValidationError(

@@ -11,6 +11,7 @@ from django.core.signals import setting_changed
 from django.db import models
 from django.dispatch import receiver
 from django.utils.functional import LazyObject, empty
+from django.utils.translation import gettext_lazy
 
 from core.privatefiles import PrivateFileField
 
@@ -83,7 +84,7 @@ class ExportTemplate(models.Model):
 class ExportJob(models.Model):
     class Status(models.TextChoices):
         PENDING = "pending", "wartet"
-        RUNNING = "running", "läuft"
+        RUNNING = "running", gettext_lazy("läuft")
         DONE = "done", "fertig"
         FAILED = "failed", "fehlgeschlagen"
 
@@ -144,11 +145,11 @@ class ImportTemplate(models.Model):
 class ImportJob(models.Model):
     class Status(models.TextChoices):
         UPLOADED = "uploaded", "hochgeladen"
-        VALIDATING = "validating", "wird geprüft"
-        VALIDATED = "validated", "geprüft"
-        IMPORTING = "importing", "wird importiert"
+        VALIDATING = "validating", gettext_lazy("wird geprüft")
+        VALIDATED = "validated", gettext_lazy("geprüft")
+        IMPORTING = "importing", gettext_lazy("wird importiert")
         IMPORTED = "imported", "importiert"
-        UNDONE = "undone", "rückgängig gemacht"
+        UNDONE = "undone", gettext_lazy("rückgängig gemacht")
         FAILED = "failed", "fehlgeschlagen"
 
     organization = models.ForeignKey(

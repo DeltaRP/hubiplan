@@ -15,6 +15,7 @@ from django.core.exceptions import ValidationError
 from django.http import Http404, HttpResponse
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
+from django.utils.translation import gettext
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema
 from rest_framework.permissions import AllowAny
@@ -129,7 +130,7 @@ class _Signed(APIView):
         return self.respond(status, data, reply_keys, request.path, nonce)
 
     def unknown_sender(self, payload: dict, sender: str) -> transport.PeerKeys:
-        raise ValidationError("Unbekannte Instanz.")
+        raise ValidationError(gettext("Unbekannte Instanz."))
 
     def handle(self, peer, payload):  # pragma: no cover
         raise NotImplementedError
@@ -193,7 +194,7 @@ class _Pairing(_Signed):
         services._code_for(str(payload.get("unit", "")), str(payload.get("secret", "")))
         info = transport.fetch_info(str(payload.get("base_url", "")))
         if str(info["instance_id"]) != sender:
-            raise ValidationError("Die Selbstauskunft passt nicht zum Absender.")
+            raise ValidationError(gettext("Die Selbstauskunft passt nicht zum Absender."))
         self.info = info
         return services.keys_of(info)
 
@@ -210,7 +211,7 @@ class PairRequestView(_Pairing):
             # Instanz ist schon bekannt (weitere Einheit derselben Instanz)
             info = transport.fetch_info(peer.base_url)
             if str(info["instance_id"]) != str(peer.instance_id):
-                raise ValidationError("Die Selbstauskunft passt nicht zum Absender.")
+                raise ValidationError(gettext("Die Selbstauskunft passt nicht zum Absender."))
             services._code_for(str(payload.get("unit", "")), str(payload.get("secret", "")))
         return services.handle_request(info, payload)
 

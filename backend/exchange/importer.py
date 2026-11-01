@@ -20,6 +20,7 @@ from dataclasses import dataclass, field
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext
 from openpyxl import Workbook
 
 from access.models import Role, RoleAssignment
@@ -174,9 +175,11 @@ def parse_date(value) -> datetime.date | None:
         except ValueError:
             continue
         if pattern == "%d.%m.%y":
-            raise ValueError(f"Zweistellige Jahreszahl ist mehrdeutig: {text}")
+            raise ValueError(
+                gettext("Zweistellige Jahreszahl ist mehrdeutig: {text}").format(text=text)
+            )
         return parsed
-    raise ValueError(f"Kein gültiges Datum: {text}")
+    raise ValueError(gettext("Kein gültiges Datum: {text}").format(text=text))
 
 
 def distinct_values(job, target: str) -> list[str]:
@@ -253,7 +256,7 @@ class Lookups:
             return self.types.get(int(mapped))
         found = self.types_by_name.get(str(raw).strip().lower())
         if found is None:
-            raise ValueError(f"Unbekannte Mitgliedsart: {raw}")
+            raise ValueError(gettext("Unbekannte Mitgliedsart: {raw}").format(raw=raw))
         return found
 
     def exit_reason(self, raw) -> str:
@@ -265,7 +268,7 @@ class Lookups:
         for value, label in ExitReason.choices:
             if str(raw).strip().lower() in (value, label.lower()):
                 return value
-        raise ValueError(f"Unbekannter Austrittsgrund: {raw}")
+        raise ValueError(gettext("Unbekannter Austrittsgrund: {raw}").format(raw=raw))
 
     def departments_of(self, raw) -> list[Department]:
         result = []
@@ -294,7 +297,7 @@ class Lookups:
             else self.roles_by_name.get(str(raw).strip().lower())
         )
         if role is None:
-            raise ValueError(f"Unbekannte Vorstandsrolle: {raw}")
+            raise ValueError(gettext("Unbekannte Vorstandsrolle: {raw}").format(raw=raw))
         return role
 
 

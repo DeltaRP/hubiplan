@@ -5,6 +5,7 @@ Mails gehen nirgendwohin, sondern lassen sich in der Oberfläche ansehen.
 """
 
 from django.db import models
+from django.utils.translation import gettext_lazy
 
 from core.encfields import EncryptedTextField
 
@@ -15,9 +16,9 @@ EMPTIED = "(Inhalt nach Ablauf der Aufbewahrungsfrist entfernt)"
 
 class OutgoingMail(models.Model):
     class Status(models.TextChoices):
-        STORED = "stored", "nur gespeichert (kein Mailserver)"
+        STORED = "stored", gettext_lazy("nur gespeichert (kein Mailserver)")
         SENT = "sent", "versendet"
-        FAILED = "failed", "Versand fehlgeschlagen"
+        FAILED = "failed", gettext_lazy("Versand fehlgeschlagen")
 
     # Leer bei Mails ohne Organisationsbezug (z. B. „Passwort vergessen“)
     organization = models.ForeignKey(

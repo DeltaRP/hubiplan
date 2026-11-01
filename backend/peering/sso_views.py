@@ -6,6 +6,7 @@ from django.contrib.auth import login
 from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
+from django.utils.translation import gettext
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -34,7 +35,7 @@ def _errors(func):
 
 def _limited(request, kind: str) -> None:
     if too_many(f"peering-sso:{kind}:{client_ip(request)}", *RATE):
-        raise ValidationError({"detail": "Zu viele Versuche. Bitte später erneut."})
+        raise ValidationError({"detail": gettext("Zu viele Versuche. Bitte später erneut.")})
 
 
 class _Public(APIView):

@@ -22,6 +22,7 @@ import datetime
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext
 
 ANON = "anonymisiert"
 DOCUMENT_YEARS = 8
@@ -226,12 +227,14 @@ def purge(org, year: int, user) -> dict:
 
     closing = YearClosing.objects.select_for_update().filter(organization=org, year=year).first()
     if closing is None:
-        raise ValidationError("Nur abgeschlossene Geschäftsjahre lassen sich bereinigen.")
+        raise ValidationError(gettext("Nur abgeschlossene Geschäftsjahre lassen sich bereinigen."))
     info = state(org, closing)
     if not (info["documents_due"] or info["records_due"]):
         raise ValidationError(
-            f"Die Aufbewahrungsfrist läuft noch: Belege ab {info['documents_from']:%d.%m.%Y}, "
-            f"Bücher ab {info['records_from']:%d.%m.%Y}."
+            gettext(
+                "Die Aufbewahrungsfrist läuft noch: Belege ab {x:%d.%m.%Y}, Bücher ab "
+                "{x2:%d.%m.%Y}."
+            ).format(x=info["documents_from"], x2=info["records_from"])
         )
     start, end = org.fiscal_range(year)
     counts: dict[str, int] = {}

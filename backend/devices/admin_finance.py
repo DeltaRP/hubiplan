@@ -18,6 +18,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.translation import gettext
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, status
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -52,7 +53,7 @@ class AppBookingView(AppAdminAccess, finance_views.FinanceMixin, APIView):
             return Response(self._data(booking), status=status.HTTP_201_CREATED)
         upload = request.FILES.get("file")
         if upload is None:
-            raise serializers.ValidationError({"file": "Aus der App nur mit Belegfoto."})
+            raise serializers.ValidationError({"file": gettext("Aus der App nur mit Belegfoto.")})
         values = {k: v for k, v in request.data.items() if k != "file"}
         data = BookingSerializer(data=values, context={"org": self.org, "request": request})
         data.is_valid(raise_exception=True)
@@ -106,7 +107,7 @@ class AppCashPaymentView(AppAdminAccess, billing_views.BillingMixin, APIView):
             organization=self.org, pk=data["account"], is_active=True
         ).first()
         if account is None or account.kind != Account.Kind.CASH:
-            raise serializers.ValidationError({"account": "Bitte eine Barkasse wählen."})
+            raise serializers.ValidationError({"account": gettext("Bitte eine Barkasse wählen.")})
         amount = data.get("amount")
         try:
             payment = billing_services.add_payment(

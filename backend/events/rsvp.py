@@ -12,6 +12,7 @@ from dataclasses import dataclass
 
 from django.db.models import Count, Exists, OuterRef, Q, Sum
 from django.utils import timezone
+from django.utils.translation import gettext
 from rest_framework.exceptions import ValidationError
 
 from members.models import DepartmentMembership, Membership, MembershipPeriod, today
@@ -113,9 +114,15 @@ def check_capacity(event: Event, response: EventResponse | None, status: str, gu
     free = event.rsvp_capacity - taken
     if 1 + guests > free:
         if free <= 0:
-            raise ValidationError({"status": ["Leider sind alle Plätze vergeben."]})
+            raise ValidationError({"status": [gettext("Leider sind alle Plätze vergeben.")]})
         raise ValidationError(
-            {"guests": [f"Es sind nur noch {free} Plätze frei (mit Ihnen selbst)."]}
+            {
+                "guests": [
+                    gettext("Es sind nur noch {free} Plätze frei (mit Ihnen selbst).").format(
+                        free=free
+                    )
+                ]
+            }
         )
 
 

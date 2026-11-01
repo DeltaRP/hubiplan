@@ -15,6 +15,7 @@ from django.db.models import (
 )
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import generics, serializers, status, viewsets
 from rest_framework.decorators import action
@@ -119,8 +120,9 @@ class MemberTypeViewSet(_ClubMixin, AuditMixin, viewsets.ModelViewSet):
         if found:
             return Response(
                 {
-                    "detail": f"„{member_type.name}“ wird noch verwendet und kann nur "
-                    "archiviert werden.",
+                    "detail": gettext(
+                        "„{name}“ wird noch verwendet und kann nur archiviert werden."
+                    ).format(name=member_type.name),
                     "reasons": [u.text for u in found],
                     "can_archive": not member_type.is_archived,
                 },
@@ -486,8 +488,11 @@ class MemberDetailView(_ClubMixin, APIView):
             if locked:
                 raise serializers.ValidationError(
                     {
-                        "detail": "Stammdaten und Kontakt pflegt die ausgegliederte Untereinheit "
-                        "auf ihrer Instanz. Bitte eine Korrektur vorschlagen."
+                        "detail": gettext(
+                            "Stammdaten und Kontakt pflegt die ausgegliederte Untereinheit "
+                            "auf ihrer "
+                            "Instanz. Bitte eine Korrektur vorschlagen."
+                        )
                     }
                 )
         update_member(self.org, membership, data.validated_data, request.user)
@@ -618,7 +623,9 @@ class PeriodViewSet(_MemberChildMixin, viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         if instance.membership.periods.count() <= 1:
-            raise serializers.ValidationError("Der einzige Zeitraum kann nicht gelöscht werden.")
+            raise serializers.ValidationError(
+                gettext("Der einzige Zeitraum kann nicht gelöscht werden.")
+            )
         super().perform_destroy(instance)
 
 
@@ -645,7 +652,9 @@ class FederationEntryView(_ClubMixin, APIView):
         membership = get_object_or_404(Membership, organization=self.org, pk=pk)
         fm = FederationMember.objects.filter(person=membership.person).first()
         if fm is None:
-            raise serializers.ValidationError("Die Person ist (noch) kein Verbandsmitglied.")
+            raise serializers.ValidationError(
+                gettext("Die Person ist (noch) kein Verbandsmitglied.")
+            )
         data = FederationEntrySerializer(data=request.data)
         data.is_valid(raise_exception=True)
         before = snapshot(fm)
@@ -732,7 +741,11 @@ class MemberErasureView(_ClubMixin, APIView):
             or last.exit_date > today()
         ):
             raise ValidationError(
-                {"detail": "Löschen geht nur bei ehemaligen Mitgliedern nach dem Austritt."}
+                {
+                    "detail": gettext(
+                        "Löschen geht nur bei ehemaligen Mitgliedern nach dem Austritt."
+                    )
+                }
             )
         purge_membership(membership, after_deadline=True)
         # Nach dem Löschen protokollieren (das Löschen leert ältere Einträge zur Person)

@@ -26,6 +26,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext
 
 from access.catalog import DEFAULT_MODULES, DEPARTMENT_CODES, SWITCHABLE_MODULES, codes_for
 from access.models import Role, RoleAssignment
@@ -816,7 +817,9 @@ class Loader:
         try:
             data = clean_logo(content)
         except ValidationError as exc:
-            raise ValidationError(f"Logo „{path}“: {' '.join(exc.messages)}") from exc
+            raise ValidationError(
+                gettext("Logo „{path}“: {x}").format(path=path, x=" ".join(exc.messages))
+            ) from exc
         fieldfile.save("logo.png", ContentFile(data), save=False)
         return True
 

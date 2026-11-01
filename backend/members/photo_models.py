@@ -13,6 +13,7 @@ import secrets
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy
 
 from core.privatefiles import PrivateFileField
 from exchange.models import private_storage
@@ -26,12 +27,12 @@ def photo_path(instance, filename: str) -> str:
 class MemberPhoto(models.Model):
     class Status(models.TextChoices):
         APPROVED = "approved", "freigegeben"
-        PENDING = "pending", "wartet auf Freigabe"
+        PENDING = "pending", gettext_lazy("wartet auf Freigabe")
 
     class Source(models.TextChoices):
-        BOARD = "board", "Vorstand"
-        MEMBER = "member", "Mitglied (Upload-Link)"
-        APP = "app", "Mitglied (App)"
+        BOARD = "board", gettext_lazy("Vorstand")
+        MEMBER = "member", gettext_lazy("Mitglied (Upload-Link)")
+        APP = "app", gettext_lazy("Mitglied (App)")
 
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE, related_name="+"

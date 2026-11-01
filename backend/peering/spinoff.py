@@ -18,6 +18,7 @@ import datetime
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext
 
 from .models import Coupling, SpinOff
 
@@ -49,18 +50,23 @@ def check_unit(club, unit) -> None:
 
     services.require_enabled()
     if unit.type != unit.Type.UNIT or unit.organization_id != club.pk:
-        raise ValidationError("Unbekannte Untereinheit.")
+        raise ValidationError(gettext("Unbekannte Untereinheit."))
     if unit.is_remote:
-        raise ValidationError("Diese Einheit liegt schon auf einer anderen Instanz.")
+        raise ValidationError(gettext("Diese Einheit liegt schon auf einer anderen Instanz."))
     if not unit.is_active:
-        raise ValidationError("Die Untereinheit ist stillgelegt.")
+        raise ValidationError(gettext("Die Untereinheit ist stillgelegt."))
     if Department.objects.filter(parent=unit).exists():
         raise ValidationError(
-            "Die Untereinheit hat selbst Untereinheiten. Bitte diese vorher umhängen; "
-            "ausgegliedert wird immer eine Untereinheit ohne eigene Untereinheiten."
+            gettext(
+                "Die Untereinheit hat selbst Untereinheiten. Bitte diese vorher "
+                "umhängen; ausgegliedert wird immer eine Untereinheit ohne eigene "
+                "Untereinheiten."
+            )
         )
     if open_spin_off(unit):
-        raise ValidationError("Für diese Untereinheit ist schon eine Ausgliederung vorbereitet.")
+        raise ValidationError(
+            gettext("Für diese Untereinheit ist schon eine Ausgliederung vorbereitet.")
+        )
 
 
 def prepare(club, unit, user, *, way: str, cutoff, checklist: dict, with_files: bool):
@@ -72,12 +78,12 @@ def prepare(club, unit, user, *, way: str, cutoff, checklist: dict, with_files: 
 
     check_unit(club, unit)
     if way not in SpinOff.Way.values:
-        raise ValidationError("Bitte einen Weg wählen.")
+        raise ValidationError(gettext("Bitte einen Weg wählen."))
     missing = [text for key, text in CHECKLIST[way].items() if not (checklist or {}).get(key)]
     if missing:
         raise ValidationError("Bitte vorher bestätigen: " + " ".join(missing))
     if cutoff is None:
-        raise ValidationError("Bitte einen Stichtag angeben.")
+        raise ValidationError(gettext("Bitte einen Stichtag angeben."))
     with transaction.atomic():
         text, code = services.create_code(club, user, valid=CODE_VALID)
         job = start_export(
@@ -113,7 +119,9 @@ def cancel(spin: SpinOff, user) -> SpinOff:
 
     if spin.state != SpinOff.State.PREPARED:
         raise ValidationError(
-            "Die Ausgliederung ist schon angefragt. Bitte die Kopplung unter Verbund ablehnen."
+            gettext(
+                "Die Ausgliederung ist schon angefragt. Bitte die Kopplung unter Verbund ablehnen."
+            )
         )
     with transaction.atomic():
         if spin.code_id and spin.code.used_at is None:
@@ -137,7 +145,7 @@ def placeholder_for(code):
         .exclude(state__in=[Coupling.State.ENDED, Coupling.State.MOVED])
         .exists()
     ):
-        raise ValidationError("Diese Untereinheit ist schon gekoppelt.")
+        raise ValidationError(gettext("Diese Untereinheit ist schon gekoppelt."))
     return spin
 
 
@@ -246,18 +254,18 @@ def collective_exit(spin: SpinOff, user, exclude: list[int] | None = None) -> in
     from . import services
 
     if spin.way != SpinOff.Way.MOVE:
-        raise ValidationError("Nur bei „Mitglieder werden Mitglieder der Untereinheit“.")
+        raise ValidationError(gettext("Nur bei „Mitglieder werden Mitglieder der Untereinheit“."))
     if spin.state != SpinOff.State.DONE:
-        raise ValidationError("Erst nach der bestätigten Kopplung.")
+        raise ValidationError(gettext("Erst nach der bestätigten Kopplung."))
     if spin.exited_at:
-        raise ValidationError("Der Sammelaustritt ist schon ausgeführt.")
+        raise ValidationError(gettext("Der Sammelaustritt ist schon ausgeführt."))
     skip = set(exclude or [])
     note = f"Wechsel zu {spin.unit.name} (Ausgliederung)"
     count = 0
     with transaction.atomic():
         spin = SpinOff.objects.select_for_update().get(pk=spin.pk)
         if spin.exited_at:
-            raise ValidationError("Der Sammelaustritt ist schon ausgeführt.")
+            raise ValidationError(gettext("Der Sammelaustritt ist schon ausgeführt."))
         for item in exit_candidates(spin):
             if item["id"] in skip:
                 continue

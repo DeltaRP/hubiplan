@@ -12,6 +12,7 @@ from django.core import signing
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.translation import gettext
 from rest_framework import serializers
 
 from core.tenancy import rls_bypass
@@ -181,7 +182,7 @@ def start_sending(circular: Circular, user) -> dict[str, int]:
     """Empfänger festhalten und den Versand im Hintergrund anstoßen."""
     circular = Circular.objects.select_for_update().get(pk=circular.pk)
     if not circular.is_draft:
-        raise serializers.ValidationError("Dieses Rundschreiben wurde bereits versendet.")
+        raise serializers.ValidationError(gettext("Dieses Rundschreiben wurde bereits versendet."))
     errors = problems(circular)
     if errors:
         raise serializers.ValidationError(errors)
@@ -193,7 +194,7 @@ def start_sending(circular: Circular, user) -> dict[str, int]:
 
     remote = packet_circulars.remote_targets(circular)
     if not chosen and not remote:
-        raise serializers.ValidationError("Für diese Auswahl gibt es keine Empfänger.")
+        raise serializers.ValidationError(gettext("Für diese Auswahl gibt es keine Empfänger."))
     rcp.fill_values(circular, selection, used_placeholders(circular))
     now = timezone.now()
     rows = []
@@ -257,8 +258,10 @@ def check_short_limit(circular: Circular) -> None:
     ).count()
     if sent >= MAX_SHORT_PER_DAY:
         raise serializers.ValidationError(
-            f"Heute gingen schon {sent} Kurzmitteilungen hinaus (höchstens "
-            f"{MAX_SHORT_PER_DAY} je Tag). Bitte morgen erneut oder als Rundschreiben."
+            gettext(
+                "Heute gingen schon {sent} Kurzmitteilungen hinaus (höchstens "
+                "{MAX_SHORT_PER_DAY} je Tag). Bitte morgen erneut oder als Rundschreiben."
+            ).format(sent=sent, MAX_SHORT_PER_DAY=MAX_SHORT_PER_DAY)
         )
 
 
@@ -468,7 +471,9 @@ def send_test(circular: Circular, user) -> str:
     if errors:
         raise serializers.ValidationError(errors)
     if not user.email:
-        raise serializers.ValidationError("Für dein Konto ist keine E-Mail-Adresse hinterlegt.")
+        raise serializers.ValidationError(
+            gettext("Für dein Konto ist keine E-Mail-Adresse hinterlegt.")
+        )
     selection = rcp.select(circular)
     rcp.fill_values(circular, selection, used_placeholders(circular))
     first = selection.chosen[0] if selection.chosen else None

@@ -14,6 +14,7 @@ from decimal import Decimal
 
 from django.apps import apps
 from django.db import models
+from django.utils.translation import gettext
 
 MODULE_MODELS = (
     "finance.Account",
@@ -283,13 +284,19 @@ def check_file(name: str, obj, content: bytes, path: str) -> None:
         fname = getattr(obj, "name", "") or path
         ext = fname.rsplit(".", 1)[-1].lower() if "." in fname else ""
         if ext not in ALLOWED_TYPES:
-            raise ValidationError(f"Datei „{fname}“: Diese Dateiart ist nicht erlaubt.")
+            raise ValidationError(
+                gettext("Datei „{fname}“: Diese Dateiart ist nicht erlaubt.").format(fname=fname)
+            )
         ctype, magic = ALLOWED_TYPES[ext]
         if magic is None:
             if b"\x00" in content[:4096]:
-                raise ValidationError(f"Datei „{fname}“ ist keine Textdatei.")
+                raise ValidationError(
+                    gettext("Datei „{fname}“ ist keine Textdatei.").format(fname=fname)
+                )
         elif not content.startswith(magic):
-            raise ValidationError(f"Datei „{fname}“: Inhalt und Dateiendung passen nicht.")
+            raise ValidationError(
+                gettext("Datei „{fname}“: Inhalt und Dateiendung passen nicht.").format(fname=fname)
+            )
         obj.content_type = ctype
         return
     hash_field = FILE_HASHES.get(name)
@@ -297,7 +304,9 @@ def check_file(name: str, obj, content: bytes, path: str) -> None:
         import hashlib
 
         if hashlib.sha256(content).hexdigest() != getattr(obj, hash_field):
-            raise ValidationError(f"Datei „{path}“ passt nicht zu ihrer Prüfsumme.")
+            raise ValidationError(
+                gettext("Datei „{path}“ passt nicht zu ihrer Prüfsumme.").format(path=path)
+            )
     if name == "finance.bankstatement":
         # Original eines Kontoauszugs (CAMT als XML oder ZIP), Gesamtaudit 01.11., GA-F09
         from finance import camt
@@ -305,14 +314,20 @@ def check_file(name: str, obj, content: bytes, path: str) -> None:
         try:
             camt.parse(content)
         except camt.CamtError as exc:
-            raise ValidationError(f"Datei „{path}“ ist kein lesbarer Kontoauszug.") from exc
+            raise ValidationError(
+                gettext("Datei „{path}“ ist kein lesbarer Kontoauszug.").format(path=path)
+            ) from exc
         return
     allowed = FILE_TYPES.get(name)
     if allowed is None:
-        raise ValidationError(f"Datei „{path}“ wird hier nicht übernommen.")
+        raise ValidationError(
+            gettext("Datei „{path}“ wird hier nicht übernommen.").format(path=path)
+        )
     ctype = sniff(content)
     if ctype not in allowed:
-        raise ValidationError(f"Datei „{path}“: Diese Dateiart ist nicht erlaubt.")
+        raise ValidationError(
+            gettext("Datei „{path}“: Diese Dateiart ist nicht erlaubt.").format(path=path)
+        )
     if hasattr(obj, "content_type"):
         obj.content_type = ctype
 
@@ -574,7 +589,9 @@ def load_tables(tables: dict, org, ids: IdMap, files, user=None, allowed=None) -
     if allowed is not None:
         extra = sorted(set(tables or {}) - set(allowed))
         if extra:
-            raise ValidationError(f"Tabelle „{extra[0]}“ darf hier nicht importiert werden.")
+            raise ValidationError(
+                gettext("Tabelle „{x}“ darf hier nicht importiert werden.").format(x=extra[0])
+            )
     for model in module_models():
         name = label(model)
         rows = (tables or {}).get(name) or []

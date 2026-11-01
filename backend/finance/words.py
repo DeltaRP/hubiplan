@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from decimal import ROUND_HALF_UP, Decimal
 
+from django.utils.translation import gettext
+
 _ONES = [
     "null",
     "eins",
@@ -65,7 +67,7 @@ def _below_1000(n: int, final: bool) -> str:
 def number_words(n: int) -> str:
     """Ganze Zahl (0 bis unter eine Milliarde) in Worten, klein geschrieben."""
     if n < 0 or n >= 1_000_000_000:
-        raise ValueError("Zahl außerhalb des Bereichs")
+        raise ValueError(gettext("Zahl außerhalb des Bereichs"))
     if n == 0:
         return "null"
     millions, rest = divmod(n, 1_000_000)

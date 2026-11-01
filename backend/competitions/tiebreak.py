@@ -15,6 +15,8 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+from django.utils.translation import gettext
+
 from .targets import METHOD_DECIMAL, ShotValue, Target
 
 SERIES = "serien"
@@ -46,11 +48,11 @@ def clean(raw) -> list[str]:
     if raw in (None, ""):
         return []
     if not isinstance(raw, list):
-        raise ValueError("Ungültige Gleichstandsregeln.")
+        raise ValueError(gettext("Ungültige Gleichstandsregeln."))
     out: list[str] = []
     for item in raw:
         if item not in LABELS:
-            raise ValueError(f"Unbekannte Gleichstandsregel „{item}“.")
+            raise ValueError(gettext("Unbekannte Gleichstandsregel „{item}“.").format(item=item))
         if item not in out:
             out.append(item)
     return out

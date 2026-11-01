@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import datetime
 
+from django.utils.translation import gettext
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import serializers
 from rest_framework.response import Response
@@ -33,11 +34,13 @@ class JubileeView(_ClubMixin, APIView):
             if request.query_params.get("bis"):
                 end = field.to_internal_value(request.query_params["bis"])
         except serializers.ValidationError as exc:
-            raise serializers.ValidationError({"von": "Bitte gültige Daten angeben."}) from exc
+            raise serializers.ValidationError(
+                {"von": gettext("Bitte gültige Daten angeben.")}
+            ) from exc
         if end < start:
-            raise serializers.ValidationError({"bis": "Das Ende liegt vor dem Beginn."})
+            raise serializers.ValidationError({"bis": gettext("Das Ende liegt vor dem Beginn.")})
         if (end - start).days > 3 * 366:
-            raise serializers.ValidationError({"bis": "Höchstens drei Jahre auf einmal."})
+            raise serializers.ValidationError({"bis": gettext("Höchstens drei Jahre auf einmal.")})
         rows = jubilees_between(self.org, start, end)
         return Response({"von": start, "bis": end, "results": rows})
 
@@ -58,9 +61,11 @@ class UnitJubileeView(OrgScopedMixin, APIView):
             if request.query_params.get("bis"):
                 end = field.to_internal_value(request.query_params["bis"])
         except serializers.ValidationError as exc:
-            raise serializers.ValidationError({"von": "Bitte gültige Daten angeben."}) from exc
+            raise serializers.ValidationError(
+                {"von": gettext("Bitte gültige Daten angeben.")}
+            ) from exc
         if end < start:
-            raise serializers.ValidationError({"bis": "Das Ende liegt vor dem Beginn."})
+            raise serializers.ValidationError({"bis": gettext("Das Ende liegt vor dem Beginn.")})
         return Response({"von": start, "bis": end, "results": unit_jubilees(self.org, start, end)})
 
 
@@ -78,11 +83,13 @@ class BirthdayView(_ClubMixin, APIView):
             if request.query_params.get("bis"):
                 end = field.to_internal_value(request.query_params["bis"])
         except serializers.ValidationError as exc:
-            raise serializers.ValidationError({"von": "Bitte gültige Daten angeben."}) from exc
+            raise serializers.ValidationError(
+                {"von": gettext("Bitte gültige Daten angeben.")}
+            ) from exc
         if end < start:
-            raise serializers.ValidationError({"bis": "Das Ende liegt vor dem Beginn."})
+            raise serializers.ValidationError({"bis": gettext("Das Ende liegt vor dem Beginn.")})
         if (end - start).days > 366:
-            raise serializers.ValidationError({"bis": "Höchstens ein Jahr auf einmal."})
+            raise serializers.ValidationError({"bis": gettext("Höchstens ein Jahr auf einmal.")})
         return Response(
             {"von": start, "bis": end, "results": birthdays_between(self.org, start, end)}
         )

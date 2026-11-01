@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from django.db import transaction
 from django.db.models import QuerySet
+from django.utils.translation import gettext
 from rest_framework import serializers
 from rest_framework.response import Response
 
@@ -20,9 +21,9 @@ def parse_ids(data) -> list[int]:
     if not isinstance(ids, list) or not all(
         isinstance(i, int) and not isinstance(i, bool) for i in ids
     ):
-        raise serializers.ValidationError({"ids": "Erwartet eine Liste von Nummern."})
+        raise serializers.ValidationError({"ids": gettext("Erwartet eine Liste von Nummern.")})
     if len(set(ids)) != len(ids):
-        raise serializers.ValidationError({"ids": "Ein Eintrag kommt doppelt vor."})
+        raise serializers.ValidationError({"ids": gettext("Ein Eintrag kommt doppelt vor.")})
     return ids
 
 
@@ -39,7 +40,7 @@ def apply_order(
     objects = {o.pk: o for o in queryset.select_for_update()}
     if set(objects) != set(ids):
         raise serializers.ValidationError(
-            {"ids": "Die Liste hat sich inzwischen geändert. Bitte neu laden."}
+            {"ids": gettext("Die Liste hat sich inzwischen geändert. Bitte neu laden.")}
         )
     changed = []
     for position, pk in enumerate(ids, start=1):

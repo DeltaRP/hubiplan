@@ -9,6 +9,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.translation import gettext
 
 from .catalog import DEPARTMENT_CODES, codes_for
 
@@ -131,7 +132,11 @@ class Role(models.Model):
         unknown = sorted(set(self.permissions) - allowed)
         if unknown:
             raise ValidationError(
-                {"permissions": f"Für diese Organisation nicht erlaubt: {', '.join(unknown)}"}
+                {
+                    "permissions": gettext("Für diese Organisation nicht erlaubt: {x}").format(
+                        x=", ".join(unknown)
+                    )
+                }
             )
 
     @property
@@ -236,7 +241,7 @@ class RoleAssignment(models.Model):
 
     def clean(self) -> None:
         if self.valid_until and self.valid_until < self.valid_from:
-            raise ValidationError({"valid_until": "Das Ende liegt vor dem Beginn."})
+            raise ValidationError({"valid_until": gettext("Das Ende liegt vor dem Beginn.")})
 
     @property
     def is_former_entry(self) -> bool:

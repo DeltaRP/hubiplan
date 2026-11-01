@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from django.utils.translation import gettext, gettext_noop
+
 
 @dataclass(frozen=True)
 class Permission:
@@ -74,66 +76,78 @@ DEPT_ENTRIES_SUBMIT = "dept.entries.submit"
 MODULES: tuple[Module, ...] = (
     Module(
         "members",
-        "Mitglieder",
+        gettext_noop("Mitglieder"),
         (
-            Permission(MEMBERS_VIEW, "Mitglieder lesen"),
-            Permission(MEMBERS_EDIT, "Mitglieder bearbeiten"),
-            Permission(PHOTOS_MANAGE, "Fotos verwalten"),
-            Permission(CARDS_MANAGE, "Mitgliedsausweise (QR-Code) erstellen und sperren"),
+            Permission(MEMBERS_VIEW, gettext_noop("Mitglieder lesen")),
+            Permission(MEMBERS_EDIT, gettext_noop("Mitglieder bearbeiten")),
+            Permission(PHOTOS_MANAGE, gettext_noop("Fotos verwalten")),
+            Permission(
+                CARDS_MANAGE, gettext_noop("Mitgliedsausweise (QR-Code) erstellen und sperren")
+            ),
         ),
         switchable=True,
     ),
     Module(
         "organization",
-        "Einstellungen und Organisation",
+        gettext_noop("Einstellungen und Organisation"),
         (
-            Permission(ORG_EDIT, "Organisationsdaten und {pl} bearbeiten"),
-            Permission(AUDIT_VIEW, "Änderungsprotokoll einsehen"),
+            Permission(ORG_EDIT, gettext_noop("Organisationsdaten und {pl} bearbeiten")),
+            Permission(AUDIT_VIEW, gettext_noop("Änderungsprotokoll einsehen")),
             Permission(
                 PEERING_MANAGE,
-                "Verbund mit anderen HUBIplan-Instanzen verwalten (Namen und Rechnungen nur "
-                "zusammen mit den Rechten dafür)",
+                gettext_noop(
+                    "Verbund mit anderen HUBIplan-Instanzen verwalten (Namen und Rechnungen nur "
+                    "zusammen mit den Rechten dafür)"
+                ),
             ),
         ),
         org_types=("platform", "federation", "club"),
     ),
     Module(
         "roles",
-        "Rollen und Benutzer",
+        gettext_noop("Rollen und Benutzer"),
         (
-            Permission(ROLES_MANAGE, "Rollen und Benutzer verwalten"),
+            Permission(ROLES_MANAGE, gettext_noop("Rollen und Benutzer verwalten")),
             Permission(
                 ROLES_PREVIEW,
-                "Ansicht als Rolle: HUBIplan so ansehen, wie eine Rolle es sieht (nur lesen, "
-                "nie mehr als die eigenen Rechte)",
+                gettext_noop(
+                    "Ansicht als Rolle: HUBIplan so ansehen, wie eine Rolle es sieht (nur lesen, "
+                    "nie mehr als die eigenen Rechte)"
+                ),
             ),
         ),
         org_types=("platform", "federation", "club", "unit"),
     ),
     Module(
         "theme",
-        "Erscheinungsbild",
-        (Permission(THEME_EDIT, "Erscheinungsbild ändern"),),
+        gettext_noop("Erscheinungsbild"),
+        (Permission(THEME_EDIT, gettext_noop("Erscheinungsbild ändern")),),
         org_types=("platform", "federation", "club"),
     ),
     Module(
         "finance",
-        "Kasse",
+        gettext_noop("Kasse"),
         (
-            Permission(FINANCE_VIEW, "Kasse, Belege und Berichte lesen (z. B. Kassenprüfer)"),
-            Permission(FINANCE_EDIT, "Kasse führen: Konten, Kategorien, Buchungen, Belege"),
+            Permission(
+                FINANCE_VIEW, gettext_noop("Kasse, Belege und Berichte lesen (z. B. Kassenprüfer)")
+            ),
+            Permission(
+                FINANCE_EDIT, gettext_noop("Kasse führen: Konten, Kategorien, Buchungen, Belege")
+            ),
         ),
         org_types=("federation", "club", "unit"),
         switchable=True,
     ),
     Module(
         "billing",
-        "Beiträge und Rechnungen",
+        gettext_noop("Beiträge und Rechnungen"),
         (
-            Permission(BILLING_VIEW, "Beiträge, Rechnungen und Zahlungsstand lesen"),
+            Permission(BILLING_VIEW, gettext_noop("Beiträge, Rechnungen und Zahlungsstand lesen")),
             Permission(
                 BILLING_EDIT,
-                "Beitragsregeln, Beitragsläufe, Rechnungen, Mahnungen und Zahlungen bearbeiten",
+                gettext_noop(
+                    "Beitragsregeln, Beitragsläufe, Rechnungen, Mahnungen und Zahlungen bearbeiten"
+                ),
             ),
         ),
         org_types=("federation", "club", "unit"),
@@ -141,94 +155,117 @@ MODULES: tuple[Module, ...] = (
     ),
     Module(
         "events",
-        "Termine",
+        gettext_noop("Termine"),
         (
             Permission(
                 EVENTS_MANAGE,
-                "Termine verwalten: Kalender der Organisation, Kategorien, öffentlicher Link",
+                gettext_noop(
+                    "Termine verwalten: Kalender der Organisation, Kategorien, öffentlicher Link"
+                ),
             ),
         ),
         switchable=True,
     ),
     Module(
         "documents",
-        "Dokumente",
+        gettext_noop("Dokumente"),
         (
-            Permission(DOCS_VIEW, "Dokumentenablage lesen"),
-            Permission(DOCS_MANAGE, "Dokumentenablage verwalten: Ordner, Dokumente, Freigaben"),
+            Permission(DOCS_VIEW, gettext_noop("Dokumentenablage lesen")),
+            Permission(
+                DOCS_MANAGE,
+                gettext_noop("Dokumentenablage verwalten: Ordner, Dokumente, Freigaben"),
+            ),
         ),
     ),
     Module(
         "circulars",
-        "Rundschreiben",
+        gettext_noop("Rundschreiben"),
         (
             Permission(
                 CIRCULARS_SEND,
-                "Rundschreiben verfassen und versenden (E-Mails und Serienbriefe)",
+                gettext_noop("Rundschreiben verfassen und versenden (E-Mails und Serienbriefe)"),
             ),
         ),
     ),
     Module(
         "website",
-        "Webseite",
+        gettext_noop("Webseite"),
         (
             Permission(
                 WEBSITE_MANAGE,
-                "Webseite verwalten: einrichten, Zustand, Domains, Vorschau, Bausteine",
+                gettext_noop(
+                    "Webseite verwalten: einrichten, Zustand, Domains, Vorschau, Bausteine"
+                ),
             ),
-            Permission(WEBSITE_CONTENT, "Inhalte der Webseite bearbeiten (Texte und Bilder)"),
+            Permission(
+                WEBSITE_CONTENT, gettext_noop("Inhalte der Webseite bearbeiten (Texte und Bilder)")
+            ),
         ),
         org_types=("federation", "club", "unit"),
         switchable=True,
     ),
     Module(
         "competitions",
-        "Wettbewerbe",
+        gettext_noop("Wettbewerbe"),
         (
             Permission(
                 COMPETITIONS_MANAGE,
-                "Wettbewerbe verwalten: anlegen, Wertungen, abschließen, Auswertung",
+                gettext_noop("Wettbewerbe verwalten: anlegen, Wertungen, abschließen, Auswertung"),
             ),
             Permission(
                 COMPETITIONS_RESULTS,
-                "Ergebnisse erfassen: Starter, Werte und Stechen eintragen (z. B. Schießmeister)",
+                gettext_noop(
+                    "Ergebnisse erfassen: Starter, Werte und Stechen eintragen "
+                    "(z. B. Schießmeister)"
+                ),
             ),
         ),
         switchable=True,
     ),
     Module(
         "entries",
-        "Meldungen",
+        gettext_noop("Meldungen"),
         (
             Permission(
                 ENTRIES_SUBMIT,
-                "Meldungen an Veranstalter zusammenstellen und abgeben (z. B. Mannschaften)",
+                gettext_noop(
+                    "Meldungen an Veranstalter zusammenstellen und abgeben (z. B. Mannschaften)"
+                ),
             ),
             Permission(
                 ENTRIES_MANAGE,
-                "Ausschreibungen an die eigenen Untereinheiten verwalten, Meldungen bestätigen",
+                gettext_noop(
+                    "Ausschreibungen an die eigenen Untereinheiten verwalten, Meldungen bestätigen"
+                ),
             ),
         ),
         switchable=True,
     ),
     Module(
         "export",
-        "Export",
+        gettext_noop("Export"),
         (
-            Permission(EXPORT_RUN, "Mitgliederlisten exportieren"),
-            Permission(DATA_EXPORT, "Vollständigen Datenexport erstellen (alle Daten als Datei)"),
+            Permission(EXPORT_RUN, gettext_noop("Mitgliederlisten exportieren")),
+            Permission(
+                DATA_EXPORT,
+                gettext_noop("Vollständigen Datenexport erstellen (alle Daten als Datei)"),
+            ),
         ),
     ),
     Module(
         "clubs",
-        "{Pl}",
-        (Permission(CLUBS_MANAGE, "{Pl} anlegen und aus einer Exportdatei importieren"),),
+        gettext_noop("{Pl}"),
+        (
+            Permission(
+                CLUBS_MANAGE, gettext_noop("{Pl} anlegen und aus einer Exportdatei importieren")
+            ),
+        ),
         org_types=("federation",),
     ),
     Module(
         "platform",
-        "Plattform",
-        (Permission(PLATFORM_MANAGE, "Einheiten und Plattform verwalten"),),
+        gettext_noop("Plattform"),
+        (Permission(PLATFORM_MANAGE, gettext_noop("Einheiten und Plattform verwalten")),),
         org_types=("platform",),
     ),
 )
@@ -236,50 +273,59 @@ MODULES: tuple[Module, ...] = (
 DEPARTMENT_MODULES: tuple[Module, ...] = (
     Module(
         "dept_members",
-        "Mitglieder {gen}",
+        gettext_noop("Mitglieder {gen}"),
         (
-            Permission(DEPT_MEMBERS_VIEW, "Mitglieder {gen} lesen"),
-            Permission(DEPT_MEMBERS_EDIT, "Mitgliederdaten {gen} ändern"),
-            Permission(DEPT_ACCESS_MANAGE, "Zugänge und Anmeldelinks für Mitglieder"),
-            Permission(DEPT_CARDS_MANAGE, "Mitgliedsausweise (QR-Code) {gen}"),
-            Permission(DEPT_EXPORT, "Daten {gen} exportieren"),
+            Permission(DEPT_MEMBERS_VIEW, gettext_noop("Mitglieder {gen} lesen")),
+            Permission(DEPT_MEMBERS_EDIT, gettext_noop("Mitgliederdaten {gen} ändern")),
+            Permission(DEPT_ACCESS_MANAGE, gettext_noop("Zugänge und Anmeldelinks für Mitglieder")),
+            Permission(DEPT_CARDS_MANAGE, gettext_noop("Mitgliedsausweise (QR-Code) {gen}")),
+            Permission(DEPT_EXPORT, gettext_noop("Daten {gen} exportieren")),
         ),
         org_types=("department",),
     ),
     Module(
         "dept_invoices",
-        "Rechnungen {gen}",
-        (Permission(DEPT_INVOICES_VIEW, "Sammelrechnungen {gen} sehen (Kassierer)"),),
+        gettext_noop("Rechnungen {gen}"),
+        (Permission(DEPT_INVOICES_VIEW, gettext_noop("Sammelrechnungen {gen} sehen (Kassierer)")),),
         org_types=("department",),
     ),
     Module(
         "dept_events",
-        "Termine {gen}",
-        (Permission(DEPT_EVENTS_MANAGE, "Termine {gen} verwalten"),),
+        gettext_noop("Termine {gen}"),
+        (Permission(DEPT_EVENTS_MANAGE, gettext_noop("Termine {gen} verwalten")),),
         org_types=("department",),
     ),
     Module(
         "dept_documents",
-        "Dokumente {gen}",
-        (Permission(DEPT_DOCS_MANAGE, "Dokumentenablage {gen} verwalten"),),
+        gettext_noop("Dokumente {gen}"),
+        (Permission(DEPT_DOCS_MANAGE, gettext_noop("Dokumentenablage {gen} verwalten")),),
         org_types=("department",),
     ),
     Module(
         "dept_circulars",
-        "Rundschreiben {gen}",
-        (Permission(DEPT_CIRCULARS_SEND, "Rundschreiben an die Mitglieder {gen} versenden"),),
+        gettext_noop("Rundschreiben {gen}"),
+        (
+            Permission(
+                DEPT_CIRCULARS_SEND, gettext_noop("Rundschreiben an die Mitglieder {gen} versenden")
+            ),
+        ),
         org_types=("department",),
     ),
     Module(
         "dept_entries",
-        "Meldungen {gen}",
-        (Permission(DEPT_ENTRIES_SUBMIT, "Meldungen {gen} zu Ausschreibungen von oben abgeben"),),
+        gettext_noop("Meldungen {gen}"),
+        (
+            Permission(
+                DEPT_ENTRIES_SUBMIT,
+                gettext_noop("Meldungen {gen} zu Ausschreibungen von oben abgeben"),
+            ),
+        ),
         org_types=("department",),
     ),
     Module(
         "dept_roles",
-        "Rollen {gen}",
-        (Permission(DEPT_ROLES_MANAGE, "Rollen {gen} und ihre Rechte verwalten"),),
+        gettext_noop("Rollen {gen}"),
+        (Permission(DEPT_ROLES_MANAGE, gettext_noop("Rollen {gen} und ihre Rechte verwalten")),),
         org_types=("department",),
     ),
 )
@@ -317,8 +363,10 @@ def catalog_for(org_type: str | None = None, org=None) -> list[dict]:
     return [
         {
             "id": m.id,
-            "label": fill(m.label, terms),
-            "permissions": [{"code": p.code, "label": fill(p.label, terms)} for p in m.permissions],
+            "label": fill(gettext(m.label), terms),
+            "permissions": [
+                {"code": p.code, "label": fill(gettext(p.label), terms)} for p in m.permissions
+            ],
         }
         for m in modules
         if org_type is None or org_type in m.org_types

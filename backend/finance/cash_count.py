@@ -23,6 +23,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
@@ -41,9 +42,9 @@ def _amount(value, field: str) -> Decimal:
     try:
         result = Decimal(str(value if value not in (None, "") else "0")).quantize(Decimal("0.01"))
     except (InvalidOperation, ValueError) as exc:
-        raise ValidationError({field: "Bitte einen Betrag angeben."}) from exc
+        raise ValidationError({field: gettext("Bitte einen Betrag angeben.")}) from exc
     if result < 0:
-        raise ValidationError({field: "Der Betrag darf nicht negativ sein."})
+        raise ValidationError({field: gettext("Der Betrag darf nicht negativ sein.")})
     return result
 
 
@@ -55,9 +56,11 @@ def count_total(denominations: dict) -> tuple[dict, Decimal]:
         try:
             cents, n = int(key), int(raw or 0)
         except (TypeError, ValueError) as exc:
-            raise ValidationError({"denominations": "Bitte ganze Stückzahlen angeben."}) from exc
+            raise ValidationError(
+                {"denominations": gettext("Bitte ganze Stückzahlen angeben.")}
+            ) from exc
         if cents not in DENOMINATIONS or n < 0 or n > 100000:
-            raise ValidationError({"denominations": "Unbekannte Stückelung oder Anzahl."})
+            raise ValidationError({"denominations": gettext("Unbekannte Stückelung oder Anzahl.")})
         if n:
             clean[str(cents)] = n
             total += cents * n
@@ -92,39 +95,47 @@ def _booking(org, user, *, account, date, kind, amount, category, text, project=
 def _category(org, raw, kind: str, field: str) -> Category:
     cat = Category.objects.filter(organization=org, pk=raw, is_active=True).first() if raw else None
     if cat is None:
-        raise ValidationError({field: "Bitte eine Kategorie wählen."})
+        raise ValidationError({field: gettext("Bitte eine Kategorie wählen.")})
     if cat.kind not in (kind, Category.Kind.BOTH):
-        raise ValidationError({field: f"Die Kategorie „{cat.name}“ passt nicht zur Buchungsart."})
+        raise ValidationError(
+            {
+                field: gettext("Die Kategorie „{name}“ passt nicht zur Buchungsart.").format(
+                    name=cat.name
+                )
+            }
+        )
     return cat
 
 
 @transaction.atomic
 def create(org, user, data: dict) -> CashCount:
     if not org.cash_counts_enabled:
-        raise ValidationError("Zählprotokoll und Kassenbericht sind nicht eingeschaltet.")
+        raise ValidationError(gettext("Zählprotokoll und Kassenbericht sind nicht eingeschaltet."))
     kind = data.get("kind")
     if kind not in CashCount.Kind.values:
-        raise ValidationError({"kind": "Bitte Zählprotokoll oder Kassenbericht wählen."})
+        raise ValidationError({"kind": gettext("Bitte Zählprotokoll oder Kassenbericht wählen.")})
     account = Account.objects.filter(organization=org, pk=data.get("account") or 0).first()
     if account is None or account.kind != Account.Kind.CASH or not account.is_active:
-        raise ValidationError({"account": "Bitte eine aktive Barkasse wählen."})
+        raise ValidationError({"account": gettext("Bitte eine aktive Barkasse wählen.")})
     try:
         date = datetime.date.fromisoformat(str(data.get("date")))
     except ValueError as exc:
-        raise ValidationError({"date": "Bitte ein Datum angeben."}) from exc
+        raise ValidationError({"date": gettext("Bitte ein Datum angeben.")}) from exc
     if date > timezone.localdate():
-        raise ValidationError({"date": "Gezählt wird heute oder an einem vergangenen Tag."})
+        raise ValidationError(
+            {"date": gettext("Gezählt wird heute oder an einem vergangenen Tag.")}
+        )
     if reason := services.fixed_on(org, date, timezone.now()):
         raise ValidationError({"date": "Die Kasse ist an diesem Tag festgeschrieben" + reason})
     services.ensure_open(org, date=date)
     counted_by = str(data.get("counted_by") or "").strip()[:200]
     if not counted_by:
-        raise ValidationError({"counted_by": "Bitte angeben, wer gezählt hat."})
+        raise ValidationError({"counted_by": gettext("Bitte angeben, wer gezählt hat.")})
     project = None
     if data.get("project"):
         project = Project.objects.filter(organization=org, pk=data["project"]).first()
         if project is None:
-            raise ValidationError({"project": "Unbekannte Veranstaltung."})
+            raise ValidationError({"project": gettext("Unbekannte Veranstaltung.")})
     denominations, counted = count_total(data.get("denominations") or {})
     note = str(data.get("note") or "").strip()[:500]
     record = CashCount(
@@ -152,7 +163,11 @@ def create(org, user, data: dict) -> CashCount:
         if diff:
             if len(note) < 5:
                 raise ValidationError(
-                    {"note": "Bei einer Differenz bitte den Grund angeben (mind. 5 Zeichen)."}
+                    {
+                        "note": gettext(
+                            "Bei einer Differenz bitte den Grund angeben (mind. 5 Zeichen)."
+                        )
+                    }
                 )
             booking_kind = Booking.Kind.INCOME if diff > 0 else Booking.Kind.EXPENSE
             cat = _category(org, data.get("category"), booking_kind, "category")
@@ -171,15 +186,19 @@ def create(org, user, data: dict) -> CashCount:
             )
     else:
         if not record.title:
-            raise ValidationError({"title": "Bitte das Fest bzw. den Verkaufsstand angeben."})
+            raise ValidationError(
+                {"title": gettext("Bitte das Fest bzw. den Verkaufsstand angeben.")}
+            )
         record.opening = _amount(data.get("opening"), "opening")
         record.expenses = _amount(data.get("expenses"), "expenses")
         record.withdrawals = _amount(data.get("withdrawals"), "withdrawals")
         takings = record.takings
         if takings < 0:
             raise ValidationError(
-                "Die Tageseinnahme wäre negativ. Bitte Anfangsbestand, Ausgaben und Entnahmen "
-                "prüfen."
+                gettext(
+                    "Die Tageseinnahme wäre negativ. Bitte Anfangsbestand, Ausgaben und "
+                    "Entnahmen prüfen."
+                )
             )
         lines = []
         for i, line in enumerate(data.get("lines") or []):
@@ -192,8 +211,9 @@ def create(org, user, data: dict) -> CashCount:
         if total != takings:
             raise ValidationError(
                 {
-                    "lines": f"Die Aufteilung ergibt {_euro(total)}, die Tageseinnahme ist "
-                    f"{_euro(takings)}."
+                    "lines": gettext(
+                        "Die Aufteilung ergibt {x}, die Tageseinnahme ist {x2}."
+                    ).format(x=_euro(total), x2=_euro(takings))
                 }
             )
         record.lines = [{"category": c.pk, "name": c.name, "amount": f"{a:.2f}"} for c, a in lines]

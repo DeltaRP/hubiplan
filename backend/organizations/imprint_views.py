@@ -5,6 +5,7 @@ from __future__ import annotations
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.translation import gettext
 from rest_framework import serializers
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -63,7 +64,9 @@ class ImprintSerializer(ModelCleanMixin, serializers.ModelSerializer):
     def validate_mode(self, value):
         org = self.instance.organization if self.instance else None
         if org is not None and org.type == Organization.Type.PLATFORM and value != "own":
-            raise serializers.ValidationError("Die Plattform braucht ein eigenes Impressum.")
+            raise serializers.ValidationError(
+                gettext("Die Plattform braucht ein eigenes Impressum.")
+            )
         return value
 
 
@@ -99,10 +102,10 @@ def _update(request, org: Organization, audit_org: Organization) -> dict:
 def _publish(request, org: Organization, audit_org: Organization) -> dict:
     """Entwurf der Datenschutzhinweise veröffentlichen (POST {"action": "publish_privacy"})."""
     if request.data.get("action") != "publish_privacy":
-        raise serializers.ValidationError("Unbekannte Aktion.")
+        raise serializers.ValidationError(gettext("Unbekannte Aktion."))
     imprint = service.ensure(org)
     if not imprint.privacy_text.strip():
-        raise serializers.ValidationError({"privacy_text": "Der Entwurf ist leer."})
+        raise serializers.ValidationError({"privacy_text": gettext("Der Entwurf ist leer.")})
     before = imprint.privacy_published_at
     imprint.privacy_published_text = imprint.privacy_text
     imprint.privacy_published_at = timezone.now()

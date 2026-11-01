@@ -16,6 +16,7 @@ from django.db.models import Count, Max, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_datetime
+from django.utils.translation import gettext
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers, status, viewsets
@@ -56,13 +57,13 @@ class _Mixin(OrgScopedMixin):
     def initial(self, request, *args, **kwargs):
         super().initial(request, *args, **kwargs)
         if MODULE not in (self.org.enabled_modules or []):
-            raise NotFound("Das Modul Wettbewerbe ist nicht freigeschaltet.")
+            raise NotFound(gettext("Das Modul Wettbewerbe ist nicht freigeschaltet."))
         perms = self.org_permissions
         if not ({COMPETITIONS_MANAGE, COMPETITIONS_RESULTS} & perms):
-            raise PermissionDenied("Dafür fehlt dir die Berechtigung.")
+            raise PermissionDenied(gettext("Dafür fehlt dir die Berechtigung."))
         if request.method not in ("GET", "HEAD", "OPTIONS"):
             if self.manage_only and COMPETITIONS_MANAGE not in perms:
-                raise PermissionDenied("Dafür fehlt dir die Berechtigung.")
+                raise PermissionDenied(gettext("Dafür fehlt dir die Berechtigung."))
 
     @property
     def can_manage(self) -> bool:
@@ -115,29 +116,29 @@ class CompetitionSerializer(serializers.ModelSerializer):
             for field in ("form", "own"):
                 if field in attrs and attrs[field] != getattr(self.instance, field):
                     raise serializers.ValidationError(
-                        {field: "Die Art des Wettbewerbs lässt sich nicht mehr ändern."}
+                        {field: gettext("Die Art des Wettbewerbs lässt sich nicht mehr ändern.")}
                     )
         form = attrs.get("form", getattr(self.instance, "form", Competition.Form.RANKING))
         own = attrs.get("own", getattr(self.instance, "own", True))
         if form == Competition.Form.BIRD and not own:
             raise serializers.ValidationError(
-                {"own": "Ein Vogelschießen lässt sich nur als eigener Wettbewerb anlegen."}
+                {"own": gettext("Ein Vogelschießen lässt sich nur als eigener Wettbewerb anlegen.")}
             )
         return attrs
 
     def validate_title(self, value):
         value = value.strip()
         if not value:
-            raise serializers.ValidationError("Bitte einen Titel angeben.")
+            raise serializers.ValidationError(gettext("Bitte einen Titel angeben."))
         return value
 
     def validate_details(self, value):
         if not isinstance(value, list) or len(value) > 30:
-            raise serializers.ValidationError("Höchstens 30 weitere Angaben.")
+            raise serializers.ValidationError(gettext("Höchstens 30 weitere Angaben."))
         out = []
         for item in value:
             if not isinstance(item, dict):
-                raise serializers.ValidationError("Ungültige Angabe.")
+                raise serializers.ValidationError(gettext("Ungültige Angabe."))
             label = str(item.get("label", "")).strip()[:60]
             text = str(item.get("value", "")).strip()[:200]
             if label or text:
@@ -189,7 +190,7 @@ class ScoringSerializer(serializers.ModelSerializer):
 
         value = (value or "").strip()
         if value and value != targets.CUSTOM and value not in targets.BY_KEY:
-            raise serializers.ValidationError("Unbekannte Scheibe.")
+            raise serializers.ValidationError(gettext("Unbekannte Scheibe."))
         return value
 
     def validate_custom_target(self, value):
@@ -213,7 +214,7 @@ class ScoringSerializer(serializers.ModelSerializer):
 
     def validate_series_size(self, value):
         if value < 1 or value > 100:
-            raise serializers.ValidationError("Bitte 1 bis 100 Schüsse je Serie.")
+            raise serializers.ValidationError(gettext("Bitte 1 bis 100 Schüsse je Serie."))
         return value
 
     def _target_rules(self, attrs, get) -> None:
@@ -223,16 +224,16 @@ class ScoringSerializer(serializers.ModelSerializer):
         target_key, method = get("target") or "", get("method") or Scoring.Method.FREE
         if target_key == targets.CUSTOM and not get("custom_target"):
             raise serializers.ValidationError(
-                {"custom_target": "Bitte die Maße der eigenen Scheibe angeben."}
+                {"custom_target": gettext("Bitte die Maße der eigenen Scheibe angeben.")}
             )
         kind = get("kind") or Scoring.Kind.INDIVIDUAL
         if method != Scoring.Method.FREE and kind != Scoring.Kind.INDIVIDUAL:
             raise serializers.ValidationError(
-                {"method": "Ringe, Zehntel oder Teiler gibt es nur in Einzelwertungen."}
+                {"method": gettext("Ringe, Zehntel oder Teiler gibt es nur in Einzelwertungen.")}
             )
         if method != Scoring.Method.FREE and not target_key:
             raise serializers.ValidationError(
-                {"target": "Für Ringe, Zehntel oder Teiler bitte eine Scheibe wählen."}
+                {"target": gettext("Für Ringe, Zehntel oder Teiler bitte eine Scheibe wählen.")}
             )
         touched = {"target", "custom_target", "method"} & set(attrs)
         if not touched or method == Scoring.Method.FREE:
@@ -256,7 +257,7 @@ class ScoringSerializer(serializers.ModelSerializer):
 
     def validate_decimals(self, value):
         if value > 3:
-            raise serializers.ValidationError("Höchstens 3 Nachkommastellen.")
+            raise serializers.ValidationError(gettext("Höchstens 3 Nachkommastellen."))
         return value
 
     def validate(self, attrs):
@@ -264,30 +265,38 @@ class ScoringSerializer(serializers.ModelSerializer):
         get = lambda name: attrs.get(name, getattr(self.instance, name, None))  # noqa: E731
         name = (get("name") or "").strip()
         if not name:
-            raise serializers.ValidationError({"name": "Bitte eine Bezeichnung angeben."})
+            raise serializers.ValidationError({"name": gettext("Bitte eine Bezeichnung angeben.")})
         if comp.form == Competition.Form.BIRD:
             raise serializers.ValidationError(
-                "Beim Vogelschießen gibt es keine Wertungen, nur Pfänder."
+                gettext("Beim Vogelschießen gibt es keine Wertungen, nur Pfänder.")
             )
         kind = get("kind")
         if kind == Scoring.Kind.TEAM and comp.own:
             raise serializers.ValidationError(
-                {"kind": "Mannschaftswertungen gibt es nur bei fremden Wettbewerben."}
+                {"kind": gettext("Mannschaftswertungen gibt es nur bei fremden Wettbewerben.")}
             )
         if kind == Scoring.Kind.UNIT and not comp.own:
             raise serializers.ValidationError(
-                {"kind": "Bei fremden Wettbewerben: Einzel- oder Mannschaftswertung."}
+                {"kind": gettext("Bei fremden Wettbewerben: Einzel- oder Mannschaftswertung.")}
             )
         attrs["name"] = name if "name" in attrs or not self.instance else attrs.get("name", name)
         shots, counted = get("shots"), get("counted_shots")
         if shots and counted and counted > shots:
             raise serializers.ValidationError(
-                {"counted_shots": "Es können nicht mehr Schüsse zählen als geschossen werden."}
+                {
+                    "counted_shots": gettext(
+                        "Es können nicht mehr Schüsse zählen als geschossen werden."
+                    )
+                }
             )
         so_shots, so_counted = get("shootoff_shots"), get("shootoff_counted")
         if so_shots and so_counted and so_counted > so_shots:
             raise serializers.ValidationError(
-                {"shootoff_counted": "Es können nicht mehr Schüsse zählen als geschossen werden."}
+                {
+                    "shootoff_counted": gettext(
+                        "Es können nicht mehr Schüsse zählen als geschossen werden."
+                    )
+                }
             )
         if get("kind") == Scoring.Kind.UNIT:
             source = get("source")
@@ -299,14 +308,16 @@ class ScoringSerializer(serializers.ModelSerializer):
                 )
                 if source is None:
                     raise serializers.ValidationError(
-                        {"source": "Zuerst eine Einzelwertung anlegen."}
+                        {"source": gettext("Zuerst eine Einzelwertung anlegen.")}
                     )
                 attrs["source"] = source
             elif source.competition_id != comp.pk or source.kind != Scoring.Kind.INDIVIDUAL:
-                raise serializers.ValidationError({"source": "Bitte eine Einzelwertung wählen."})
+                raise serializers.ValidationError(
+                    {"source": gettext("Bitte eine Einzelwertung wählen.")}
+                )
             if get("team_mode") == Scoring.TeamMode.SUM_BEST and not get("team_size"):
                 raise serializers.ValidationError(
-                    {"team_size": "Bitte angeben, wie viele der besten zählen."}
+                    {"team_size": gettext("Bitte angeben, wie viele der besten zählen.")}
                 )
         else:
             attrs["source"] = None
@@ -488,7 +499,7 @@ class StartersView(_Mixin, APIView):
 
 def _open_for_entries(comp: Competition) -> None:
     if comp.status == Competition.Status.FINAL:
-        raise ValidationError("Der Wettbewerb ist endgültig abgeschlossen.")
+        raise ValidationError(gettext("Der Wettbewerb ist endgültig abgeschlossen."))
 
 
 @transaction.atomic
@@ -517,7 +528,7 @@ def create_starter(org, user, comp: Competition, data, merged: list | None = Non
             .first()
         )
         if m is None:
-            raise ValidationError({"membership": "Unbekanntes Mitglied."})
+            raise ValidationError({"membership": gettext("Unbekanntes Mitglied.")})
         existing = comp.starters.filter(membership=m).first()
         if existing and key and merged is not None:
             existing.aliases = [*existing.aliases, str(key)]
@@ -525,7 +536,9 @@ def create_starter(org, user, comp: Competition, data, merged: list | None = Non
             merged.append(existing)
             return existing
         if existing:
-            raise ValidationError({"membership": f"{_person_name(m)} ist schon eingetragen."})
+            raise ValidationError(
+                {"membership": gettext("{x} ist schon eingetragen.").format(x=_person_name(m))}
+            )
         s = Starter(
             organization=org,
             competition=comp,
@@ -536,7 +549,7 @@ def create_starter(org, user, comp: Competition, data, merged: list | None = Non
     else:
         name = str(data.get("name", "")).strip()[:200]
         if not name:
-            raise ValidationError({"name": "Bitte einen Namen angeben."})
+            raise ValidationError({"name": gettext("Bitte einen Namen angeben.")})
         s = Starter(
             organization=org,
             competition=comp,
@@ -551,7 +564,7 @@ def create_starter(org, user, comp: Competition, data, merged: list | None = Non
             s.save()
             record(org, user, "create", s, diff({}, snapshot(s)))
     except IntegrityError as exc:
-        raise ValidationError({"membership": "Schon eingetragen."}) from exc
+        raise ValidationError({"membership": gettext("Schon eingetragen.")}) from exc
     return Starter.objects.select_related("unit").get(pk=s.pk)
 
 
@@ -561,7 +574,7 @@ def _uuid(raw):
     try:
         return uuid.UUID(str(raw))
     except ValueError as exc:
-        raise ValidationError({"client_key": "Ungültige Kennung."}) from exc
+        raise ValidationError({"client_key": gettext("Ungültige Kennung.")}) from exc
 
 
 def _person_name(m: Membership) -> str:
@@ -573,7 +586,7 @@ def _unit_or_none(org, raw):
         return None
     unit = Department.objects.filter(organization=org, pk=raw).first()
     if unit is None:
-        raise ValidationError({"unit": "Unbekannte Untereinheit."})
+        raise ValidationError({"unit": gettext("Unbekannte Untereinheit.")})
     return unit
 
 
@@ -585,7 +598,7 @@ class StarterView(_Mixin, APIView):
     def _get(self, competition_id, pk) -> Starter:
         comp = self.competition(competition_id)
         if comp.status == Competition.Status.FINAL:
-            raise ValidationError("Der Wettbewerb ist endgültig abgeschlossen.")
+            raise ValidationError(gettext("Der Wettbewerb ist endgültig abgeschlossen."))
         return get_object_or_404(Starter, pk=pk, competition=comp, organization=self.org)
 
     def patch(self, request, org_id: int, competition_id: int, pk: int):
@@ -620,15 +633,17 @@ def update_starter(org, user, s: Starter, data) -> None:
         if s.competition.form == Competition.Form.BIRD and s.number:
             n = bird.lot(s.number)
             if n is None:
-                raise ValidationError({"number": "Losnummer: bitte eine ganze Zahl ab 1."})
+                raise ValidationError({"number": gettext("Losnummer: bitte eine ganze Zahl ab 1.")})
             other = s.competition.starters.exclude(pk=s.pk).filter(number=str(n)).first()
             if other:
-                raise ValidationError({"number": f"Nummer {n} hat schon {other.name}."})
+                raise ValidationError(
+                    {"number": gettext("Nummer {n} hat schon {name}.").format(n=n, name=other.name)}
+                )
             s.number = str(n)
             s.drawn_how = s.drawn_how or "hut"
     if "presence" in data:
         if data["presence"] not in Presence.values:
-            raise ValidationError({"presence": "Unbekannte Angabe."})
+            raise ValidationError({"presence": gettext("Unbekannte Angabe.")})
         s.presence = data["presence"]
     if "out_of_competition" in data:
         s.out_of_competition = bool(data["out_of_competition"])
@@ -636,7 +651,7 @@ def update_starter(org, user, s: Starter, data) -> None:
         if "name" in data:
             name = str(data["name"] or "").strip()[:200]
             if not name:
-                raise ValidationError({"name": "Bitte einen Namen angeben."})
+                raise ValidationError({"name": gettext("Bitte einen Namen angeben.")})
             s.name = name
         if "club" in data:
             s.club = str(data["club"] or "").strip()[:200]
@@ -652,18 +667,18 @@ def _decimal(raw, field: str) -> Decimal | None:
     try:
         value = Decimal(str(raw).replace(",", ".").strip())
     except InvalidOperation as exc:
-        raise ValidationError({field: "Bitte eine Zahl eingeben."}) from exc
+        raise ValidationError({field: gettext("Bitte eine Zahl eingeben.")}) from exc
     if not value.is_finite() or value < 0 or value >= Decimal("10000000"):
-        raise ValidationError({field: "Bitte eine gültige Zahl eingeben."})
+        raise ValidationError({field: gettext("Bitte eine gültige Zahl eingeben.")})
     return value
 
 
 def _check_decimals(value: Decimal, decimals: int, field: str):
     if value != value.quantize(Decimal(1).scaleb(-decimals)):
         raise ValidationError(
-            {field: f"Höchstens {decimals} Nachkommastellen."}
+            {field: gettext("Höchstens {decimals} Nachkommastellen.").format(decimals=decimals)}
             if decimals
-            else {field: "Bitte eine ganze Zahl eingeben."}
+            else {field: gettext("Bitte eine ganze Zahl eingeben.")}
         )
 
 
@@ -707,7 +722,9 @@ def set_score(org, user, comp, scoring, starter, raw, at=None):
         return None, False
     _check_decimals(value, scoring.decimals, "value")
     if scoring.max_value is not None and value > scoring.max_value:
-        raise ValidationError({"value": f"Höchstens {services.fmt(scoring.max_value, 0)}."})
+        raise ValidationError(
+            {"value": gettext("Höchstens {x}.").format(x=services.fmt(scoring.max_value, 0))}
+        )
     if existing:
         before = snapshot(existing)
         existing.value = value
@@ -753,7 +770,7 @@ def sync(org, user, comp: Competition, ops, generation=None) -> dict:
     von vor dem Zurücksetzen und werden verworfen."""
     ops = ops or []
     if not isinstance(ops, list) or len(ops) > 2000:
-        raise ValidationError("Höchstens 2000 Eingaben auf einmal.")
+        raise ValidationError(gettext("Höchstens 2000 Eingaben auf einmal."))
     results, conflicts = [], []
     stale = generation is not None and str(generation) != str(comp.generation)
     for op in ops:
@@ -908,7 +925,7 @@ def _apply_op(org, user, comp, op, conflicts) -> dict:
         if note:
             conflicts.append({"starter": s.pk, "name": s.name, "number": number, "note": note})
         return {"ok": True, "number": number}
-    raise ValidationError("Unbekannte Eingabe.")
+    raise ValidationError(gettext("Unbekannte Eingabe."))
 
 
 def _shootoff_ref(comp, ref) -> ShootOff:
@@ -926,7 +943,7 @@ def _shootoff_op(org, user, comp, kind, op, conflicts) -> dict:
     if kind == "shootoff":
         key = _uuid(op.get("client_key"))
         if key is None:
-            raise ValidationError("Gerätekennung fehlt.")
+            raise ValidationError(gettext("Gerätekennung fehlt."))
         try:
             return {"ok": True, "shootoff": _shootoff_ref(comp, str(key)).pk}
         except ShootOff.DoesNotExist:
@@ -968,7 +985,7 @@ def _shootoff_op(org, user, comp, kind, op, conflicts) -> dict:
     entry = so.entries.all()
     entry = next((e for e in entry if e.key == op.get("key")), None)
     if entry is None:
-        raise ValidationError("Unbekannter Teilnehmer im Stechen.")
+        raise ValidationError(gettext("Unbekannter Teilnehmer im Stechen."))
     if kind == "shootoff_member":
         update_shootoff_entry(org, user, comp, entry.pk, {"membership": op.get("membership")})
         return {"ok": True}
@@ -1140,12 +1157,16 @@ class StatusView(_Mixin, APIView):
         comp = self.competition(competition_id)
         new = request.data.get("status")
         if new not in Competition.Status.values:
-            raise ValidationError({"status": "Unbekannter Zustand."})
+            raise ValidationError({"status": gettext("Unbekannter Zustand.")})
         if new == Competition.Status.FINAL:
             data = services.standings(comp)
             if data["open_shootoffs"]:
                 raise ValidationError(
-                    {"status": "Erst die offenen Stechen entscheiden, dann endgültig setzen."}
+                    {
+                        "status": gettext(
+                            "Erst die offenen Stechen entscheiden, dann endgültig setzen."
+                        )
+                    }
                 )
         before = snapshot(comp)
         comp.status = new
@@ -1164,7 +1185,9 @@ class ResetView(_Mixin, APIView):
         comp = self.competition(competition_id)
         Competition.objects.select_for_update().filter(pk=comp.pk).first()
         if comp.status == Competition.Status.FINAL:
-            raise ValidationError("Ein endgültiger Wettbewerb lässt sich nicht zurücksetzen.")
+            raise ValidationError(
+                gettext("Ein endgültiger Wettbewerb lässt sich nicht zurücksetzen.")
+            )
         keep = bool(request.data.get("keep_starters"))
         before = snapshot(comp)
         counts = {
@@ -1296,13 +1319,13 @@ def _shootoff_rules(data, defaults: tuple) -> tuple:
         else defaults[1]
     )
     if shots and counted and counted > shots:
-        raise ValidationError({"counted_shots": "Höchstens so viele wie Schüsse."})
+        raise ValidationError({"counted_shots": gettext("Höchstens so viele wie Schüsse.")})
     return shots, counted
 
 
 def _not_final(comp: Competition) -> None:
     if comp.status == Competition.Status.FINAL:
-        raise ValidationError("Der Wettbewerb ist endgültig abgeschlossen.")
+        raise ValidationError(gettext("Der Wettbewerb ist endgültig abgeschlossen."))
 
 
 # Stechen: angemeldet (Org-API) und über den Standzugang (stand_views) gleich
@@ -1316,7 +1339,7 @@ def list_shootoffs(comp: Competition) -> list:
 @transaction.atomic
 def create_shootoff(org, user, comp: Competition, data) -> dict:
     if comp.status == Competition.Status.FINAL:
-        raise ValidationError("Der Wettbewerb ist endgültig abgeschlossen.")
+        raise ValidationError(gettext("Der Wettbewerb ist endgültig abgeschlossen."))
     scoring = get_object_or_404(Scoring, pk=data.get("scoring"), competition=comp)
     keys = data.get("keys") or []
     standings = services.standings(comp)
@@ -1326,7 +1349,7 @@ def create_shootoff(org, user, comp: Competition, data) -> dict:
         None,
     )
     if group is None:
-        raise ValidationError("Für diese Gruppe ist kein Stechen nötig.")
+        raise ValidationError(gettext("Für diese Gruppe ist kein Stechen nötig."))
     number = (scoring.shootoffs.aggregate(m=Max("number"))["m"] or 0) + 1
     previous = scoring.shootoffs.order_by("-number").first()
     defaults = (
@@ -1367,10 +1390,10 @@ def create_shootoff(org, user, comp: Competition, data) -> dict:
 @transaction.atomic
 def update_shootoff(org, user, comp: Competition, pk: int, data) -> dict:
     if comp.status == Competition.Status.FINAL:
-        raise ValidationError("Der Wettbewerb ist endgültig abgeschlossen.")
+        raise ValidationError(gettext("Der Wettbewerb ist endgültig abgeschlossen."))
     so = get_object_or_404(ShootOff, pk=pk, scoring__competition=comp)
     if so.entries.filter(value__isnull=False).exists():
-        raise ValidationError("Es sind schon Werte eingetragen; erst die Werte löschen.")
+        raise ValidationError(gettext("Es sind schon Werte eingetragen; erst die Werte löschen."))
     before = snapshot(so)
     so.shots, so.counted_shots = _shootoff_rules(data, (so.shots, so.counted_shots))
     so.save(update_fields=["shots", "counted_shots"])
@@ -1382,10 +1405,10 @@ def update_shootoff(org, user, comp: Competition, pk: int, data) -> dict:
 @transaction.atomic
 def delete_shootoff(org, user, comp: Competition, pk: int) -> None:
     if comp.status == Competition.Status.FINAL:
-        raise ValidationError("Der Wettbewerb ist endgültig abgeschlossen.")
+        raise ValidationError(gettext("Der Wettbewerb ist endgültig abgeschlossen."))
     so = get_object_or_404(ShootOff, pk=pk, scoring__competition=comp)
     if so.scoring.shootoffs.filter(number__gt=so.number).exists():
-        raise ValidationError("Erst das spätere Stechen entfernen.")
+        raise ValidationError(gettext("Erst das spätere Stechen entfernen."))
     record(org, user, "delete", so, diff(snapshot(so), {}))
     so.delete()
 
@@ -1408,7 +1431,9 @@ def update_shootoff_entry(org, user, comp: Competition, pk: int, data) -> dict:
             per_shot = scoring.max_per_shot or metric.max_per_shot
             count = entry.shootoff.counted_shots or entry.shootoff.shots
             if per_shot is not None and count and value > per_shot * count:
-                raise ValidationError({"value": f"Höchstens {services.fmt(per_shot * count, 0)}."})
+                raise ValidationError(
+                    {"value": gettext("Höchstens {x}.").format(x=services.fmt(per_shot * count, 0))}
+                )
         entry.value = value
     if entry.unit_id and "membership" in data:
         if data["membership"]:
@@ -1420,7 +1445,7 @@ def update_shootoff_entry(org, user, comp: Competition, pk: int, data) -> dict:
                 .first()
             )
             if m is None:
-                raise ValidationError({"membership": "Unbekanntes Mitglied."})
+                raise ValidationError({"membership": gettext("Unbekanntes Mitglied.")})
             entry.membership = m
             entry.name = _person_name(m)
         else:
@@ -1528,7 +1553,7 @@ class ExportView(_Mixin, APIView):
             return resp
         if kind in ("losliste", "pfaenderliste"):
             if comp.form != Competition.Form.BIRD:
-                raise ValidationError("Das ist kein Vogelschießen.")
+                raise ValidationError(gettext("Das ist kein Vogelschießen."))
             if kind == "losliste":
                 try:
                     blank = max(0, min(int(request.query_params.get("leerzeilen", 10)), 60))

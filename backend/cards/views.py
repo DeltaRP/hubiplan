@@ -17,6 +17,7 @@ from django.core.cache import cache
 from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.translation import gettext
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.permissions import AllowAny
@@ -150,7 +151,7 @@ class OrgCardsPdfView(_CardOrgMixin, APIView):
         if self.org.type == "federation":
             if self.org.federation_member_access == "none":
                 raise PermissionDenied(
-                    "Die Plattform hat den Zugriff auf Mitgliedsdaten nicht freigegeben."
+                    gettext("Die Plattform hat den Zugriff auf Mitgliedsdaten nicht freigegeben.")
                 )
             qs = filter_federation(federation_queryset(self.org), params)
         else:
@@ -287,7 +288,9 @@ class PublicCardView(APIView):
 
     def get(self, request, token: str):
         if _rate_limited(request):
-            return Response({"detail": "Zu viele Aufrufe. Bitte später erneut."}, status=429)
+            return Response(
+                {"detail": gettext("Zu viele Aufrufe. Bitte später erneut.")}, status=429
+            )
         card = services.find_valid(token)
         if card is None:
             raise Http404

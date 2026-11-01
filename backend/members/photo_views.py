@@ -10,6 +10,7 @@ from django.db import transaction
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.translation import gettext
 from rest_framework import serializers, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny
@@ -92,12 +93,16 @@ class MemberPhotoView(_PhotoView):
         membership = self.membership()
         upload = request.FILES.get("file")
         if upload is None:
-            raise serializers.ValidationError({"file": "Bitte ein Bild wählen."})
+            raise serializers.ValidationError({"file": gettext("Bitte ein Bild wählen.")})
         consent = str(request.data.get("consent", "")).lower() in ("1", "true", "ja", "on")
         if not membership.photo_consent_at:
             if not consent:
                 raise serializers.ValidationError(
-                    {"consent": "Bitte bestätigen, dass die Einwilligung des Mitglieds vorliegt."}
+                    {
+                        "consent": gettext(
+                            "Bitte bestätigen, dass die Einwilligung des Mitglieds vorliegt."
+                        )
+                    }
                 )
             membership.photo_consent_at = timezone.localdate()
             membership.photo_consent_source = "board"
@@ -135,7 +140,7 @@ class PhotoRotateView(_PhotoView):
         membership = self.membership()
         photo = MemberPhoto.objects.filter(membership=membership, status="approved").first()
         if photo is None:
-            raise serializers.ValidationError("Kein Foto vorhanden.")
+            raise serializers.ValidationError(gettext("Kein Foto vorhanden."))
         degrees = 90 if request.data.get("direction") == "left" else -90
         photos.rotate(photo, degrees)
         record(
@@ -256,7 +261,7 @@ class PhotoLinkView(_PhotoView):
             contact = services.contact_for(membership.person, self.org)
             if contact is None or not contact.email:
                 raise serializers.ValidationError(
-                    "Für dieses Mitglied ist keine E-Mail-Adresse hinterlegt."
+                    gettext("Für dieses Mitglied ist keine E-Mail-Adresse hinterlegt.")
                 )
             send_mail(
                 f"Ihr Foto für {self.org.name}",
@@ -345,7 +350,9 @@ class PublicPhotoUploadView(APIView):
 
     def get(self, request, token: str):
         if _rate_limited(request, "get", RATE_GET):
-            return Response({"detail": "Zu viele Aufrufe. Bitte später erneut."}, status=429)
+            return Response(
+                {"detail": gettext("Zu viele Aufrufe. Bitte später erneut.")}, status=429
+            )
         link = _valid_link(token)
         org = link.organization
         theme = effective_theme(org.ancestors())
@@ -363,15 +370,17 @@ class PublicPhotoUploadView(APIView):
 
     def post(self, request, token: str):
         if _rate_limited(request, "post", RATE_POST):
-            return Response({"detail": "Zu viele Versuche. Bitte später erneut."}, status=429)
+            return Response(
+                {"detail": gettext("Zu viele Versuche. Bitte später erneut.")}, status=429
+            )
         link = _valid_link(token)
         if str(request.data.get("consent", "")).lower() not in ("1", "true", "on"):
             raise serializers.ValidationError(
-                {"consent": "Bitte stimmen Sie der Verwendung des Fotos zu."}
+                {"consent": gettext("Bitte stimmen Sie der Verwendung des Fotos zu.")}
             )
         upload = request.FILES.get("file")
         if upload is None:
-            raise serializers.ValidationError({"file": "Bitte ein Bild wählen."})
+            raise serializers.ValidationError({"file": gettext("Bitte ein Bild wählen.")})
         processed = photos.process(upload)
         org = link.organization
         membership = link.membership
@@ -458,14 +467,16 @@ class PortalPhotoView(_PortalPhotoMixin, APIView):
 
     def post(self, request, access_id: int):
         if too_many(f"portal-photo:{request.user.pk}", RATE_PORTAL[0], RATE_PORTAL[1]):
-            return Response({"detail": "Zu viele Versuche. Bitte später erneut."}, status=429)
+            return Response(
+                {"detail": gettext("Zu viele Versuche. Bitte später erneut.")}, status=429
+            )
         if str(request.data.get("consent", "")).lower() not in ("1", "true", "on"):
             raise serializers.ValidationError(
-                {"consent": "Bitte stimme der Verwendung des Fotos zu."}
+                {"consent": gettext("Bitte stimme der Verwendung des Fotos zu.")}
             )
         upload = request.FILES.get("file")
         if upload is None:
-            raise serializers.ValidationError({"file": "Bitte ein Bild wählen."})
+            raise serializers.ValidationError({"file": gettext("Bitte ein Bild wählen.")})
         processed = photos.process(upload)
         with tenant_context(self.club.pk, request.user.pk), transaction.atomic():
             m = self.membership()

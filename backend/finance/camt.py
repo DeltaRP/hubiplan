@@ -19,6 +19,8 @@ import zipfile
 from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
 
+from django.utils.translation import gettext
+
 MAX_FILE = 10 * 1024 * 1024  # 10 MB je Upload
 MAX_XML = 20 * 1024 * 1024  # 20 MB entpackt je Datei
 MAX_FILES = 100  # Auszüge je ZIP
@@ -140,11 +142,15 @@ def _amount(raw: str, *, signed: bool = False) -> Decimal:
     try:
         value = Decimal(raw)
     except (InvalidOperation, ValueError):
-        raise CamtError(f"Ungültiger Betrag „{raw}“.") from None
+        raise CamtError(gettext("Ungültiger Betrag „{raw}“.").format(raw=raw)) from None
     if not value.is_finite() or value != value.quantize(Decimal("0.01")) or abs(value) > MAX_AMOUNT:
-        raise CamtError(f"Ungültiger Betrag „{raw}“.")
+        raise CamtError(gettext("Ungültiger Betrag „{raw}“.").format(raw=raw))
     if value < 0 and not signed:
-        raise CamtError(f"Ungültiger Betrag „{raw}“ (Beträge stehen ohne Vorzeichen in der Datei).")
+        raise CamtError(
+            gettext(
+                "Ungültiger Betrag „{raw}“ (Beträge stehen ohne Vorzeichen in der Datei)."
+            ).format(raw=raw)
+        )
     return value
 
 
@@ -152,7 +158,7 @@ def _currency_ok(el, path: str = "Amt") -> None:
     node = _find(el, path)
     ccy = node.get("Ccy") if node is not None else None
     if ccy and ccy != "EUR":
-        raise CamtError(f"Nur Beträge in Euro (Umsatz in {ccy}).")
+        raise CamtError(gettext("Nur Beträge in Euro (Umsatz in {ccy}).").format(ccy=ccy))
 
 
 def _balance(stmt, code: str) -> tuple[Decimal | None, datetime.date | None]:
@@ -199,18 +205,22 @@ def _purpose(details) -> str:
 def _parse_xml(data: bytes) -> list[Statement]:
     head = data[:4096].lower()
     if b"<!doctype" in head or b"<!entity" in data.lower():
-        raise CamtError("Die Datei enthält eine DTD und wird aus Sicherheitsgründen abgelehnt.")
+        raise CamtError(
+            gettext("Die Datei enthält eine DTD und wird aus Sicherheitsgründen abgelehnt.")
+        )
     try:
         root = ET.fromstring(data)  # noqa: S314 - DTD/Entitäten oben abgewiesen
     except ET.ParseError:
-        raise CamtError("Die Datei ist kein gültiges XML.") from None
+        raise CamtError(gettext("Die Datei ist kein gültiges XML.")) from None
     container = _find(root, "BkToCstmrStmt")
     if container is None:
         if _find(root, "BkToCstmrAcctRpt") is not None:
             raise CamtError(
-                "Das ist ein Tagesumsatz (CAMT.052). Bitte den Kontoauszug als CAMT.053 laden."
+                gettext(
+                    "Das ist ein Tagesumsatz (CAMT.052). Bitte den Kontoauszug als CAMT.053 laden."
+                )
             )
-        raise CamtError("Keine CAMT.053-Datei (Kontoauszug) gefunden.")
+        raise CamtError(gettext("Keine CAMT.053-Datei (Kontoauszug) gefunden."))
     statements = []
     for stmt in _children(container, "Stmt"):
         iban = _text(stmt, "Acct", "Id", "IBAN").replace(" ", "").upper()
@@ -234,7 +244,11 @@ def _parse_xml(data: bytes) -> list[Statement]:
                 continue
             raw_amount = _text(entry, "Amt")
             if not raw_amount:
-                raise CamtError(f"Umsatz Nr. {pos} im Auszug {iban} hat keinen Betrag.")
+                raise CamtError(
+                    gettext("Umsatz Nr. {pos} im Auszug {iban} hat keinen Betrag.").format(
+                        pos=pos, iban=iban
+                    )
+                )
             amount = _amount(raw_amount)
             _currency_ok(entry)
             credit = _text(entry, "CdtDbtInd") == "CRDT"
@@ -244,9 +258,11 @@ def _parse_xml(data: bytes) -> list[Statement]:
                 # Nicht still auslassen (Audit 31.10. FIN31-04): sonst fehlt ein Umsatz,
                 # obwohl der Import als erfolgreich gemeldet wird
                 raise CamtError(
-                    f"Umsatz Nr. {pos} im Auszug {iban} ({raw_amount} €) hat kein gültiges "
-                    "Buchungsdatum. Bitte den Auszug bei der Bank neu herunterladen; eingelesen "
-                    "wurde nichts."
+                    gettext(
+                        "Umsatz Nr. {pos} im Auszug {iban} ({raw_amount} €) hat kein gültiges "
+                        "Buchungsdatum. Bitte den Auszug bei der Bank neu herunterladen; "
+                        "eingelesen wurde nichts."
+                    ).format(pos=pos, iban=iban, raw_amount=raw_amount)
                 )
             all_details = []
             for ntry_dtls in _children(entry, "NtryDtls"):
@@ -303,32 +319,38 @@ def _parse_xml(data: bytes) -> list[Statement]:
         st.number_occurrences()
         statements.append(st)
     if not statements:
-        raise CamtError("Die Datei enthält keinen Kontoauszug.")
+        raise CamtError(gettext("Die Datei enthält keinen Kontoauszug."))
     return statements
 
 
 def parse(data: bytes) -> list[Statement]:
     """XML- oder ZIP-Datei lesen; liefert alle Auszüge darin."""
     if len(data) > MAX_FILE:
-        raise CamtError("Die Datei ist größer als 10 MB.")
+        raise CamtError(gettext("Die Datei ist größer als 10 MB."))
     if data[:2] == b"PK":
         try:
             archive = zipfile.ZipFile(io.BytesIO(data))
         except zipfile.BadZipFile:
-            raise CamtError("Das ZIP-Archiv ist beschädigt.") from None
+            raise CamtError(gettext("Das ZIP-Archiv ist beschädigt.")) from None
         names = [i for i in archive.infolist() if i.filename.lower().endswith(".xml")]
         if not names:
-            raise CamtError("Im ZIP-Archiv ist keine XML-Datei.")
+            raise CamtError(gettext("Im ZIP-Archiv ist keine XML-Datei."))
         if len(names) > MAX_FILES:
-            raise CamtError(f"Höchstens {MAX_FILES} Auszüge je ZIP-Archiv.")
+            raise CamtError(
+                gettext("Höchstens {MAX_FILES} Auszüge je ZIP-Archiv.").format(MAX_FILES=MAX_FILES)
+            )
         result = []
         for info in sorted(names, key=lambda i: i.filename):
             if info.file_size > MAX_XML:
-                raise CamtError(f"{info.filename} ist entpackt zu groß.")
+                raise CamtError(
+                    gettext("{filename} ist entpackt zu groß.").format(filename=info.filename)
+                )
             with archive.open(info) as fh:
                 content = fh.read(MAX_XML + 1)
             if len(content) > MAX_XML:
-                raise CamtError(f"{info.filename} ist entpackt zu groß.")
+                raise CamtError(
+                    gettext("{filename} ist entpackt zu groß.").format(filename=info.filename)
+                )
             result += _parse_xml(content)
         return result
     return _parse_xml(data)

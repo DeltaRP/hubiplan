@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from django.conf import settings
 from django.db import models
+from django.utils.translation import gettext_lazy
 
 from core.encfields import EncryptedJSONField
 
@@ -24,14 +25,14 @@ class Call(models.Model):
     """Ausschreibung: was, bis wann, an wen und wie gemeldet wird."""
 
     class FeePer(models.TextChoices):
-        TEAM = "mannschaft", "je Mannschaft"
-        PERSON = "person", "je Person"
+        TEAM = "mannschaft", gettext_lazy("je Mannschaft")
+        PERSON = "person", gettext_lazy("je Person")
         FLAT = "pauschal", "pauschal"
 
     class Changes(models.TextChoices):
-        NONE = "keine", "nach Meldeschluss keine Änderungen"
-        SUBSTITUTE = "ersatz", "nach Meldeschluss nur Ersatz von Personen"
-        FREE = "frei", "Änderungen bis zum Anlass"
+        NONE = "keine", gettext_lazy("nach Meldeschluss keine Änderungen")
+        SUBSTITUTE = "ersatz", gettext_lazy("nach Meldeschluss nur Ersatz von Personen")
+        FREE = "frei", gettext_lazy("Änderungen bis zum Anlass")
 
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE, related_name="+"
@@ -116,11 +117,11 @@ class CallBlock(models.Model):
     """Baustein des Formulars einer Ausschreibung."""
 
     class Kind(models.TextChoices):
-        TEAMS = "mannschaften", "Mannschaften"
-        PERSONS = "personen", "Personenliste"
-        NUMBER = "zahl", "Zahl"
-        CHOICE = "auswahl", "Auswahl"
-        TEXT = "text", "Text"
+        TEAMS = "mannschaften", gettext_lazy("Mannschaften")
+        PERSONS = "personen", gettext_lazy("Personenliste")
+        NUMBER = "zahl", gettext_lazy("Zahl")
+        CHOICE = "auswahl", gettext_lazy("Auswahl")
+        TEXT = "text", gettext_lazy("Text")
 
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE, related_name="+"
@@ -149,11 +150,11 @@ class Entry(models.Model):
     """Meldung einer Einheit zu einer Ausschreibung."""
 
     class Status(models.TextChoices):
-        DRAFT = "entwurf", "Entwurf"
+        DRAFT = "entwurf", gettext_lazy("Entwurf")
         SUBMITTED = "abgegeben", "abgegeben"
-        CONFIRMED = "bestaetigt", "bestätigt"
-        RETURNED = "rueckfrage", "Rückfrage"
-        WITHDRAWN = "zurueckgezogen", "zurückgezogen"
+        CONFIRMED = "bestaetigt", gettext_lazy("bestätigt")
+        RETURNED = "rueckfrage", gettext_lazy("Rückfrage")
+        WITHDRAWN = "zurueckgezogen", gettext_lazy("zurückgezogen")
 
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE, related_name="+"
@@ -306,16 +307,16 @@ class EntryVersion(models.Model):
     """Festgehaltene Fassung einer abgegebenen Meldung (Meldung, Änderung, Rückzug)."""
 
     class Kind(models.TextChoices):
-        ENTRY = "meldung", "Meldung"
-        CHANGE = "aenderung", "Änderungsmeldung"
-        WITHDRAWAL = "rueckzug", "Rückzug"
+        ENTRY = "meldung", gettext_lazy("Meldung")
+        CHANGE = "aenderung", gettext_lazy("Änderungsmeldung")
+        WITHDRAWAL = "rueckzug", gettext_lazy("Rückzug")
 
     class Channel(models.TextChoices):
-        LETTER = "brief", "Brief"
-        EMAIL = "email", "E-Mail"
-        TABLE = "tabelle", "Tabelle"
-        OTHER = "sonstiges", "sonstiger Weg"
-        HUBIPLAN = "hubiplan", "in HUBIplan"
+        LETTER = "brief", gettext_lazy("Brief")
+        EMAIL = "email", gettext_lazy("E-Mail")
+        TABLE = "tabelle", gettext_lazy("Tabelle")
+        OTHER = "sonstiges", gettext_lazy("sonstiger Weg")
+        HUBIPLAN = "hubiplan", gettext_lazy("in HUBIplan")
 
     organization = models.ForeignKey(
         "organizations.Organization", on_delete=models.CASCADE, related_name="+"
