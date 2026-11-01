@@ -287,8 +287,14 @@ def _fill_rims(
     return out
 
 
-def hole_mask(norm: np.ndarray, t: targets.Target, black_r: float) -> np.ndarray:
+def hole_mask(
+    norm: np.ndarray, t: targets.Target, black_r: float, with_raw: bool = False
+) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
     """Flächen, die wie Löcher aussehen (255), im entzerrten Bild.
+
+    ``with_raw``: zusätzlich die Maske vor dem Glätten (Öffnen/Schließen). Das Schließen
+    füllt die Kerben zwischen überlappenden Löchern; zum Einpassen der Kreise zählt aber
+    gerade der Umriss mit Kerben.
 
     Vergleich mit der erwarteten Scheibe: im Spiegel dunkel, außen hell, jeweils mit der
     örtlichen Helligkeit (Lichtverlauf, Schatten). Was deutlich abweicht und dicker als
@@ -332,6 +338,7 @@ def hole_mask(norm: np.ndarray, t: targets.Target, black_r: float) -> np.ndarray
     if t.inner_diameter:
         radii.append(t.inner_diameter / 2 * PX_PER_MM)
     mask = _fill_rims(mask, hole_px, radii, black_r * PX_PER_MM if has_black else 0.0)
+    raw = mask.copy()
     o = int(hole_px * 0.35) | 1
     mask = cv2.morphologyEx(
         mask, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (o, o))
@@ -340,12 +347,13 @@ def hole_mask(norm: np.ndarray, t: targets.Target, black_r: float) -> np.ndarray
     mask = cv2.morphologyEx(
         mask, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (c, c))
     )
-    return mask
+    return (mask, raw) if with_raw else mask
 
 
-def _fit_circles(blob: np.ndarray, centers: np.ndarray, r_px: float) -> np.ndarray:
+def _fit_circles(blob: np.ndarray, centers: np.ndarray, r_px: float) -> tuple[np.ndarray, int]:
     """Mitten von ``k`` gleich großen Kreisen so verschieben, dass ihre Vereinigung die
-    Fläche ``blob`` (bool, Ausschnitt) möglichst genau deckt (zu viel + zu wenig)."""
+    Fläche ``blob`` (bool, Ausschnitt) möglichst genau deckt; zurück auch die Abweichung
+    (Bildpunkte zu viel + zu wenig)."""
     h, w = blob.shape
     yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
     r2 = r_px * r_px
@@ -375,7 +383,7 @@ def _fit_circles(blob: np.ndarray, centers: np.ndarray, r_px: float) -> np.ndarr
                         improved = True
             if not improved:
                 break
-    return centers
+    return centers, best
 
 
 def _split(points: np.ndarray, k: int, r_px: float) -> list[tuple[float, float]]:
@@ -397,23 +405,66 @@ def _split(points: np.ndarray, k: int, r_px: float) -> list[tuple[float, float]]
     return [(float(x), float(y)) for x, y in centers]
 
 
-def _counts(areas: list[float], one: float, expected: int | None) -> tuple[list[int], bool]:
-    """Löcher je Fläche schätzen; ``unsure``, wenn eine Fläche zwischen zwei Zahlen liegt."""
-    raw = [a / one for a in areas]
-    counts = [max(1, round(r)) for r in raw]
-    unsure = any(0.3 < (r % 1) < 0.7 and r > 1 for r in raw)
-    if expected and 0 < len(raw) <= expected:
-        # bekannte Schusszahl: auf die Flächen nach Größe verteilen (jede mindestens 1).
-        # Überlappende Löcher ergeben weniger Fläche als einzelne, darum nicht nur runden.
-        counts = [1] * len(raw)
-        for _ in range(expected - len(raw)):
-            j = max(range(len(raw)), key=lambda i: raw[i] / counts[i])
-            # nur, wenn dann noch jedes Loch fast eine halbe Lochfläche hat; sonst fehlt
-            # eher ein Loch woanders (dann lieber zu wenige und „bitte prüfen“)
-            if raw[j] / (counts[j] + 1) < 0.45:
-                break
-            counts[j] += 1
-    return counts, unsure
+# Ohne bekannte Schusszahl lohnt ein weiteres Loch in einer Fläche nur, wenn es die Deckung
+# um so viel Lochflächen verbessert; mit bekannter Schusszahl wird immer bis dahin verteilt
+# (fehlt ein Loch ganz, steht dann „bitte prüfen“ über die Anzahl je Fläche).
+MIN_GAIN_FREE = 0.25
+# Lochgrößen im Bild (Vielfache des Kalibers): Bleirand auf Weiß macht Löcher größer
+RADII = (1.0, 1.04, 1.08, 1.12, 1.16)
+
+
+def _choose_counts(blobs, areas, one: float, r_px: float, expected: int | None):
+    """Löcher je Fläche: für jede Fläche mehrere Anzahlen einpassen und die Gesamtzahl so
+    verteilen, dass die Kreise die Flächen am besten decken.
+
+    Zurück: Anzahl je Fläche, ``unsure`` und die Einpassungen ``{(id, k): (Mitten, Kosten)}``.
+    Die Kosten sind Bildpunkte zu viel + zu wenig; ein Kreis mehr senkt sie, solange er
+    einen Teil der Fläche erklärt."""
+    fits: dict = {}
+
+    def fit(j: int, k: int):
+        pts, blob, origin = blobs[j]
+        key = (id(origin), k)
+        if key not in fits:
+            centers = np.array(_split(pts, k, r_px), dtype=np.float32) - origin
+            best = _fit_circles(blob, centers, r_px)
+            if k > 1:
+                # zweiter Anfang: Lösung mit einem Kreis weniger, der neue Kreis dort, wo die
+                # Fläche am wenigsten gedeckt ist (sonst am weitesten von allen Mitten)
+                prev = fit(j, k - 1)[0]
+                local = pts - origin
+                d = np.min(np.linalg.norm(local[:, None, :] - prev[None, :, :], axis=2), axis=1)
+                start = np.vstack([prev, local[int(np.argmax(d))]]).astype(np.float32)
+                other = _fit_circles(blob, start, r_px)
+                if other[1] < best[1]:
+                    best = other
+            fits[key] = best
+        return fits[key]
+
+    n = len(blobs)
+    counts = [1] * n
+    for j in range(n):
+        fit(j, 1)
+    limit = expected if expected and expected >= n else None
+    free = limit is None
+    while not limit or sum(counts) < limit:
+        best_j, best_gain = -1, 0.0
+        for j in range(n):
+            k = counts[j]
+            if k >= max(2, round(areas[j] / one) + 3):
+                continue
+            gain = (fit(j, k)[1] - fit(j, k + 1)[1]) / one
+            if gain > best_gain:
+                best_j, best_gain = j, gain
+        if best_j < 0 or (free and best_gain < MIN_GAIN_FREE):
+            break
+        counts[best_j] += 1
+    # unsicher: eine Fläche, die deutlich mehr oder weniger Löcher hat, als ihre Größe sagt
+    unsure = any(
+        (a / one > counts[j] + 0.7) or (counts[j] >= 2 and a / one < counts[j] * 0.45)
+        for j, a in enumerate(areas)
+    )
+    return counts, unsure, fits
 
 
 def unsupported(t: targets.Target) -> str:
@@ -483,7 +534,7 @@ def _detect_spot(
     das entzerrte Graubild;
     ``first``: Nummer des ersten Schusses in den Hinweisen."""
     norm, quality, black_r, _ = _normalize(img, t, ellipse)
-    mask = hole_mask(norm, t, black_r)
+    mask, raw = hole_mask(norm, t, black_r, with_raw=True)
     n, labels, stats, _ = cv2.connectedComponentsWithStats(mask, connectivity=8)
     r_px = t.caliber / 2 * PX_PER_MM
     one = math.pi * r_px * r_px
@@ -494,21 +545,31 @@ def _detect_spot(
     singles = [a for a in areas if 0.6 * one <= a <= 1.4 * one]
     if len(singles) >= 2:
         one = float(np.median(singles))
-    counts, unsure = _counts(areas, one, expected)
     size = norm.shape[0]
-    hits: list[tuple[float, float]] = []
-    for i, k in zip(comps, counts, strict=True):
+    blobs = []
+    for i in comps:
         ys, xs = np.nonzero(labels == i)
         pts = np.stack([xs, ys], axis=1).astype(np.float32)
-        centers = np.array(_split(pts, k, r_px), dtype=np.float32)
-        if k > 1:
-            # Ausschnitt mit Rand, darin die Kreise genau einpassen
-            x0, y0 = int(xs.min() - r_px), int(ys.min() - r_px)
-            x0, y0 = max(x0, 0), max(y0, 0)
-            x1, y1 = int(xs.max() + r_px) + 1, int(ys.max() + r_px) + 1
-            blob = labels[y0:y1, x0:x1] == i
-            centers = _fit_circles(blob, centers - [x0, y0], r_px) + [x0, y0]
-        for x, y in centers:
+        # Ausschnitt mit Rand, darin die Kreise genau einpassen
+        pad = r_px * RADII[-1]
+        x0, y0 = max(int(xs.min() - pad), 0), max(int(ys.min() - pad), 0)
+        x1, y1 = int(xs.max() + pad) + 1, int(ys.max() + pad) + 1
+        # Umriss vor dem Glätten, nur in der Nähe dieser Fläche
+        near = cv2.dilate((labels[y0:y1, x0:x1] == i).astype(np.uint8), np.ones((5, 5), np.uint8))
+        blob = (near > 0) & (raw[y0:y1, x0:x1] > 0)
+        blobs.append((pts, blob, np.array([x0, y0], dtype=np.float32)))
+    # Wie groß ein Loch im Bild wirkt, hängt vom Bleirand und vom Licht ab: mehrere
+    # Lochgrößen einpassen und die nehmen, deren Kreise die Flächen am besten decken
+    best = None
+    for f in RADII:
+        res = _choose_counts(blobs, areas, one * f * f, r_px * f, expected)
+        total = sum(res[2][id(o), k][1] for (_, _, o), k in zip(blobs, res[0], strict=True))
+        if best is None or total < best[0]:
+            best = (total, res)
+    counts, unsure, fits = best[1] if best else ([], False, {})
+    hits: list[tuple[float, float]] = []
+    for (_, _, origin), k in zip(blobs, counts, strict=True):
+        for x, y in fits[id(origin), k][0] + origin:
             hits.append(
                 (
                     round(float(x - size / 2) / PX_PER_MM, 3),

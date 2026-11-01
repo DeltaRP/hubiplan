@@ -98,8 +98,11 @@ sind vor ernsthafter Nutzung gegen die aktuelle Sportordnung zu lesen.
   - Ablauf: Spiegel als Ellipse finden, dann Spiegelrand und Ringlinien entlang von Strahlen
     suchen und die volle Abbildung schätzen (Schräge, Lichtverlauf); Löcher als deutliche
     Abweichung von der örtlichen Helligkeit, vor hellem Hintergrund über den geschlossenen
-    Lochrand; überlappende Löcher über Fläche und bekannte Schusszahl, Kreise mit Kaliber
-    eingepasst.
+    Lochrand. Überlappende Löcher: je Fläche werden mehrere Anzahlen Kreise eingepasst
+    (Umriss vor dem Glätten, damit die Kerben zwischen den Löchern erhalten bleiben); die
+    bekannte Schusszahl geht dorthin, wo ein weiterer Kreis die Flächen am meisten besser
+    deckt. Weil der Bleirand auf Weiß ein Loch größer wirken lässt, probiert die Erkennung
+    Lochgrößen von 1,0 bis 1,16 × Kaliber und nimmt die am besten passende.
   - „Bitte prüfen“, wenn die Schusszahl nicht passt, eine Fläche nicht eindeutig ist, drei
     oder mehr Löcher ineinander liegen (der Umriss lässt die Lage dann offen), ein Treffer
     0,1 mm oder näher an einer Ringlinie liegt oder der Spiegel unsicher erkannt wurde.
@@ -111,10 +114,13 @@ sind vor ernsthafter Nutzung gegen die aktuelle Sportordnung zu lesen.
     etwa 1,3 s je Foto. Im Verein üblich ist aber die Karte mit einem Spiegel und mehreren
     Schuss darin.
   - Stand der Messlatte (01.11.2026, künstliche Fotos, je 60, LG DSB und Kyffhäuser, Schwierigkeit
-    leicht / mittel / schwer): Schusszahl richtig 93 / 87 / 85 %, alle Ringe richtig 68 / 52 /
-    43 %, unbemerkt falsch 0 / 1,7 / 1,7 %, „bitte prüfen“ 87 / 88 / 88 %. Einzelne Löcher
-    liegen meist auf 0,03–0,1 mm genau; Fehler kommen fast nur aus dichten Gruppen (dann
-    „bitte prüfen“). Die Mitte der Scheibe findet die Erkennung auf etwa 0,06 mm.
+    leicht / mittel / schwer): Schusszahl richtig 100 / 95 / 90 %, alle Ringe richtig 85 / 73 /
+    60 %, unbemerkt falsch 0 / 0 / 0 %, „bitte prüfen“ 80 / 83 / 90 % (vorher 93 / 88 / 85 %
+    und 68 / 58 / 45 %). Nur dichte Gruppen (je 40, eng und Loch in Loch, leicht und mittel):
+    Schusszahl 95 % (vorher 80 %), alle Ringe 69 % (vorher 33 %), unbemerkt falsch 0 %. Einzelne
+    Löcher liegen meist auf 0,03–0,1 mm genau; Fehler kommen fast nur aus dichten Gruppen auf
+    dunkler Unterlage (dann „bitte prüfen“). Die Mitte der Scheibe findet die Erkennung auf
+    etwa 0,06 mm. Etwa 0,7 s je Foto (höchstens 3 s).
   - **Live-Kamera** (Schritt 5): „Live-Kamera“ zeigt das Kamerabild mit Rahmen (rot, bis
     die Lage passt, dann grün) und Hinweisen (näher heran, weiter weg, in die Mitte, gerade
     von oben, ruhig halten, mehr Licht). Jedes Bild wird im Browser verkleinert geprüft

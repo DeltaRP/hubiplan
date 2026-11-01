@@ -60,6 +60,21 @@ class TestErkennung:
         assert summary["schusszahl_richtig"] >= 75, summary
         assert summary["unbemerkt_falsch"] <= 10, summary
 
+    def test_messlatte_dichte_gruppen(self):
+        """Mehrere Schuss in einem Spiegel (im Verein üblich): Löcher liegen ineinander."""
+        samples = [
+            synth.make_sample(["lg10_dsb", "lg10_kyf"][i % 2], 5000 + i, difficulty=0.3, kind="eng")
+            for i in range(8)
+        ]
+        outcomes = [
+            benchmark.compare(s.target, s.hits, detect.detect(img, s.target, len(s.hits)))
+            for img, s in samples
+        ]
+        summary = benchmark.summarize(outcomes)
+        assert summary["schusszahl_richtig"] >= 85, summary
+        assert summary["ringe_richtig"] >= 60, summary
+        assert summary["unbemerkt_falsch"] == 0, summary
+
     def test_fuenf_spiegel_karte(self):
         image, sample = synth.make_sample("lg10_kyf5", 4002, difficulty=0.3, kind="streuung")
         found = detect.detect(image, "lg10_kyf5", len(sample.hits))
