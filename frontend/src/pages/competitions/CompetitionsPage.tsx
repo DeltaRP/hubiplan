@@ -1,9 +1,10 @@
 // Wettbewerbe: Liste, Einrichten (Grunddaten, Wertungen), Erfassen und Auswertung.
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom'
 import {
   competitionsApi,
+  orgStandApi,
   STATUS_LABELS,
   WEBSITE_LABELS,
   type Competition,
@@ -27,6 +28,9 @@ import {
   Tabs,
 } from '../../components/ui.tsx'
 import { useActiveOrg } from '../../org/OrgContext.tsx'
+import { BirdStand } from './BirdStand.tsx'
+import { ManualPrizes, PrizesCard, StandAccessCard } from './BirdSetup.tsx'
+import { ForeignPanel } from './ForeignPanel.tsx'
 import { ResultsPanel } from './ResultsPanel.tsx'
 import { StandPanel } from './StandPanel.tsx'
 
@@ -50,7 +54,8 @@ function CompetitionList() {
     <section>
       <h1>Wettbewerbe</h1>
       <p className="muted">
-        Eigene Schießen und andere Wettbewerbe mit Einzel- und Zugwertung, Stechen und Auswertung.
+        Eigene Schießen mit Einzel- und Zugwertung und Stechen, Vogelschießen mit Pfändern, und
+        fremde Wettbewerbe, bei denen ihr eure Plätze eintragt.
       </p>
       {error && <LoadError message={error} onRetry={reload} />}
       {canManage && !creating && (
@@ -126,12 +131,19 @@ function NewCompetition({
     title: '',
     date: todayIso(),
     template: 'schiessen',
+    organizer: '',
   })
   const { values: v, set, errors } = form
 
   async function save(e: FormEvent) {
     e.preventDefault()
-    const created = await form.submit(() => competitionsApi.create(org, v))
+    const created = await form.submit(() =>
+      competitionsApi.create(org, {
+        ...v,
+        form: v.template === 'vogel' ? 'vogel' : 'rangliste',
+        own: v.template !== 'fremd',
+      }),
+    )
     if (created) onCreated((created as Competition).id)
   }
 
@@ -168,8 +180,19 @@ function NewCompetition({
           >
             <option value="schiessen">Schießen mit Einzel- und Zugwertung</option>
             <option value="einfach">nur Einzelwertung</option>
+            <option value="vogel">Vogelschießen mit Pfändern</option>
+            <option value="fremd">Fremder Wettbewerb (eigene Plätze eintragen)</option>
             <option value="">leer (Wertungen selbst anlegen)</option>
           </SelectField>
+          {v.template === 'fremd' && (
+            <Field
+              label="Ausrichter"
+              placeholder="z. B. Bürger-Schützenverein"
+              value={v.organizer}
+              error={errors.organizer}
+              onChange={(e) => set('organizer', e.target.value)}
+            />
+          )}
         </div>
         {form.message && <Alert kind={form.message.kind}>{form.message.text}</Alert>}
         <div className="button-row">
@@ -189,6 +212,7 @@ function CompetitionArea() {
     () => competitionsApi.get(org.id, id),
     [org.id, id],
   )
+  const standApi = useMemo(() => orgStandApi(org.id, id), [org.id, id])
   if (error) return <LoadError message={error} onRetry={reload} />
   if (!data) return <p className="muted">Wird geladen …</p>
   const base = `/wettbewerbe/${id}`
@@ -201,7 +225,9 @@ function CompetitionArea() {
       <p className="muted">
         {new Date(data.date).toLocaleDateString('de-DE')}
         {data.occasion ? ` · ${data.occasion}` : ''}
-        {data.discipline ? ` · ${data.discipline}` : ''} · {STATUS_LABELS[data.status]}
+        {data.discipline ? ` · ${data.discipline}` : ''}
+        {!data.own && data.organizer ? ` · Ausrichter: ${data.organizer}` : ''} ·{' '}
+        {STATUS_LABELS[data.status]}
       </p>
       <Tabs
         items={[
@@ -216,12 +242,29 @@ function CompetitionArea() {
           element={
             <>
               <div className="button-row">
-                <a className="button button-ghost" href={`/stand/${org.id}/${id}`}>
-                  Standmodus (Vollbild, Handy, offline)
-                </a>
+                {data.own && (
+                  <a className="button button-ghost" href={`/stand/${org.id}/${id}`}>
+                    Standmodus (Vollbild, Handy, offline)
+                  </a>
+                )}
                 <PrintMenu org={org.id} comp={data} />
               </div>
-              <StandPanel org={org.id} comp={data} />
+              {!data.own ? (
+                <ForeignPanel org={org.id} comp={data} />
+              ) : data.form === 'vogel' ? (
+                <>
+                  <BirdStand
+                    api={standApi}
+                    comp={data}
+                    onDrawAll={async () => {
+                      await competitionsApi.drawAll(org.id, id)
+                    }}
+                  />
+                  <ManualPrizes org={org.id} comp={data} />
+                </>
+              ) : (
+                <StandPanel api={standApi} comp={data} />
+              )}
             </>
           }
         />
@@ -241,15 +284,24 @@ function CompetitionArea() {
 
 export function PrintMenu({ org, comp }: { org: number; comp: CompetitionDetail }) {
   async function print() {
+    const choices = !comp.own
+      ? [{ value: 'pdf', label: 'Ergebnisliste' }]
+      : comp.form === 'vogel'
+        ? [
+            { value: 'losliste', label: 'Losliste (zum Zählen auf Papier)' },
+            { value: 'pfaenderliste', label: 'Leere Pfänderliste' },
+            { value: 'pdf', label: 'Pfänderliste mit Ergebnissen' },
+          ]
+        : [
+            { value: 'schiessliste&sortierung=name', label: 'Schießliste nach Name' },
+            { value: 'schiessliste&sortierung=einheit', label: 'Schießliste nach Zug' },
+            { value: 'schiessliste&leer=1', label: 'Leere Schießliste' },
+            { value: 'pdf', label: 'Ergebnisliste' },
+          ]
     const choice = await choiceDialog({
       title: 'Drucken',
       message: 'Welche Vorlage? (PDF zum Ausdrucken)',
-      choices: [
-        { value: 'schiessliste&sortierung=name', label: 'Schießliste nach Name' },
-        { value: 'schiessliste&sortierung=einheit', label: 'Schießliste nach Zug' },
-        { value: 'schiessliste&leer=1', label: 'Leere Schießliste' },
-        { value: 'pdf', label: 'Ergebnisliste' },
-      ],
+      choices,
       cancelValue: '',
     })
     if (choice) window.open(competitionsApi.exportUrl(org, comp.id, `als=${choice}`), '_blank')
@@ -283,6 +335,10 @@ function Setup({
     description: comp.description,
     details: comp.details,
     website: comp.website,
+    organizer: comp.organizer,
+    drop_out: comp.drop_out,
+    fixed_order: comp.fixed_order,
+    total_shots: comp.total_shots,
   })
   const { values: v, set, errors } = form
   const auto = useAutoSave(form, (changes) => competitionsApi.update(org, comp.id, changes), {
@@ -374,6 +430,14 @@ function Setup({
               error={errors.location}
               onChange={(e) => set('location', e.target.value)}
             />
+            {!comp.own && (
+              <Field
+                label="Ausrichter"
+                value={v.organizer}
+                error={errors.organizer}
+                onChange={(e) => set('organizer', e.target.value)}
+              />
+            )}
             <SelectField
               label="Auf der Webseite"
               value={v.website}
@@ -387,6 +451,33 @@ function Setup({
               ))}
             </SelectField>
           </div>
+          {comp.form === 'vogel' && (
+            <>
+              <h3>Vogelschießen</h3>
+              <div className="grid-3">
+                <Checkbox
+                  label="Wer ein Pfand errungen hat, scheidet aus"
+                  checked={v.drop_out}
+                  onChange={(on) => set('drop_out', on)}
+                />
+                <Checkbox
+                  label="Pfänder in fester Reihenfolge"
+                  hint="aus: jeder Schuss kann jedes noch hängende Teil treffen"
+                  checked={v.fixed_order}
+                  onChange={(on) => set('fixed_order', on)}
+                />
+                <Field
+                  label="Schüsse insgesamt"
+                  type="number"
+                  min={1}
+                  hint="nur, wenn auf Papier gezählt wurde; live zählt der Standmodus"
+                  value={v.total_shots ?? ''}
+                  error={errors.total_shots}
+                  onChange={(e) => set('total_shots', numOrNull(e.target.value))}
+                />
+              </div>
+            </>
+          )}
           <label className="field">
             <span>Beschreibung</span>
             <textarea
@@ -439,7 +530,8 @@ function Setup({
         {form.message && <Alert kind={form.message.kind}>{form.message.text}</Alert>}
       </div>
 
-      <h2>Wertungen</h2>
+      {comp.form === 'vogel' && <PrizesCard org={org} comp={comp} onChanged={reload} />}
+      {comp.form !== 'vogel' && <h2>Wertungen</h2>}
       {comp.scorings.map((s) => (
         <ScoringCard
           key={s.id}
@@ -450,7 +542,7 @@ function Setup({
           onRemoved={reload}
         />
       ))}
-      {canManage && (
+      {canManage && comp.form !== 'vogel' && (
         <div className="button-row">
           <button
             type="button"
@@ -463,7 +555,20 @@ function Setup({
           >
             Einzelwertung hinzufügen
           </button>
-          {comp.scorings.some((s) => s.kind === 'einzel') && (
+          {!comp.own && (
+            <button
+              type="button"
+              className="button button-ghost"
+              onClick={() =>
+                void competitionsApi
+                  .createScoring(org, comp.id, { name: 'Mannschaftswertung', kind: 'mannschaft' })
+                  .then(reload)
+              }
+            >
+              Mannschaftswertung hinzufügen
+            </button>
+          )}
+          {comp.own && comp.scorings.some((s) => s.kind === 'einzel') && (
             <button
               type="button"
               className="button button-ghost"
@@ -483,6 +588,8 @@ function Setup({
           )}
         </div>
       )}
+
+      {canManage && comp.own && <StandAccessCard org={org} comp={comp} />}
 
       {canManage && (
         <div className="card card-wide">
@@ -568,6 +675,7 @@ function ScoringCard({
     prize_places: scoring.prize_places,
     shootoff_shots: scoring.shootoff_shots,
     shootoff_counted: scoring.shootoff_counted,
+    field_size: scoring.field_size,
   })
   const { values: v, set, errors } = form
   const auto = useAutoSave(
@@ -577,6 +685,7 @@ function ScoringCard({
   )
   const unit = scoring.kind === 'einheit'
   const singles = comp.scorings.filter((s) => s.kind === 'einzel')
+  const foreign = !comp.own
 
   async function remove() {
     const ok = await confirmDialog({
@@ -592,7 +701,13 @@ function ScoringCard({
   return (
     <div className="card card-wide">
       <div className="card-head">
-        <h3>{unit ? 'Wertung der Untereinheiten' : 'Einzelwertung'}</h3>
+        <h3>
+          {unit
+            ? 'Wertung der Untereinheiten'
+            : scoring.kind === 'mannschaft'
+              ? 'Mannschaftswertung'
+              : 'Einzelwertung'}
+        </h3>
         {canManage && <SaveStatus auto={auto} />}
       </div>
       <fieldset disabled={!canManage}>
@@ -603,7 +718,36 @@ function ScoringCard({
             error={errors.name}
             onChange={(e) => set('name', e.target.value)}
           />
-          {unit ? (
+          {foreign ? (
+            <>
+              <Field
+                label="Teilnehmer insgesamt"
+                type="number"
+                min={1}
+                hint="für „Platz 2 von 14“"
+                value={v.field_size ?? ''}
+                error={errors.field_size}
+                onChange={(e) => set('field_size', numOrNull(e.target.value))}
+              />
+              <Field
+                label="Einheit des Werts"
+                value={v.unit_label}
+                error={errors.unit_label}
+                onChange={(e) => set('unit_label', e.target.value)}
+              />
+              <SelectField
+                label="Nachkommastellen"
+                value={v.decimals}
+                onChange={(e) => set('decimals', Number(e.target.value))}
+              >
+                {[0, 1, 2, 3].map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </SelectField>
+            </>
+          ) : unit ? (
             <>
               <SelectField
                 label="Aus der Wertung"
@@ -699,15 +843,17 @@ function ScoringCard({
             error={errors.prize_places}
             onChange={(e) => set('prize_places', numOrNull(e.target.value) ?? 0)}
           />
-          <Field
-            label="Schüsse im Stechen"
-            type="number"
-            min={1}
-            value={v.shootoff_shots ?? ''}
-            error={errors.shootoff_shots}
-            onChange={(e) => set('shootoff_shots', numOrNull(e.target.value))}
-          />
-          {!unit && (
+          {!foreign && (
+            <Field
+              label="Schüsse im Stechen"
+              type="number"
+              min={1}
+              value={v.shootoff_shots ?? ''}
+              error={errors.shootoff_shots}
+              onChange={(e) => set('shootoff_shots', numOrNull(e.target.value))}
+            />
+          )}
+          {!unit && !foreign && (
             <Field
               label="davon im Stechen gewertet"
               type="number"

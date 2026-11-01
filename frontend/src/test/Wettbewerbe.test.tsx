@@ -16,6 +16,13 @@ const base = '/api/orgs/7/competitions/'
 const detail = {
   id: 3,
   title: 'Preisschießen 2027',
+  form: 'rangliste',
+  own: true,
+  organizer: '',
+  drop_out: true,
+  fixed_order: false,
+  total_shots: null,
+  prizes: [],
   occasion: 'Schützenfest',
   discipline: 'Luftgewehr',
   location: '',
@@ -47,6 +54,7 @@ const detail = {
       prize_places: 10,
       shootoff_shots: 3,
       shootoff_counted: null,
+      field_size: null,
     },
   ],
 }
@@ -61,6 +69,8 @@ const otto = {
   unit_name: 'Zug 1',
   number: '',
   out_of_competition: false,
+  presence: '',
+  drawn_how: '',
   values: { '11': '25.000' },
 }
 

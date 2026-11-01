@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { PERM } from './api/orgs.ts'
-import { RequireAuth } from './auth/RequireAuth.tsx'
+import { RequireAuth, RequireAuthOrOffline } from './auth/RequireAuth.tsx'
 import { Layout } from './components/Layout.tsx'
 import { PublicShell } from './components/ImprintFooter.tsx'
 import { AccessibilityPage, ImprintPage, LicensePage, PrivacyPage } from './pages/ImprintPages.tsx'
@@ -58,6 +58,10 @@ const CompetitionsPage = lazyPage(
   'CompetitionsPage',
 )
 const StandPage = lazyPage(() => import('./pages/competitions/StandPage.tsx'), 'StandPage')
+const StandTokenPage = lazyPage(
+  () => import('./pages/competitions/StandPage.tsx'),
+  'StandTokenPage',
+)
 const PlatformLayout = lazyPage(
   () => import('./pages/platform/PlatformPages.tsx'),
   'PlatformLayout',
@@ -192,11 +196,13 @@ export default function App() {
         <Route
           path="/stand/:org/:id"
           element={
-            <RequireAuth>
+            <RequireAuthOrOffline>
               <StandPage />
-            </RequireAuth>
+            </RequireAuthOrOffline>
           }
         />
+        {/* Standzugang ohne Konto (Link bzw. QR-Code für ein geliehenes Gerät) */}
+        <Route path="/stand/zugang/:token" element={<StandTokenPage />} />
         <Route
           element={
             <RequireAuth>

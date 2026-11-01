@@ -19,3 +19,11 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   }
   return <>{children}</>
 }
+
+/** Wie RequireAuth; ist der Server beim Start nicht erreichbar, geht es trotzdem weiter
+ * (Standmodus ohne Empfang arbeitet mit dem Speicher auf dem Gerät). */
+export function RequireAuthOrOffline({ children }: { children: ReactNode }) {
+  const { user, loading, offline } = useAuth()
+  if (!loading && !user && offline) return <>{children}</>
+  return <RequireAuth>{children}</RequireAuth>
+}

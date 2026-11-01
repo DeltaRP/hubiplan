@@ -2,72 +2,48 @@
 // Karte. Ein Suchfeld ist immer aktiv: Name oder Startnummer, Enter, Punkte, Enter.
 // Alle Eingaben landen erst auf dem Gerät und gleichen sich bei Empfang selbst ab
 // (Schießstände im Keller, Ralf 2026-11-01).
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { FormEvent, KeyboardEvent } from 'react'
 import { newRequestKey } from '../../api/client.ts'
 import {
-  competitionsApi,
   foldName,
   showValue,
   type CompetitionDetail,
   type MemberChoice,
   type Scoring,
+  type StandApi,
   type Starter,
   type SyncOp,
 } from '../../api/competitions.ts'
 import { confirmDialog } from '../../components/dialog.ts'
-import { errorMessage } from '../../components/forms.ts'
-
-interface Local {
-  /** Starter mit Werten; neue Starter tragen ihre Gerätekennung als ``key`` */
-  starters: (Starter & { key?: string })[]
-  members: MemberChoice[]
-  ops: SyncOp[]
-  recent: { ref: number | string; name: string; value: string; at: string }[]
-  savedAt: string | null
-}
-
-const storageKey = (org: number, id: number) => `hubiplan.stand.${org}.${id}`
-
-function loadLocal(org: number, id: number): Local | null {
-  try {
-    const raw = localStorage.getItem(storageKey(org, id))
-    return raw ? (JSON.parse(raw) as Local) : null
-  } catch {
-    return null
-  }
-}
-
-function saveLocal(org: number, id: number, data: Local) {
-  try {
-    localStorage.setItem(storageKey(org, id), JSON.stringify(data))
-  } catch {
-    // Speicher voll oder gesperrt: dann bleibt es bei der Warteschlange im Speicher
-  }
-}
+import { describe, useStandStore } from './standStore.ts'
 
 type Hit =
-  | { kind: 'starter'; starter: Starter & { key?: string } }
+  | { kind: 'starter'; starter: Starter }
   | { kind: 'member'; member: MemberChoice }
   | { kind: 'guest'; name: string }
 
 export function StandPanel({
-  org,
+  api,
   comp,
   fullscreen = false,
 }: {
-  org: number
+  api: StandApi
   comp: CompetitionDetail
   fullscreen?: boolean
 }) {
   const scoring: Scoring | undefined = comp.scorings.find((s) => s.kind === 'einzel')
-  const [local, setLocal] = useState<Local>(
-    () =>
-      loadLocal(org, comp.id) ?? { starters: [], members: [], ops: [], recent: [], savedAt: null },
-  )
-  const [online, setOnline] = useState(typeof navigator === 'undefined' ? true : navigator.onLine)
-  const [syncError, setSyncError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const { local, setLocal, push, online, syncError, pending, statusText } = useStandStore(
+    api,
+    describe,
+    (conflicts) =>
+      setNotice(
+        `Auf einem anderen Gerät später geändert, dieser Wert gilt: ${conflicts
+          .map((c) => `${c.name} ${showValue(c.value, scoring?.decimals ?? 0)}`)
+          .join(', ')}`,
+      ),
+  )
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
   const [chosen, setChosen] = useState<Hit | null>(null)
@@ -75,90 +51,7 @@ export function StandPanel({
   const [guestClub, setGuestClub] = useState('')
   const searchRef = useRef<HTMLInputElement>(null)
   const pointsRef = useRef<HTMLInputElement>(null)
-  const localRef = useRef(local)
-  const syncing = useRef(false)
-  const closed = comp.status === 'endgueltig'
-
-  useEffect(() => {
-    localRef.current = local
-    saveLocal(org, comp.id, local)
-  }, [org, comp.id, local])
-
-  // Erst laden: Starter und Mitgliederliste aufs Gerät (für die Suche ohne Netz)
-  useEffect(() => {
-    let stop = false
-    async function load() {
-      try {
-        const [starters, members] = await Promise.all([
-          competitionsApi.starters(org, comp.id),
-          competitionsApi.members(org, comp.id),
-        ])
-        if (stop) return
-        setLocal((l) => ({ ...l, starters: mergePending(starters, l), members }))
-        setOnline(true)
-      } catch {
-        if (!stop) setOnline(false)
-      }
-    }
-    void load().then(() => sync())
-    const up = () => {
-      setOnline(true)
-      void sync()
-    }
-    const down = () => setOnline(false)
-    window.addEventListener('online', up)
-    window.addEventListener('offline', down)
-    const timer = setInterval(() => void sync(), 15000)
-    return () => {
-      stop = true
-      window.removeEventListener('online', up)
-      window.removeEventListener('offline', down)
-      clearInterval(timer)
-    }
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [org, comp.id])
-
-  async function sync() {
-    const ops = localRef.current.ops
-    if (syncing.current || ops.length === 0) return
-    syncing.current = true
-    try {
-      const res = await competitionsApi.sync(org, comp.id, ops)
-      const failed = res.results
-        .map((r, i) => (r.ok ? null : `${describe(ops[i], localRef.current)}: ${r.error}`))
-        .filter(Boolean)
-      setLocal((l) => {
-        // Was während des Abgleichs dazukam, bleibt in der Warteschlange
-        const rest = l.ops.slice(ops.length)
-        return {
-          ...l,
-          ops: rest,
-          starters: mergePending(res.starters, { ...l, ops: rest }),
-          savedAt: new Date().toISOString(),
-        }
-      })
-      setOnline(true)
-      setSyncError(failed.length ? `Nicht übernommen: ${failed.join('; ')}` : null)
-      if (res.conflicts.length)
-        setNotice(
-          `Auf einem anderen Gerät später geändert, dieser Wert gilt: ${res.conflicts
-            .map((c) => `${c.name} ${showValue(c.value, scoring?.decimals ?? 0)}`)
-            .join(', ')}`,
-        )
-    } catch (err) {
-      setOnline(false)
-      setSyncError(
-        errorMessage(err) === 'Der Server ist nicht erreichbar.' ? null : errorMessage(err),
-      )
-    } finally {
-      syncing.current = false
-    }
-  }
-
-  function push(op: SyncOp, change: (l: Local) => Local) {
-    setLocal((l) => change({ ...l, ops: [...l.ops, op] }))
-    setTimeout(() => void sync(), 0)
-  }
+  const closed = (local.status ?? comp.status) === 'endgueltig'
 
   const hits: Hit[] = useMemo(() => {
     const q = foldName(query.trim())
@@ -246,6 +139,8 @@ export function StandPanel({
         unit_name: chosen.kind === 'member' ? chosen.member.unit_name : '',
         number: '',
         out_of_competition: false,
+        presence: '',
+        drawn_how: '',
         values: {},
       }
       const op: SyncOp =
@@ -265,7 +160,7 @@ export function StandPanel({
       }))
       setNotice(`${name}: ${showValue(value, scoring.decimals)} ${scoring.unit_label}`)
     } else {
-      setTimeout(() => void sync(), 0)
+      push(null)
       setNotice(`${name} eingetragen.`)
     }
     setChosen(null)
@@ -278,16 +173,12 @@ export function StandPanel({
   if (!scoring) return <p className="muted">Zuerst eine Einzelwertung anlegen.</p>
 
   const open = local.starters.filter((s) => !s.values[String(scoring.id)])
-  const pending = local.ops.length
-  const status = pending
-    ? `${pending} ${pending === 1 ? 'Eingabe wartet' : 'Eingaben warten'} auf ${online ? 'Abgleich' : 'Empfang'}`
-    : 'Alles gespeichert'
 
   return (
     <div className={`stand${fullscreen ? ' stand-full' : ''}`}>
       <p className={`stand-sync ${pending ? 'stand-sync-wait' : 'stand-sync-ok'}`} role="status">
         {online ? '' : 'Kein Empfang · '}
-        {status}
+        {statusText}
       </p>
       {syncError && <p className="alert alert-error">{syncError}</p>}
       {closed ? (
@@ -438,21 +329,6 @@ export function StandPanel({
   )
 }
 
-function mergePending(server: Starter[], l: Local): (Starter & { key?: string })[] {
-  // Noch nicht abgeglichene Starter und Werte des Geräts über den Stand des Servers legen
-  const out: (Starter & { key?: string })[] = server.map((s) => ({ ...s }))
-  const pendingKeys = new Set(
-    l.ops.filter((o) => o.op === 'starter').map((o) => (o as { client_key: string }).client_key),
-  )
-  for (const s of l.starters) if (s.key && pendingKeys.has(s.key)) out.push(s)
-  for (const o of l.ops) {
-    if (o.op !== 'score') continue
-    const s = out.find((x) => (x.key ?? x.id) === o.starter)
-    if (s) s.values = { ...s.values, [o.scoring]: o.value ?? '' }
-  }
-  return out
-}
-
 function hitKey(h: Hit) {
   if (h.kind === 'starter') return `s-${h.starter.key ?? h.starter.id}`
   if (h.kind === 'member') return `m-${h.member.membership}`
@@ -493,11 +369,4 @@ function hitLabel(h: Hit, scoring: Scoring) {
       Neu: <strong>„{h.name}“</strong> als Gast hinzufügen
     </>
   )
-}
-
-function describe(op: SyncOp, l: Local): string {
-  if (op.op === 'starter')
-    return op.name ?? l.members.find((m) => m.membership === op.membership)?.name ?? 'Schütze'
-  const s = l.starters.find((x) => (x.key ?? x.id) === op.starter)
-  return s?.name ?? 'Eingabe'
 }
