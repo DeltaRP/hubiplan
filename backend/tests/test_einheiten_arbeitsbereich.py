@@ -52,6 +52,7 @@ class TestArbeitsbereich:
         assert role.name == "Vorstand"
         assert set(role.permissions) == {
             "roles.manage",
+            "roles.preview",
             "finance.view",
             "finance.edit",
             "billing.view",

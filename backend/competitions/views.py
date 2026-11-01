@@ -27,8 +27,18 @@ from core.api_base import AuditMixin, OrgScopedMixin
 from members.models import Membership
 from organizations.models import Department, Organization
 
-from . import report, services
-from .models import Competition, Score, Scoring, ShootOff, ShootOffEntry, Starter
+from . import bird, report, services
+from .models import (
+    Competition,
+    Presence,
+    Prize,
+    Score,
+    Scoring,
+    ShootOff,
+    ShootOffEntry,
+    Starter,
+    Team,
+)
 
 MODULE = "competitions"
 
@@ -68,12 +78,16 @@ def _units(org) -> list[Department]:
 class CompetitionSerializer(serializers.ModelSerializer):
     starter_count = serializers.IntegerField(read_only=True, default=0)
     status_label = serializers.CharField(source="get_status_display", read_only=True)
+    event = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = Competition
         fields = [
             "id",
             "title",
+            "form",
+            "own",
+            "organizer",
             "occasion",
             "discipline",
             "location",
@@ -83,9 +97,28 @@ class CompetitionSerializer(serializers.ModelSerializer):
             "status",
             "status_label",
             "website",
+            "drop_out",
+            "fixed_order",
+            "total_shots",
+            "event",
             "starter_count",
         ]
         read_only_fields = ["status"]
+
+    def validate(self, attrs):
+        if self.instance is not None:
+            for field in ("form", "own"):
+                if field in attrs and attrs[field] != getattr(self.instance, field):
+                    raise serializers.ValidationError(
+                        {field: "Die Art des Wettbewerbs lässt sich nicht mehr ändern."}
+                    )
+        form = attrs.get("form", getattr(self.instance, "form", Competition.Form.RANKING))
+        own = attrs.get("own", getattr(self.instance, "own", True))
+        if form == Competition.Form.BIRD and not own:
+            raise serializers.ValidationError(
+                {"own": "Ein Vogelschießen lässt sich nur als eigener Wettbewerb anlegen."}
+            )
+        return attrs
 
     def validate_title(self, value):
         value = value.strip()
@@ -128,6 +161,7 @@ class ScoringSerializer(serializers.ModelSerializer):
             "prize_places",
             "shootoff_shots",
             "shootoff_counted",
+            "field_size",
         ]
         read_only_fields = ["competition"]
 
@@ -142,6 +176,19 @@ class ScoringSerializer(serializers.ModelSerializer):
         name = (get("name") or "").strip()
         if not name:
             raise serializers.ValidationError({"name": "Bitte eine Bezeichnung angeben."})
+        if comp.form == Competition.Form.BIRD:
+            raise serializers.ValidationError(
+                "Beim Vogelschießen gibt es keine Wertungen, nur Pfänder."
+            )
+        kind = get("kind")
+        if kind == Scoring.Kind.TEAM and comp.own:
+            raise serializers.ValidationError(
+                {"kind": "Mannschaftswertungen gibt es nur bei fremden Wettbewerben."}
+            )
+        if kind == Scoring.Kind.UNIT and not comp.own:
+            raise serializers.ValidationError(
+                {"kind": "Bei fremden Wettbewerben: Einzel- oder Mannschaftswertung."}
+            )
         attrs["name"] = name if "name" in attrs or not self.instance else attrs.get("name", name)
         shots, counted = get("shots"), get("counted_shots")
         if shots and counted and counted > shots:
@@ -192,6 +239,7 @@ class CompetitionViewSet(_Mixin, AuditMixin, viewsets.ModelViewSet):
     def perform_create(self, serializer):
         super().perform_create(serializer)
         comp = serializer.instance
+        self._calendar(comp)
         template = self.request.data.get("template")
         if template == "schiessen":
             # Vorlage „Schießen mit Einzel- und Zugwertung“ (Leitszenario des Pilotvereins)
@@ -224,15 +272,61 @@ class CompetitionViewSet(_Mixin, AuditMixin, viewsets.ModelViewSet):
             Scoring.objects.create(
                 organization=self.org, competition=comp, name="Einzelwertung", sort_order=1
             )
+        elif template == "vogel" or comp.form == Competition.Form.BIRD:
+            if comp.form != Competition.Form.BIRD:
+                comp.form = Competition.Form.BIRD
+                comp.save(update_fields=["form"])
+            bird.create_template(self.org, comp)
+        elif template == "fremd" or not comp.own:
+            # Fremder Wettbewerb: eigene Schützen und Mannschaften mit Platz des Ausrichters
+            if comp.own:
+                comp.own = False
+                comp.save(update_fields=["own"])
+            Scoring.objects.create(
+                organization=self.org,
+                competition=comp,
+                name="Einzelwertung",
+                kind=Scoring.Kind.INDIVIDUAL,
+                sort_order=1,
+            )
+            Scoring.objects.create(
+                organization=self.org,
+                competition=comp,
+                name="Mannschaftswertung",
+                kind=Scoring.Kind.TEAM,
+                sort_order=2,
+            )
+            Team.objects.create(organization=self.org, competition=comp, name="Mannschaft 1")
+
+    def _calendar(self, comp: Competition) -> None:
+        """Beim Anlegen: Termin zuordnen (``event``) oder neu anlegen (``create_event``)."""
+        from . import event_views
+
+        if self.request.data.get("event"):
+            event = event_views.find_event(self, self.request.data["event"])
+            event_views.link(self, comp, event, fill=True)
+        elif self.request.data.get("create_event") is True:
+            event_views.create_event(self, comp)
 
     def retrieve(self, request, *args, **kwargs):
+        from access.catalog import EVENTS_MANAGE
+
+        from . import event_views
+
         comp = self.get_object()
         data = CompetitionSerializer(comp).data
         data["scorings"] = ScoringSerializer(
             comp.scorings.all(), many=True, context={"competition": comp}
         ).data
         data["units"] = [{"id": u.pk, "name": u.name} for u in _units(self.org)]
+        data["prizes"] = [
+            {"id": p.pk, "name": p.name, "award": p.award, "sort_order": p.sort_order}
+            for p in comp.prizes.all()
+        ]
         data["can_manage"] = self.can_manage
+        data["event_info"] = event_views.event_info(comp.event)
+        on = event_views.calendar_on(self.org)
+        data["calendar"] = {"on": on, "can_create": on and EVENTS_MANAGE in self.org_permissions}
         return Response(data)
 
 
@@ -270,6 +364,9 @@ def _starter_data(s: Starter, value_by_scoring: dict | None = None) -> dict:
         "unit_name": s.unit.name if s.unit_id else "",
         "number": s.number,
         "out_of_competition": s.out_of_competition,
+        "presence": s.presence,
+        "drawn_how": s.drawn_how,
+        "key": str(s.client_key) if s.client_key else None,
         "values": value_by_scoring or {},
     }
 
@@ -402,6 +499,19 @@ def update_starter(org, user, s: Starter, data) -> None:
         s.unit_id = unit.pk if unit else None
     if "number" in data:
         s.number = str(data["number"] or "").strip()[:20]
+        if s.competition.form == Competition.Form.BIRD and s.number:
+            n = bird.lot(s.number)
+            if n is None:
+                raise ValidationError({"number": "Losnummer: bitte eine ganze Zahl ab 1."})
+            other = s.competition.starters.exclude(pk=s.pk).filter(number=str(n)).first()
+            if other:
+                raise ValidationError({"number": f"Nummer {n} hat schon {other.name}."})
+            s.number = str(n)
+            s.drawn_how = s.drawn_how or "hut"
+    if "presence" in data:
+        if data["presence"] not in Presence.values:
+            raise ValidationError({"presence": "Unbekannte Angabe."})
+        s.presence = data["presence"]
     if "out_of_competition" in data:
         s.out_of_competition = bool(data["out_of_competition"])
     if s.is_guest:
@@ -512,62 +622,101 @@ class SyncView(_Mixin, APIView):
 
     def post(self, request, org_id: int, competition_id: int):
         comp = self.competition(competition_id)
-        ops = request.data.get("ops") or []
-        if not isinstance(ops, list) or len(ops) > 2000:
-            raise ValidationError("Höchstens 2000 Eingaben auf einmal.")
-        results, conflicts = [], []
-        for op in ops:
-            try:
-                with transaction.atomic():
-                    results.append(self._apply(comp, op, conflicts))
-            except (ValidationError, NotFound) as exc:
-                results.append({"ok": False, "error": _message(exc)})
-            except (Starter.DoesNotExist, Scoring.DoesNotExist, ValueError, TypeError):
-                results.append({"ok": False, "error": "Ungültige Eingabe."})
-        keys = {
-            str(k): pk
-            for pk, k in comp.starters.filter(client_key__isnull=False).values_list(
-                "pk", "client_key"
-            )
-        }
-        return Response(
-            {
-                "results": results,
-                "conflicts": conflicts,
-                "keys": keys,
-                "starters": _starters_with_values(comp),
-            }
+        return Response(sync(self.org, request.user, comp, request.data.get("ops")))
+
+
+def sync(org, user, comp: Competition, ops) -> dict:
+    """Eingaben aus dem Standmodus nachreichen (auch für den Standzugang)."""
+    ops = ops or []
+    if not isinstance(ops, list) or len(ops) > 2000:
+        raise ValidationError("Höchstens 2000 Eingaben auf einmal.")
+    results, conflicts = [], []
+    for op in ops:
+        try:
+            if not isinstance(op, dict):
+                raise TypeError
+            with transaction.atomic():
+                results.append(_apply_op(org, user, comp, op, conflicts))
+        except (ValidationError, NotFound) as exc:
+            results.append({"ok": False, "error": _message(exc)})
+        except (
+            Starter.DoesNotExist,
+            Scoring.DoesNotExist,
+            Prize.DoesNotExist,
+            ValueError,
+            TypeError,
+        ):
+            results.append({"ok": False, "error": "Ungültige Eingabe."})
+    comp.refresh_from_db()
+    keys = {
+        str(k): pk
+        for pk, k in comp.starters.filter(client_key__isnull=False).values_list("pk", "client_key")
+    }
+    out = {
+        "results": results,
+        "conflicts": conflicts,
+        "keys": keys,
+        "starters": _starters_with_values(comp),
+        "status": comp.status,
+    }
+    if comp.form == Competition.Form.BIRD:
+        out["bird"] = _jsonable(bird.state(comp))
+    return out
+
+
+def _starter_ref(comp, ref) -> Starter:
+    if isinstance(ref, int) or (isinstance(ref, str) and ref.isdigit()):
+        return Starter.objects.get(pk=int(ref), competition=comp)
+    return Starter.objects.get(client_key=_uuid(ref), competition=comp)
+
+
+def _apply_op(org, user, comp, op, conflicts) -> dict:
+    kind = op.get("op")
+    if kind == "starter":
+        s = create_starter(org, user, comp, op)
+        return {"ok": True, "starter": s.pk}
+    if kind == "starter_update":
+        s = _starter_ref(comp, op.get("starter"))
+        update_starter(org, user, s, op)
+        return {"ok": True}
+    if kind == "score":
+        s = _starter_ref(comp, op.get("starter"))
+        scoring = Scoring.objects.get(
+            pk=op.get("scoring"), competition=comp, kind=Scoring.Kind.INDIVIDUAL
         )
-
-    def _starter(self, comp, ref) -> Starter:
-        if isinstance(ref, int) or (isinstance(ref, str) and ref.isdigit()):
-            return Starter.objects.get(pk=int(ref), competition=comp)
-        return Starter.objects.get(client_key=_uuid(ref), competition=comp)
-
-    def _apply(self, comp, op, conflicts) -> dict:
-        kind = op.get("op")
-        if kind == "starter":
-            s = create_starter(self.org, self.request.user, comp, op)
-            return {"ok": True, "starter": s.pk}
-        if kind == "starter_update":
-            s = self._starter(comp, op.get("starter"))
-            update_starter(self.org, self.request.user, s, op)
-            return {"ok": True}
-        if kind == "score":
-            s = self._starter(comp, op.get("starter"))
-            scoring = Scoring.objects.get(
-                pk=op.get("scoring"), competition=comp, kind=Scoring.Kind.INDIVIDUAL
+        at = parse_datetime(str(op.get("at") or "")) if op.get("at") else None
+        value, conflict = set_score(org, user, comp, scoring, s, op.get("value"), at)
+        if conflict:
+            conflicts.append(
+                {"starter": s.pk, "name": s.name, "scoring": scoring.pk, "value": str(value)}
             )
-            at = parse_datetime(str(op.get("at") or "")) if op.get("at") else None
-            value, conflict = set_score(
-                self.org, self.request.user, comp, scoring, s, op.get("value"), at
-            )
-            if conflict:
-                conflicts.append(
-                    {"starter": s.pk, "name": s.name, "scoring": scoring.pk, "value": str(value)}
-                )
-            return {"ok": True}
-        raise ValidationError("Unbekannte Eingabe.")
+        return {"ok": True}
+    if kind == "shot":
+        s = _starter_ref(comp, op.get("starter"))
+        hits = op.get("hits") or []
+        if not isinstance(hits, list):
+            raise TypeError
+        shot = bird.fire(
+            org,
+            user,
+            comp,
+            s,
+            hits,
+            at=bird.parse_at(op.get("at")),
+            client_key=bird.parse_key(op.get("client_key")),
+        )
+        return {"ok": True, "shot": shot.number}
+    if kind == "undo":
+        bird.undo(org, user, comp, client_key=bird.parse_key(op.get("client_key")))
+        return {"ok": True}
+    if kind == "draw":
+        s = _starter_ref(comp, op.get("starter"))
+        how = op.get("how") if op.get("how") in ("hut", "digital") else "hut"
+        number, note = bird.draw(org, user, comp, s, op.get("number"), how)
+        if note:
+            conflicts.append({"starter": s.pk, "name": s.name, "number": number, "note": note})
+        return {"ok": True, "number": number}
+    raise ValidationError("Unbekannte Eingabe.")
 
 
 def _message(exc) -> str:
@@ -736,6 +885,11 @@ class CopyView(_Mixin, APIView):
         comp = Competition.objects.create(
             organization=self.org,
             title=title,
+            form=src.form,
+            own=src.own,
+            organizer=src.organizer,
+            drop_out=src.drop_out,
+            fixed_order=src.fixed_order,
             occasion=src.occasion,
             discipline=src.discipline,
             location=src.location,
@@ -753,6 +907,18 @@ class CopyView(_Mixin, APIView):
             sc.source_id = mapping.get(source_id)
             sc.save()
             mapping[old_pk] = sc.pk
+        for p in src.prizes.all():
+            Prize.objects.create(
+                organization=self.org,
+                competition=comp,
+                name=p.name,
+                sort_order=p.sort_order,
+                award=p.award,
+            )
+        for t in src.teams.all():
+            Team.objects.create(
+                organization=self.org, competition=comp, name=t.name, sort_order=t.sort_order
+            )
         record(self.org, request.user, "create", comp, diff({}, snapshot(comp)))
         return Response({"id": comp.pk}, status=status.HTTP_201_CREATED)
 
@@ -966,6 +1132,22 @@ class ExportView(_Mixin, APIView):
             resp = HttpResponse(body, content_type="application/pdf")
             resp["Content-Disposition"] = (
                 f'inline; filename="{name.replace("Auswertung", "Schiessliste")}.pdf"'
+            )
+            return resp
+        if kind in ("losliste", "pfaenderliste"):
+            if comp.form != Competition.Form.BIRD:
+                raise ValidationError("Das ist kein Vogelschießen.")
+            if kind == "losliste":
+                try:
+                    blank = max(0, min(int(request.query_params.get("leerzeilen", 10)), 60))
+                except ValueError:
+                    blank = 10
+                body, label = report.lot_list(comp, blank), "Losliste"
+            else:
+                body, label = report.prize_sheet(comp), "Pfaenderliste"
+            resp = HttpResponse(body, content_type="application/pdf")
+            resp["Content-Disposition"] = (
+                f'inline; filename="{name.replace("Auswertung", label)}.pdf"'
             )
             return resp
         if kind == "stechliste":

@@ -7,6 +7,8 @@ import { bindUndoToUser, clearUndo } from '../components/undo.ts'
 interface AuthState {
   user: User | null
   loading: boolean
+  /** Server beim Start nicht erreichbar (z. B. Standmodus ohne Empfang) */
+  offline: boolean
   setUser: (user: User | null) => void
   logout: () => Promise<void>
 }
@@ -16,12 +18,16 @@ const AuthContext = createContext<AuthState | null>(null)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [offline, setOffline] = useState(false)
 
   useEffect(() => {
     api
       .getSession()
       .then(setUser)
-      .catch(() => setUser(null))
+      .catch(() => {
+        setUser(null)
+        setOffline(true)
+      })
       .finally(() => setLoading(false))
   }, [])
 
@@ -36,7 +42,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user) bindUndoToUser(user.id)
   }, [user])
 
-  const value = useMemo(() => ({ user, loading, setUser, logout }), [user, loading, logout])
+  const value = useMemo(
+    () => ({ user, loading, offline, setUser, logout }),
+    [user, loading, offline, logout],
+  )
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 

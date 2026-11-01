@@ -157,6 +157,7 @@ org_patterns = [
         org_views.DepartmentHomepageImageView.as_view(),
         name="department-homepage-image",
     ),
+    path("ansicht/", access_views.RolePreviewView.as_view(), name="org-role-preview"),
     path("audit/", access_views.AuditListView.as_view(), name="org-audit"),
     path("audit/kette/", access_views.AuditChainView.as_view(), name="org-audit-chain"),
     path("changes/<uuid:set_id>/undo/", change_views.UndoView.as_view(), name="org-change-undo"),
@@ -629,6 +630,7 @@ urlpatterns = [
     ),
     path("", include(peering_urls)),
     path("public/card/<str:token>/", card_views.PublicCardView.as_view(), name="public-card"),
+    *competition_urls.public_patterns,
     path(
         "public/card/<str:token>/photo/",
         card_views.PublicCardPhotoView.as_view(),

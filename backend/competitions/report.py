@@ -30,6 +30,8 @@ def filename(comp: Competition) -> str:
 
 def _meta(comp: Competition) -> list[str]:
     parts = [f"{comp.date:%d.%m.%Y}"]
+    if not comp.own and comp.organizer:
+        parts.append(f"Ausrichter: {comp.organizer}")
     for v in (comp.occasion, comp.discipline, comp.location):
         if v:
             parts.append(v)
@@ -37,6 +39,8 @@ def _meta(comp: Competition) -> list[str]:
 
 
 def _scoring_info(sc: Scoring) -> str:
+    if not sc.competition.own:
+        return f"{sc.field_size} Teilnehmer insgesamt" if sc.field_size else ""
     if sc.kind == Scoring.Kind.UNIT:
         mode = {
             "beste": f"Summe der besten {sc.team_size or ''}",
@@ -56,6 +60,8 @@ def _scoring_info(sc: Scoring) -> str:
 
 
 def pdf(comp: Competition) -> bytes:
+    if comp.form == Competition.Form.BIRD:
+        return bird_pdf(comp)
     org = comp.organization
     data = services.standings(comp)
     scorings = {s.pk: s for s in comp.scorings.all()}
@@ -81,6 +87,9 @@ def pdf(comp: Competition) -> bytes:
         story.append(Paragraph(f"<b>{escape(block['name'])}</b>", st["h2"]))
         story.append(Paragraph(escape(_scoring_info(sc)), st["small"]))
         has_so = any(row.get("shootoff") for row in block["rows"])
+        if not comp.own:
+            story.append(_foreign_table(block, sc, primary, st))
+            continue
         if sc.kind == Scoring.Kind.UNIT:
             head = ["Platz", "Einheit", "Schützen", "Bester Schütze", "Wert"]
             widths = [14 * mm, 52 * mm, 20 * mm, 52 * mm, 24 * mm]
@@ -203,11 +212,192 @@ def pdf(comp: Competition) -> bytes:
     return buf.getvalue()
 
 
+def _place_text(row: dict, sc: Scoring) -> str:
+    if not row.get("place"):
+        return "–"
+    text = f"{row['place']}."
+    if sc.field_size:
+        text += f" von {sc.field_size}"
+    return text
+
+
+def _foreign_table(block: dict, sc: Scoring, primary, st):
+    n, r = st["normal"], st["right"]
+    team = sc.kind == Scoring.Kind.TEAM
+    head = ["Platz", "Mannschaft" if team else "Name", "Schützen" if team else "Einheit", "Wert"]
+    rows = [[Paragraph(f"<b>{h}</b>", r if h == "Wert" else n) for h in head]]
+    for row in block["rows"]:
+        second = ", ".join(row.get("members", [])) if team else (row["unit_name"] or row["club"])
+        note = f" ({row['note']})" if row.get("note") else ""
+        rows.append(
+            [
+                Paragraph(escape(_place_text(row, sc)), n),
+                Paragraph(escape(row["name"] + note), n),
+                Paragraph(escape(second), n),
+                Paragraph(escape(row["value_text"]), r),
+            ]
+        )
+    return _table(rows, [24 * mm, 56 * mm, 64 * mm, 22 * mm], primary, total_row=False)
+
+
+def _bird_numbers(data: dict) -> list[tuple[str, str]]:
+    stats = data["stats"]
+    lines = [
+        ("Schüsse insgesamt", str(stats["shots"] or "")),
+        ("Schützen", str(stats["starters"])),
+        ("davon Mitglieder / Gäste", f"{stats['members']} / {stats['guests']}"),
+    ]
+    if stats.get("rounds"):
+        lines.append(("Runden", str(stats["rounds"])))
+    if stats.get("duration_minutes") is not None:
+        h, m = divmod(stats["duration_minutes"], 60)
+        lines.append(("Dauer", f"{h} Std. {m} Min." if h else f"{m} Min."))
+    for u in stats["per_unit"]:
+        lines.append((f"Pfänder {u['name']}", str(u["count"])))
+    return lines
+
+
+def bird_pdf(comp: Competition) -> bytes:
+    """Pfänderliste mit Kennzahlen (Vogelschießen)."""
+    from . import bird
+
+    org = comp.organization
+    data = bird.state(comp)
+    st = _styles()
+    n, r = st["normal"], st["right"]
+    primary = colors.HexColor(effective_theme(org.ancestors())["primary"])
+    story: list = [
+        Paragraph(f"<b>{escape(comp.title)}</b>", st["title"]),
+        Paragraph(escape(" · ".join([org.name, *_meta(comp)])), n),
+        Paragraph(
+            f"Stand {timezone.localdate():%d.%m.%Y} · {comp.get_status_display()}", st["small"]
+        ),
+        Spacer(1, 4 * mm),
+        Paragraph("<b>Pfänderliste</b>", st["h2"]),
+    ]
+    head = ["Pfand", "Schütze", "Einheit / Verein", "Schuss Nr.", "Schüsse", "Preis"]
+    rows = [[Paragraph(f"<b>{h}</b>", r if h in ("Schuss Nr.", "Schüsse") else n) for h in head]]
+    for p in data["prizes"]:
+        rows.append(
+            [
+                Paragraph(escape(p["name"]), n),
+                Paragraph(escape(p["winner_name"] or "–"), n),
+                Paragraph(escape(p["unit_name"] or p["club"]), n),
+                Paragraph(str(p["shot_number"] or ""), r),
+                Paragraph(str(p["shots_for"] or ""), r),
+                Paragraph(escape(p["award"]), n),
+            ]
+        )
+    story.append(
+        _table(
+            rows,
+            [30 * mm, 44 * mm, 34 * mm, 18 * mm, 16 * mm, 30 * mm],
+            primary,
+            total_row=False,
+        )
+    )
+    story.append(Paragraph("<b>Kennzahlen</b>", st["h2"]))
+    story.append(
+        _table(
+            [[Paragraph(escape(a), n), Paragraph(escape(b), r)] for a, b in _bird_numbers(data)],
+            [70 * mm, 40 * mm],
+            primary,
+            total_row=False,
+        )
+    )
+    return _doc(comp, f"Pfänderliste {comp.title}", story)
+
+
+def lot_list(comp: Competition, blank_rows: int = 10) -> bytes:
+    """Losliste fürs Vogelschießen auf Papier: Schützen nach Losnummer mit Feld für Striche
+    (gezählte Schüsse) und Pfand, dazu leere Zeilen für Nachzügler."""
+    from . import bird
+
+    org = comp.organization
+    st = _styles()
+    n = st["normal"]
+    primary = colors.HexColor(effective_theme(org.ancestors())["primary"])
+    starters = [s for s in comp.starters.select_related("unit") if s.presence != "zurueckgezogen"]
+    starters.sort(key=lambda s: (bird.lot(s.number) is None, bird.lot(s.number) or 0, s.name))
+    head = ["Los", "Name", "Einheit / Verein", "Schüsse (Striche)", "Pfand"]
+    widths = [14 * mm, 58 * mm, 40 * mm, 125 * mm, 20 * mm]
+    rows = [[Paragraph(f"<b>{escape(h)}</b>", n) for h in head]]
+    for s in starters:
+        rows.append(
+            [
+                Paragraph(escape(s.number), n),
+                Paragraph(escape(s.name), n),
+                Paragraph(escape(s.unit.name if s.unit_id else s.club), n),
+                "",
+                "",
+            ]
+        )
+    prizes = ", ".join(p.name for p in comp.prizes.all())
+
+    def story(blank: int) -> list:
+        return [
+            Paragraph(f"<b>Losliste {escape(comp.title)}</b>", st["title"]),
+            Paragraph(escape(" · ".join([org.name, *_meta(comp)])), n),
+            Paragraph(escape(f"Pfänder: {prizes}"), st["small"]),
+            Spacer(1, 4 * mm),
+            _grid(rows + [[""] * len(head) for _ in range(blank)], widths, primary),
+        ]
+
+    return _filled(comp, f"Losliste {comp.title}", story, blank_rows, wide=True)
+
+
+def prize_sheet(comp: Competition) -> bytes:
+    """Leere Pfänderliste zum Ausfüllen am Stand."""
+    org = comp.organization
+    st = _styles()
+    n = st["normal"]
+    primary = colors.HexColor(effective_theme(org.ancestors())["primary"])
+    head = ["Pfand", "Schütze", "Los", "Schuss Nr.", "Schüsse für das Pfand", "Uhrzeit"]
+    widths = [32 * mm, 58 * mm, 14 * mm, 20 * mm, 30 * mm, 18 * mm]
+    rows = [[Paragraph(f"<b>{escape(h)}</b>", n) for h in head]]
+    for p in comp.prizes.all():
+        rows.append([Paragraph(escape(p.name), n)] + [""] * (len(head) - 1))
+    story = [
+        Paragraph(f"<b>Pfänderliste {escape(comp.title)}</b>", st["title"]),
+        Paragraph(escape(" · ".join([org.name, *_meta(comp)])), n),
+        Spacer(1, 4 * mm),
+        _grid(rows, widths, primary, height=12 * mm),
+        Spacer(1, 6 * mm),
+        Paragraph("Schüsse insgesamt: ____________", n),
+    ]
+    return _doc(comp, f"Pfänderliste {comp.title}", story)
+
+
 def _doc(comp: Competition, title: str, story: list, *, wide: bool = False) -> bytes:
+    return _build(comp, title, story, wide=wide)[0]
+
+
+def _filled(comp: Competition, title: str, make_story, least: int, *, wide: bool = False):
+    """PDF mit mindestens ``least`` leeren Zeilen, aufgefüllt bis die letzte Seite voll ist,
+    damit keine Seite mit nur einer einzelnen Zeile entsteht (Ralf 2026-11-01).
+    ``make_story(blank)`` baut den Inhalt mit ``blank`` leeren Zeilen."""
+    body, pages = _build(comp, title, make_story(least), wide=wide)
+    if least == 0:  # ausdrücklich ohne leere Zeilen
+        return body
+    low, high = least, least + 60  # 60 leere Zeilen sind mehr als eine Seite
+    while low < high:  # größte Zahl leerer Zeilen, die noch auf gleich viele Seiten passt
+        mid = (low + high + 1) // 2
+        b, p = _build(comp, title, make_story(mid), wide=wide)
+        if p == pages:
+            low, body = mid, b
+        else:
+            high = mid - 1
+    if low != least:
+        body = _build(comp, title, make_story(low), wide=wide)[0]
+    return body
+
+
+def _build(comp: Competition, title: str, story: list, *, wide: bool = False):
     from reportlab.lib.pagesizes import landscape
 
     org = comp.organization
     buf = io.BytesIO()
+    count = {"pages": 0}
 
     def footer(canvas, doc):
         canvas.saveState()
@@ -216,6 +406,7 @@ def _doc(comp: Competition, title: str, story: list, *, wide: bool = False) -> b
         canvas.drawString(20 * mm, 10 * mm, f"{org.name} · {title}")
         canvas.drawRightString((277 if wide else 190) * mm, 10 * mm, f"Seite {doc.page}")
         canvas.restoreState()
+        count["pages"] = doc.page
 
     SimpleDocTemplate(
         buf,
@@ -227,7 +418,7 @@ def _doc(comp: Competition, title: str, story: list, *, wide: bool = False) -> b
         title=title,
         author=org.name,
     ).build(story, onFirstPage=footer, onLaterPages=footer)
-    return buf.getvalue()
+    return buf.getvalue(), count["pages"]
 
 
 def _grid(rows, widths, primary, height=8 * mm):
@@ -291,20 +482,25 @@ def shooting_list(comp: Competition, order: str = "name", blank_rows: int = 10, 
             ]
             + [""] * (len(head) - 3)
         )
-    rows += [[""] * len(head) for _ in range(max(0, blank_rows if not empty else 30))]
     info = []
     if sc:
         info.append(_scoring_info(sc))
-    story = [
-        Paragraph(f"<b>Schießliste {escape(comp.title)}</b>", st["title"]),
-        Paragraph(escape(" · ".join([org.name, *_meta(comp)])), n),
-        Paragraph(
-            escape(" · ".join(info + [f"sortiert nach {ORDERS.get(order, 'Name')}"])), st["small"]
-        ),
-        Spacer(1, 4 * mm),
-        _grid(rows, fixed, primary),
-    ]
-    return _doc(comp, f"Schießliste {comp.title}", story, wide=wide)
+
+    def story(blank: int) -> list:
+        return [
+            Paragraph(f"<b>Schießliste {escape(comp.title)}</b>", st["title"]),
+            Paragraph(escape(" · ".join([org.name, *_meta(comp)])), n),
+            Paragraph(
+                escape(" · ".join(info + [f"sortiert nach {ORDERS.get(order, 'Name')}"])),
+                st["small"],
+            ),
+            Spacer(1, 4 * mm),
+            _grid(rows + [[""] * len(head) for _ in range(blank)], fixed, primary),
+        ]
+
+    # Leere Liste: genau eine volle Seite; sonst die letzte Seite mit leeren Zeilen füllen
+    least = 1 if empty else blank_rows
+    return _filled(comp, f"Schießliste {comp.title}", story, least, wide=wide)
 
 
 def shootoff_list(comp: Competition, shootoff) -> bytes:
@@ -343,7 +539,60 @@ def shootoff_list(comp: Competition, shootoff) -> bytes:
     return _doc(comp, f"Stechliste {comp.title}", story)
 
 
+def bird_xlsx(comp: Competition) -> bytes:
+    from . import bird
+
+    data = bird.state(comp)
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Pfänder"
+    ws.append(["Pfand", "Schütze", "Einheit", "Verein", "Los", "Schuss Nr.", "Schüsse", "Preis"])
+    for p in data["prizes"]:
+        ws.append(
+            [
+                safe_cell(p["name"]),
+                safe_cell(p["winner_name"]),
+                safe_cell(p["unit_name"]),
+                safe_cell(p["club"]),
+                safe_cell(p["number"]),
+                p["shot_number"],
+                p["shots_for"],
+                safe_cell(p["award"]),
+            ]
+        )
+    _style(ws)
+    ws = wb.create_sheet("Schützen")
+    ws.append(["Los", "Name", "Einheit", "Verein", "Teilnahme", "gezogen"])
+    for s in sorted(
+        comp.starters.select_related("unit"),
+        key=lambda s: (bird.lot(s.number) is None, bird.lot(s.number) or 0, s.name),
+    ):
+        ws.append(
+            [
+                bird.lot(s.number),
+                safe_cell(s.name),
+                safe_cell(s.unit.name if s.unit_id else ""),
+                safe_cell(s.club),
+                s.get_presence_display() if s.presence else "",
+                {"hut": "Hut", "digital": "digital", "alle": "alle auf einmal"}.get(
+                    s.drawn_how, ""
+                ),
+            ]
+        )
+    _style(ws)
+    ws = wb.create_sheet("Kennzahlen")
+    ws.append(["Kennzahl", "Wert"])
+    for a, b in _bird_numbers(data):
+        ws.append([safe_cell(a), b])
+    _style(ws)
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+
+
 def xlsx(comp: Competition) -> bytes:
+    if comp.form == Competition.Form.BIRD:
+        return bird_xlsx(comp)
     data = services.standings(comp)
     scorings = {s.pk: s for s in comp.scorings.all()}
     wb = Workbook()
@@ -356,6 +605,30 @@ def xlsx(comp: Competition) -> bytes:
             title = title[:26] + "_"
         used.add(title)
         ws = wb.create_sheet(title)
+        if not comp.own:
+            team = sc.kind == Scoring.Kind.TEAM
+            ws.append(
+                [
+                    "Platz",
+                    "von",
+                    "Mannschaft" if team else "Name",
+                    "Schützen" if team else "Einheit",
+                ]
+                + ["Wert", "Bemerkung"]
+            )
+            for row in block["rows"]:
+                ws.append(
+                    [
+                        row.get("place"),
+                        sc.field_size,
+                        safe_cell(row["name"]),
+                        safe_cell(", ".join(row.get("members", [])) if team else row["unit_name"]),
+                        float(row["value"]) if row.get("value") is not None else None,
+                        safe_cell(row.get("note", "")),
+                    ]
+                )
+            _style(ws)
+            continue
         if sc.kind == Scoring.Kind.UNIT:
             ws.append(
                 ["Platz", "Einheit", "Schützen", "Bester Schütze", "Wert", "Stechen", "Hinweis"]
