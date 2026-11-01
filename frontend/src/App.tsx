@@ -57,6 +57,7 @@ const CompetitionsPage = lazyPage(
   () => import('./pages/competitions/CompetitionsPage.tsx'),
   'CompetitionsPage',
 )
+const EntriesPage = lazyPage(() => import('./pages/entries/EntriesPage.tsx'), 'EntriesPage')
 const StandPage = lazyPage(() => import('./pages/competitions/StandPage.tsx'), 'StandPage')
 const StandTokenPage = lazyPage(
   () => import('./pages/competitions/StandPage.tsx'),
@@ -245,6 +246,14 @@ export default function App() {
             element={
               <RequireOrg>
                 <CompetitionsPage />
+              </RequireOrg>
+            }
+          />
+          <Route
+            path="meldungen/*"
+            element={
+              <RequireOrg>
+                <EntriesPage />
               </RequireOrg>
             }
           />

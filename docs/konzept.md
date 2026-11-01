@@ -27,6 +27,7 @@ Gepflegt von Ralf Philipsen; bei jeder neuen Funktion hier eine Zeile ergänzen.
 | Untereinheiten | Vorstand, Verantwortliche der Einheit | frei verschachtelbare Einheiten (z. B. Züge, Abteilungen) mit eigenen Rollen, Kasse und Webseite |
 | Termine | Vorstand, Mitglieder | Kalender, Zu-/Absagen bei einmaligen Terminen, Kalender-Abo |
 | Dokumente | Vorstand, je nach Ordnerfreigabe Mitglieder | Ablage, Satzung |
+| Meldungen | Vorstand | Mannschaften, Personen und Angaben an Veranstalter melden (Brief, E-Mail, Tabelle), Fassungen und Änderungsmeldungen, fremder Wettbewerb aus der Meldung |
 | Rundschreiben | Vorstand | Mail/Brief/App an Mitglieder, Vorstände, Rolleninhaber; Abbestellen nur für „Information“ |
 | Webseite | Vorstand, Webseitenpflege | Inhalte, Startseiten-Bausteine, Instagram/Facebook-Beiträge, Impressum/Datenschutz |
 | Finanzen | Kassierer, Kassenprüfer | Beiträge/Rechnungen, Mahnungen, Kasse, Quittungen, Kontoauszüge (CAMT), Zuwendungsbestätigungen, Abschlüsse |

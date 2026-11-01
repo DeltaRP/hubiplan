@@ -97,6 +97,17 @@ export const modules: AppModule[] = [
         org.permissions.includes(PERM.competitionsResults)),
   },
   {
+    id: 'meldungen',
+    label: 'Meldungen',
+    path: '/meldungen',
+    icon: icon('M5 4h10l4 4v12H5zM15 4v4h4M8.5 12.5l2 2 4-4.5M8.5 17.5h7'),
+    visible: (org) =>
+      !!org &&
+      (org.type === 'club' || org.type === 'federation') &&
+      org.modules.includes('entries') &&
+      org.permissions.includes(PERM.entriesSubmit),
+  },
+  {
     id: 'dokumente',
     label: 'Dokumente',
     path: '/dokumente',
