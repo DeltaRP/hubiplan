@@ -6,6 +6,7 @@ import base64
 
 from django.core.files.base import ContentFile
 
+from core import virenscan
 from core.files import delete_on_commit
 
 from .models import RemoteState
@@ -116,6 +117,8 @@ def apply_statute(coupling, data):
     except ValueError:
         return
     if len(raw) > STATUTE_LIMIT or not raw.startswith(b"%PDF"):
+        return
+    if not virenscan.inbound_ok(raw, "Satzung.pdf", "Satzung aus dem Verbund"):
         return
     meta = {
         "level": data.get("level"),

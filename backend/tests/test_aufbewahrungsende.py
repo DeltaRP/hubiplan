@@ -74,13 +74,16 @@ def test_frist_laeuft_noch(c, fin, jahr2025, monkeypatch):
     assert "läuft noch" in str(resp.json())
 
 
-def test_belege_nach_acht_jahren(c, fin, club, jahr2025, monkeypatch):
+def test_belege_nach_acht_jahren(
+    c, fin, club, jahr2025, monkeypatch, django_capture_on_commit_callbacks
+):
     heute(monkeypatch, datetime.date(2034, 1, 1))
     info = retention_of(c, fin)
     assert info["documents_due"] and not info["records_due"]
     receipt = Receipt.objects.get()
     path = receipt.file.path
-    resp = c.post(f"{fin}/closings/aufbewahrung/", {"year": 2025}, content_type=JSON)
+    with django_capture_on_commit_callbacks(execute=True):
+        resp = c.post(f"{fin}/closings/aufbewahrung/", {"year": 2025}, content_type=JSON)
     assert resp.status_code == 200, resp.json()
     assert resp.json()["counts"]["Belege"] == 1
     assert not Receipt.objects.exists()
@@ -126,3 +129,25 @@ def test_nur_vorstand_und_nur_abgeschlossen(c, fin, setup, monkeypatch):
     resp = c.post(f"{fin}/closings/aufbewahrung/", {"year": 2025}, content_type=JSON)
     assert resp.status_code == 400
     assert "abgeschlossene" in str(resp.json())
+
+
+def test_rollback_behaelt_belege(c, fin, club, jahr2025, monkeypatch):
+    """Gesamtaudit 01.11., GA-F07: Dateien erst nach dem Commit löschen."""
+    import os
+
+    from django.db import transaction
+
+    from accounts.models import User
+
+    heute(monkeypatch, datetime.date(2034, 1, 1))
+    path = Receipt.objects.get().file.path
+
+    def kaputt(*args, **kwargs):
+        raise RuntimeError("Fehler nach dem Löschen")
+
+    monkeypatch.setattr("audit.log.record", kaputt)
+    user = User.objects.filter(role_assignments__organization=club).first()
+    with pytest.raises(RuntimeError), transaction.atomic():
+        retention.purge(club, 2025, user)
+    assert Receipt.objects.exists()
+    assert os.path.exists(path)

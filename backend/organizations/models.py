@@ -279,6 +279,11 @@ class Organization(ShortNameMixin, FiscalYearFields, ThemeFields):
     )
     # Für diese Adresse wurde zuletzt automatisch geholt (nur einmal je Adresse)
     website_image_for = models.CharField(max_length=200, blank=True, default="", db_default="")
+    # Speicherbudget der Dokumentablage in GB (leer: DOCUMENT_BUDGET_GB, Standard 5);
+    # erhöhen darf nur die Plattform (Gesamtaudit 01.11., GA-S04)
+    document_budget_gb = models.PositiveSmallIntegerField(
+        "Speicherbudget Dokumente (GB)", null=True, blank=True
+    )
 
     # Vereinseinstellungen zu Abteilungen
     department_label = models.CharField(

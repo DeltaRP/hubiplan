@@ -43,3 +43,24 @@ def send_invitation(user, organization, role_name: str) -> bool:
         logger.exception("Einladung an %s konnte nicht gesendet werden", user.email)
         return False
     return True
+
+
+def send_password_link(user) -> bool:
+    """Link zum Festlegen des Passworts für ein Konto, dessen Startpasswort entfällt (FQ-16)."""
+    from .tokens import INVITATION_DAYS as days
+
+    body = (
+        f"Guten Tag,\n\n"
+        f"HUBIplan verschickt keine Startpasswörter mehr. Ihr bisheriges Startpasswort "
+        f"gilt nicht mehr.\n\n"
+        f"Bitte legen Sie über diesen Link Ihr eigenes Passwort fest (gültig {days} Tage):\n"
+        f"{password_link(user)}\n\n"
+        f"Ihre Anmeldung: {user.email}\n\n"
+        f"Ist der Link abgelaufen, hilft „Passwort vergessen“ auf der Anmeldeseite.\n"
+    )
+    try:
+        send_mail("HUBIplan: Passwort festlegen", body, settings.DEFAULT_FROM_EMAIL, [user.email])
+    except Exception:  # noqa: BLE001 – ein Versandfehler soll die übrigen nicht aufhalten
+        logger.exception("Passwort-Link an %s konnte nicht gesendet werden", user.email)
+        return False
+    return True

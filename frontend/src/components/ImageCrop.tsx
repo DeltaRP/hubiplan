@@ -229,8 +229,11 @@ export function useImageCrop(settings: CropSettings = {}): {
   choose: (e: ChangeEvent<HTMLInputElement>, done: (file: File | null) => void) => void
   dialog: ReactNode
 } {
-  const [pending, setPending] = useState<File | null>(null)
+  const [pending, setPending] = useState<{ file: File; gen: number } | null>(null)
   const resolver = useRef<((file: File | null) => void) | null>(null)
+  // Jede Auswahl hat ihre Nummer: Ein später fertiger Zuschnitt einer abgebrochenen
+  // Auswahl erfüllt nie eine neuere (Gesamtaudit 01.11., GA-F11)
+  const generation = useRef(0)
 
   // Offener Dialog beim Verlassen der Seite: Warten beenden
   useEffect(
@@ -243,7 +246,8 @@ export function useImageCrop(settings: CropSettings = {}): {
 
   const pick = useCallback((file: File) => {
     resolver.current?.(null)
-    setPending(file)
+    generation.current += 1
+    setPending({ file, gen: generation.current })
     return new Promise<File | null>((resolve) => {
       resolver.current = resolve
     })
@@ -263,7 +267,9 @@ export function useImageCrop(settings: CropSettings = {}): {
     })
   }
 
-  function finish(file: File | null) {
+  function finish(gen: number, file: File | null) {
+    if (gen !== generation.current) return // veraltete Auswahl
+    generation.current += 1
     resolver.current?.(file)
     resolver.current = null
     setPending(null)
@@ -271,11 +277,11 @@ export function useImageCrop(settings: CropSettings = {}): {
 
   const dialog = pending ? (
     <ImageCropDialog
-      key={`${pending.name}-${pending.size}-${pending.lastModified}`}
-      file={pending}
+      key={pending.gen}
+      file={pending.file}
       settings={settings}
-      onDone={finish}
-      onCancel={() => finish(null)}
+      onDone={(file) => finish(pending.gen, file)}
+      onCancel={() => finish(pending.gen, null)}
     />
   ) : null
   return { pick, choose, dialog }

@@ -5,7 +5,7 @@ from .models import Department, DepartmentRole, Imprint, Organization, PlatformS
 
 @admin.register(Organization)
 class OrganizationAdmin(admin.ModelAdmin):
-    list_display = ("name", "type", "parent", "city", "is_active")
+    list_display = ("name", "type", "parent", "city", "is_active", "document_budget_gb")
     list_filter = ("type", "is_active")
     search_fields = ("name", "city")
 

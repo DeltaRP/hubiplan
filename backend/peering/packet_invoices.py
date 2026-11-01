@@ -23,7 +23,7 @@ from django.core.files.base import ContentFile
 from django.db import transaction
 from django.utils import timezone
 
-from core.files import delete_on_commit
+from core import virenscan
 
 from .models import Coupling, RemoteInvoice
 from .packets import DOWN, Packet, register
@@ -212,35 +212,52 @@ def _receive_issue(coupling: Coupling, uid: str, data: dict) -> None:
                 }
             )
     bank = data.get("bank") if isinstance(data.get("bank"), dict) else {}
-    remote, _ = RemoteInvoice.objects.update_or_create(
-        coupling=coupling,
-        uid=uid,
-        defaults={
-            "number": str(data.get("number") or "")[:40],
-            "subject": str(data.get("subject") or "")[:200],
-            "date": _date(data.get("date")),
-            "due_date": _date(data.get("due_date")),
-            "total": _money(data.get("total")),
-            "status": RemoteInvoice.Status.OPEN,
-            "data": {
-                "note": str(data.get("note") or "")[:2000],
-                "lines": lines,
-                "bank": {
-                    k: str(bank.get(k) or "")[:100] for k in ("holder", "iban", "bic", "bank_name")
-                },
-                "paid": "0.00",
-                "settled": False,
-            },
-        },
-    )
+    fields = {
+        "number": str(data.get("number") or "")[:40],
+        "subject": str(data.get("subject") or "")[:200],
+        "date": _date(data.get("date")),
+        "due_date": _date(data.get("due_date")),
+        "total": _money(data.get("total")),
+    }
+    original = {
+        "note": str(data.get("note") or "")[:2000],
+        "lines": lines,
+        "bank": {k: str(bank.get(k) or "")[:100] for k in ("holder", "iban", "bic", "bank_name")},
+    }
     content = b""
     if data.get("pdf"):
         try:
             content = base64.b64decode(str(data["pdf"]), validate=True)
         except (ValueError, TypeError):
             content = b""
-    if content.startswith(b"%PDF") and len(content) <= PDF_LIMIT:
-        delete_on_commit(remote.file)  # erst nach dem Commit (INF-F02)
+    if not (content.startswith(b"%PDF") and len(content) <= PDF_LIMIT):
+        content = b""
+    if content and not virenscan.inbound_ok(content, f"{uid}.pdf", "Rechnung aus dem Verbund"):
+        content = b""
+
+    # Eine empfangene Rechnung bleibt, wie sie ist (Gesamtaudit 01.11., GA-F01): Dieselbe
+    # Rechnung noch einmal wird still quittiert (das erste PDF bleibt), eine geänderte
+    # abgelehnt. Korrekturen
+    # kommen als Storno und neue Rechnung mit eigener Kennung.
+    existing = RemoteInvoice.objects.select_for_update().filter(coupling=coupling, uid=uid).first()
+    if existing is not None:
+        same = all(getattr(existing, k) == v for k, v in fields.items()) and all(
+            (existing.data or {}).get(k) == v for k, v in original.items()
+        )
+        if not same:
+            raise ValidationError(
+                f"Rechnung {existing.number or uid} liegt schon vor und wird nicht geändert. "
+                "Bitte stornieren und als neue Rechnung schicken."
+            )
+        return
+    remote = RemoteInvoice.objects.create(
+        coupling=coupling,
+        uid=uid,
+        status=RemoteInvoice.Status.OPEN,
+        data={**original, "paid": "0.00", "settled": False},
+        **fields,
+    )
+    if content:
         remote.file.save(f"{uid}.pdf", ContentFile(content), save=True)
 
 

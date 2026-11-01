@@ -203,6 +203,18 @@ Wiederherstellen **nicht** zurücksetzen. Auf einem neuen Server vor dem ersten 
 neueste `loeschliste.jsonl` aus dem Backup-Ordner hineinkopieren (das Backup legt sie täglich
 dorthin und kopiert sie an den zweiten Ort). Von Hand: `python manage.py loeschliste_anwenden`.
 
+**Kettenköpfe:** Das Backup hängt täglich je Organisation Nummer und Prüfsumme des letzten
+geprüften Eintrags im Änderungsprotokoll an `kettenkoepfe.log` im Backup-Ordner an (keine
+Inhalte). Die Datei geht mit an den zweiten Ort und mit restic nach Hetzner; ältere Stände
+bleiben in den Schnappschüssen. Abgleich mit der Datenbank:
+`python manage.py kettenkoepfe_pruefen /pfad/kettenkoepfe.log`. Das macht Löschen oder
+Neuberechnen der Kette sichtbar, solange die Hetzner-Kopie unberührt ist; gegen jemanden mit
+vollem Zugriff auf Server und Hetzner schützt es nicht.
+
+**Alte Startpasswörter:** `python manage.py startpasswoerter` zeigt nur die Anzahl der Konten,
+die noch ein Startpasswort haben; mit `--umstellen` wird es unbrauchbar und die Person bekommt
+einen Link zum Festlegen des Passworts.
+
 ## E-Mail
 
 Jede Mail landet im **Postausgang** der Datenbank:

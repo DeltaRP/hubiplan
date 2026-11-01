@@ -171,6 +171,15 @@ ORG_FIELDS = (
     "direct_members",
     # Platzhalter einer Einheit auf einer anderen Instanz (Verbund)
     "is_remote",
+    # Finanzeinstellungen und Festschreibung (Gesamtaudit 01.11., GA-F08)
+    "finance_locked_until",
+    "cash_counts_enabled",
+    "reserves_enabled",
+    "datev_enabled",
+    "datev_consultant",
+    "datev_client",
+    "datev_account_length",
+    "datev_chart",
 )
 DEPT_FIELDS = (
     "name",
@@ -197,6 +206,15 @@ DEPT_FIELDS = (
     "own_workspace",
     "self_managed",
     "fee_exempt",
+    # Finanzeinstellungen und Festschreibung (Gesamtaudit 01.11., GA-F08)
+    "finance_locked_until",
+    "cash_counts_enabled",
+    "reserves_enabled",
+    "datev_enabled",
+    "datev_consultant",
+    "datev_client",
+    "datev_account_length",
+    "datev_chart",
 )
 MEMBERSHIP_PREFETCH = (
     "periods",
@@ -307,6 +325,7 @@ class Dumper:
                     "person": person_id,
                     # Früherer Inhaber ohne Konto (Mitglieder › Ämter)
                     "holder_name": a.name,
+                    "name_public": a.name_public,
                     **period(a),
                 }
             )
@@ -370,7 +389,7 @@ class Dumper:
                     "in_chronicle": r.in_chronicle,
                     # Frühere Inhaber ohne Mitgliedschaft (Mitglieder › Ämter), nur Name
                     "former_holders": [
-                        {"name": a.name, **period(a)}
+                        {"name": a.name, "name_public": a.name_public, **period(a)}
                         for a in r.assignments.filter(
                             membership__isnull=True, user__isnull=True
                         ).exclude(name="")

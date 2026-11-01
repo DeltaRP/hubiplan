@@ -197,6 +197,34 @@ def used_bytes(org: Organization, department: Department | None = None) -> int:
     return qs.aggregate(s=Sum("size"))["s"] or 0
 
 
+def budget_bytes(org: Organization) -> int:
+    """Speicherbudget der Ablage eines Vereins samt Untereinheiten (GA-S04)."""
+    from django.conf import settings
+
+    gb = org.document_budget_gb or settings.DOCUMENT_BUDGET_GB
+    return gb * 1024**3
+
+
+def total_bytes(org: Organization) -> int:
+    """Belegter Platz des ganzen Vereins (alle Ablagen, Fassungen und Papierkorb)."""
+    return DocumentVersion.objects.filter(organization=org).aggregate(s=Sum("size"))["s"] or 0
+
+
+def check_budget(org: Organization, size: int) -> None:
+    """Passt eine weitere Datei noch ins Budget? Sperrt den Verein bis zum Commit,
+    damit gleichzeitige Uploads das Budget nicht gemeinsam überschreiten."""
+    Organization.objects.select_for_update().filter(pk=org.pk).values_list("pk").first()
+    limit = budget_bytes(org)
+    if total_bytes(org) + (size or 0) > limit:
+        raise ValidationError(
+            {
+                "file": f"Der Speicherplatz der Ablage ({limit // 1024**3} GB) ist voll. Bitte "
+                "alte Fassungen oder den Papierkorb leeren oder die Plattform um mehr Platz "
+                "bitten."
+            }
+        )
+
+
 def documents_in(folder_ids, *, trash: bool = False):
     qs = Document.objects.filter(folder_id__in=folder_ids, deleted_at__isnull=not trash)
     return qs.prefetch_related("versions__uploaded_by").select_related("created_by", "deleted_by")

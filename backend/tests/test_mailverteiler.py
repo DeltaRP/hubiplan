@@ -378,7 +378,12 @@ class TestEingang:
     ):
         create_list(api(board_a), base(cal["a"]), mode="direct")
         with django_capture_on_commit_callbacks(execute=True):
-            entry = inbound.process_message(mail_bytes(board_a.email))
+            entry = inbound.process_message(
+                mail_bytes(
+                    board_a.email,
+                    Authentication_Results="mx.example.org; spf=pass; dkim=pass; dmarc=pass",
+                )
+            )
         assert entry.status == InboundMail.Status.SENT and entry.user == board_a
         circular = entry.circular
         circular.refresh_from_db()
@@ -544,3 +549,23 @@ class TestAbsenderAuswahl:
         c.patch(url, {"senders": []}, content_type=JSON)
         entry = inbound.process_message(mail_bytes(board_a.email, subject="Wieder alle"))
         assert entry.status == InboundMail.Status.WAITING
+
+
+# --- GA-S03: „direkt senden“ nur mit bestätigter Herkunft ---
+
+
+@pytest.mark.parametrize(
+    "ergebnis",
+    [
+        None,
+        "mx.example.org; dmarc=none",
+        "mx.example.org; dmarc=temperror",
+        "mx.example.org; dmarc=permerror",
+        "mx.example.org; spf=softfail; dmarc=bestpass",
+    ],
+)
+def test_direkt_ohne_dmarc_pass_braucht_bestaetigung(cal, board_a, members, api, ergebnis):
+    create_list(api(board_a), base(cal["a"]), mode="direct")
+    headers = {"Authentication_Results": ergebnis} if ergebnis else {}
+    entry = inbound.process_message(mail_bytes(board_a.email, **headers))
+    assert entry.status == InboundMail.Status.WAITING

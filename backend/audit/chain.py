@@ -113,6 +113,12 @@ def verify(org_id: int) -> dict:
     prev = GENESIS
     head_seq = None
     with tenant_context(org_id):
+        # Zuletzt bestätigter Kopf: Fehlt danach das Ende der Kette oder alles, ist das
+        # ein Bruch und kein neuer, kürzerer Kopf (Gesamtaudit 01.11., GA-F06).
+        known = AuditCheck.objects.filter(organization_id=org_id).first()
+        known_seq = known.head_seq if known else None
+        known_hash = known.head_hash if known else ""
+        known_seen = False
         entries = AuditEntry.objects.filter(organization_id=org_id, seq__isnull=False)
         for entry in entries.order_by("seq").iterator(chunk_size=2000):
             count += 1
@@ -126,17 +132,34 @@ def verify(org_id: int) -> dict:
             if entry.prev_hash != prev:
                 problems.append(f"Nr. {entry.seq}: Verweis auf den Vorgänger passt nicht.")
             if changes_digest(entry) != entry.changes_hash:
-                if entry.cleared:
+                if entry.cleared and not entry.changes:
                     cleared += 1
                 else:
                     problems.append(f"Nr. {entry.seq}: Inhalt wurde nachträglich geändert.")
             if entry_digest(entry, entry.seq, entry.prev_hash, entry.changes_hash) != entry.hash:
                 problems.append(f"Nr. {entry.seq}: Angaben wurden nachträglich geändert.")
+            if known_seq is not None and entry.seq == known_seq:
+                known_seen = True
+                if known_hash and entry.hash != known_hash:
+                    problems.append(
+                        f"Nr. {entry.seq}: weicht vom zuletzt geprüften Stand ab "
+                        "(Kette neu berechnet?)."
+                    )
             prev = entry.hash
             head_seq = entry.seq
             expected_seq += 1
+        if known_seq is not None and not known_seen:
+            first_missing = (head_seq or 0) + 1
+            problems.append(
+                f"Nr. {first_missing} bis {known_seq} fehlen (Ende der Kette gelöscht)."
+                if first_missing <= known_seq
+                else f"Nr. {known_seq} fehlt (gelöscht)."
+            )
         if len(problems) > MAX_PROBLEMS:
             problems = [*problems[:MAX_PROBLEMS], f"… und {len(problems) - MAX_PROBLEMS} weitere."]
+        if known_seq is not None and (head_seq is None or head_seq < known_seq):
+            # Den letzten belastbaren Kopf behalten, damit die Kürzung gemeldet bleibt
+            head_seq, prev = known_seq, known_hash
         result = {
             "ok": not problems,
             "entries": count,

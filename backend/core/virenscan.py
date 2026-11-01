@@ -214,3 +214,17 @@ class ClamavUploadHandler(FileUploadHandler):
         if self.stream is not None:
             self.stream.close()
             self.stream = None
+
+
+def inbound_ok(data: bytes, name: str, source: str) -> bool:
+    """Datei aus Mail oder Verbund prüfen (Gesamtaudit 01.11., GA-I01).
+
+    False: Schadsoftware gefunden (Alarm ist raus), die Datei wird nicht übernommen.
+    Ist der Scanner nicht erreichbar, geht ``ScanUnavailable`` weiter: Die Nachricht
+    wird dann später erneut zugestellt bzw. abgewiesen, nicht ungeprüft gespeichert.
+    """
+    try:
+        scan_bytes(data, f"{name} ({source})")
+    except VirusFound:
+        return False
+    return True

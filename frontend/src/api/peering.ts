@@ -139,6 +139,13 @@ export interface RegisterInfo {
     }[]
   }[]
   conflicts: { id: number; name: string; active_elsewhere: string }[]
+  /** Vom Verein gemeldete Änderung an einer Person, die auch woanders Mitglied ist */
+  corrections?: {
+    id: number
+    name: string
+    current: Partial<Record<'last_name' | 'first_name' | 'birth_date', string>>
+    proposed: Partial<Record<'last_name' | 'first_name' | 'birth_date', string>>
+  }[]
 }
 
 export interface CouplingInvoice {
@@ -302,6 +309,10 @@ export const peeringApi = {
   end: (org: number, id: number) => api.del(`${base(org)}couplings/${id}/`),
   resolve: (org: number, id: number, member: number, person: number | null) =>
     api.post<Coupling>(`${base(org)}couplings/${id}/members/${member}/resolve/`, { person }),
+  decideCorrection: (org: number, id: number, member: number, apply: boolean) =>
+    api.post<Coupling>(`${base(org)}couplings/${id}/members/${member}/resolve/`, {
+      correction: apply ? 'apply' : 'discard',
+    }),
   requestTransfer: (
     org: number,
     id: number,

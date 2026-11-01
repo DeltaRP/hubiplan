@@ -29,6 +29,7 @@ const offices = [
         until_year: 1972,
         current: false,
         former_entry: true,
+        name_public: true,
       },
       {
         id: 11,
@@ -39,6 +40,7 @@ const offices = [
         until_year: null,
         current: true,
         former_entry: false,
+        name_public: true,
       },
     ],
   },
@@ -112,6 +114,12 @@ describe('Ämter', () => {
     await user.type(screen.getByLabelText('Inhaber (Name)'), 'Hans Alt')
     await user.type(screen.getByLabelText('von (Jahr)'), '1960')
     await user.type(screen.getByLabelText('bis (Jahr)'), '1970')
+    // Freie Namen erscheinen nur mit Häkchen auf der Webseite (FQ-19)
+    const published = screen.getByRole('checkbox', {
+      name: /Name darf auf der Webseite erscheinen/,
+    })
+    expect(published).not.toBeChecked()
+    await user.click(published)
     await user.click(screen.getByRole('button', { name: 'Anlegen' }))
     await waitFor(() => expect(calls.some((c) => c.key === `POST ${base}`)).toBe(true))
     const post = calls.find((c) => c.key === `POST ${base}`)
@@ -121,6 +129,7 @@ describe('Ämter', () => {
       person: null,
       from_year: 1960,
       until_year: 1970,
+      name_public: true,
     })
   })
 
@@ -166,6 +175,7 @@ describe('Ämter', () => {
             name: 'Nora Neu',
             person: 9,
             former_entry: false,
+            name_public: true,
             from_year: now - 2,
             until_year: null,
             current: true,

@@ -290,8 +290,9 @@ function ListSettings({
         message:
           'Wirklich direkt versenden? Dann geht jede Mail eines berechtigten Absenders sofort an ' +
           'alle Empfänger, ohne Bestätigungslink. Ein Versehen lässt sich nicht zurückholen, und ' +
-          'gegen gefälschte Absender schützt nur noch die DMARC-Prüfung, die nicht jede ' +
-          'Absenderdomain unterstützt. Am besten nur für kleine Empfängerkreise nutzen.',
+          'gegen gefälschte Absender schützt nur noch die DMARC-Prüfung. Bestätigt der ' +
+          'Mailserver die Herkunft nicht (dmarc=pass), kommt trotzdem ein Bestätigungslink. ' +
+          'Am besten nur für kleine Empfängerkreise nutzen.',
         confirmLabel: 'Direkt versenden',
       })
       if (!ok) return

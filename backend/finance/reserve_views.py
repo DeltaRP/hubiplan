@@ -71,10 +71,16 @@ class ReserveSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "kind_label", "balance", "movements"]
 
     def get_balance(self, obj) -> str:
-        return f"{reserves.balance(obj):.2f}"
+        known = self.context.get("balances")
+        value = known[obj.pk] if known is not None and obj.pk in known else reserves.balance(obj)
+        return f"{value:.2f}"
 
     def get_movements(self, obj) -> list[dict]:
-        qs = obj.movements.select_related("organization").order_by("-date", "-pk")
+        cache = getattr(obj, "_prefetched_objects_cache", {})
+        if "movements" in cache:
+            qs = sorted(cache["movements"], key=lambda m: (m.date, m.pk), reverse=True)
+        else:
+            qs = obj.movements.select_related("organization").order_by("-date", "-pk")
         return ReserveMovementSerializer(qs, many=True, context=self.context).data
 
     def validate(self, attrs):
@@ -115,8 +121,14 @@ class ReserveViewSet(FinanceMixin, AuditMixin, viewsets.ModelViewSet):
         return {"organization": self.org}
 
     def list(self, request, *args, **kwargs):
+        from django.db.models import Prefetch
+
         data = reserves.overview(self.org)
-        items = self.get_serializer(self.get_queryset(), many=True).data
+        queryset = self.get_queryset().prefetch_related(
+            Prefetch("movements", queryset=ReserveMovement.objects.select_related("organization"))
+        )
+        context = {**self.get_serializer_context(), "balances": data["balances"]}
+        items = ReserveSerializer(queryset, many=True, context=context).data
         return Response(
             {
                 "reserves": items,

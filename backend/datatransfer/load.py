@@ -922,7 +922,7 @@ class Loader:
         for field in dump.ORG_FIELDS:
             if field in ("type", "contact_source") or field not in data:
                 continue
-            setattr(org, field, data[field])
+            setattr(org, field, org._meta.get_field(field).to_python(data[field]))
         org.short_name = (org.short_name or "").strip()[:SHORT_NAME_MAX]
         # Feste Kennung mitnehmen (Umzug auf eine andere Instanz), solange sie hier frei ist
         given = parse_uuid(data.get("uuid"))
@@ -1052,6 +1052,7 @@ class Loader:
                 user=user,
                 person_id=person_id,
                 name=holder_name,
+                name_public=bool(a.get("name_public", False)),
                 valid_from=parse_date(a.get("valid_from")) or today(),
                 valid_until=parse_date(a.get("valid_until")),
             )
@@ -1064,7 +1065,7 @@ class Loader:
             dept.parent_id = parent_id
         for field in dump.DEPT_FIELDS:
             if field in d:
-                setattr(dept, field, d[field])
+                setattr(dept, field, dept._meta.get_field(field).to_python(d[field]))
         if name:
             dept.name = name
         dept.short_name = (dept.short_name or "").strip()[:SHORT_NAME_MAX]
@@ -1095,6 +1096,7 @@ class Loader:
                         organization=club,
                         role=role,
                         name=name,
+                        name_public=bool(h.get("name_public", False)),
                         valid_from=start,
                         valid_until=parse_date(h.get("valid_until")),
                     )
@@ -1304,7 +1306,7 @@ class Loader:
         org = Organization(type=Organization.Type.CLUB, parent=self.target)
         for field in dump.DEPT_FIELDS:
             if field in data and field not in ("sort_order", "is_active", "date_precision"):
-                setattr(org, field, data[field])
+                setattr(org, field, org._meta.get_field(field).to_python(data[field]))
         for field, value in unit_address(self.doc, self.options).items():
             if value:
                 setattr(org, field, value[: Organization._meta.get_field(field).max_length])

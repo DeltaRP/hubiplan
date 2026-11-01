@@ -11,6 +11,8 @@ export interface OfficeHolder {
   current: boolean
   /** freier Eintrag eines früheren Inhabers (hier änderbar) */
   former_entry: boolean
+  /** freier Name darf auf der Webseite erscheinen (nur mit Häkchen) */
+  name_public: boolean
 }
 
 export interface Office {
@@ -30,6 +32,7 @@ export interface OfficeEntryInput {
   person: number | null
   from_year: number | null
   until_year: number | null
+  name_public: boolean
 }
 
 export interface OfficeImportRow {

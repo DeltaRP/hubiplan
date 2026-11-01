@@ -1,28 +1,14 @@
-import datetime
 import secrets
 import string
 
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
-from django.utils import timezone
-
-# Startpasswörter gelten nur kurz und müssen bei der ersten Anmeldung ersetzt werden
-# (Gesamtaudit 31.10.b, AT-S04): Wer das Konto eingerichtet hat, kennt sie.
-INITIAL_PASSWORD_DAYS = 7
 
 
 def generate_initial_password(length: int = 16) -> str:
-    """Startpasswort für neu angelegte Konten (wird einmalig angezeigt)."""
+    """Zufallspasswort (nur noch für Testdaten; Konten bekommen Einladungslinks, FQ-16)."""
     alphabet = string.ascii_letters + string.digits
     return "".join(secrets.choice(alphabet) for _ in range(length))
-
-
-def set_initial_password(user: "User") -> str:
-    """Startpasswort setzen (gilt ``INITIAL_PASSWORD_DAYS`` Tage); Rückgabe zum Anzeigen."""
-    password = generate_initial_password()
-    user.set_password(password)
-    user.initial_password_expires = timezone.now() + datetime.timedelta(days=INITIAL_PASSWORD_DAYS)
-    return password
 
 
 class UserManager(BaseUserManager):

@@ -10,6 +10,7 @@ import { DataTable } from '../../components/DataTable.tsx'
 import type { Column } from '../../components/DataTable.tsx'
 import { confirmDialog } from '../../components/dialog.ts'
 import { errorMessage, useAutoSave, useForm, useLoad } from '../../components/forms.ts'
+import { useChangesGuard } from '../../components/leaveGuard.ts'
 import { DeleteIcon, EditIcon, IconButton } from '../../components/icons.tsx'
 import { Alert, Checkbox, Field, SaveStatus, SelectField } from '../../components/ui.tsx'
 import { useActiveOrg } from '../../org/OrgContext.tsx'
@@ -145,7 +146,11 @@ function HoldersPanel() {
                       <td>
                         {h.name}
                         {h.former_entry && h.person === null && (
-                          <span className="muted small"> (kein Mitglied)</span>
+                          <span className="muted small">
+                            {h.name_public
+                              ? ' (kein Mitglied)'
+                              : ' (kein Mitglied, nicht auf der Webseite)'}
+                          </span>
                         )}
                       </td>
                       {canEdit && (
@@ -197,6 +202,7 @@ function EntryForm({
     person: entry?.person ?? null,
     from_year: entry?.from_year ?? null,
     until_year: entry?.until_year ?? null,
+    name_public: entry?.name_public ?? false,
   })
   const { values: v, set, errors } = form
   // Bestehende Einträge speichern automatisch, neue erst mit „Anlegen“
@@ -207,6 +213,9 @@ function EntryForm({
       enabled: entry !== null,
     },
   )
+
+  // Neue Einträge vor dem Anlegen: beim Verlassen nachfragen (Gesamtaudit 01.11.)
+  const { markSaved } = useChangesGuard(v, entry === null)
 
   function year(value: string) {
     return value ? Number(value) : null
@@ -224,7 +233,10 @@ function EntryForm({
         void form
           .submit(() => officesApi.create(org.id, v))
           .then((result) => {
-            if (result) onDone()
+            if (result) {
+              markSaved()
+              onDone()
+            }
           })
       }}
     >
@@ -250,6 +262,14 @@ function EntryForm({
       />
       {errors.name && <Alert kind="error">{errors.name}</Alert>}
       {errors.person && <Alert kind="error">{errors.person}</Alert>}
+      {v.person === null && (
+        <Checkbox
+          label="Name darf auf der Webseite erscheinen"
+          hint="Ohne Häkchen erscheint der Name nicht unter „Ämter“ auf der Webseite."
+          checked={v.name_public}
+          onChange={(checked) => set('name_public', checked)}
+        />
+      )}
       <div className="grid-2">
         <Field
           label="von (Jahr)"

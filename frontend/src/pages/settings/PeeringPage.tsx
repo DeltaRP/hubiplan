@@ -1351,6 +1351,23 @@ function RegisterCard({ coupling, onChange }: { coupling: Coupling; onChange: ()
     }
   }
 
+  async function decide(member: number, apply: boolean) {
+    setErr(null)
+    setBusy(true)
+    try {
+      await peeringApi.decideCorrection(org.id, coupling.id, member, apply)
+      onChange()
+    } catch (e) {
+      setErr(errorMessage(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const fieldLabel = { last_name: 'Nachname', first_name: 'Vorname', birth_date: 'Geburtsdatum' }
+  const shown = (field: string, value?: string) =>
+    !value ? '–' : field === 'birth_date' ? formatDate(value) : value
+
   return (
     <div>
       <h4>Namentliche Meldung</h4>
@@ -1392,6 +1409,37 @@ function RegisterCard({ coupling, onChange }: { coupling: Coupling; onChange: ()
             onClick={() => void resolve(u.id, null)}
           >
             Andere Person, neu anlegen
+          </button>
+        </div>
+      ))}
+      {(reg.corrections ?? []).map((c) => (
+        <div key={`b${c.id}`} className="card">
+          <p>
+            <strong>{c.name}</strong> ist auch in einem anderen Verein Mitglied. Der Verein meldet
+            eine Änderung:
+          </p>
+          <ul className="plain-list">
+            {(Object.keys(c.proposed) as (keyof typeof fieldLabel)[]).map((f) => (
+              <li key={f}>
+                {fieldLabel[f]}: {shown(f, c.current[f])} → {shown(f, c.proposed[f])}
+              </li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            className="button"
+            disabled={busy}
+            onClick={() => void decide(c.id, true)}
+          >
+            Änderung übernehmen
+          </button>{' '}
+          <button
+            type="button"
+            className="link-button"
+            disabled={busy}
+            onClick={() => void decide(c.id, false)}
+          >
+            Verwerfen
           </button>
         </div>
       ))}

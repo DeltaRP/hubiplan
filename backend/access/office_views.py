@@ -51,6 +51,7 @@ class EntrySerializer(serializers.Serializer):
     person = serializers.IntegerField(required=False, allow_null=True)
     from_year = serializers.IntegerField()
     until_year = serializers.IntegerField()
+    name_public = serializers.BooleanField(required=False, default=False)
 
     def validate(self, attrs):
         if message := offices.check_years(attrs["from_year"], attrs["until_year"]):
@@ -79,6 +80,7 @@ class OfficesView(_OfficesMixin, APIView):
             person=_person(self.org, d.get("person")),
             from_year=d["from_year"],
             until_year=d["until_year"],
+            name_public=d["name_public"],
         )
         record(
             self.org,
@@ -116,6 +118,7 @@ class OfficeEntryView(_OfficesMixin, APIView):
         if entry.person is not None:
             name = f"{entry.person.first_name} {entry.person.last_name}".strip() or name
         entry.name = name
+        entry.name_public = d["name_public"]
         entry.valid_from = offices.year_start(d["from_year"])
         entry.valid_until = offices.year_start(d["until_year"])
         entry.save()

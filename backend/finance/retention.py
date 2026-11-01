@@ -56,8 +56,11 @@ def state(org, closing) -> dict:
 
 
 def _delete_file(field) -> None:
-    if field:
-        field.delete(save=False)
+    """Datei erst nach dem Commit löschen: Rollt die Bereinigung zurück, bleibt der Beleg
+    (Gesamtaudit 01.11., GA-F07)."""
+    from core.files import delete_on_commit
+
+    delete_on_commit(field)
 
 
 def _purge_documents(org, start, end) -> dict[str, int]:

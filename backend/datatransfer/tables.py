@@ -45,6 +45,8 @@ MODULE_MODELS = (
     # Rücklagen (Finanzamt-Prüfung C4)
     "finance.Reserve",
     "finance.ReserveMovement",
+    # Kassenzählungen/Festberichte mit Original-PDF (Gesamtaudit 01.11., GA-F08)
+    "finance.CashCount",
     "statutes.StatuteVersion",
     "statutes.StatutePublication",
     "documents.Folder",
@@ -222,7 +224,11 @@ FILE_TYPES = {
     "website.websiteimage": {"image/jpeg", "image/png"},
     "website.socialpostimage": {"image/jpeg", "image/png", "image/webp"},
     "honors.reignphoto": {"image/jpeg", "image/png"},
+    "finance.cashcount": {"application/pdf"},
 }
+
+# Dateien mit gespeicherter Prüfsumme: Inhalt muss unverändert sein
+FILE_HASHES = {"finance.cashcount": "pdf_sha256", "finance.bankstatement": "source_sha256"}
 
 
 def check_file(name: str, obj, content: bytes, path: str) -> None:
@@ -246,6 +252,21 @@ def check_file(name: str, obj, content: bytes, path: str) -> None:
             raise ValidationError(f"Datei „{fname}“: Inhalt und Dateiendung passen nicht.")
         obj.content_type = ctype
         return
+    hash_field = FILE_HASHES.get(name)
+    if hash_field and getattr(obj, hash_field, ""):
+        import hashlib
+
+        if hashlib.sha256(content).hexdigest() != getattr(obj, hash_field):
+            raise ValidationError(f"Datei „{path}“ passt nicht zu ihrer Prüfsumme.")
+    if name == "finance.bankstatement":
+        # Original eines Kontoauszugs (CAMT als XML oder ZIP), Gesamtaudit 01.11., GA-F09
+        from finance import camt
+
+        try:
+            camt.parse(content)
+        except camt.CamtError as exc:
+            raise ValidationError(f"Datei „{path}“ ist kein lesbarer Kontoauszug.") from exc
+        return
     allowed = FILE_TYPES.get(name)
     if allowed is None:
         raise ValidationError(f"Datei „{path}“ wird hier nicht übernommen.")
@@ -254,6 +275,20 @@ def check_file(name: str, obj, content: bytes, path: str) -> None:
         raise ValidationError(f"Datei „{path}“: Diese Dateiart ist nicht erlaubt.")
     if hasattr(obj, "content_type"):
         obj.content_type = ctype
+
+
+def fix_json_ids(name: str, obj, ids: IdMap) -> None:
+    """Kennungen in JSON-Feldern auf die neuen Zeilen umstellen (GA-F08)."""
+    if name == "finance.cashcount":
+        obj.booking_ids = [
+            new for old in obj.booking_ids or [] if (new := ids.get("finance.booking", old))
+        ]
+        lines = []
+        for line in obj.lines or []:
+            line = dict(line)
+            line["category"] = ids.get("finance.category", line.get("category"))
+            lines.append(line)
+        obj.lines = lines
 
 
 def fix_website_keys(name: str, obj, ids: IdMap) -> None:
@@ -529,6 +564,7 @@ def load_tables(tables: dict, org, ids: IdMap, files, user=None, allowed=None) -
             for field_name, make in FRESH_VALUES.get(name, {}).items():
                 setattr(obj, field_name, make())
             fix_website_keys(name, obj, ids)
+            fix_json_ids(name, obj, ids)
             if hasattr(obj, "created_by_id") and user is not None:
                 obj.created_by_id = user.pk
             for field_name, path in pending_files:
