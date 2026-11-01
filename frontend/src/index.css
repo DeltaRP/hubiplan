@@ -3783,8 +3783,10 @@ label:has(> .file-input:focus-visible) {
 }
 
 /* Standmodus dunkel in der Vereinsfarbe (Ralf 2026-11-01): klar vom normalen HUBIplan
-   abgegrenzt, weniger Blendung am Stand. Die Vereinsfarbe setzt applyTheme() auf :root. */
-.stand-page {
+   abgegrenzt, weniger Blendung am Stand. Die Vereinsfarbe setzt applyTheme() auf :root.
+   Die Live-Kamera öffnet sich aus einem hellen Block, soll aber wie der Standmodus aussehen. */
+.stand-page,
+.stand-page .live-camera {
   color-scheme: dark;
   --color-bg: color-mix(in srgb, var(--color-primary) 22%, #0c0e0d);
   --color-surface: color-mix(in srgb, var(--color-primary) 18%, #1c201e);
@@ -4039,7 +4041,10 @@ label:has(> .file-input:focus-visible) {
   gap: 0.5rem;
   padding: 0.75rem 1rem;
   background: var(--color-bg);
+  color: var(--color-text);
   overflow: auto;
+  /* Wischen bewegt nicht die Seite dahinter (Ralf 01.11.: Streifen am unteren Rand) */
+  overscroll-behavior: contain;
 }
 .live-frame {
   position: relative;
