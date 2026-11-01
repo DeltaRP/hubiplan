@@ -234,19 +234,37 @@ def federation_status(person: Person, club: Organization) -> FederationStatus | 
 # --- Dublettenprüfung ---
 
 
+def same_birth(person, birth_date, *, year_only: bool = True) -> bool:
+    """Gleiches Geburtsdatum (bzw. gleiches Jahr, wenn von der Person nur das Jahr
+    bekannt ist). Das Geburtsdatum ist verschlüsselt, daher der Vergleich in Python."""
+    if person.birth_date is None or birth_date is None:
+        return False
+    if person.birth_date == birth_date:
+        return True
+    return year_only and person.birth_year_only and person.birth_date.year == birth_date.year
+
+
+def persons_matching(scope_id, last_name: str, first_name: str, birth_date, *, limit: int):
+    """Personen im Verbandsbereich mit genau diesem Namen und Geburtsdatum."""
+    qs = Person.objects.filter(
+        scope_id=scope_id,
+        last_name__iexact=(last_name or "").strip(),
+        first_name__iexact=(first_name or "").strip(),
+    ).order_by("pk")
+    return [p for p in qs if same_birth(p, birth_date, year_only=False)][:limit]
+
+
 def find_duplicates(club: Organization, last_name: str, first_name: str, birth_date):
     """Mögliche Dubletten im Verbandsbereich: gleiches Geburtsdatum und Name.
 
     Die Personentabelle ist per RLS auf den Verbandsbereich beschränkt.
     """
     scope = scope_for(club)
-    same_birth = Q(birth_date=birth_date) | Q(
-        birth_year_only=True, birth_date__year=birth_date.year
-    )
-    qs = Person.objects.filter(same_birth, scope=scope).filter(
+    qs = Person.objects.filter(scope=scope).filter(
         Q(last_name__iexact=last_name.strip()) | Q(first_name__iexact=first_name.strip())
     )
-    return list(qs.select_related("federation")[:10])
+    found = [p for p in qs.select_related("federation") if same_birth(p, birth_date)]
+    return found[:10]
 
 
 def lock_person(person_id: int) -> None:

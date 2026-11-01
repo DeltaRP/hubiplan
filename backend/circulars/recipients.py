@@ -223,10 +223,18 @@ def club_filtered(club: Organization, qs, filters: dict):
         qs = qs.filter(person_id__in=persons)
     on = today()
     age_min, age_max = as_int(filters.get("age_min")), as_int(filters.get("age_max"))
-    if age_min is not None:
-        qs = qs.filter(person__birth_date__lte=years_ago(on, age_min))
-    if age_max is not None:
-        qs = qs.filter(person__birth_date__gt=years_ago(on, age_max + 1))
+    if age_min is not None or age_max is not None:
+        # Geburtsdatum verschlüsselt: Alter in Python prüfen
+        oldest = years_ago(on, age_max + 1) if age_max is not None else None
+        youngest = years_ago(on, age_min) if age_min is not None else None
+        keep = [
+            pk
+            for pk, birth in qs.values_list("pk", "person__birth_date")
+            if birth is not None
+            and (youngest is None or birth <= youngest)
+            and (oldest is None or birth > oldest)
+        ]
+        qs = qs.filter(pk__in=keep)
     year = as_int(filters.get("jubilee_year"))
     if year is not None and 1900 <= year <= 2200:
         rows = jubilees_between(club, datetime.date(year, 1, 1), datetime.date(year, 12, 31))

@@ -437,8 +437,10 @@ def _reduce_identity(person) -> None:
     from .models import FederationMember, Person
 
     with rls_bypass():
+        field = Person._meta.get_field("birth_date")
         Person.objects.filter(pk=person.pk).update(
-            birth_date=person.birth_date.replace(month=1, day=1), birth_year_only=True
+            birth_date=field.stored_value(person, person.birth_date.replace(month=1, day=1)),
+            birth_year_only=True,
         )
         FederationMember.objects.filter(person_id=person.pk).delete()
 

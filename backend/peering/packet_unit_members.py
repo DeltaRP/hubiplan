@@ -274,16 +274,15 @@ def _release(coupling, membership, rm, why: str) -> None:
 
 def _candidates(club, row) -> list[int]:
     from members import services
-    from members.models import Person
 
-    return list(
-        Person.objects.filter(
-            scope=services.scope_for(club),
-            birth_date=row["birth_date"],
-            last_name__iexact=row["last_name"],
-            first_name__iexact=row["first_name"],
-        ).values_list("pk", flat=True)[:5]
+    found = services.persons_matching(
+        services.scope_for(club).pk,
+        row["last_name"],
+        row["first_name"],
+        row["birth_date"],
+        limit=5,
     )
+    return [p.pk for p in found]
 
 
 def _new(coupling, club, row, person=None) -> None:

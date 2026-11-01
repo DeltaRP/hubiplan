@@ -279,16 +279,13 @@ def _transferred(person, placeholder) -> bool:
 
 
 def _candidates(federation, row):
-    from members.models import Person
 
-    return list(
-        Person.objects.filter(
-            scope=federation,
-            birth_date=row["birth_date"],
-            last_name__iexact=row["last_name"],
-            first_name__iexact=row["first_name"],
-        ).values_list("pk", flat=True)[:5]
+    from members.services import persons_matching
+
+    found = persons_matching(
+        federation.pk, row["last_name"], row["first_name"], row["birth_date"], limit=5
     )
+    return [p.pk for p in found]
 
 
 def _import(coupling, federation, row, rm=None, person=None):
@@ -607,7 +604,6 @@ def ask_active_elsewhere(club, person, on, membership=None) -> str | None:
 def answer_query(coupling: Coupling, payload: dict) -> dict:
     """Oben: Anfrage eines fernen Vereins beantworten (nur den Namen der anderen Einheit)."""
     from members import services as member_services
-    from members.models import Person
 
     if coupling.direction != Coupling.Direction.CHILD or coupling.state != Coupling.State.ACTIVE:
         return {"active_in": None}
@@ -626,13 +622,12 @@ def answer_query(coupling: Coupling, payload: dict) -> dict:
         person = _person_for(federation, {"number": payload.get("number")})
     if person is None:
         birth = _date(payload.get("birth_date"))
-        matches = list(
-            Person.objects.filter(
-                scope=federation,
-                birth_date=birth,
-                last_name__iexact=str(payload.get("last_name") or "").strip(),
-                first_name__iexact=str(payload.get("first_name") or "").strip(),
-            )[:2]
+        matches = member_services.persons_matching(
+            federation.pk,
+            str(payload.get("last_name") or ""),
+            str(payload.get("first_name") or ""),
+            birth,
+            limit=2,
         )
         person = matches[0] if len(matches) == 1 else None
     if person is None:
