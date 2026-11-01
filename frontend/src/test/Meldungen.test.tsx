@@ -235,4 +235,54 @@ describe('Meldungen', () => {
     const added = calls.find((c) => c.key === `POST ${base}calls/4/entry/persons/`)
     expect(JSON.parse(String(added?.init?.body))).toEqual({ block: 9, team: 30, membership: 3 })
   })
+
+  it('öffnet eine zurückgezogene Meldung wieder', async () => {
+    const versions = [
+      {
+        id: 1,
+        number: 1,
+        kind: 'meldung',
+        kind_label: 'Meldung',
+        channel: 'brief',
+        channel_label: 'Brief',
+        sent_to: '',
+        changes: [],
+        reason: '',
+        signed_by: 'Max Muster',
+        signed_function: '',
+        created_at: '2027-05-01T10:00:00Z',
+        shortened: false,
+      },
+      {
+        id: 2,
+        number: 2,
+        kind: 'rueckzug',
+        kind_label: 'Rückzug',
+        channel: 'brief',
+        channel_label: 'Brief',
+        sent_to: '',
+        changes: [],
+        reason: '',
+        signed_by: 'Max Muster',
+        signed_function: '',
+        created_at: '2027-05-02T10:00:00Z',
+        shortened: false,
+      },
+    ]
+    const calls = renderApp({
+      [`GET ${base}calls/4/entry/`]: () => ({
+        status: 200,
+        body: entry({ status: 'zurueckgezogen', status_label: 'zurückgezogen', versions }),
+      }),
+      [`POST ${base}calls/4/entry/reopen/`]: () => ({ status: 200, body: entry({ versions }) }),
+    })
+    const user = userEvent.setup()
+    expect(await screen.findByRole('button', { name: 'Meldung löschen' })).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'Wieder öffnen' }))
+    await waitFor(() =>
+      expect(calls.some((c) => c.key === `POST ${base}calls/4/entry/reopen/`)).toBe(true),
+    )
+    // Wieder Entwurf: die nächste Abgabe ist eine neue Meldung
+    expect(await screen.findByRole('heading', { name: 'Meldung abgeben' })).toBeVisible()
+  })
 })

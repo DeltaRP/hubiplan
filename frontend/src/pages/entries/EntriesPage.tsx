@@ -462,8 +462,66 @@ export function EntryPanel({
           onDiscarded={() => setEntry(null)}
         />
       )}
+      {withdrawn && (
+        <WithdrawnCard
+          org={org}
+          call={call}
+          entry={entry}
+          run={run}
+          onDeleted={() => setEntry(null)}
+        />
+      )}
       {organizer && <OrganizerCard org={org} call={call} entry={entry} run={run} />}
     </>
+  )
+}
+
+/** Zurückgezogene Meldung: wieder öffnen oder ganz löschen (die Ausschreibung bleibt). */
+function WithdrawnCard({
+  org,
+  call,
+  entry,
+  run,
+  onDeleted,
+}: {
+  org: Scope
+  call: CallDetail
+  entry: Entry
+  run: Run
+  onDeleted: () => void
+}) {
+  async function remove() {
+    const ok = await confirmDialog({
+      title: 'Meldung löschen',
+      message: `Die Meldung mit allen Mannschaften, Personen und ${entry.versions.length} Fassungen löschen? Die Ausschreibung bleibt erhalten.`,
+      confirmLabel: 'Löschen',
+      danger: true,
+    })
+    if (ok && (await run(() => entriesApi.discard(org, call.id)))) onDeleted()
+  }
+  return (
+    <div className="card card-wide">
+      <div className="card-head">
+        <h2>Zurückgezogen</h2>
+      </div>
+      <p className="muted">
+        Öffnet ihr die Meldung wieder, wird sie zum Entwurf mit den bisherigen Angaben; die
+        Fassungen bleiben erhalten. Beim Löschen verschwindet die Meldung mit allen Fassungen, und
+        ihr könnt neu anfangen.
+      </p>
+      <div className="button-row">
+        <button
+          type="button"
+          className="button"
+          onClick={() => void run(() => entriesApi.reopen(org, call.id))}
+        >
+          Wieder öffnen
+        </button>
+        <button type="button" className="button button-ghost" onClick={remove}>
+          Meldung löschen
+        </button>
+      </div>
+    </div>
   )
 }
 
@@ -1016,7 +1074,8 @@ function SubmitCard({
   const [sentTo, setSentTo] = useState('')
   const [fn, setFn] = useState(options.functions[0] ?? '')
   const [busy, setBusy] = useState(false)
-  const first = entry.versions.length === 0
+  // Nach Rückzug und „Wieder öffnen“ ist die nächste Abgabe wieder eine neue Meldung
+  const first = entry.versions.length === 0 || entry.versions.at(-1)?.kind === 'rueckzug'
   const nothingNew = !first && !entry.changed
   const preview = (fmt: 'pdf' | 'xlsx' | 'csv') => entriesApi.previewUrl(org, call.id, fmt)
 
@@ -1067,7 +1126,10 @@ function SubmitCard({
   async function discard() {
     const ok = await confirmDialog({
       title: 'Entwurf verwerfen',
-      message: 'Alle Mannschaften, Personen und Angaben dieses Entwurfs löschen?',
+      message:
+        entry.versions.length > 0
+          ? `Alle Mannschaften, Personen und Angaben dieses Entwurfs samt ${entry.versions.length} früheren Fassungen löschen?`
+          : 'Alle Mannschaften, Personen und Angaben dieses Entwurfs löschen?',
       confirmLabel: 'Verwerfen',
       danger: true,
     })

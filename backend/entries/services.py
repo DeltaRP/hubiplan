@@ -628,7 +628,8 @@ def record_version(
     if withdraw:
         kind = EntryVersion.Kind.WITHDRAWAL
         changes = ["Die Meldung wird zurückgezogen."]
-    elif last is None:
+    elif last is None or last.kind == EntryVersion.Kind.WITHDRAWAL:
+        # Nach einem Rückzug und „Wieder öffnen“ ist es wieder eine neue Meldung
         kind = EntryVersion.Kind.ENTRY
         changes = []
     else:
