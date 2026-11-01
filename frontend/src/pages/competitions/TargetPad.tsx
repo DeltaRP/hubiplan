@@ -33,7 +33,7 @@ function viewRadius(t: TargetInfo, zoom: Zoom): number {
 }
 
 /** Scheibe als SVG-Inhalt (ohne äußeres svg), Maße in mm. */
-function TargetRings({ t }: { t: TargetInfo }) {
+export function TargetRings({ t }: { t: TargetInfo }) {
   const black = t.black_diameter ? t.black_diameter / 2 : 0
   const rings = [...t.rings].sort((a, b) => b.diameter - a.diameter)
   return (

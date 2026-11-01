@@ -2,6 +2,7 @@
 import type { CustomTarget, ScoringMethod, TargetCatalog } from '../../api/competitions.ts'
 import { Field, SelectField } from '../../components/ui.tsx'
 import { HowTo, Term, Why } from '../../learning/Aids.tsx'
+import { TargetPicker } from './TargetPicker.tsx'
 
 export interface TargetValues {
   target: string
@@ -45,7 +46,6 @@ export function TargetSettings({
   set: <K extends keyof TargetValues>(key: K, value: TargetValues[K]) => void
   errors: Record<string, string>
 }) {
-  const groups = [...new Set(catalog.targets.map((t) => t.group))]
   const chosen = catalog.targets.find((t) => t.key === v.target)
   const custom = v.target === catalog.custom
   const ct = { ...EMPTY_CUSTOM, ...(v.custom_target as CustomTarget) }
@@ -63,34 +63,20 @@ export function TargetSettings({
   return (
     <div className="stack">
       <h4>Scheibe und Wertung</h4>
+      <TargetPicker
+        targets={catalog.targets}
+        value={v.target}
+        customKey={catalog.custom}
+        error={errors.target}
+        onChange={(key) => {
+          set('target', key)
+          if (!key && v.method !== 'frei') set('method', 'frei')
+          if (key === catalog.custom && !v.custom_target?.top_diameter) {
+            set('custom_target', EMPTY_CUSTOM)
+          }
+        }}
+      />
       <div className="grid-3">
-        <SelectField
-          label="Scheibe"
-          value={v.target}
-          error={errors.target}
-          onChange={(e) => {
-            const key = e.target.value
-            set('target', key)
-            if (!key && v.method !== 'frei') set('method', 'frei')
-            if (key === catalog.custom && !v.custom_target?.top_diameter) {
-              set('custom_target', EMPTY_CUSTOM)
-            }
-          }}
-        >
-          <option value="">keine (nur Summe eingeben)</option>
-          {groups.map((g) => (
-            <optgroup key={g} label={g}>
-              {catalog.targets
-                .filter((t) => t.group === g)
-                .map((t) => (
-                  <option key={t.key} value={t.key}>
-                    {t.name}
-                  </option>
-                ))}
-            </optgroup>
-          ))}
-          <option value={catalog.custom}>Eigene Scheibe …</option>
-        </SelectField>
         <SelectField
           label="Wertungsart"
           value={v.method}
