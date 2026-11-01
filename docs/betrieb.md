@@ -67,8 +67,8 @@ Exporte, Bilder der Webseite) liegen verschlüsselt im Volume `private-data`
 (`core/crypto.py`, `core/privatefiles.py`). Logos und Wappen (`media-data`) sind
 öffentlich und bleiben unverschlüsselt.
 
-Dazu kommen einzelne Felder in der Datenbank (`core/encfields.py`): E-Mail-Adresse,
-Telefon und Straße der Mitglieder, SEPA-Mandate (Kontoinhaber, IBAN, BIC), die IBAN der
+Dazu kommen einzelne Felder in der Datenbank (`core/encfields.py`): Geburtsdatum,
+E-Mail-Adresse, Telefon und Straße der Mitglieder, SEPA-Mandate (Kontoinhaber, IBAN, BIC), die IBAN der
 Gegenseite in Kontoauszügen, die Werte der Zusatzfelder, die Inhalte des
 Änderungsprotokolls und der Rückgängig-Daten sowie der Text von Mails im Postausgang
 (Anhänge liegen als Dateien verschlüsselt). Empfänger und Betreff bleiben lesbar, damit

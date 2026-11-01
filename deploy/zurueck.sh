@@ -45,6 +45,18 @@ if [ -f backend/core/encfields.py ] && [ "$(felder .)" != "$(felder "$ZIEL.vorhe
     $COMPOSE run -T --rm --no-deps backend python manage.py daten_verschluesseln --entschluesseln
 fi
 
+# Geburtsdatum: Kennt die vorige Fassung die Spalte nur als Datum, die Migration von
+# members zurücknehmen (text -> date; geht erst, wenn oben entschlüsselt wurde)
+MIG=backend/members/migrations/0022_geburtsdatum_verschluesselt.py
+if [ -f "$MIG" ] && [ ! -f "$ZIEL.vorher/$MIG" ]; then
+    VORHER_MIG=$(ls "$ZIEL.vorher/backend/members/migrations" | grep -E '^[0-9]{4}_.*\.py$' | sort | tail -n 1)
+    echo "Nehme die Migrationen von members bis ${VORHER_MIG%.py} zurück …"
+    # shellcheck disable=SC2016
+    $COMPOSE run -T --rm --no-deps --entrypoint sh backend -c \
+        'DATABASE_URL="${MIGRATE_DATABASE_URL:-$DATABASE_URL}" DATABASE_APP_ROLE= python manage.py migrate members "$1" --noinput' \
+        sh "${VORHER_MIG%.py}"
+fi
+
 # Images tauschen: aktuelle <-> :vorher
 for img in $EIGENE; do
     basis="${img%%:*}"

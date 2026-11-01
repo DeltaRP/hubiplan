@@ -632,6 +632,8 @@ class Checker:
         decisions = (self.job.decisions or {}).get("persons") or {}
         club = self.target if self.target.type == Organization.Type.CLUB else None
         result = []
+        from members.services import persons_matching
+
         with rls_bypass():
             for pid, p in self.persons.items():
                 try:
@@ -640,15 +642,8 @@ class Checker:
                     continue
                 if birth is None:
                     continue
-                candidates = list(
-                    Person.objects.filter(
-                        scope=scope,
-                        birth_date=birth,
-                        last_name__iexact=(p.get("last_name") or "").strip(),
-                        first_name__iexact=(p.get("first_name") or "").strip(),
-                    )
-                    .select_related("federation")
-                    .order_by("pk")[:5]
+                candidates = persons_matching(
+                    scope.pk, p.get("last_name") or "", p.get("first_name") or "", birth, limit=5
                 )
                 if not candidates:
                     continue

@@ -1,7 +1,18 @@
 from __future__ import annotations
 
+from django.contrib.postgres.fields import ArrayField
 from django.db import transaction
-from django.db.models import Exists, F, OuterRef, Q, Subquery
+from django.db.models import (
+    BigIntegerField,
+    Exists,
+    F,
+    Func,
+    IntegerField,
+    OuterRef,
+    Q,
+    Subquery,
+    Value,
+)
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -282,17 +293,34 @@ def filter_members(qs, params, org: Organization):
             for f in ("sort_key", "sort_name")
         ] + ["person__last_name", "person__first_name"]
         return qs.order_by(*ordering, "pk")
+    if key == "geburtsdatum":
+        return _by_birth(qs, desc)
     ordering = {
         "name": ("person__last_name", "person__first_name"),
         "-name": ("-person__last_name", "-person__first_name"),
         "eintritt": ("entry_date", "person__last_name"),
         "-eintritt": ("-entry_date", "person__last_name"),
-        "geburtsdatum": ("person__birth_date",),
-        "-geburtsdatum": ("-person__birth_date",),
         "nummer": ("club_number",),
         "-nummer": ("-club_number",),
     }.get(sort, ("person__last_name", "person__first_name"))
     return qs.order_by(*ordering, "pk")
+
+
+def _by_birth(qs, desc: bool):
+    """Nach Geburtsdatum sortieren. Das Datum ist verschlüsselt, die Datenbank kann
+    nicht danach sortieren: Reihenfolge in Python bilden, dann per array_position."""
+    rows = list(qs.values_list("pk", "person__birth_date"))
+    known = sorted((r for r in rows if r[1] is not None), key=lambda r: (r[1], r[0]))
+    if desc:
+        known.sort(key=lambda r: (r[1], -r[0]), reverse=True)
+    ids = [pk for pk, _ in known] + sorted(pk for pk, birth in rows if birth is None)
+    position = Func(
+        Value(ids, output_field=ArrayField(BigIntegerField())),
+        F("pk"),
+        function="array_position",
+        output_field=IntegerField(),
+    )
+    return qs.annotate(birth_position=position).order_by("birth_position")
 
 
 def member_rows(memberships, org: Organization, full_names: bool = False) -> list[dict]:

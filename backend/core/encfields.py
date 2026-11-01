@@ -16,6 +16,7 @@ Wem ein Wert gehört, steht in ``encryption_org_id()`` des Modells, sonst in
 from __future__ import annotations
 
 import base64
+import datetime
 import json
 import logging
 import os
@@ -113,6 +114,15 @@ class EncryptedMixin:
         text = self._plain_to_text(value)
         return encrypt_text(text, _owner_or_fail(model_instance, self), self)
 
+    def stored_value(self, instance, value):
+        """Gespeicherte (verschlüsselte) Form eines Werts, z. B. für ``update()``."""
+        old = getattr(instance, self.attname)
+        setattr(instance, self.attname, value)
+        try:
+            return self.pre_save(instance, False)
+        finally:
+            setattr(instance, self.attname, old)
+
     def decrypt_db_value(self, value):
         if not is_encrypted(value):
             return value
@@ -162,6 +172,51 @@ class EncryptedCharField(EncryptedMixin, models.CharField):
 
 class EncryptedEmailField(EncryptedCharField, models.EmailField):
     pass
+
+
+class EncryptedDateField(EncryptedMixin, models.DateField):
+    """DateField, verschlüsselt gespeichert (Spalte ``text``, ISO-Datum im Chiffrat).
+    Vergleiche, Sortierung und Jahr/Monat gehen nur noch in Python."""
+
+    def db_type(self, connection):
+        return "text"
+
+    def cast_db_type(self, connection):
+        return "text"
+
+    def _plain_to_text(self, value) -> str:
+        return self.to_python(value).isoformat()
+
+    def _text_to_plain(self, text: str):
+        return datetime.date.fromisoformat(text)
+
+    def _broken(self):
+        return None
+
+    def pre_save(self, model_instance, add):
+        value = getattr(model_instance, self.attname)
+        if value is None or is_encrypted(value):
+            return value
+        return encrypt_text(self._plain_to_text(value), _owner_or_fail(model_instance, self), self)
+
+    def from_db_value(self, value, expression, connection):
+        if value is None or isinstance(value, datetime.date):
+            return value
+        if is_encrypted(value):
+            return self.decrypt_db_value(value)
+        # Von vor der Umstellung (Spalte als Text, noch nicht verschlüsselt)
+        return datetime.date.fromisoformat(value)
+
+    def get_prep_value(self, value):
+        if value is None or is_encrypted(value):
+            return value
+        raise FieldError(
+            f"{self.model._meta.label}.{self.name} ist verschlüsselt: nur über save() "
+            "schreiben, nicht über update(), bulk_update() oder eine Abfrage."
+        )
+
+    def get_db_prep_value(self, value, connection, prepared=False):
+        return self.get_prep_value(value)
 
 
 class EncryptedTextField(EncryptedCharField, models.TextField):

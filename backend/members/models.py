@@ -20,7 +20,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from access.models import RoleAssignment, RoleAssignmentQuerySet
-from core.encfields import EncryptedCharField, EncryptedEmailField
+from core.encfields import EncryptedCharField, EncryptedDateField, EncryptedEmailField
 
 
 def today() -> datetime.date:
@@ -44,7 +44,9 @@ class Person(models.Model):
     )
     last_name = models.CharField("Name", max_length=100)
     first_name = models.CharField("Vorname", max_length=100)
-    birth_date = models.DateField("Geburtsdatum")
+    # Verschlüsselt mit dem Schlüssel des Verbandsbereichs; Vergleiche nur in Python
+    # (members.services.same_birth)
+    birth_date = EncryptedDateField("Geburtsdatum")
     # Nach der Löschfrist bleibt nur das Geburtsjahr (Datum auf den 1. Januar gekürzt)
     birth_year_only = models.BooleanField("nur Geburtsjahr bekannt", default=False)
     gender = models.CharField(
@@ -59,7 +61,6 @@ class Person(models.Model):
         ordering = ["last_name", "first_name"]
         indexes = [
             models.Index(fields=["scope", "last_name", "first_name"]),
-            models.Index(fields=["scope", "birth_date"]),
         ]
 
     def __str__(self) -> str:
