@@ -92,6 +92,10 @@ class Competition(models.Model):
         choices=WebsiteDepth.choices,
         default=WebsiteDepth.TOP3,
     )
+    # Ausschreibung an Untereinheiten: Die meldenden Untereinheiten sehen nach Abschluss
+    # immer ihre eigenen Starter, Mannschaften und die Wertung der Untereinheiten; die ganze
+    # Rangliste mit fremden Namen nur, wenn der Ausrichter sie freigibt (Konzept Abschnitt 9)
+    share_ranking = models.BooleanField("ganze Rangliste an meldende Untereinheiten", default=False)
     series = models.ForeignKey(
         Series,
         verbose_name="Reihe",

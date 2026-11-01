@@ -413,6 +413,7 @@ function Setup({
     details: comp.details,
     website: comp.website,
     website_depth: comp.website_depth,
+    share_ranking: comp.share_ranking,
     series: comp.series,
     organizer: comp.organizer,
     drop_out: comp.drop_out,
@@ -569,6 +570,16 @@ function Setup({
             )}
           </div>
           <Why k="comp_website" />
+          {comp.from_call && (
+            <Checkbox
+              label={t('Ganze Rangliste an die meldenden Untereinheiten')}
+              hint={t(
+                'Nach dem Abschluss sieht jede meldende Untereinheit in ihrer Meldung ihre Starter, Mannschaften und die Wertung der Untereinheiten; eingeschaltet auch die ganze Einzelrangliste mit allen Namen.',
+              )}
+              checked={v.share_ranking}
+              onChange={(on) => set('share_ranking', on)}
+            />
+          )}
           {comp.form === 'vogel' && (
             <>
               <h3>Vogelschießen</h3>

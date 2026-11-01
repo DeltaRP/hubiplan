@@ -238,8 +238,18 @@ werden verworfen und das Gerät sagt es.
 Ein anderer richtet aus (Feld „Ausrichter“). Die Einheit trägt ihre Schützen ein (nur
 Mitglieder), stellt Mannschaften zusammen (`Team`, nur bei fremden Wettbewerben) und trägt
 Platz, Wert und Bemerkung ein (`Placing`, `placings/`), optional mit „Teilnehmer insgesamt“
-für „Platz 2 von 14“. Die Verbindung zu den Meldungen (Starter aus der Meldung, Ergebnisse
-vom Ausrichter in HUBIplan) folgt, sobald es die Meldungen gibt.
+für „Platz 2 von 14“. Mit „fremden Wettbewerb anlegen“ in einer Ausschreibung entsteht er
+beim Abgeben der Meldung mit ihren Mannschaften und Personen (`entries.services.sync_competition`).
+
+**Ergebnisse zurück an die meldenden Untereinheiten** (Schritt 3, gleiche Instanz,
+`competitions/returns.py`): Eine Ausschreibung an Untereinheiten legt beim Verein einen eigenen
+Wettbewerb an, bestätigte Meldungen werden Starter. Ist er endgültig, zeigt die Meldung der
+Untereinheit (`…/entry/results/`, auch im Bereich der Untereinheit) Platz und Wert ihrer
+Starter und Mannschaften in der Gesamtwertung und die Wertung der Untereinheiten (nur Namen
+der Untereinheiten; Mitglieder nur bei eigenen Mannschaften). Die ganze Einzelrangliste mit
+fremden Namen nur mit „Ganze Rangliste an die meldenden Untereinheiten“
+(`Competition.share_ranking`, Einstellung nur bei Wettbewerben aus einer solchen
+Ausschreibung). Ergebnisse an Vereine einer anderen Instanz: Verbund-Paket (Schritt 7).
 
 ## Standzugang
 
