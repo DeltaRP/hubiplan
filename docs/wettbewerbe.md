@@ -96,7 +96,8 @@ vom Ausrichter in HUBIplan) folgt, sobald es die Meldungen gibt.
 
 ## Standzugang
 
-Für ein geliehenes Gerät ohne Konto erzeugt, wer Wettbewerbe verwaltet, unter „Einrichten“
+Für ein geliehenes Gerät ohne Konto erzeugt, wer Wettbewerbe verwaltet, unter „Erfassen“ (Knopf
+„Anderes Gerät per QR-Code“, ebenso oben im Standmodus)
 einen Standzugang (Link und QR-Code, `/stand/zugang/<schlüssel>`). Er öffnet nur diesen
 Wettbewerb im Standmodus, erlaubt nur Erfassen (`/api/public/stand/<schlüssel>/…`: Einrichtung,
 Starter, Mitglieder nur mit Name und Untereinheit, Abgleich), läuft am Ende des
