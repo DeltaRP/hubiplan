@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     "letterhead",
     "website",
     "honors",
+    "competitions",
     "peering",
     "devices",
 ]

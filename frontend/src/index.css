@@ -3411,3 +3411,148 @@ label:has(> .file-input:focus-visible) {
   object-fit: cover;
   border-radius: var(--radius);
 }
+
+/* Wettbewerbe: Auswertung und Standmodus (Tablet, Laptop, Handy am Schießstand) */
+.row-prize td:first-child {
+  font-weight: 700;
+}
+.stats-list {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.25rem 1rem;
+  margin: 0 0 1rem;
+}
+.stats-list dt {
+  color: var(--color-text-muted);
+}
+.stats-list dd {
+  margin: 0;
+}
+.stand {
+  max-width: 40rem;
+}
+.stand-page {
+  min-height: 100vh;
+  padding: 0.75rem 1rem 6rem;
+  background: var(--color-bg);
+}
+.stand-head {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 0.75rem;
+}
+.stand-full {
+  max-width: 48rem;
+  margin: 0 auto;
+}
+.stand-sync {
+  margin: 0 0 0.75rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+}
+.stand-sync-ok {
+  background: #e6f4ea;
+  color: #1e5e2f;
+}
+.stand-sync-wait {
+  background: #fff4d6;
+  color: #6b4e00;
+}
+.stand-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.stand-label {
+  font-weight: 600;
+}
+.stand .stand-input {
+  font-size: 1.5rem;
+  padding: 0.6rem 0.75rem;
+  width: 100%;
+  min-height: 3.25rem;
+}
+.stand .stand-points {
+  font-size: 2rem;
+  max-width: 12rem;
+}
+.stand-hits {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+.stand-hit {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.6rem 0.75rem;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 1.1rem;
+  text-align: left;
+  cursor: pointer;
+}
+.stand-hit.active,
+.stand-hit:hover {
+  background: var(--color-bg-alt, rgba(0, 0, 0, 0.06));
+}
+.stand-chosen {
+  font-size: 1.4rem;
+  margin: 0;
+}
+.stand-buttons .button {
+  min-height: 3rem;
+  min-width: 8rem;
+  font-size: 1.1rem;
+}
+.stand-notice {
+  font-size: 1.2rem;
+  margin: 0.75rem 0;
+}
+.stand-section {
+  margin-top: 1rem;
+}
+.stand-section summary {
+  font-weight: 600;
+  min-height: 2.5rem;
+  cursor: pointer;
+}
+.stand-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.stand-list li {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+@media (max-width: 40rem) {
+  /* Handy: Speichern in Daumenreichweite am unteren Rand */
+  .stand-full .stand-buttons {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 0.75rem 1rem;
+    background: var(--color-bg);
+    border-top: 1px solid var(--color-border);
+    margin: 0;
+  }
+  .stand-full .stand-buttons .button {
+    flex: 1;
+  }
+}

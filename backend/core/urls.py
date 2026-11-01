@@ -9,6 +9,7 @@ from billing import views as billing_views
 from cards import views as card_views
 from changes import views as change_views
 from circulars import urls as circular_urls
+from competitions import urls as competition_urls
 from customfields import views as field_views
 from datatransfer import views as transfer_views
 from documents import views as doc_views
@@ -456,6 +457,7 @@ org_patterns = [
     *circular_urls.org_patterns,
     *website_urls.org_patterns,
     *honors_urls.org_patterns,
+    *competition_urls.org_patterns,
     path("offices/", office_views.OfficesView.as_view(), name="offices"),
     path("offices/<int:pk>/", office_views.OfficeEntryView.as_view(), name="office-entry"),
     path(

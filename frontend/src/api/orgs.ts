@@ -555,6 +555,8 @@ export const PERM = {
   websiteManage: 'website.manage',
   websiteContent: 'website.content',
   peeringManage: 'peering.manage',
+  competitionsManage: 'competitions.manage',
+  competitionsResults: 'competitions.results',
 } as const
 
 /** Ergebnis von „Verwalter einrichten“ für eine Untereinheit. */
